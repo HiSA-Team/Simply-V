@@ -22,13 +22,15 @@ Supported boards and associated profiles are:
 |--------------------------|--------------------------
 | `embedded` (Default)     | [Nexys A7-100T](https://digilent.com/reference/programmable-logic/nexys-a7/reference-manual) (Default)
 | `embedded`               | [Nexys A7-50T](https://digilent.com/reference/programmable-logic/nexys-a7/reference-manual)
-| `hpc`                    | [Alveo U250](https://www.amd.com/en/products/accelerators/alveo/u250/a-u250-a64g-pq-g.html)
+| `hpc`                    | [Alveo U250](https://www.amd.com/en/products/accelerators/alveo/u250/a-u250-a64g-pq-g.html) (Default)
+| `hpc`                    | [Alveo U280](https://docs.amd.com/r/en-US/ug1314-alveo-u280-reconfig-accel)
+
+> **NOTE:** To use the Alveo U280, Vivado <= 2023.1 is needed because the Alveo U280 is EOL (end of life)
 
 Further support is coming soon for:
 - [Zybo](https://digilent.com/reference/programmable-logic/zybo/reference-manual)
 - [ZCU102](https://www.xilinx.com/products/boards-and-kits/ek-u1-zcu102-g.html)
 - [Alveo U50](https://docs.amd.com/r/en-US/ug1371-u50-reconfig-accel)
-- [Alveo U280](https://docs.amd.com/r/en-US/ug1314-alveo-u280-reconfig-accel)
 
 ## Build and Run:
 The top-level `Makefile` can be used to build the platform for the specific target board.
