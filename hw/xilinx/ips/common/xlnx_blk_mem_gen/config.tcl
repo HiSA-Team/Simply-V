@@ -8,18 +8,6 @@ set coe_file $::env(IP_DIR)/init.coe
 
 puts "$coe_file"
 
-# Use envvars out of list
-set_property CONFIG.Write_Width_A $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
-set_property CONFIG.Read_Width_A  $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
-set_property CONFIG.Write_Width_B $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
-set_property CONFIG.Read_Width_B  $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
-set_property CONFIG.AXI_ID_Width  $::env(MBUS_ID_WIDTH)       [get_ips $::env(IP_NAME)]
-
-# Get the BRAM depth
-set bram_depths [split $::env(BRAM_DEPTHS) " "]
-# This file is the config for the first BRAM occurrence, hence it uses the index 0
-set_property CONFIG.Write_Depth_A [lindex $bram_depths 0] [get_ips $::env(IP_NAME)]
-
 # Configure IP
 set_property -dict [list CONFIG.Interface_Type {AXI4} \
                         CONFIG.AXI_Slave_Type {Memory_Slave} \
@@ -42,4 +30,13 @@ set_property -dict [list CONFIG.Interface_Type {AXI4} \
                         CONFIG.Fill_Remaining_Memory_Locations {true} \
                 ] [get_ips $::env(IP_NAME)]
 
-
+# Use envvars out of list
+set_property CONFIG.Write_Width_A $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
+set_property CONFIG.Read_Width_A  $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
+set_property CONFIG.Write_Width_B $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
+set_property CONFIG.Read_Width_B  $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
+set_property CONFIG.AXI_ID_Width  $::env(MBUS_ID_WIDTH)       [get_ips $::env(IP_NAME)]
+# Get the BRAM depth
+set bram_depths [split $::env(BRAM_DEPTHS) " "]
+# This file is the config for the first BRAM occurrence, hence it uses the index 0
+set_property CONFIG.Write_Depth_A [lindex $bram_depths 0] [get_ips $::env(IP_NAME)]

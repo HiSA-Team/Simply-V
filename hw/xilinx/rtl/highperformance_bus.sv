@@ -136,6 +136,9 @@ module highperformance_bus #(
     logic HBUS_clk ;
     logic HBUS_rstn;
 
+    logic ddr_clk;
+    logic ddr_rst;
+
     /////////////////
     // Assignments //
     /////////////////
@@ -529,7 +532,11 @@ module highperformance_bus #(
     `ASSIGN_AXI_BUS(m_acc, HBUS_to_m_acc)
     `ASSIGN_AXI_BUS(s_acc_to_HBUS, s_acc)
     `ASSIGN_AXI_BUS(MBUS_to_HBUS, dwidth_conv_to_HBUS)
-    `ASSIGN_AXI_BUS(dwidth_conv_from_HBUS, HBUS_to_MBUS)
+
+
+    // `ASSIGN_AXI_BUS(dwidth_conv_from_HBUS, HBUS_to_MBUS)
+    `SINK_AXI_MASTER_INTERFACE(dwidth_conv_from_HBUS)
+    `SINK_AXI_SLAVE_INTERFACE(HBUS_to_MBUS)
 
     // AXI4 crossbar
     xlnx_highperformance_crossbar highperformance_xbar_u (

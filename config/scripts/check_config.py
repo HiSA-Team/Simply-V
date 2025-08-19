@@ -202,6 +202,8 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
 # Check configuration validity between parent and child buses
 def check_inter_config(configs : list) -> bool:
 
+    hbus_clock_domain_from_hbus = None
+    hbus_clock_domain_from_mbus = None
     # For each Configuration
     for config in configs:
 
@@ -246,7 +248,7 @@ def check_inter_config(configs : list) -> bool:
                                 print_error(f"Address of {child_config.CONFIG_NAME} is not properly contained in {config.CONFIG_NAME}")
                                 return False
 
-    if hbus_clock_domain_from_hbus != hbus_clock_domain_from_mbus:
+    if hbus_clock_domain_from_hbus is not None and hbus_clock_domain_from_mbus is not None and hbus_clock_domain_from_hbus != hbus_clock_domain_from_mbus:
         print_error(f"HBUS_CLOCK_DOMAIN {hbus_clock_domain_from_hbus} defined in hbus_clock_domain_from_hbus.csv is different from {hbus_clock_domain_from_mbus} defined in config_main_bus.csv")
         return False
 
