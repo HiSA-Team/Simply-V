@@ -107,7 +107,6 @@ done
 
 # Assume each BRAM name starts with BRAM
 bram_name=BRAM
-bram_size_name=BRAM_DEPTHS
 # Get all slave names
 slaves=$(grep "RANGE_NAMES" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}');
 # Get all slave range address widths
@@ -119,6 +118,8 @@ let cnt=0
 prefix_len=${#bram_name}
 # Find the index for each BRAM into the slave names and get the right range_addr_width
 for slave in ${slaves[*]}; do
+    # TODO74: multiple BRAMs are not yet fully supported anyway
+    # TODO74: need legal name convention each BRAM in the CSV must have the index as suffix, e.g. BRAM_0, BRAM_1, ...
     # Assume each BRAM name starts with BRAM and they are ordered in the CSV
     if [[ ${slave:0:$prefix_len} == $bram_name ]]; then
         range_width=${range_addr_widths[$cnt]}
