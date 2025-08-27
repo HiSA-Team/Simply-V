@@ -8,7 +8,8 @@ set coe_file $::env(IP_DIR)/initRV$::env(MBUS_DATA_WIDTH).coe
 
 puts "$coe_file"
 
-# Set the bram depth this is modified by config-based script
+# Set the bram depth
+# WARNING: Do not change the following line, it is modified by config-based script
 set bram_depth {8192}
 
 # Use envvars out of list

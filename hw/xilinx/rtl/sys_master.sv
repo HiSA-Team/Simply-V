@@ -635,8 +635,6 @@ module sys_master # (
 
         assign m_axi_awid = '0;
         assign m_axi_arid = '0;
-        // assign m_axi_awregion = '0;
-        // assign m_axi_arregion = '0;
 
     end: dwidth_converter
     else begin: no_dwidth_conversion
