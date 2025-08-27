@@ -43,8 +43,8 @@ export XILINX_PROJECT_NAME=uninasoc
 # Default is "embedded" "Nexys-A7-100T". If "hpc" is selected, "Alveo U250" is
 # the default board configuration.
 
-# hpc      -> { au250           , au280 (TBD)   , au50 (TBD)  }
-# embedded -> { nexys_a7_100t   , nexys_a7_50t                }
+# hpc      -> { au250           , au280 (Vivado 2023.1 only) , au50 (TBD)  }
+# embedded -> { nexys_a7_100t   , nexys_a7_50t                             }
 
 # PS: Environmental variable BOARD should match the .xdc constraint file name.
 
@@ -59,8 +59,12 @@ if [[ ${SOC_CONFIG} == "hpc" ]]; then
     export XILINX_HW_SERVER_FPGA_PATH=xilinx_tcf/Xilinx/*
 
     if [[ ${BOARD_CONFIG} == "au280" ]]; then
-        # TBD
-        echo "[Error] Board Configuration ${BOARD_CONFIG} unsupported!" >&2 ;
+        # Alveo  280
+        # NOTE: the Alveo U280 is EOL (end of life) the last vivado version to support it is the 2023.1
+        export XILINX_PART_NUMBER=xcu280-fsvh2892-2L-e
+        export XILINX_BOARD_PART=xilinx.com:au280:part0:1.2
+        export XILINX_HW_DEVICE=xcu280_u55c_0 # xcu280_0
+        export BOARD=au280
     elif [[ ${BOARD_CONFIG} == "au50" ]]; then
         # TBD
         echo "[Error] Board Configuration ${BOARD_CONFIG} unsupported!" >&2 ;

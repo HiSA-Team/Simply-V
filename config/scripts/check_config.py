@@ -68,6 +68,10 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         if config.CORE_SELECTOR == "CORE_PICORV32" and config.VIO_RESETN_DEFAULT != 0:
             print_error(f"CORE_PICORV32 only supports VIO_RESETN_DEFAULT = 0! {config.VIO_RESETN_DEFAULT}")
             return False
+        # Microblaze-V is not allowed when building for au280
+        if config.CORE_SELECTOR == "CORE_MICROBLAZEV" and os.getenv("BOARD") == "au280":
+            print_error(f"CORE_MICROBLAZEV is not allowed when building for au280")
+            return False
 
         # All check passed
         return True
