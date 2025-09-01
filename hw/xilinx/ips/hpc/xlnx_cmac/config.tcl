@@ -15,5 +15,5 @@ set_property -dict [list \
   CONFIG.RX_MAX_PACKET_LEN {1518} \
   CONFIG.USER_INTERFACE {AXIS} \
   CONFIG.INCLUDE_RS_FEC {1} \
-  CONFIG.GT_DRP_CLK {50} \
+  CONFIG.GT_DRP_CLK {250} \
 ] [get_ips $::env(IP_NAME)]

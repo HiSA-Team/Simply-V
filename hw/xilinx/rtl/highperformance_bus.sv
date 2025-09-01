@@ -631,8 +631,8 @@ module highperformance_bus #(
 
     // Synch DDR4 sys reset - it is active high
    logic ddr4_reset = 1'b1;
-   always @(posedge main_clock_i or negedge main_reset_ni) begin
-       if (main_reset_ni == 1'b0) begin
+   always @(posedge HBUS_clk or negedge HBUS_rstn) begin
+       if (HBUS_rstn == 1'b0) begin
            ddr4_reset <= 1'b1;
        end else begin
            ddr4_reset <= 1'b0;
@@ -660,8 +660,8 @@ module highperformance_bus #(
                 .LOCAL_ID_WIDTH   ( HBUS_ID_WIDTH   )
 
             ) ddr_data_clock_conv_u (
-                .s_axi_aclk     ( HBUS_clock_i        ),
-                .s_axi_aresetn  ( HBUS_reset_ni       ),
+                .s_axi_aclk     ( HBUS_clk            ),
+                .s_axi_aresetn  ( HBUS_rstn           ),
 
                 .m_axi_aclk     ( ddr_clk             ),
                 .m_axi_aresetn  ( ~ddr_rst            ),
