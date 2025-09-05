@@ -404,14 +404,10 @@ module rv_socket # (
             // ID's are set to zero since they are not present in microblaze, while the crossbar have ID's of size 2.
             // Instruction
             assign converter_instr_axi_awid = '0;
-            assign converter_instr_axi_bid  = '0;
             assign converter_instr_axi_arid = '0;
-            assign converter_instr_axi_rid  = '0;
             // Data
             assign microblaze_data_axi_awid = '0;
-            assign microblaze_data_axi_bid  = '0;
             assign microblaze_data_axi_arid = '0;
-            assign microblaze_data_axi_rid  = '0;
 
             // Regions are not present in microblaze data implementation so they are set to 0.
             assign microblaze_data_axi_awregion ='0;
