@@ -97,6 +97,9 @@ _start:
 
   jal ra, main
 
+  # Wait for interrupt
+_exit_wfi:
+  wfi
 
 
 
