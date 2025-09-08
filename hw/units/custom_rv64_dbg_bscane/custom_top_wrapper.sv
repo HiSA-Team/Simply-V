@@ -269,7 +269,7 @@ module custom_top_wrapper # (
         .AxiAddrWidth ( LOCAL_AXI_ADDR_WIDTH     ),
         .DataWidth    ( LOCAL_AXI_DATA_WIDTH     ),
         .MaxRequests  ( axi_from_mem_MaxRequests ),
-        .AxiProt      ( '0                       ),
+        .AxiProt      ( axi_from_mem_AxiProt     ),
         .axi_req_t    ( axi_req_t                ),
         .axi_rsp_t    ( axi_resp_t               )
     ) axi_from_mem_u (
