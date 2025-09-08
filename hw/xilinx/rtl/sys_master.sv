@@ -11,7 +11,7 @@
 // sys_clock   |              | soc_clock   |          |   data [32b] |             | data[MBUS_DATA_WIDTH]
 // ----------->| Clock Wizard |------------>| Jtag2Axi |--------------| Dwidth Conv |-------------------------------------------------->
 //             |______________|     |       |__________|              |_____________|
-//                                  |                                 
+//                                  |
 //                                  |                      soc_clock [10, 20, 50, 100 (MHz)]
 //                                  |-------------------------------------------------------------------------------------------------->
 //
@@ -501,7 +501,7 @@ module sys_master # (
     );
 
     // The JTAG2AXI ip is always built with a 32-bits DWIDTH. We use a DWIDTH
-    // converter if the SoC is built at 64 bits. While it is possible to build 
+    // converter if the SoC is built at 64 bits. While it is possible to build
     // JTAG2AXI as a 64-bits ip, it would also require a change to the load_binary
     // script, which we want to avoid.
     `DECLARE_AXI_BUS(jtag_to_axi_dwidth_converter, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
@@ -635,8 +635,6 @@ module sys_master # (
 
         assign m_axi_awid = '0;
         assign m_axi_arid = '0;
-        assign m_axi_awregion = '0;
-        assign m_axi_arregion = '0;
 
     end: dwidth_converter
     else begin: no_dwidth_conversion

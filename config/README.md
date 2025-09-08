@@ -96,9 +96,11 @@ $ make config_sw                  # Update software config
 ```
 
 ### BRAM size configuration
-The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_gen` according to the `RANGE_ADDR_WIDTH` assigned to the BRAM in the CSV.
+The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_gen_<i>` (where i is the BRAM index) according to the `RANGE_ADDR_WIDTH` assigned to the BRAM in the CSV.
 
-> **NOTE**: The xlnx_blk_mem_gen/config.tcl file configures the first BRAM occurrence, hence it uses the index 0. For now, a single BRAM is supported, if multiple BRAMs are declared in the config (CSV) file, the config flow gives an error. Multiple BRAMs would be simple to add in the future.
+> **NOTE**: The `xlnx_blk_mem_gen_0/config.tcl` file configures the first BRAM occurrence, hence it uses the index 0. For now, a single BRAM is supported, if multiple BRAMs are declared in the config (CSV) file, the config flow gives an error. Multiple BRAMs would be simple to add in the future.
+
+> **NOTE**: All the `xlnx_blk_mem_gen_<i>/config.tcl` configuration files must be in the `ips/common` directory.
 
 ### Clock domains
 The configuration flow gives the possibility to specify clock domains.

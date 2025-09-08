@@ -317,9 +317,7 @@ module peripheral_bus #(
 
         // Since the AXI data width converter has a reordering depth of 1 it doesn't have ID in its master ports - for more details see the documentation
         assign to_prot_conv_axi_awid = '0;
-        assign to_prot_conv_axi_bid  = '0;
         assign to_prot_conv_axi_arid = '0;
-        assign to_prot_conv_axi_rid  = '0;
     end : gen_dwidth_conv
     else begin : no_dwidth_conv
         `ASSIGN_AXI_BUS (to_prot_conv, to_dwidth_conv)
