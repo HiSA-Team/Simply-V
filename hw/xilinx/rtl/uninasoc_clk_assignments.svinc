@@ -23,7 +23,3 @@ logic CMAC_CSR_rstn;
 assign CMAC_CSR_rstn = rstn_250MHz;
 assign HBUS_extern_clk  = clk_322MHz;
 assign HBUS_extern_rstn = rstn_322MHz;
-logic PLIC_clk;
-assign PLIC_clk = clk_250MHz;
-logic PLIC_rstn;
-assign PLIC_rstn = rstn_250MHz;

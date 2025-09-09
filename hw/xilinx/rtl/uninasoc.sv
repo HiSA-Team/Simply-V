@@ -579,76 +579,76 @@ module uninasoc (
     logic [31:0] plic_int_line;
     logic plic_int_irq_o;
 
-    always_comb begin : system_interrupts
+    // always_comb begin : system_interrupts
 
-        // Default non-assigned lines
-        plic_int_line = '0;
-        rv_socket_interrupt_line = '0;
+    //     // Default non-assigned lines
+    //     plic_int_line = '0;
+    //     rv_socket_interrupt_line = '0;
 
-        // Mapping PLIC input interrupts (from pbus and hbus at the moment)
-        // Mapping is static (refer to uninasoc_pkg.sv)
-        plic_int_line[PLIC_RESERVED_INTERRUPT]  = 1'b0;
-        plic_int_line[PLIC_GPIOIN_INTERRUPT]    = pbus_int_line[PBUS_GPIOIN_INTERRUPT];
-        plic_int_line[PLIC_TIM0_INTERRUPT]      = pbus_int_line[PBUS_TIM0_INTERRUPT];
-        plic_int_line[PLIC_TIM1_INTERRUPT]      = pbus_int_line[PBUS_TIM1_INTERRUPT];
-        plic_int_line[PLIC_UART_INTERRUPT]      = pbus_int_line[PBUS_UART_INTERRUPT];
-        plic_int_line[PLIC_CMAC_INTERRUPT]      = interrupt_po /* TODO: hbus_int_line[HBUS_CMAC_INTERRUPT]*/;
+    //     // Mapping PLIC input interrupts (from pbus and hbus at the moment)
+    //     // Mapping is static (refer to uninasoc_pkg.sv)
+    //     plic_int_line[PLIC_RESERVED_INTERRUPT]  = 1'b0;
+    //     plic_int_line[PLIC_GPIOIN_INTERRUPT]    = pbus_int_line[PBUS_GPIOIN_INTERRUPT];
+    //     plic_int_line[PLIC_TIM0_INTERRUPT]      = pbus_int_line[PBUS_TIM0_INTERRUPT];
+    //     plic_int_line[PLIC_TIM1_INTERRUPT]      = pbus_int_line[PBUS_TIM1_INTERRUPT];
+    //     plic_int_line[PLIC_UART_INTERRUPT]      = pbus_int_line[PBUS_UART_INTERRUPT];
+    //     plic_int_line[PLIC_CMAC_INTERRUPT]      = interrupt_po /* TODO: hbus_int_line[HBUS_CMAC_INTERRUPT]*/;
 
-        // Map system-interrupts pins to socket interrupts
-        rv_socket_interrupt_line[CORE_EXT_INTERRUPT] = plic_int_irq_o;
+    //     // Map system-interrupts pins to socket interrupts
+    //     rv_socket_interrupt_line[CORE_EXT_INTERRUPT] = plic_int_irq_o;
 
-    end : system_interrupts
+    // end : system_interrupts
 
-    plic_wrapper #(
-        .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
-        .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
-        .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
-    ) plic_wrapper_u (
-        .clk_i          ( main_clk                      ), // input wire s_axi_aclk
-        .rst_ni         ( main_rstn                     ), // input wire s_axi_aresetn
-        // AXI4 slave port (from xbar)
-        .intr_src_i     ( plic_int_line                 ), // Input interrupt lines (Sources)
-        .irq_o          ( plic_int_irq_o                ), // Output Interrupts (Targets -> Socket)
-        .s_axi_awid     ( MBUS_to_PLIC_axi_awid         ), // input wire [1 : 0] s_axi_awid
-        .s_axi_awaddr   ( MBUS_to_PLIC_axi_awaddr       ), // input wire [25 : 0] s_axi_awaddr
-        .s_axi_awlen    ( MBUS_to_PLIC_axi_awlen        ), // input wire [7 : 0] s_axi_awlen
-        .s_axi_awsize   ( MBUS_to_PLIC_axi_awsize       ), // input wire [2 : 0] s_axi_awsize
-        .s_axi_awburst  ( MBUS_to_PLIC_axi_awburst      ), // input wire [1 : 0] s_axi_awburst
-        .s_axi_awlock   ( MBUS_to_PLIC_axi_awlock       ), // input wire [0 : 0] s_axi_awlock
-        .s_axi_awcache  ( MBUS_to_PLIC_axi_awcache      ), // input wire [3 : 0] s_axi_awcache
-        .s_axi_awprot   ( MBUS_to_PLIC_axi_awprot       ), // input wire [2 : 0] s_axi_awprot
-        .s_axi_awregion ( MBUS_to_PLIC_axi_awregion     ), // input wire [3 : 0] s_axi_awregion
-        .s_axi_awqos    ( MBUS_to_PLIC_axi_awqos        ), // input wire [3 : 0] s_axi_awqos
-        .s_axi_awvalid  ( MBUS_to_PLIC_axi_awvalid      ), // input wire s_axi_awvalid
-        .s_axi_awready  ( MBUS_to_PLIC_axi_awready      ), // output wire s_axi_awready
-        .s_axi_wdata    ( MBUS_to_PLIC_axi_wdata        ), // input wire [31 : 0] s_axi_wdata
-        .s_axi_wstrb    ( MBUS_to_PLIC_axi_wstrb        ), // input wire [3 : 0] s_axi_wstrb
-        .s_axi_wlast    ( MBUS_to_PLIC_axi_wlast        ), // input wire s_axi_wlast
-        .s_axi_wvalid   ( MBUS_to_PLIC_axi_wvalid       ), // input wire s_axi_wvalid
-        .s_axi_wready   ( MBUS_to_PLIC_axi_wready       ), // output wire s_axi_wready
-        .s_axi_bid      ( MBUS_to_PLIC_axi_bid          ), // output wire [1 : 0] s_axi_bid
-        .s_axi_bresp    ( MBUS_to_PLIC_axi_bresp        ), // output wire [1 : 0] s_axi_bresp
-        .s_axi_bvalid   ( MBUS_to_PLIC_axi_bvalid       ), // output wire s_axi_bvalid
-        .s_axi_bready   ( MBUS_to_PLIC_axi_bready       ), // input wire s_axi_bready
-        .s_axi_arid     ( MBUS_to_PLIC_axi_arid         ), // input wire [1 : 0] s_axi_arid
-        .s_axi_araddr   ( MBUS_to_PLIC_axi_araddr       ), // input wire [25 : 0] s_axi_araddr
-        .s_axi_arlen    ( MBUS_to_PLIC_axi_arlen        ), // input wire [7 : 0] s_axi_arlen
-        .s_axi_arsize   ( MBUS_to_PLIC_axi_arsize       ), // input wire [2 : 0] s_axi_arsize
-        .s_axi_arburst  ( MBUS_to_PLIC_axi_arburst      ), // input wire [1 : 0] s_axi_arburst
-        .s_axi_arlock   ( MBUS_to_PLIC_axi_arlock       ), // input wire [0 : 0] s_axi_arlock
-        .s_axi_arcache  ( MBUS_to_PLIC_axi_arcache      ), // input wire [3 : 0] s_axi_arcache
-        .s_axi_arprot   ( MBUS_to_PLIC_axi_arprot       ), // input wire [2 : 0] s_axi_arprot
-        .s_axi_arregion ( MBUS_to_PLIC_axi_arregion     ), // input wire [3 : 0] s_axi_arregion
-        .s_axi_arqos    ( MBUS_to_PLIC_axi_arqos        ), // input wire [3 : 0] s_axi_arqos
-        .s_axi_arvalid  ( MBUS_to_PLIC_axi_arvalid      ), // input wire s_axi_arvalid
-        .s_axi_arready  ( MBUS_to_PLIC_axi_arready      ), // output wire s_axi_arready
-        .s_axi_rid      ( MBUS_to_PLIC_axi_rid          ), // output wire [1 : 0] s_axi_rid
-        .s_axi_rdata    ( MBUS_to_PLIC_axi_rdata        ), // output wire [31 : 0] s_axi_rdata
-        .s_axi_rresp    ( MBUS_to_PLIC_axi_rresp        ), // output wire [1 : 0] s_axi_rresp
-        .s_axi_rlast    ( MBUS_to_PLIC_axi_rlast        ), // output wire s_axi_rlast
-        .s_axi_rvalid   ( MBUS_to_PLIC_axi_rvalid       ), // output wire s_axi_rvalid
-        .s_axi_rready   ( MBUS_to_PLIC_axi_rready       )
-    );
+    // plic_wrapper #(
+    //     .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
+    //     .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
+    //     .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
+    // ) plic_wrapper_u (
+    //     .clk_i          ( main_clk                      ), // input wire s_axi_aclk
+    //     .rst_ni         ( main_rstn                     ), // input wire s_axi_aresetn
+    //     // AXI4 slave port (from xbar)
+    //     .intr_src_i     ( plic_int_line                 ), // Input interrupt lines (Sources)
+    //     .irq_o          ( plic_int_irq_o                ), // Output Interrupts (Targets -> Socket)
+    //     .s_axi_awid     ( MBUS_to_PLIC_axi_awid         ), // input wire [1 : 0] s_axi_awid
+    //     .s_axi_awaddr   ( MBUS_to_PLIC_axi_awaddr       ), // input wire [25 : 0] s_axi_awaddr
+    //     .s_axi_awlen    ( MBUS_to_PLIC_axi_awlen        ), // input wire [7 : 0] s_axi_awlen
+    //     .s_axi_awsize   ( MBUS_to_PLIC_axi_awsize       ), // input wire [2 : 0] s_axi_awsize
+    //     .s_axi_awburst  ( MBUS_to_PLIC_axi_awburst      ), // input wire [1 : 0] s_axi_awburst
+    //     .s_axi_awlock   ( MBUS_to_PLIC_axi_awlock       ), // input wire [0 : 0] s_axi_awlock
+    //     .s_axi_awcache  ( MBUS_to_PLIC_axi_awcache      ), // input wire [3 : 0] s_axi_awcache
+    //     .s_axi_awprot   ( MBUS_to_PLIC_axi_awprot       ), // input wire [2 : 0] s_axi_awprot
+    //     .s_axi_awregion ( MBUS_to_PLIC_axi_awregion     ), // input wire [3 : 0] s_axi_awregion
+    //     .s_axi_awqos    ( MBUS_to_PLIC_axi_awqos        ), // input wire [3 : 0] s_axi_awqos
+    //     .s_axi_awvalid  ( MBUS_to_PLIC_axi_awvalid      ), // input wire s_axi_awvalid
+    //     .s_axi_awready  ( MBUS_to_PLIC_axi_awready      ), // output wire s_axi_awready
+    //     .s_axi_wdata    ( MBUS_to_PLIC_axi_wdata        ), // input wire [31 : 0] s_axi_wdata
+    //     .s_axi_wstrb    ( MBUS_to_PLIC_axi_wstrb        ), // input wire [3 : 0] s_axi_wstrb
+    //     .s_axi_wlast    ( MBUS_to_PLIC_axi_wlast        ), // input wire s_axi_wlast
+    //     .s_axi_wvalid   ( MBUS_to_PLIC_axi_wvalid       ), // input wire s_axi_wvalid
+    //     .s_axi_wready   ( MBUS_to_PLIC_axi_wready       ), // output wire s_axi_wready
+    //     .s_axi_bid      ( MBUS_to_PLIC_axi_bid          ), // output wire [1 : 0] s_axi_bid
+    //     .s_axi_bresp    ( MBUS_to_PLIC_axi_bresp        ), // output wire [1 : 0] s_axi_bresp
+    //     .s_axi_bvalid   ( MBUS_to_PLIC_axi_bvalid       ), // output wire s_axi_bvalid
+    //     .s_axi_bready   ( MBUS_to_PLIC_axi_bready       ), // input wire s_axi_bready
+    //     .s_axi_arid     ( MBUS_to_PLIC_axi_arid         ), // input wire [1 : 0] s_axi_arid
+    //     .s_axi_araddr   ( MBUS_to_PLIC_axi_araddr       ), // input wire [25 : 0] s_axi_araddr
+    //     .s_axi_arlen    ( MBUS_to_PLIC_axi_arlen        ), // input wire [7 : 0] s_axi_arlen
+    //     .s_axi_arsize   ( MBUS_to_PLIC_axi_arsize       ), // input wire [2 : 0] s_axi_arsize
+    //     .s_axi_arburst  ( MBUS_to_PLIC_axi_arburst      ), // input wire [1 : 0] s_axi_arburst
+    //     .s_axi_arlock   ( MBUS_to_PLIC_axi_arlock       ), // input wire [0 : 0] s_axi_arlock
+    //     .s_axi_arcache  ( MBUS_to_PLIC_axi_arcache      ), // input wire [3 : 0] s_axi_arcache
+    //     .s_axi_arprot   ( MBUS_to_PLIC_axi_arprot       ), // input wire [2 : 0] s_axi_arprot
+    //     .s_axi_arregion ( MBUS_to_PLIC_axi_arregion     ), // input wire [3 : 0] s_axi_arregion
+    //     .s_axi_arqos    ( MBUS_to_PLIC_axi_arqos        ), // input wire [3 : 0] s_axi_arqos
+    //     .s_axi_arvalid  ( MBUS_to_PLIC_axi_arvalid      ), // input wire s_axi_arvalid
+    //     .s_axi_arready  ( MBUS_to_PLIC_axi_arready      ), // output wire s_axi_arready
+    //     .s_axi_rid      ( MBUS_to_PLIC_axi_rid          ), // output wire [1 : 0] s_axi_rid
+    //     .s_axi_rdata    ( MBUS_to_PLIC_axi_rdata        ), // output wire [31 : 0] s_axi_rdata
+    //     .s_axi_rresp    ( MBUS_to_PLIC_axi_rresp        ), // output wire [1 : 0] s_axi_rresp
+    //     .s_axi_rlast    ( MBUS_to_PLIC_axi_rlast        ), // output wire s_axi_rlast
+    //     .s_axi_rvalid   ( MBUS_to_PLIC_axi_rvalid       ), // output wire s_axi_rvalid
+    //     .s_axi_rready   ( MBUS_to_PLIC_axi_rready       )
+    // );
 
     ////////////////////
     // PERIPHERAL BUS //

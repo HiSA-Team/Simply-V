@@ -139,14 +139,16 @@ module cmac_subsystem # (
     `DECLARE_AXILITE_BUS(prot_conv_to_cmac_xbar, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 
     // CMAC XBAR slaves (CSR PATH)
-    `DECLARE_AXILITE_BUS_ARRAY(cmac_xbar_slaves, 2, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    `DECLARE_AXILITE_BUS_ARRAY(cmac_xbar_slaves, 3, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 
     // From CMAC XBAR to CMAC CSR (CMAC CSR PATH)
     `DECLARE_AXILITE_BUS(cmac_xbar_to_cmac_csr, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
     // From CMAC XBAR to FIFO clock conv (FIFO CSR PATH)
     `DECLARE_AXILITE_BUS(cmac_xbar_to_fifo_clock_conv, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    // From CMAC XBAR to MATCH-ENGINE (rules management)
+    (* keep = "TRUE" *) `DECLARE_AXILITE_BUS(cmac_xbar_to_match_engine, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 
-    `CONCAT_AXILITE_SLAVES_ARRAY2(cmac_xbar_slaves, cmac_xbar_to_fifo_clock_conv, cmac_xbar_to_cmac_csr)
+    `CONCAT_AXILITE_SLAVES_ARRAY3(cmac_xbar_slaves, cmac_xbar_to_match_engine, cmac_xbar_to_fifo_clock_conv, cmac_xbar_to_cmac_csr)
 
     // From FIFO clock conv to FIFO CSR (FIFO CSR PATH)
     `DECLARE_AXILITE_BUS(clock_conv_to_fifo_csr, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
@@ -616,6 +618,102 @@ module cmac_subsystem # (
         // Interrupt
         .interrupt              ( fifo_interrupt    )
     );
+
+    //////////////////////////////////
+    // SMART NIC RULE MATCH ENGINE  //
+    //////////////////////////////////
+
+
+    `DECLARE_AXIS_BUS(data_fifo_to_match_engine)
+
+    (* keep = "TRUE" *)  logic [16-1:0]           tx_match_valid_out;
+    (* keep = "TRUE" *)  logic [16-1:0][31:0]     tx_packet_addr_list_out;
+    (* keep = "TRUE" *)  logic [$clog2(16+1)-1:0] tx_num_matches_out;
+    (* keep = "TRUE" *)  logic res_mask_and;
+    (* keep = "TRUE" *)  logic [16-1:0] res_mask_or;
+    (* keep = "TRUE" *)  logic final_sop_match_out;
+
+    // RULE-MATCH ENGINE
+    match_engine #(
+        .PKT_DATA_WIDTH              ( AXIS_TDATA_WIDTH         ),
+        .PKT_KSTRB_WIDTH             ( AXIS_TKEEP_WIDTH         )
+    ) match_engine_u (
+        .clock_i                     ( cmac_output_clock_322MHz ),
+        .reset_ni                    ( ~cmac_output_reset_p     ),
+
+        .rules_clock_i               ( csr_clock_i              ),
+        .rules_reset_ni              ( csr_reset_ni             ),
+
+        // AXIS interface from the CMAC
+        .s_axis_tdata                ( data_fifo_to_match_engine_axis_tdata  ),
+        .s_axis_tkeep                ( data_fifo_to_match_engine_axis_tkeep  ),
+        .s_axis_tlast                ( data_fifo_to_match_engine_axis_tlast  ),
+        .s_axis_tvalid               ( data_fifo_to_match_engine_axis_tvalid ),
+        .s_axis_tready               ( data_fifo_to_match_engine_axis_tready ),
+
+        // AXI Lite interface to update rules
+        .s_rules_axilite_awaddr      ( cmac_xbar_to_match_engine_axilite_awaddr   ),
+        .s_rules_axilite_awprot      ( cmac_xbar_to_match_engine_axilite_awprot   ),
+        .s_rules_axilite_awvalid     ( cmac_xbar_to_match_engine_axilite_awvalid  ),
+        .s_rules_axilite_awready     ( cmac_xbar_to_match_engine_axilite_awready  ),
+        .s_rules_axilite_wdata       ( cmac_xbar_to_match_engine_axilite_wdata    ),
+        .s_rules_axilite_wstrb       ( cmac_xbar_to_match_engine_axilite_wstrb    ),
+        .s_rules_axilite_wvalid      ( cmac_xbar_to_match_engine_axilite_wvalid   ),
+        .s_rules_axilite_wready      ( cmac_xbar_to_match_engine_axilite_wready   ),
+        .s_rules_axilite_bresp       ( cmac_xbar_to_match_engine_axilite_bresp    ),
+        .s_rules_axilite_bvalid      ( cmac_xbar_to_match_engine_axilite_bvalid   ),
+        .s_rules_axilite_bready      ( cmac_xbar_to_match_engine_axilite_bready   ),
+        .s_rules_axilite_araddr      ( cmac_xbar_to_match_engine_axilite_araddr   ),
+        .s_rules_axilite_arprot      ( cmac_xbar_to_match_engine_axilite_arprot   ),
+        .s_rules_axilite_arvalid     ( cmac_xbar_to_match_engine_axilite_arvalid  ),
+        .s_rules_axilite_arready     ( cmac_xbar_to_match_engine_axilite_arready  ),
+        .s_rules_axilite_rdata       ( cmac_xbar_to_match_engine_axilite_rdata    ),
+        .s_rules_axilite_rresp       ( cmac_xbar_to_match_engine_axilite_rresp    ),
+        .s_rules_axilite_rvalid      ( cmac_xbar_to_match_engine_axilite_rvalid   ),
+        .s_rules_axilite_rready      ( cmac_xbar_to_match_engine_axilite_rready   ),
+
+
+        .rule_logic_mask_and_in      ( '0 ),               // Maschera per le regole che devono essere combinate in AND
+        .rule_logic_mask_or_in       ( '0 ),               // Maschera per le regole che devono essere combinate in OR
+        .final_match_logic_enable_in ( '0 ),               // Abilita/disabilita la logica booleana finale
+        .res_mask_and                ( res_mask_and ),      // se alto la maschera di regole in and ha avuto successo
+        .res_mask_or                 ( res_mask_or  ),      // viene specificate quale regole in or matcha nel pacchetto
+
+        // Input per la logica SOP
+        .sop_term_masks_in           ( '0 ),               // Matrice di maschere: sop_term_masks_in[j] definisce il j-esimo termine AND
+        .sop_term_enable_in          ( '0 ),               // Abilita/disabilita ogni termine AND
+        .sop_logic_enable_in         ( '0 ),               // Abilita/disabilita l'intera logica SOP
+        .final_sop_match_out         ( final_sop_match_out ),      // Risultato finale della logica SOP
+
+        .tx_match_valid_out          ( tx_match_valid_out      ),
+        .tx_packet_addr_list_out     ( tx_packet_addr_list_out ),
+        .tx_num_matches_out          ( tx_num_matches_out      )
+    );
+
+    // AXI-Stream data FIFO
+    xlnx_axis_data_fifo axis_data_fifo (
+        .s_axis_aclk              ( cmac_output_clock_322MHz    ),
+        .s_axis_aresetn           ( ~cmac_output_reset_p        ),
+
+        .s_axis_tdata             ( rx_cmac_to_fifo_axis_tdata  ),      // 512 bit
+        .s_axis_tkeep             ( rx_cmac_to_fifo_axis_tkeep  ),      //  64 bit
+        .s_axis_tlast             ( rx_cmac_to_fifo_axis_tlast  ),
+        .s_axis_tready            (  ),
+        .s_axis_tuser             ( rx_cmac_to_fifo_axis_tuser  ),
+        .s_axis_tvalid            ( rx_cmac_to_fifo_axis_tvalid ),
+
+        .m_axis_tdata             ( data_fifo_to_match_engine_axis_tdata  ),      // 512 bit
+        .m_axis_tkeep             ( data_fifo_to_match_engine_axis_tkeep  ),      //  64 bit
+        .m_axis_tlast             ( data_fifo_to_match_engine_axis_tlast  ),
+        .m_axis_tready            ( data_fifo_to_match_engine_axis_tready ),
+        .m_axis_tuser             ( data_fifo_to_match_engine_axis_tuser  ),
+        .m_axis_tvalid            ( data_fifo_to_match_engine_axis_tvalid )
+    );
+
+
+
+
+
 
     // CMAC
     xlnx_cmac cmac_u (

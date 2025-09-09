@@ -126,10 +126,11 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         end_address = base_address + ~(~1 << (config.RANGE_ADDR_WIDTH[i]-1))
 
         # Check if the CMAC_CSR has the right addr width (17)
-        if config.RANGE_NAMES[i] == "CMAC_CSR":
-            if config.RANGE_ADDR_WIDTH[i] != 17:
-                print_error(f"The CMAC_CSR must have the RANGE_ADDR_WIDTH equal to 17")
-                return False
+        # TODO: restore this to the right number maybe 18 with the match-engine
+        # if config.RANGE_NAMES[i] == "CMAC_CSR":
+        #     if config.RANGE_ADDR_WIDTH[i] != 17:
+        #         print_error(f"The CMAC_CSR must have the RANGE_ADDR_WIDTH equal to 17")
+        #         return False
 
         # Check if the base addr does not fall into the addr range (e.g. base_addr: 0x100 is not allowed with range_width=12)
         if (base_address & ~(~1 << (config.RANGE_ADDR_WIDTH[i]-1)) ) != 0:

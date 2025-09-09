@@ -3,7 +3,7 @@
 #              This IP is used for converting AXI Stream (from/to the CMAC) to AXI4 (from/to the core)
 
 # Set base address this is modified by config-based script
-set base_offset {0x60000}
+set base_offset {0x80000}
 set base_address [format 0x%X [expr $base_offset + 0x0]]
 
 create_ip -name axi_fifo_mm_s -vendor xilinx.com -library ip -version 4.3 -module_name $::env(IP_NAME)

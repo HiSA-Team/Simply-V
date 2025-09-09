@@ -1056,3 +1056,5 @@ set_property PACKAGE_PIN AN9 [get_ports pci_exp_txp_o[7] ]; # Bank 226  - MGTYTX
 # set_property PACKAGE_PIN BD5 [get_ports pci_exp_txp_o[14]]; # Bank 224  - MGTYTXP1_224
 # set_property PACKAGE_PIN BF4 [get_ports pci_exp_txn_o[15]]; # Bank 224  - MGTYTXN0_224
 # set_property PACKAGE_PIN BF5 [get_ports pci_exp_txp_o[15]]; # Bank 224  - MGTYTXP0_224
+
+set_false_path -from clk_250_xlnx_clk_wiz_hpc -to txoutclk_out[0]
