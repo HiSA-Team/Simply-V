@@ -21,15 +21,17 @@ examples:
 	@echo "[Make] Compile all the example projects"
 	@for example in ${EXAMPLES_LIST}; do \
 		echo "[Make] Compiling project $$example" ; \
-		${MAKE} -C $$example ; \
+		${MAKE} -C $$example && \
 		echo "\n[Make] Done\n" ; \
 	done
 
 # Build all libraries
 lib:
 	@echo "[Make] Compile all the libraries"
-#	TinyIO is the only one atm
+#	Build TinyIO
 	${MAKE} -C lib/tinyio XLEN=${XLEN} C_EXTENSION=Y
+#	Build light-weight HAL
+	${MAKE} -C lib/uninasoc
 
 clean:
 	@echo "[Make] Clean all the example projects"

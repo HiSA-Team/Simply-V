@@ -15,6 +15,7 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
     parameter LOCAL_DATA_WIDTH  = 32,   // AXI/MEM macros parameter
     parameter LOCAL_ADDR_WIDTH  = 32,   // AXI/MEM macros parameter
     parameter COREV_PULP        = 0,    // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. cv.elw)

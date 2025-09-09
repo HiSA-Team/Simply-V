@@ -1,6 +1,6 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 // Description:
-//    This module is intended as a top-level wrapper for the custom_cv64a6 
+//    This module is intended as a top-level wrapper for the custom_cv64a6
 //    unit used in the SoC rtl (in the Socket). It wraps the CV64A6 CPU from OpenHW.
 //    By default, CV64A6 expects a configuration file describing its extensions
 //    Cache sizes and microarchitectural features, such as RAS or BTB size.
@@ -20,6 +20,7 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
     parameter LOCAL_AXI_DATA_WIDTH    = 64,
     parameter LOCAL_AXI_ADDR_WIDTH    = 64,
     parameter LOCAL_AXI_STRB_WIDTH    = LOCAL_AXI_DATA_WIDTH / 8,
@@ -87,7 +88,7 @@ module custom_top_wrapper # (
 
   axi_req_t axi_req;
   axi_resp_t axi_rsp;
-    
+
   cva6 #(
 
   ) cva6_u (
@@ -100,8 +101,8 @@ module custom_top_wrapper # (
     .ipi_i          ( ipi_i       ),
     .time_irq_i     ( time_irq_i  ),
     .debug_req_i    ( debug_req_i ),
-    .rvfi_probes_o  (             ),          
-    .cvxif_req_o    (             ),          
+    .rvfi_probes_o  (             ),
+    .cvxif_req_o    (             ),
     .cvxif_resp_i   ( '0          ),
     .noc_req_o      ( axi_req     ),
     .noc_resp_i     ( axi_rsp     )

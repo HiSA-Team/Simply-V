@@ -15,6 +15,7 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
     // AXI/MEM macros parameter
     parameter LOCAL_DATA_WIDTH  = 32,
     parameter LOCAL_ADDR_WIDTH  = 32,

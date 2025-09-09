@@ -14,12 +14,13 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
     parameter LOCAL_MEM_ADDR_WIDTH    = 32,
     parameter LOCAL_MEM_DATA_WIDTH    = 32,
     parameter LOCAL_AXI_DATA_WIDTH    = 32,
     parameter LOCAL_AXI_ADDR_WIDTH    = 32,
     parameter LOCAL_AXI_STRB_WIDTH    = LOCAL_AXI_DATA_WIDTH / 8,
-    parameter LOCAL_AXI_ID_WIDTH      = 3, // TODO: align with config
+    parameter LOCAL_AXI_ID_WIDTH      = 4,
     parameter LOCAL_AXI_REGION_WIDTH  = 4,
     parameter LOCAL_AXI_LEN_WIDTH     = 8,
     parameter LOCAL_AXI_SIZE_WIDTH    = 3,

@@ -1,23 +1,13 @@
 # Python products
 *__pycache__
 
-# Prerequisites
-*.d
-# Object files
-*.o
-# Static libraries
-*.a
-
-# Vivado outputs
-.Xil
-vivado*
-webtalk*
+# VScode local
+.vscode
 
 # Build outputs
-build/
+build*/
 
 # Temporary files and directories
 tmp*
 backup*
 *.log
-

@@ -1,5 +1,11 @@
 # Phony xci IP files
 *.xci
 
-# Xilinx artifacts
+# Xilinx local artifacts
 .Xil
+# Memory initialization files
+.mif
+# Vivado outputs
+.Xil
+vivado*
+webtalk*

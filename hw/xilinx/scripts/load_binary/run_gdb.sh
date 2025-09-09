@@ -33,4 +33,7 @@ echo "Loading ELF $ELF_NAME";
 echo "Connecting to port $BACKEND_PORT";
 
 # Run GDB
-riscv$XLEN-unknown-elf-gdb $ELF_NAME -ex 'target extended-remote:'$BACKEND_PORT -ex 'load '$ELF_NAME;
+riscv$XLEN-unknown-elf-gdb $ELF_NAME \
+    -ex 'set architecture riscv:rv'$XLEN \
+    -ex 'target extended-remote:'$BACKEND_PORT \
+    -ex 'load '$ELF_NAME;
