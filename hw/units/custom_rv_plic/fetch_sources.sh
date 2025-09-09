@@ -17,7 +17,7 @@ ASSETS_DIR=$(pwd)/assets
 # Python Environment #
 ######################
 
-# TODO142: migrate to venv 
+# TODO142: migrate to venv
 
 # Install the required modules
 echo -e "${YELLOW}[FETCH_SOURCES] Installing Python modules: hjson, tabulate, pyyaml, mako ...${NC}"
@@ -44,7 +44,6 @@ cd ${CLONE_DIR};
 echo -e "${YELLOW}[FETCH_SOURCES] Use Bender to retrieve dependencies ${NC}"
 # Open-Titan peripherals (by PULP) requires a preliminar configuration and patching
 # Apply hjson configurations and patches
-#cp ${ASSETS_DIR}/bender ./
 cp ${ASSETS_DIR}/Bender.yml ./
 cp ${ASSETS_DIR}/otp.mk ./
 make -B otp;
