@@ -34,7 +34,7 @@ module custom_top_wrapper # (
     parameter                           AXI_DATA_WIDTH      = 32,
     parameter                           AXI_ADDR_WIDTH      = 32,
     parameter                           AXI_STRB_WIDTH      = AXI_ADDR_WIDTH / 8,
-    parameter                           AXI_ID_WIDTH        = 4, // TODO: align with config
+    parameter                           AXI_ID_WIDTH        = 4,
     parameter                           AXI_USER_WIDTH      = 2,
     parameter                           AXI_REGION_WIDTH    = 4,
     parameter                           AXI_LEN_WIDTH       = 8,
