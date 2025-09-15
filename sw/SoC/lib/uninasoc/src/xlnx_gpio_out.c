@@ -21,7 +21,7 @@
 #define GIER 0x011C // Global Interrupt Enable Register
 #define IP_ISR 0x0120 // Interrupt Status Register
 #define IP_IER 0x0128 // Interrupt Enable Register
-                
+
 
 //Extend this function implementation in case you add more peripherals
 static inline int assert_gpio_out(xlnx_gpio_out_t* gpio)
