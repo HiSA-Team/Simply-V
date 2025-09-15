@@ -19,9 +19,8 @@ all: $(UNINASOC_LIB)
 # Build libuninasoc.a library
 $(UNINASOC_LIB): $(UNINASOC_OBJS)
 	@echo "\n[OBJ] Creating libuninasoc.a library"
-	echo "THIS IS THE ROOT YOU'RE USING: $(SW_SOC_ROOT)"
 	@mkdir -p lib
-	ar rcs $(UNINASOC_LIB) $(UNINASOC_OBJS)	
+	ar rcs $(UNINASOC_LIB) $(UNINASOC_OBJS)
 	@rm -f $(UNINASOC_OBJS)
 
 clean:
