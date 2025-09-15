@@ -44,10 +44,6 @@ cd ${CLONE_DIR};
 echo -e "${YELLOW}[FETCH_SOURCES] Use Bender to retrieve dependencies ${NC}"
 # Open-Titan peripherals (by PULP) requires a preliminar configuration and patching
 # Apply hjson configurations and patches
-<<<<<<< HEAD
-#cp ${ASSETS_DIR}/bender ./
-=======
->>>>>>> f95c8afa1b45a6527c2b576e6d806c64a104c9f7
 cp ${ASSETS_DIR}/Bender.yml ./
 cp ${ASSETS_DIR}/otp.mk ./
 make -B otp;
