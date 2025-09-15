@@ -8,6 +8,9 @@ include ${XILINX_ROOT}/make/config.mk
 # Common scripts directory
 XILINX_SCRIPTS_LOAD_ROOT := ${XILINX_SCRIPT_ROOT}/load_binary
 
+# Default example to run
+EXAMPLE ?= hello_world
+
 ###############
 # Load Binary #
 ###############
@@ -15,7 +18,7 @@ XILINX_SCRIPTS_LOAD_ROOT := ${XILINX_SCRIPT_ROOT}/load_binary
 # For CPUs that does not support debuggers yet
 
 # Path to target binary
-BIN_PATH ?= ${SW_ROOT}/SoC/examples/blinky/bin/blinky.bin
+BIN_PATH ?= ${SW_ROOT}/SoC/examples/${EXAMPLE}/bin/${EXAMPLE}.bin
 # BRAM base address
 BASE_ADDRESS ?= 0x00000000
 # Whether to readback and check the loaded binary or not
@@ -44,7 +47,7 @@ load_binary_hpc: ${BIN_PATH}
 # Depending on the selected CPU, two backends flows are supported
 
 # Path to target elf
-ELF_PATH ?= ${SW_ROOT}/SoC/examples/blinky/bin/blinky.elf
+ELF_PATH ?= ${SW_ROOT}/SoC/examples/${EXAMPLE}/bin/${EXAMPLE}.elf
 
 # Use XSDB as a backend
 XSDB ?= xsdb
