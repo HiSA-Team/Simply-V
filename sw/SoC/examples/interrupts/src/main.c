@@ -71,15 +71,15 @@ void _ext_handler(void)
     case 0x0: // unused
         break;
     case 0x1:
+        printf("Handiling GPIO_OUT interrupt!\r\n");
         xlnx_gpio_out_toggle(&gpio_out, PIN_0);
         xlnx_gpio_in_clear_int(&gpio_in);
-        // gpio_handler();
         break;
     case 0x2:
         // Timer interrupt
+        printf("Handiling TIM0 interrupt!\r\n");
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
         xlnx_tim_clear_int(&timer);
-        // tim_handler();
         break;
     default:
         break;
@@ -96,7 +96,7 @@ int main()
     // Initialize HAL
     uninasoc_init();
 
-    printf("Interrupts Example\n\r");
+    printf("Interrupts Example\r\n");
 
     // Configure the PLIC
     uint32_t priorities[SOURCES_NUM] = { 1, 1, 1 };
@@ -105,26 +105,25 @@ int main()
     plic_enable_all();
 
     if (xlnx_gpio_in_init(&gpio_in) != UNINASOC_OK)
-        printf("ERROR GPIOIN\n");
+        printf("ERROR GPIOIN\r\n");
 
     if (xlnx_gpio_out_init(&gpio_out) != UNINASOC_OK)
-        printf("ERROR GPIOOUT\n");
+        printf("ERROR GPIOOUT\r\n");
 
     // Configure the timer for one interrupt each second (assuming a 20MHz clock)
     xlnx_tim_init(&timer);
 
     if (xlnx_tim_configure(&timer) != UNINASOC_OK)
-        printf("ERROR TIMER\n");
+        printf("ERROR TIMER\r\n");
 
     if (xlnx_tim_enable_int(&timer) != UNINASOC_OK)
-        printf("ERROR TIMER\n");
+        printf("ERROR TIMER\r\n");
 
     if (xlnx_tim_start(&timer) != UNINASOC_OK)
-        printf("ERROR TIMER\n");
+        printf("ERROR TIMER\r\n");
 
     // Hot-loop, waiting for interrupts to occur
-    while (1)
-        ;
+    while (1);
 
     return 0;
 }
