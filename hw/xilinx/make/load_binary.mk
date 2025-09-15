@@ -18,7 +18,7 @@ EXAMPLE ?= hello_world
 # For CPUs that does not support debuggers yet
 
 # Path to target binary
-BIN_PATH ?= ${SW_ROOT}/SoC/examples/$/bin/${EXAMPLE}.bin
+BIN_PATH ?= ${SW_ROOT}/SoC/examples/${EXAMPLE}/bin/${EXAMPLE}.bin
 # BRAM base address
 BASE_ADDRESS ?= 0x00000000
 # Whether to readback and check the loaded binary or not
