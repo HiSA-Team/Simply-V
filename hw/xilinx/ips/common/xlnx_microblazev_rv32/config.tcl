@@ -58,11 +58,11 @@ set_property -dict [list \
 # AXI interconnect parameters #
 ###############################
 # Data width
-set_property CONFIG.C_DATA_SIZE $::env(MBUS_DATA_WIDTH) [get_ips $::env(IP_NAME)]
+set_property CONFIG.C_DATA_SIZE 32 [get_ips $::env(IP_NAME)]
 # Address width
 # - If RV32, address width is fixed equal to data width
 # - If RV64, supported: 32, 36, 40, 44, 48, 52, 56, 64
-set_property CONFIG.C_ADDR_SIZE $::env(MBUS_ADDR_WIDTH)  [get_ips $::env(IP_NAME)]
+set_property CONFIG.C_ADDR_SIZE 32 [get_ips $::env(IP_NAME)]
 # AXI ID width is fixed to 1
 
 ##########

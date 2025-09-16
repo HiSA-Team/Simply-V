@@ -4,7 +4,7 @@
 # Xilinx local artifacts
 .Xil
 # Memory initialization files
-.mif
+*.mif
 # Vivado outputs
 .Xil
 vivado*

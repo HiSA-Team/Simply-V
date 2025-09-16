@@ -123,7 +123,6 @@ def parse_XLEN (
 	if (config.PROTOCOL == "DISABLE"):
 		# No-op
 		return config
-
 	# Set BUS-related parameters
 	match config.CONFIG_NAME:
 		# Main bus, use XLEN
@@ -145,7 +144,8 @@ def parse_XLEN (
 			config.set_DATA_WIDTH(512)
 		# SoC config
 		case "SYS":
-			# No-op
+			# Set XLEN in order to check CORE data width correctness
+			config.XLEN = int(property_value)
 			logging.info("Skipping DATA_WIDTH set for SYS")
 		case _:
 			logging.error("Can't read valid config.CONFIG_NAME " + config.CONFIG_NAME)

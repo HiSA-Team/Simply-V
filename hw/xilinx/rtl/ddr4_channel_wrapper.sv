@@ -28,8 +28,8 @@ module ddr4_channel_wrapper # (
     input logic reset_ni,
 
     // DDR4 CH0 clock and reset
-    input logic clk_300mhz_0_p_i,
-    input logic clk_300mhz_0_n_i,
+    input logic clk_300mhz_x_p_i,
+    input logic clk_300mhz_x_n_i,
 
     // DDR4 channel interface (to PHYs)
     `DEFINE_DDR4_PORTS(x),
@@ -267,8 +267,8 @@ module ddr4_channel_wrapper # (
     assign ddr4_axi_araddr = (LOCAL_ADDR_WIDTH == 32) ? { 2'b00, dwidth_conv_to_ddr4_axi_araddr } : dwidth_conv_to_ddr4_axi_araddr[DDR4_CHANNEL_ADDRESS_WIDTH-1:0];
 
     xlnx_ddr4 ddr4_u (
-        .c0_sys_clk_n                ( clk_300mhz_0_n_i ),
-        .c0_sys_clk_p                ( clk_300mhz_0_p_i ),
+        .c0_sys_clk_n                ( clk_300mhz_x_n_i ),
+        .c0_sys_clk_p                ( clk_300mhz_x_p_i ),
 
         .sys_rst                     ( ddr4_reset       ),
 
@@ -289,7 +289,7 @@ module ddr4_channel_wrapper # (
         .c0_ddr4_dqs_t               ( cx_ddr4_dqs_t    ),
         .c0_ddr4_dqs_c               ( cx_ddr4_dqs_c    ),
         .c0_ddr4_odt                 ( cx_ddr4_odt      ),
-        .c0_ddr4_parity              ( cx_ddr4_par      ),
+        .c0_ddr4_parity              ( cx_ddr4_parity   ),
         .c0_ddr4_bg                  ( cx_ddr4_bg       ),
         .c0_ddr4_reset_n             ( cx_ddr4_reset_n  ),
         .c0_ddr4_act_n               ( cx_ddr4_act_n    ),

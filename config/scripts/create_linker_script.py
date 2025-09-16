@@ -84,9 +84,9 @@ for config_df in config_dfs:
 BOOT_MEMORY_BLOCK = 0x0
 
 
-# ################
+# # ###############
 # # Sanity check #
-# ################
+# # ###############
 # For each bus
 for i in range(len(NUM_MI)):
 	assert (NUM_MI[i] == len(RANGE_NAMES[i])) & (NUM_MI[i] == len(RANGE_BASE_ADDR[i]) ) & (NUM_MI[i]  == len(RANGE_ADDR_WIDTH[i])), \

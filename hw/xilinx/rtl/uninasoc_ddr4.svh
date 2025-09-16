@@ -18,7 +18,7 @@
     output logic [0:0]   c``channel``_ddr4_cs_n,    \
     output logic         c``channel``_ddr4_act_n,   \
     output logic [0:0]   c``channel``_ddr4_odt,     \
-    output logic         c``channel``_ddr4_par,     \
+    output logic         c``channel``_ddr4_parity,  \
     output logic         c``channel``_ddr4_reset_n, \
     inout  logic [71:0]  c``channel``_ddr4_dq,      \
     inout  logic [17:0]  c``channel``_ddr4_dqs_t,   \

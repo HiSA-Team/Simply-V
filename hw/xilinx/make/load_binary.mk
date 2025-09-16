@@ -51,7 +51,10 @@ ELF_PATH ?= ${SW_ROOT}/SoC/examples/${EXAMPLE}/bin/${EXAMPLE}.elf
 
 # Use XSDB as a backend
 XSDB ?= xsdb
-# 32-bit RISC-V port exposed by Vivado HW Server is 3004, while it is 3005 for 64_bit
+# For MicroblazeV, Vivado HW Server exposes ports:
+# - 3004 for 32-bit,
+# - 3005 for 64-bit
+# Although if one of the port has already been used, hw_server will not switch and use the active one for either 32 or 64 bits.
 # If using OpenOCD, we always connect to port 3004
 DEBUG_PORT ?= 3004
 
@@ -74,6 +77,10 @@ openocd_run:
 
 gdb_run:
 	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/run_gdb.sh ${ELF_PATH} ${DEBUG_PORT} ${XLEN}"
+
+# Run XSBD to load the ELF and run directly
+xsdb_run_elf:
+	${XSDB} ${XILINX_SCRIPTS_LOAD_ROOT}/xsdb_run_elf.tcl ${ELF_PATH}
 
 ###########
 # PHONIES #

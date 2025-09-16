@@ -35,9 +35,9 @@ The following table details the supported properties.
 
 | Name  | Description | Values | Default
 |-|-|-|-|
-| CORE_SELECTOR         | Select target RV core (**only for main_bus**)             | CORE_PICORV32*, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV | CORE_CV64A6 | None (**mandatory value**)
-| VIO_RESETN_DEFAULT    | Select value for VIO resetn (**only for main_bus**)       | [0,1]                                                     | 1
-| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version             | [32,64]                                                 | 32
+| CORE_SELECTOR         | Select target RV core       | CORE_PICORV32*, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6 | None (**mandatory value**)
+| VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1] | 1
+| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                 | 32
 | PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
 
 > \* the external PicoRV32 IP is currently bugged in CSR support. Any code running with CORE_PICORV32 must not perform any CSR operation.
@@ -48,7 +48,7 @@ The following table details the supported properties.
 
 | Name  | Description | Values | Default
 |-|-|-|-|
-| PROTOCOL              | AXI PROTOCOL                                              | (AXI4, AXI4LITE, AXI3, DISABLE*)                           | N/A
+| PROTOCOL              | AXI PROTOCOL, use MOCK to disable a bus                   | (AXI4, AXI4LITE, AXI3, MOCK)                              | N/A
 | CONNECTIVITY_MODE     | Crossbar Interconnection                                  | Shared-Address, Multiple-Data(SAMD), Shared-Address/Shared-Data(SASD)                | SAMD
 | ID_WIDTH              | AXI ID Width                                              | (4..32)                                                   | 4
 | NUM_MI                | Number of Master Interfaces (number of slaves)            | (0..16)                                                   | 2

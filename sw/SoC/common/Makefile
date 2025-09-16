@@ -16,15 +16,6 @@ OBJS	 = $(addprefix $(OBJ_DIR)/, $(notdir $(SRCS:.c=.o)))
 RM	  = rm -rf					 # Remove recursively command
 MKDIR   = @mkdir -p $(@D)			 # Creates folders if not present
 
-##########
-# MACROS #
-##########
-
-MACRO_LIST =
-ifeq ($(SOC_CONFIG), embedded)
-MACRO_LIST += -DIS_EMBEDDED
-endif
-
 ###############################################################################
 
 ###########
@@ -36,7 +27,7 @@ all: bin/$(PROGRAM_NAME).bin bin/$(PROGRAM_NAME).dump
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@echo "\n[OBJ] Creating OBJs from src"
 	$(MKDIR)
-	$(CC) -o $@ $^ -I$(INC_DIR) $(LIB_INC_LIST) $(CFLAGS) $(MACRO_LIST)
+	$(CC) -o $@ $^ $(INC_FLAGS) $(LIB_INC_LIST) $(CFLAGS)
 
 obj/startup.o:
 	@echo "\n[OBJ] Creating OBJs from $(STARTUP_DIR)/startup.s"
