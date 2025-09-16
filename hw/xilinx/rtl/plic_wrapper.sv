@@ -119,9 +119,7 @@ module plic_wrapper # (
 
         // Since the AXI data width converter has a reordering depth of 1 it doesn't have ID in its master ports - for more details see the documentation
         assign to_plic_axi_awid = '0;
-        assign to_plic_axi_bid  = '0;
         assign to_plic_axi_arid = '0;
-        assign to_plic_axi_rid  = '0;
 
     end : gen_axi_32_dwidth_conv
     else begin : no_conv

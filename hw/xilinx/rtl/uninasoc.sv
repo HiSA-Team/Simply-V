@@ -514,8 +514,8 @@ module uninasoc (
     // AXI slaves //
     ////////////////
 
-    // BRAM
-    xlnx_blk_mem_gen bram_u (
+    // Main memory
+    xlnx_blk_mem_gen_0 bram_u (
         .rsta_busy      ( /* open */                ), // output wire rsta_busy
         .rstb_busy      ( /* open */                ), // output wire rstb_busy
         .s_aclk         ( BRAM_clk                  ), // input wire s_aclk

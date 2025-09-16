@@ -1,8 +1,11 @@
 # Python products
 *__pycache__
 
+# VScode local
+.vscode
+
 # Build outputs
-build/
+build*/
 
 # Temporary files and directories
 tmp*

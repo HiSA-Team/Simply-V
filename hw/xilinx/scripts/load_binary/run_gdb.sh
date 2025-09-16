@@ -30,12 +30,21 @@ echo "[INFO] Running GDB";
 echo "[INFO] Loading ELF $ELF_NAME";
 echo "[INFO] Connecting to port $BACKEND_PORT";
 
+<<<<<<< HEAD
 # Run with break-point and exit on termination
 riscv32-unknown-elf-gdb \
     -batch \
+    -ex 'set architecture riscv:rv'$XLEN \
     -ex 'target extended-remote:'$BACKEND_PORT \
     -ex "file $ELF_NAME" \
     -ex 'load ' \
     -ex "b _exit_wfi" \
     -ex "run" \
     -ex "quit"
+=======
+# Run GDB
+riscv$XLEN-unknown-elf-gdb $ELF_NAME \
+    -ex 'set architecture riscv:rv'$XLEN \
+    -ex 'target extended-remote:'$BACKEND_PORT \
+    -ex 'load '$ELF_NAME;
+>>>>>>> origin/main
