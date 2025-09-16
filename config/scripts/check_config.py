@@ -68,6 +68,11 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         if config.CORE_SELECTOR == "CORE_PICORV32" and config.VIO_RESETN_DEFAULT != 0:
             print_error(f"CORE_PICORV32 only supports VIO_RESETN_DEFAULT = 0! {config.VIO_RESETN_DEFAULT}")
             return False
+        # Match XLEN with MicroblazeV type
+        if ((config.CORE_SELECTOR == "CORE_MICROBLAZEV_RV64" and config.XLEN == 32) or \
+            (config.CORE_SELECTOR == "CORE_MICROBLAZEV_RV32" and config.XLEN == 64)):
+            print_error(f"XLEN={config.XLEN} doesn't match {config.CORE_SELECTOR} data width.")
+            return False
 
         # All check passed
         return True
