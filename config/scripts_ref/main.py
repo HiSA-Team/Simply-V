@@ -3,6 +3,7 @@
 import simply_v
 import os
 import logging
+from pprint import pprint
 
 # SoC Profile
 soc_profile = os.environ["SOC_CONFIG"]
@@ -25,3 +26,5 @@ if __name__ == "__main__":
 		exit(1)
 
 	system = simply_v.SimplyV(sys_config_file_path, mbus_config_path, soc_profile)
+
+	pprint(vars(system))
