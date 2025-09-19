@@ -29,15 +29,21 @@ class SimplyV:
 		self.check_intra()
 
 		# Create root node (MBUS)
-		addr_width = self.PHYSICAL_ADDR_WIDTH
-		data_width = self.XLEN
-		# this is a list of len ADDR_RANGES
-		range_addr_width = [self.PHYSICAL_ADDR_WIDTH]
+		axi_addr_width = self.PHYSICAL_ADDR_WIDTH
+		axi_data_width = self.XLEN
+
+		# MBUS has an addr_ranges of 1,
+		# has a range_base_address of 0 and
+		# a range_addr_width of all the PHYSICAL memory as convention
+		asgn_addr_ranges = 1
+		asgn_range_base_addr = [0]
+		asgn_range_addr_width = [self.PHYSICAL_ADDR_WIDTH]
 		clock = self.MAIN_CLOCK_DOMAIN
 
 		mbus_data_dict = parse_csv(mbus_file_name)
 
-		self.mbus = mbus.MBus(mbus_data_dict, mbus_file_name, addr_width, data_width, range_addr_width, clock)
+		self.mbus = mbus.MBus(mbus_data_dict, mbus_file_name, axi_addr_width, axi_data_width, asgn_addr_ranges, \
+								asgn_range_base_addr, asgn_range_addr_width, clock)
 
 		pprint(vars(self.mbus))
 

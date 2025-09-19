@@ -1,9 +1,11 @@
 from node import Node
 
 class Peripheral(Node):
-	def __init__(self, name: str , assigned_addr_ranges: int, base_addr: list, addr_width: list, clock: int):
+	def __init__(self, name: str , asgn_addr_ranges: int, asgn_range_base_addr: list, \
+			asgn_range_addr_width: list, clock: int):
+
 		self.NAME :str = name;
 		self.LEGAL_CLOCK_DOMAIN = 0
 
-		super().__init__(assigned_addr_ranges, base_addr, addr_width, clock)
+		super().__init__(asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 		
