@@ -1,23 +1,23 @@
-import mbus
-from pprint import pprint
 from utils import *
+from mbus import MBus
 from logger import Logger
+from pprint import pprint
 
 class SimplyV:
 	def __init__(self, sys_config_file_name: str, mbus_file_name: str, soc_profile: str):
 		# defaults
 		self.SUPPORTED_CORES : list = ["CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", \
 										"CORE_MICROBLAZEV_RV64", "CORE_CV64A6"]
-		self.EMBEDDED_SUPPORTED_CLOCKS : list = [10, 20, 50, 100]
-		self.HPC_SUPPORTED_CLOCKS : list = [10, 20, 50, 100, 250]
+		self.EMBEDDED_SUPPORTED_CLOCKS : list[int] = [10, 20, 50, 100]
+		self.HPC_SUPPORTED_CLOCKS : list[int] = [10, 20, 50, 100, 250]
 		self.CORE_SELECTOR : str
 		self.VIO_RESETN_DEFAULT : int = 1
 		self.XLEN : int = 32
 		self.PHYSICAL_ADDR_WIDTH : int = 32
 		self.MAIN_CLOCK_DOMAIN : int
-		self.logger = Logger(sys_config_file_name)
+		self.logger: Logger = Logger(sys_config_file_name)
 		self.soc_profile : str = soc_profile
-		self.mbus : MBus
+		self.mbus : "MBus"
 		
 		# read config file
 		system_data_dict = parse_csv(sys_config_file_name)
@@ -42,7 +42,7 @@ class SimplyV:
 
 		mbus_data_dict = parse_csv(mbus_file_name)
 
-		self.mbus = mbus.MBus(mbus_data_dict, mbus_file_name, axi_addr_width, axi_data_width, asgn_addr_ranges, \
+		self.mbus = MBus(mbus_data_dict, mbus_file_name, axi_addr_width, axi_data_width, asgn_addr_ranges, \
 								asgn_range_base_addr, asgn_range_addr_width, clock)
 
 		pprint(vars(self.mbus))

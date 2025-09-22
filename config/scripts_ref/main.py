@@ -1,6 +1,6 @@
 #!/bin/python3.10
 
-import simply_v
+from simply_v import SimplyV
 import os
 import logging
 from pprint import pprint
@@ -25,6 +25,6 @@ if __name__ == "__main__":
 		logging.error("Unknown SoC profile")
 		exit(1)
 
-	system = simply_v.SimplyV(sys_config_file_path, mbus_config_path, soc_profile)
+	system = SimplyV(sys_config_file_path, mbus_config_path, soc_profile)
 
 	pprint(vars(system))

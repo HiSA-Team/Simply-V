@@ -5,7 +5,7 @@ class Peripheral(Node):
 			asgn_range_addr_width: list, clock: int):
 
 		self.NAME :str = name;
-		self.LEGAL_CLOCK_DOMAIN = 0
+		self.LEGAL_CLOCK_DOMAIN: list[int] = []
 
 		super().__init__(asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 		
