@@ -3,32 +3,23 @@
 /////////////////////////////////////////
 // Clocks declaration and assignments  //
 /////////////////////////////////////////
-assign main_clk = clk_100MHz;
-assign main_rstn = rstn_100MHz;
+assign main_clk = clk_20MHz;
+assign main_rstn = rstn_20MHz;
 logic clk_300MHz;
 logic rstn_300MHz;
 logic BRAM_clk;
-assign BRAM_clk = clk_100MHz;
+assign BRAM_clk = clk_20MHz;
 logic BRAM_rstn;
-assign BRAM_rstn = rstn_100MHz;
+assign BRAM_rstn = rstn_20MHz;
 logic DM_mem_clk;
-assign DM_mem_clk = clk_100MHz;
+assign DM_mem_clk = clk_20MHz;
 logic DM_mem_rstn;
-assign DM_mem_rstn = rstn_100MHz;
+assign DM_mem_rstn = rstn_20MHz;
 logic PBUS_clk;
-assign PBUS_clk = clk_250MHz;
+assign PBUS_clk = clk_10MHz;
 logic PBUS_rstn;
-assign PBUS_rstn = rstn_250MHz;
-logic HLS_CONTROL_clk;
-assign HLS_CONTROL_clk = clk_300MHz;
-logic HLS_CONTROL_rstn;
-assign HLS_CONTROL_rstn = rstn_300MHz;
-logic DDR1_clk;
-assign DDR1_clk = clk_300MHz;
-logic DDR1_rstn;
-assign DDR1_rstn = rstn_300MHz;
-logic HBUS_clk;
+assign PBUS_rstn = rstn_10MHz;
 logic PLIC_clk;
-assign PLIC_clk = clk_100MHz;
+assign PLIC_clk = clk_20MHz;
 logic PLIC_rstn;
-assign PLIC_rstn = rstn_100MHz;
+assign PLIC_rstn = rstn_20MHz;

@@ -19,7 +19,7 @@
 
 #define SOURCES_NUM 3 // regardless of embedded/hpc
 
-#ifdef IS_EMBEDDED
+#ifndef IS_EMBEDDED
 xlnx_gpio_in_t gpio_in = {
     .base_addr = GPIO_IN_BASEADDR,
     .interrupt = ENABLE_INT
