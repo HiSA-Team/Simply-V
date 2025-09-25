@@ -30,9 +30,9 @@ enum{
 
 static inline void uninasoc_init()
 {
-    extern const volatile uint32_t _peripheral_UART_start;
+    extern const volatile uintptr_t _peripheral_UART_start;
     // TinyIO init
-    uint32_t uart_base_address = (uint32_t)&_peripheral_UART_start;
+    uintptr_t uart_base_address = (uintptr_t)&_peripheral_UART_start;
     tinyIO_init(uart_base_address);
 }
 

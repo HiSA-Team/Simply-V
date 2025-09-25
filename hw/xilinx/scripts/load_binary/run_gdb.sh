@@ -36,4 +36,8 @@ echo "Connecting to port $BACKEND_PORT";
 riscv$XLEN-unknown-elf-gdb $ELF_NAME \
     -ex 'set architecture riscv:rv'$XLEN \
     -ex 'target extended-remote:'$BACKEND_PORT \
-    -ex 'load '$ELF_NAME;
+    -ex "file $ELF_NAME" \
+    -ex 'load ' \
+    -ex "b _exit_wfi" \
+    -ex "run" \
+    -ex "quit"

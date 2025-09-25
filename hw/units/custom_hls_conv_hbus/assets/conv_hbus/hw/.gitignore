@@ -1,0 +1,7 @@
+build
+Vitis_workspace/
+conv_hbus
+
+.Xil
+xcd.log
+*.zip

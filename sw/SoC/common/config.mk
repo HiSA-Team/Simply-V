@@ -14,6 +14,7 @@ CC          = $(RV_PREFIX)gcc
 LD          = $(RV_PREFIX)ld
 OBJDUMP     = $(RV_PREFIX)objdump
 OBJCOPY     = $(RV_PREFIX)objcopy
+AR          = $(RV_PREFIX)ar
 
 #########
 # Flags #
