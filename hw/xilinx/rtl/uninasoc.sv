@@ -676,6 +676,7 @@ module uninasoc (
 
     // DDR4 Channel 0
     ddr4_channel_wrapper # (
+        .ENABLE_CACHE       ( 0               ),
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
