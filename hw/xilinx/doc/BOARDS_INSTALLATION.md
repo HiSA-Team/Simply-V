@@ -8,8 +8,14 @@ Verified on Vivado 2022.1 (should be working from 2015.1 onward):
    - Restart vivado
 
 ## Alveo U250
-Verified on Vivado 2023.1:
+Verified on Vivado 2023.1 and 2024.1:
    - Download the [Alveo U250 board files](https://www.xilinx.com/bin/public/openDownload?filename=au250_board_files_20200616.zip)
+   - Extract the downloaded zip into \<VIVADO_DIR>/data/xhub/boards/XilinxBoardStore/boards/Xilinx/
+   - Restart Vivado
+
+## Alveo U280
+The Alveo U280 is no longer supported by AMD Xilinx, thus Vivado 2023.1 is the last version to support it:
+   - Download the [Alveo U280 board files](https://www.xilinx.com/bin/public/openDownload?filename=au280_boardfiles_v1_2.zip)
    - Extract the downloaded zip into \<VIVADO_DIR>/data/xhub/boards/XilinxBoardStore/boards/Xilinx/
    - Restart Vivado
 
