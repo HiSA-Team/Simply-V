@@ -55,12 +55,10 @@ if [[ ${SOC_CONFIG} == "hpc" ]]; then
 
     export SOC_CONFIG=hpc
 
-    # Use wildcard instead device specific part number
-    export XILINX_HW_SERVER_FPGA_PATH=xilinx_tcf/Xilinx/*
-
     if [[ ${BOARD_CONFIG} == "au280" ]]; then
-        # Alveo  280
+        # Alveo U280
         # NOTE: the Alveo U280 is EOL (end of life) the last vivado version to support it is the 2023.1
+        export XILINX_HW_SERVER_FPGA_PATH=xilinx_tcf/Xilinx/217* # Full serial 21760207X00DA
         export XILINX_PART_NUMBER=xcu280-fsvh2892-2L-e
         export XILINX_BOARD_PART=xilinx.com:au280:part0:1.2
         export XILINX_HW_DEVICE=xcu280_u55c_0 # xcu280_0
@@ -69,7 +67,8 @@ if [[ ${SOC_CONFIG} == "hpc" ]]; then
         # TBD
         echo "[Error] Board Configuration ${BOARD_CONFIG} unsupported!" >&2 ;
     else
-        # Alveo  250
+        # Alveo U250
+        export XILINX_HW_SERVER_FPGA_PATH=xilinx_tcf/Xilinx/213* # Full serials 21320514G01HA 21320514G01CA
         export XILINX_PART_NUMBER=xcu250-figd2104-2L-e
         export XILINX_BOARD_PART=xilinx.com:au250:part0:1.3
         export XILINX_HW_DEVICE=xcu250_0
