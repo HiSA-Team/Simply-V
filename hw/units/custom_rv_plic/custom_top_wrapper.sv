@@ -29,11 +29,12 @@ module custom_top_wrapper # (
     parameter logic [SOURCE_NUM-1:0]    LEVEL_EDGE_TRIGGER  = '0,
     parameter int                       SRCW                = $clog2(SOURCE_NUM),
 
+    // TODO121: Automatically align with config
     // AXI-related paraamters
     parameter                           AXI_DATA_WIDTH      = 32,
     parameter                           AXI_ADDR_WIDTH      = 32,
     parameter                           AXI_STRB_WIDTH      = AXI_ADDR_WIDTH / 8,
-    parameter                           AXI_ID_WIDTH        = 3, // TODO: align with config
+    parameter                           AXI_ID_WIDTH        = 4,
     parameter                           AXI_USER_WIDTH      = 2,
     parameter                           AXI_REGION_WIDTH    = 4,
     parameter                           AXI_LEN_WIDTH       = 8,

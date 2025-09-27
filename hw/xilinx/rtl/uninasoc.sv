@@ -495,7 +495,7 @@ module uninasoc (
     ////////////////
 
     // Main memory
-    xlnx_blk_mem_gen main_memory_u (
+    xlnx_blk_mem_gen_0 main_memory_u (
         .rsta_busy      ( /* open */                ), // output wire rsta_busy
         .rstb_busy      ( /* open */                ), // output wire rstb_busy
         .s_aclk         ( main_clk                  ), // input wire s_aclk

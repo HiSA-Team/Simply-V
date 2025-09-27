@@ -48,3 +48,6 @@ Once all sources are flattened in the `hw/units/<common|embedded|hpc>/custom_<IP
 The file `custom_top_wrapper.sv` RTL wrapper can leverage platform-compatible interfaces, namely MEM, AXI4 and AXI-lite.
 
 It can leverage the `hw/xilinx/rtl/uninasoc_mem.svh` and `hw/xilinx/rtl/uninasoc_axi.svh` headers (which are already included in the Vivado project packaging flow) to define macros for the MEM and AXI bus interfaces. While custom signals are allowed, we expect the custom IP to primarily communicate via either AXI (preferably) or MEM.
+
+> NOTE: [[#121](https://github.com/HiSA-Team/Simply-V/issues/121)] Vivado does not allow macros when exporting SystemVerilog IPs.
+So we can't import config-based parameters, e.g. `MBUS_ID_WIDTH`, and IP interfaces must be manually aligned with configuration.

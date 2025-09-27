@@ -71,6 +71,10 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         # Microblaze-V is not allowed when building for au280
         if config.CORE_SELECTOR == "CORE_MICROBLAZEV" and os.getenv("BOARD") == "au280":
             print_error(f"CORE_MICROBLAZEV is not allowed when building for au280")
+        # Match XLEN with MicroblazeV type
+        if ((config.CORE_SELECTOR == "CORE_MICROBLAZEV_RV64" and config.XLEN == 32) or \
+            (config.CORE_SELECTOR == "CORE_MICROBLAZEV_RV32" and config.XLEN == 64)):
+            print_error(f"XLEN={config.XLEN} doesn't match {config.CORE_SELECTOR} data width.")
             return False
 
         # All check passed

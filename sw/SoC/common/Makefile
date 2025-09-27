@@ -31,7 +31,7 @@ endif
 # Targets #
 ###########
 
-all: bin/$(PROGRAM_NAME).bin
+all: bin/$(PROGRAM_NAME).bin bin/$(PROGRAM_NAME).dump
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@echo "\n[OBJ] Creating OBJs from src"
@@ -41,7 +41,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 obj/startup.o:
 	@echo "\n[OBJ] Creating OBJs from $(STARTUP_DIR)/startup.s"
 	$(MKDIR)
-	$(CC) -o obj/startup.o $(STARTUP_DIR)/startup.s -I$(LIB_INC_LIST) $(CFLAGS)
+	$(CC) -o obj/startup.o $(STARTUP_DIR)/startup.s $(LIB_INC_LIST) $(CFLAGS)
 
 bin/$(PROGRAM_NAME).elf: $(OBJS) obj/startup.o
 	@echo "\n[ELF] Creating elf file"
@@ -49,15 +49,15 @@ bin/$(PROGRAM_NAME).elf: $(OBJS) obj/startup.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 bin/$(PROGRAM_NAME).bin: bin/$(PROGRAM_NAME).elf
-	@echo "\n[BIN] Creating bin file"
+	@echo "\n[ELF] Linking OBJs $^ into ELF $@"
 	$(OBJCOPY) -O binary bin/$(PROGRAM_NAME).elf bin/$(PROGRAM_NAME).bin
+
+dump: bin/$(PROGRAM_NAME).dump
+bin/$(PROGRAM_NAME).dump:
+	$(OBJDUMP) -D bin/$(PROGRAM_NAME).elf > $@
 
 clean:
 	-$(RM) obj
 	-$(RM) bin
 
 .PHONY: all clean
-
-dump:
-	$(OBJDUMP) -D bin/$(PROGRAM_NAME).elf
-

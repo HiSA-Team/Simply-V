@@ -1,17 +1,15 @@
-#include "tinyIO.h"
+#include "uninasoc.h"
 #include <stdint.h>
-
-extern const volatile uint32_t _peripheral_UART_start;
 
 int main()
 {
-
-  uint32_t uart_base_address = (uint32_t) &_peripheral_UART_start;
+  // Local char buffer
   char str[128];
 
-  tinyIO_init(uart_base_address);
+  // Initialize HAL
+  uninasoc_init();
 
-
+  // Spin indefinetly
   while(1){
     printf("Please enter a string\n\r");
 
@@ -21,6 +19,7 @@ int main()
     printf("\n\r");
   }
 
+  // Return to caller
   return 0;
 
 }

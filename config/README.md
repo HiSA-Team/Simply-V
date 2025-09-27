@@ -35,9 +35,9 @@ The following table details the supported properties.
 
 | Name  | Description | Values | Default
 |-|-|-|-|
-| CORE_SELECTOR         | Select target RV core (**only for main_bus**)             | CORE_PICORV32*, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV | CORE_CV64A6 | None (**mandatory value**)
-| VIO_RESETN_DEFAULT    | Select value for VIO resetn (**only for main_bus**)       | [0,1]                                                     | 1
-| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version             | [32,64]                                                 | 32
+| CORE_SELECTOR         | Select target RV core       | CORE_PICORV32*, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6 | None (**mandatory value**)
+| VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1] | 1
+| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                 | 32
 | PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
 
 > \* the external PicoRV32 IP is currently bugged in CSR support. Any code running with CORE_PICORV32 must not perform any CSR operation.
@@ -96,9 +96,11 @@ $ make config_sw                  # Update software config
 ```
 
 ### BRAM size configuration
-The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_gen` according to the `RANGE_ADDR_WIDTH` assigned to the BRAM in the CSV.
+The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_gen_<i>` (where i is the BRAM index) according to the `RANGE_ADDR_WIDTH` assigned to the BRAM in the CSV.
 
-> **NOTE**: The xlnx_blk_mem_gen/config.tcl file configures the first BRAM occurrence, hence it uses the index 0. For now, a single BRAM is supported, if multiple BRAMs are declared in the config (CSV) file, the config flow gives an error. Multiple BRAMs would be simple to add in the future.
+> **NOTE**: The `xlnx_blk_mem_gen_0/config.tcl` file configures the first BRAM occurrence, hence it uses the index 0. For now, a single BRAM is supported, if multiple BRAMs are declared in the config (CSV) file, the config flow gives an error. Multiple BRAMs would be simple to add in the future.
+
+> **NOTE**: All the `xlnx_blk_mem_gen_<i>/config.tcl` configuration files must be in the `ips/common` directory.
 
 ### Clock domains
 The configuration flow gives the possibility to specify clock domains.
