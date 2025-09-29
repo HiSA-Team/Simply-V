@@ -10,7 +10,7 @@ from abc import abstractmethod, ABC
 
 
 class Bus(Node, ABC):
-	def __init__(self, data_dict: dict, file_name: str, axi_addr_width: int, axi_data_width: int, \
+	def __init__(self, file_name: str, axi_addr_width: int, axi_data_width: int, \
 			  asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
 
 		self.ID_WIDTH			 : int = 4		# ID Data Width for MI and SI (a subset of it is used by the Interfaces Thread IDs)
@@ -28,14 +28,12 @@ class Bus(Node, ABC):
 		self.ADDR_RANGES : int = 1 
 		self.RANGE_BASE_ADDR : list[int]
 		self.RANGE_ADDR_WIDTH : list[int]
-		
+		self.RANGE_END_ADDR : list[int]	= []	# computed from RANGE_BASE_ADDR and RANGE_ADDR_WIDTH
+
 				
 		# init Node object
 		super().__init__(asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 
-		#check params
-
-		
 
         # Must match a legal prefix exactly OR prefix + '_' + integer.
         # If duplicates appear, they must be numbered (TIM_0, TIM_1, ...).
@@ -70,6 +68,15 @@ class Bus(Node, ABC):
 	@abstractmethod
 	def generate_children(self):
 		return
+
+	def compute_range_end_addr(self, base_addr: int, addr_width: int) -> int:
+		return base_addr + ~(~1 << (addr_width-1))
+
+	def compute_range_end_addresses(self, base_addresses: list[int], addr_widths: list[int]) -> list[int]: 
+		end_addresses = []
+		for i in range(len(base_addresses)):
+			end_addresses.append(self.compute_range_end_addr(base_addresses[i], addr_widths[i]))
+		return end_addresses
 
 	def check_assign_params(self, data_dict: dict):
 		simply_v_crash = self.logger.simply_v_crash
@@ -117,15 +124,22 @@ class Bus(Node, ABC):
 		if ("RANGE_BASE_ADDR" not in data_dict):
 			simply_v_crash("RANGE_BASE_ADDR is mandatory")
 
-		self.RANGE_BASE_ADDR =[int(x, 16) for x in data_dict["RANGE_BASE_ADDR"].split(" ")] 
+		self.RANGE_BASE_ADDR = [int(x, 16) for x in data_dict["RANGE_BASE_ADDR"].split()]
 
 		if ("RANGE_ADDR_WIDTH" not in data_dict):
 			simply_v_crash("RANGE_ADDR_WIDTH is mandatory")
 
 		self.RANGE_ADDR_WIDTH = [int(x) for x in data_dict["RANGE_ADDR_WIDTH"].split(" ")]
+
+		for range_addr in self.RANGE_ADDR_WIDTH:
+			if(range_addr > 64):
+				simply_v_crash(f"RANGE_ADDR_WIDTH {range_addr} greather than 64")
+
 		
 		if ("ADDR_RANGES" in data_dict):
 			self.ADDR_RANGES = data_dict["ADDR_RANGES"]
+
+		self.RANGE_END_ADDR = self.compute_range_end_addresses(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)
 
 
 
@@ -156,20 +170,21 @@ class Bus(Node, ABC):
 			if self.PROTOCOL == "AXI4LITE" and addr_width < MIN_AXI4LITE_ADDR_WIDTH:
 				simply_v_crash(f"RANGE_ADDR_WIDTH is less than {MIN_AXI4LITE_ADDR_WIDTH}")
 		
-		# Check Addresses interactions
-		base_addresses = list()
-		end_addresses = list()
 
 		for i in range(len(self.RANGE_BASE_ADDR)):
 			base_address = self.RANGE_BASE_ADDR[i]
-			end_address = base_address + ~(~1 << (self.RANGE_ADDR_WIDTH[i]-1))
+			end_address = self.RANGE_END_ADDR[i]
 
 			# Check if the base addr does not fall into the addr range (e.g. base_addr: 0x100 is not allowed with range_width=12)
 			if (base_address & ~(~1 << (self.RANGE_ADDR_WIDTH[i]-1)) ) != 0:
 				simply_v_crash(f"BASE_ADDR does not match RANGE_ADDR_WIDTH")
 
 				# Check if the current address does not fall into the addr range one of the previous slaves
-				for j in range(len(base_addresses)):
+				for j in range(len(self.RANGE_BASE_ADDR)):
+					# Skip yourself from the check
+					if (i == j):
+						continue
+						
 					if  ((base_address <= end_addresses[j])   and (base_address >= base_addresses[j])) or \
 						((end_address >= base_addresses[j])   and (base_address <= base_addresses[j])) or \
 						((base_address <= base_addresses[j])  and (end_address >= end_addresses[j])  ) or \
@@ -177,26 +192,17 @@ class Bus(Node, ABC):
 
 						simply_v_crash(f"Address of {self.RANGE_NAMES[i]} overlaps with {self.RANGE_NAMES[j]}")
 
-			base_addresses.append(base_address)
-			end_addresses.append(end_address)
-
+	def check_inter(self):
 		# Check that all the RANGES are included in the Bus addresses ranges
-		# (this is the old check_inter semantics)
 		# the "ASGN" variables are the one assigned to the current bus
 		# not the one relatives to the nodes that we're trying to "allocate"
 		# on this bus
 		
-		#compute all ranges of the bus
-		bus_base_addresses = []
-		bus_end_addresses = []
-		for i in range(self.ASGN_ADDR_RANGES):
-			bus_base_addresses.append(self.ASGN_RANGE_BASE_ADDR[i])
-			# RANGE_ADDR_WIDTH contained in the "Node" object of this bus
-			bus_end_addresses.append(self.ASGN_RANGE_BASE_ADDR[i] + ~(~1 << (self.ASGN_RANGE_ADDR_WIDTH[i]-1)))
-
+		bus_base_addresses = self.ASGN_RANGE_BASE_ADDR
+		bus_end_addresses = self.ASGN_RANGE_END_ADDR
 		#for each node connected to the bus check if it's included in at least
 		#one bus address range
-		for base, end in zip(base_addresses,end_addresses):
+		for base, end in zip(self.RANGE_BASE_ADDR, self.RANGE_END_ADDR):
 			included = 0
 			# Check if all the Nodes attached to this bus, fit in the assigned Address range
 			for bus_base, bus_end in zip(bus_base_addresses, bus_end_addresses):
@@ -205,5 +211,5 @@ class Bus(Node, ABC):
 					break
 
 			if(included == 0):
-				simply_v_crash(f"The addresses assigned to some Node (Peripheral or Bus) in this bus\
-						don't fit in the address ranges assigned to this bus from his parent bus.")
+				self.logger.simply_v_crash(f"The addresses assigned to some Node (Peripheral or Bus) in this bus "
+						"don't fit in the address ranges assigned to this bus from his parent bus.")

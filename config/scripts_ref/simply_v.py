@@ -23,7 +23,11 @@ class SimplyV:
 		system_data_dict = parse_csv(sys_config_file_name)
 
 		# check and assign parameters
-		self.check_assign_params(system_data_dict)
+
+		try:
+			self.check_assign_params(system_data_dict)
+		except ValueError as e:
+			self.logger.simply_v_crash(f"Invalid value type: {e}")
 
 		# check params interactions
 		self.check_intra()

@@ -1,8 +1,8 @@
 #!/bin/python3.10
 
 from simply_v import SimplyV
-import os
 import logging
+import os
 from pprint import pprint
 
 # SoC Profile
