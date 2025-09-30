@@ -19,7 +19,7 @@ class MBus(NonLeafBus):
 		
 
 		# init NonLeafBus object
-		super().__init__(mbus_data_dict, mbus_file_name, axi_addr_width, axi_data_width, \
+		super().__init__( mbus_file_name, axi_addr_width, axi_data_width, \
 				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 
 		try:
