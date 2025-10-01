@@ -1,9 +1,8 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Description: Baremetal host code for conv_hbus HLS IP core.
 
-#include "stdlib.h" // TODO47: push this to HAL
-#include "tinyIO.h" // TODO47: push this to HAL
-#include "xlnx.h"
+#include "uninasoc.h"
+#include "xlnx/xlnx.h"
 #include "krnl_conv_hbus.h"
 #include "utils.h"
 
@@ -36,8 +35,6 @@ void print_control_csr ( uint32_t csr_read_in ) {
 
 #define PRINT_LEAP 10000
 
-extern const volatile uint32_t _peripheral_UART_start;
-
 int main() {
 
     // Control CSR
@@ -45,8 +42,7 @@ int main() {
     uint32_t cnt;
 
     // Init platform
-    uint32_t uart_base_address = (uint32_t) &_peripheral_UART_start;
-    tinyIO_init(uart_base_address);
+    uninasoc_init();
 
     // Pre-allocate tensors, aligned to power of two
     #define ALIGN_I 2048
@@ -101,9 +97,9 @@ int main() {
     /////////////////////////
 
     // Writing input/output addresses
-    Xil_Out32(Xkrnl_AXI_ADDR_I, (uint32_t)I);
-    Xil_Out32(Xkrnl_AXI_ADDR_W, (uint32_t)W);
-    Xil_Out32(Xkrnl_AXI_ADDR_O, (uint32_t)O);
+    Xil_Out32(Xkrnl_AXI_ADDR_I, (uintptr_t)I);
+    Xil_Out32(Xkrnl_AXI_ADDR_W, (uintptr_t)W);
+    Xil_Out32(Xkrnl_AXI_ADDR_O, (uintptr_t)O);
     Xil_Out32(Xkrnl_N, (uint8_t)N);
     Xil_Out32(Xkrnl_C, (uint8_t)C);
     Xil_Out32(Xkrnl_K, (uint8_t)K);

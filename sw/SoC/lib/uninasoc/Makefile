@@ -11,9 +11,6 @@ include $(SW_ROOT)/SoC/common/config.mk
 
 all: $(UNINASOC_LIB)
 
-tmp:
-	@echo $(UNINASOC_OBJS)
-
 # Build sources for devices
 %.o: $(UNINASOC_SRCS_DIR)/%.c
 	@echo "[CC] $<"
@@ -26,5 +23,8 @@ $(UNINASOC_LIB): $(UNINASOC_OBJS)
 	$(AR) rcs $(UNINASOC_LIB) $(UNINASOC_OBJS)
 	@rm -f $(UNINASOC_OBJS)
 
+dump: $(UNINASOC_LIB)
+	$(OBJDUMP) -d $^ > lib/libuninasoc.dump
+
 clean:
-	@rm $(UNINASOC_LIB)
+	@rm -f $(UNINASOC_LIB)

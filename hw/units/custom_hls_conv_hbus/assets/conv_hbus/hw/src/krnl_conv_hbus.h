@@ -2,7 +2,7 @@
 #define __CONV_OPT1_H__
 
 #include <stdint.h> // uint32_t
-#include "ap_int.h"
+#include "xlnx/ap_int.h"
 
 ///////////////////////////
 // Notation from MAESTRO //

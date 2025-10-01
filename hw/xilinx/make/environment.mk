@@ -80,6 +80,9 @@ XILINX_PROBE_LTX ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl
 
 # Whether to use ILA probes (0|1)
 XILINX_ILA ?= 0
+# Clock net for ILA probes, use main clock by default
+# NOTE: of course, probing in faster-clock domains requires a faster clock
+XILINX_ILA_CLOCK ?= main_clk
 
 # Full environment variables list for Vivado
 XILINX_VIVADO_ENV ?=                                \
