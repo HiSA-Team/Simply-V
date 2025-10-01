@@ -80,6 +80,8 @@ XILINX_PROBE_LTX ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl
 
 # Whether to use ILA probes (0|1)
 XILINX_ILA ?= 0
+# Clock net for ILA probes: use main clock by default
+XILINX_ILA_CLOCK ?= main_clk
 
 # Full environment variables list for Vivado
 XILINX_VIVADO_ENV ?=                                \
@@ -98,6 +100,7 @@ XILINX_VIVADO_ENV ?=                                \
     HBUS_NUM_SI=${HBUS_NUM_SI}                      \
     HBUS_ID_WIDTH=${HBUS_ID_WIDTH}                  \
     XILINX_ILA=${XILINX_ILA}                        \
+    XILINX_ILA_CLOCK=${XILINX_ILA_CLOCK}            \
     SYNTH_STRATEGY=${SYNTH_STRATEGY}                \
     IMPL_STRATEGY=${IMPL_STRATEGY}                  \
     XILINX_PART_NUMBER=${XILINX_PART_NUMBER}        \
