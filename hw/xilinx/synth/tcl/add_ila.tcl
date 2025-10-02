@@ -3,7 +3,8 @@
 # Description: Create an ILA core and attach all nets in the design marked as MARK_DEBUG.
 
 # ILA clock from SoC design
-set clk_net_name sys_master_u/soc_clk_o
+# Choose a clock net as fast as the fastest net to probe
+set ila_clk_net [get_nets $::env(XILINX_ILA_CLOCK)]
 
 # Get market nets
 set debug_nets [lsort -dictionary [get_nets -hier -filter {MARK_DEBUG == 1}]]
@@ -30,7 +31,7 @@ set_property -dict [list \
 
 # Connect SoC clock
 set_property port_width 1 [get_debug_ports ila_u/clk]
-connect_debug_port ila_u/clk [get_nets $clk_net_name]
+connect_debug_port ila_u/clk [get_nets $ila_clk_net]
 
 # Loop through debug nets (add extra list element to ensure last net is processed)
 set net_name_last ""
