@@ -51,7 +51,7 @@ ifeq (${SOC_CONFIG}, hpc)
     # Remove Microblaze-V and Microblaze Debug Module V when building for au280
     # TODO55: quick workaround for PR 146, extend this for all selectable IPs
     ifeq (${BOARD}, au280)
-        FILTER_IP                 := xlnx_microblaze_riscv xlnx_microblaze_debug_module_v
+        FILTER_IP                 := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
         FILTER_IP_XCI             := $(foreach ip,${FILTER_IP},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
         TMP_XILINX_IP_LIST        := ${XILINX_IP_LIST}
         TMP_XILINX_IP_LIST_XCI    := ${XILINX_IP_LIST_XCI}
