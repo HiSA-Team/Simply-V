@@ -29,14 +29,14 @@ package cva6_config_pkg;
   localparam CVA6ConfigF8AltEn = 0;
   localparam CVA6ConfigFVecEn = 0;
 
-  localparam CVA6ConfigCvxifEn = 1;
+  localparam CVA6ConfigCvxifEn = 0;
   localparam CVA6ConfigCExtEn = 1;
   localparam CVA6ConfigZcbExtEn = 1;
   localparam CVA6ConfigZcmpExtEn = 0;
   localparam CVA6ConfigAExtEn = 1;
   localparam CVA6ConfigBExtEn = 1;
   localparam CVA6ConfigHExtEn = 0;
-  localparam CVA6ConfigVExtEn = 1;
+  localparam CVA6ConfigVExtEn = 1; // Enables Ara!
   localparam CVA6ConfigRVZiCond = 1;
   localparam CVA6ConfigSclicExtEn = 0;
 

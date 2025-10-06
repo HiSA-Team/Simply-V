@@ -9,15 +9,12 @@
 `include "uninasoc_mem.svh"
 
 // Import PULP headers
-// `include "axi/assign.svh"
-`include "axi/typedef.svh"
-// `include "common_cells/registers.svh"
-// `include "apb/typedef.svh"
-`include "ara/intf_typedef.svh"
+`include "typedef.svh" // axi/typedef.svh
+`include "intf_typedef.svh" // ara/intf_typedef.svh
 
 // Import CVA6 configuration package
-import config_pkg::*;
-import cva6_config_pkg::*;
+// import config_pkg::*;
+// import cva6_config_pkg::*;
 
 module custom_top_wrapper # (
 
@@ -128,15 +125,19 @@ module custom_top_wrapper # (
         logic [LOCAL_AXI_USER_WIDTH-1:0]  // This is for the user field, which is missing from our interface (or unused)
     )
 
+    // From ara_soc.sv
+    // Build the package
+    localparam config_pkg::cva6_cfg_t CVA6AraConfig = build_config_pkg::build_config(cva6_config_pkg::cva6_cfg);
+
     // Ara wide bus
     // Define the exception type
-    `CVA6_TYPEDEF_EXCEPTION(exception_t, cva6_config_pkg::cva6_cfg);
+    `CVA6_TYPEDEF_EXCEPTION(exception_t, CVA6AraConfig);
     // Standard interface
-    `CVA6_INTF_TYPEDEF_ACC_REQ(accelerator_req_t, cva6_config_pkg::cva6_cfg, fpnew_pkg::roundmode_e);
-    `CVA6_INTF_TYPEDEF_ACC_RESP(accelerator_resp_t, cva6_config_pkg::cva6_cfg, exception_t);
+    `CVA6_INTF_TYPEDEF_ACC_REQ(accelerator_req_t, CVA6AraConfig, fpnew_pkg::roundmode_e);
+    `CVA6_INTF_TYPEDEF_ACC_RESP(accelerator_resp_t, CVA6AraConfig, exception_t);
     // MMU interface
-    `CVA6_INTF_TYPEDEF_MMU_REQ(acc_mmu_req_t, cva6_config_pkg::cva6_cfg);
-    `CVA6_INTF_TYPEDEF_MMU_RESP(acc_mmu_resp_t, cva6_config_pkg::cva6_cfg, exception_t);
+    `CVA6_INTF_TYPEDEF_MMU_REQ(acc_mmu_req_t, CVA6AraConfig);
+    `CVA6_INTF_TYPEDEF_MMU_RESP(acc_mmu_resp_t, CVA6AraConfig, exception_t);
     // Accelerator - CVA6's top-level interface
     `CVA6_INTF_TYPEDEF_CVA6_TO_ACC(cva6_to_acc_t, accelerator_req_t, acc_mmu_resp_t);
     `CVA6_INTF_TYPEDEF_ACC_TO_CVA6(acc_to_cva6_t, accelerator_resp_t, acc_mmu_req_t);
@@ -185,7 +186,7 @@ module custom_top_wrapper # (
 
     // CVA6
     cva6 #(
-        .cva6_cfg           ( cva6_config_pkg::cva6_cfg ),
+        .CVA6Cfg            ( CVA6AraConfig      ),
         .axi_ar_chan_t      ( axi_ar_chan_t      ),
         .axi_aw_chan_t      ( axi_aw_chan_t      ),
         .axi_w_chan_t       ( axi_w_chan_t       ),
@@ -228,7 +229,7 @@ module custom_top_wrapper # (
         .NrLanes            ( ARA_NR_LANES           ),
         .VLEN               ( AraVLEN                ),
         .OSSupport          ( 1'b1                   ),
-        .cva6_cfg           ( cva6_config_pkg::cva6_cfg ),
+        .CVA6Cfg            ( CVA6AraConfig          ),
         .exception_t        ( exception_t            ),
         .accelerator_req_t  ( accelerator_req_t      ),
         .accelerator_resp_t ( accelerator_resp_t     ),
@@ -261,7 +262,7 @@ module custom_top_wrapper # (
     axi_inval_filter #(
         .MaxTxns      ( 4                               ),
         .AddrWidth    ( LOCAL_AXI_ADDR_WIDTH            ),
-        .L1LineWidth  ( cva6_config_pkg::cva6_cfg.DCACHE_LINE_WIDTH/8    ),
+        .L1LineWidth  ( CVA6AraConfig.DCACHE_LINE_WIDTH/8    ),
         .aw_chan_t    ( axi_ara_wide_aw_chan_t          ),
         .req_t        ( axi_ara_wide_req_t              ),
         .resp_t       ( axi_ara_wide_resp_t             )

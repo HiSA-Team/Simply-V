@@ -1,0 +1,10 @@
+${DIR}/hardware/include/ara/ara.svh
+${DIR}/hardware/include/ara/ara_typedef.svh
+${DIR}/hardware/include/ara/intf_typedef.svh
+${DIR}/hardware/deps/common_cells/include/common_cells/assertions.svh
+${DIR}/hardware/deps/common_cells/include/common_cells/registers.svh
+${DIR}/hardware/deps/axi/include/axi/typedef.svh
+${DIR}/hardware/deps/axi/include/axi/assign.svh
+${DIR}/hardware/deps/cva6/core/cache_subsystem/hpdcache/rtl/include/hpdcache_typedef.svh
+${DIR}/hardware/deps/cva6/core/include/cvxif_types.svh
+${DIR}/hardware/deps/cva6/core/include/rvfi_types.svh

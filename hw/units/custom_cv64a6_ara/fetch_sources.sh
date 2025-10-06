@@ -9,10 +9,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Directories
-RTL_DIR=$(pwd)/rtl
-mkdir ${RTL_DIR}
-
-ASSETS_DIR=$(pwd)/assets
+THIS_DIR=$(pwd)
+ASSETS_DIR=${THIS_DIR}/assets
+RTL_DIR=${THIS_DIR}/rtl
 
 ##################################
 # Fetch sources and depencencies #
@@ -22,40 +21,108 @@ ASSETS_DIR=$(pwd)/assets
 GIT_URL=https://github.com/pulp-platform/ara.git
 GIT_BRANCH=main
 GIT_COMMIT=a6436df6ad4011c77b5b40e0432acdbf4668639f
-CLONE_DIR=ara
+CLONE_DIR=${THIS_DIR}/ara
 printf "${YELLOW}[FETCH_SOURCES] Cloning source repository${NC}\n"
-git clone ${GIT_URL} -b ${GIT_BRANCH} ${CLONE_DIR}
+# git clone ${GIT_URL} -b ${GIT_BRANCH} ${CLONE_DIR}
 cd ${CLONE_DIR};
 git checkout ${GIT_COMMIT}
 
 # Download Bender
 printf "${YELLOW}[FETCH_SOURCES] Download Bender${NC}\n"
-curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh
+# Version from Ara repo
+BENDER_VERSION=0.27.3
+# curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh	-s -- ${BENDER_VERSION}
+
+# Patch Bender file
+sed -i "|.+vendor/pulp-platform/fpga-support/fpga-support-stubs.sv|d" CVA6_BENDER_FILE
 
 # Download dependencies (specify Target RTL and FPGA)
 printf "${YELLOW}[FETCH_SOURCES] Resolve dependencies with Bender${NC}\n"
 ./bender checkout
 # CVA6_BENDER_TARGET=cv64a6_imafdchsclic_sv39_wb # from cheshire/mp/ara-pulp-v2
 CVA6_BENDER_TARGET=cv64a6_imafdcv_sv39 # from MaistoV/cheshire_fork
-BENDER_TARGETS="-t xilinx -t bscane -t rtl -t cva6 -t ${CVA6_BENDER_TARGET}"
+BENDER_TARGETS="-t xilinx -t bscane -t cva6 -t ${CVA6_BENDER_TARGET}"
+BENDER_RTL_LIST=../rtl.flist
+./bender script flist ${BENDER_TARGETS} > ${BENDER_RTL_LIST}
+BENDER_DEFINES=../bender_vivado_defines.tcl
+./bender script vivado ${BENDER_TARGETS} --only-defines > ${BENDER_DEFINES}
+# TMP
 BENDER_SCRIPT=../bender_vivado.tcl
-# ./bender script flist ${BENDER_TARGETS} > rtl.flist
 ./bender script vivado ${BENDER_TARGETS} > ${BENDER_SCRIPT}
-
-##########
-# Config #
-##########
-
-# Overwrite configuration file location in bender script
-escaped=$(echo "${ASSETS_DIR}" | sed 's/\//\\\//g')
-sed -E -i "s/.+${CVA6_BENDER_TARGET}_config_pkg.sv/    ${escaped}\/cv64a6_config_pkg.sv/g" ${BENDER_SCRIPT}
 
 ###########
 # Patches #
 ###########
-# Remove GPLEN (from H-ext)
-TARGET_FILE=$(find . -name intf_typedef.svh)
-sed -E -i '/.+logic \[CVA6Cfg\.GPLEN-1:0\] tval2;/s/^/\/\//' ${TARGET_FILE}
+
+printf "${YELLOW}[FETCH_SOURCES] Patching Bender-generated file list${NC}\n"
+
+# Remove include directives
+sed -i "/+incdir+/d" ${BENDER_RTL_LIST}
+
+# Remove silly constraint on FPGA support
+sed -i "/fpga-support-stubs.sv/d" ${BENDER_RTL_LIST}
+FPGA_SUPPORT_RTL=${CLONE_DIR}/hardware/deps/cva6/vendor/pulp-platform/fpga-support/rtl/
+fpga_files=($(realpath $(ls ${FPGA_SUPPORT_RTL} )))
+echo ${fpga_files[*]} >> ${BENDER_RTL_LIST}
+
+
+# Patch bender script to import, not add, sources
+# sed -E -i 's/add_files/import_files/g' ${BENDER_SCRIPT}
+
+# Remove lines between "set_property include_dirs" and "] [current_fileset]" in bender script, including those lines
+# sed -i '/set_property include_dirs/,/\] \[current_fileset\]/d' ${BENDER_SCRIPT}
+
+# Overwrite configuration file location in bender script
+escaped=$(echo "${ASSETS_DIR}" | sed 's/\//\\\//g')
+# sed -E -i "s/.+${CVA6_BENDER_TARGET}_config_pkg.sv/    ${escaped}\/cv64a6_config_pkg.sv/g" ${BENDER_SCRIPT}
+sed -E -i "s/.+${CVA6_BENDER_TARGET}_config_pkg.sv/${escaped}\/cv64a6_config_pkg.sv/g" ${BENDER_RTL_LIST}
+
+# Remove line containing "ara_system.sv" and "ara_soc.sv" in bender script
+sed -i '/ara_system\.sv/d' ${BENDER_RTL_LIST}
+sed -i '/ara_soc\.sv/d' ${BENDER_RTL_LIST}
+# Remove unused apb
+sed -i '/.+apb\.sv/d' ${BENDER_RTL_LIST}
+
+# Replace tech cells with Xilinx versions
+sed -i "s|.*/tech_cells_generic/src/rtl/tc_sram\.sv|${CLONE_DIR}/hardware/deps/tech_cells_generic/src/fpga/tc_sram_xilinx.sv|" ${BENDER_RTL_LIST}
+sed -i "s|.*/tech_cells_generic/src/rtl/tc_clk\.sv|${CLONE_DIR}/hardware/deps/tech_cells_generic/src/fpga/tc_clk_xilinx.sv|" ${BENDER_RTL_LIST}
+# Append pad_functional (not necessary)
+# echo "${CLONE_DIR}/hardware/deps/tech_cells_generic/src/fpga/pad_functional_xilinx.sv" >> ${BENDER_RTL_LIST}
+
+##########################
+# Copy-in target headers #
+##########################
+
+# Create RTL dir
+mkdir -p ${RTL_DIR}
+
+# List of target headers
+mapfile -t headers < ${ASSETS_DIR}/headers.flist
+# Replace ${DIR} placeholder with ${CLONE_DIR} in each element
+for i in "${!headers[@]}"; do headers[$i]="${headers[$i]//\$\{DIR\}/${CLONE_DIR}}"; done
+
+# Copy into new dir
+printf "${YELLOW}[FETCH_SOURCES] Copy headers into header dir ${HEADER_DIR}${NC}\n"
+cp ${headers[*]} ${RTL_DIR}/
+
+# Copy all files from bender flist
+cp $(cat ${BENDER_RTL_LIST}) ${RTL_DIR}
+
+# Loop through all files in the rtl directory
+echo -e "${YELLOW}[PATCH_SOURCES] Patching include paths for flat includes without specific substitutions${NC}"
+for rtl_file in ${RTL_DIR}/*; do
+    if [[ -f $rtl_file ]]; then
+        # Flatten all includes
+        sed -i 's#`include "[^/]*/\([^"]*\.svh\)"#`include "\1"#g' $rtl_file
+    fi
+done
+
+#######################
+# Remove faulty files #
+#######################
+
+# Remove unsupported AXI interface file
+rm -f ${RTL_DIR}/axi_intf.sv
 
 ############
 # Clean up #
@@ -65,4 +132,9 @@ sed -E -i '/.+logic \[CVA6Cfg\.GPLEN-1:0\] tval2;/s/^/\/\//' ${TARGET_FILE}
 # printf "${YELLOW}[FETCH_SOURCES] Clean all artifacts${NC}\n"
 # sudo rm -rf ${CLONE_DIR}
 # rm rtl.flist bender
-# printf "${GREEN}[FETCH_SOURCES] Completed${NC}\n"
+
+########
+# Exit #
+########
+# Info print
+printf "${GREEN}[FETCH_SOURCES] Completed${NC}\n"
