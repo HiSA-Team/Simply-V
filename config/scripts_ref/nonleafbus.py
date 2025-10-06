@@ -1,14 +1,14 @@
 from bus import Bus
 
 class NonLeafBus(Bus):
-	def __init__(self, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
+	def __init__(self, name:str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
 			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
 
 		self.RANGE_CLOCK_DOMAINS: list[int] = []
 		self.num_loopbacks: int = 0
 
 		# init Bus object
-		super().__init__(mbus_file_name, axi_addr_width, axi_data_width, \
+		super().__init__(name, mbus_file_name, axi_addr_width, axi_data_width, \
 				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 
 
@@ -66,16 +66,14 @@ class NonLeafBus(Bus):
 
 		# this is the range of all the addresses BEFORE the range of HBUS
 		
-		hbus_range_addr_bits = self.ASGN_RANGE_BASE_ADDR[0].bit_length()
-
 		mbus_range_1_base_addr = 0
-		mbus_range_1_addr_width = hbus_range_addr_bits - 1 
+		mbus_range_1_addr_width = min(self.ASGN_RANGE_BASE_ADDR).bit_length() - 1 
 		mbus_range_1_end_addr = self.compute_range_end_addr(mbus_range_1_base_addr, mbus_range_1_addr_width)
 
 		# this is the range of all the addresses AFTER the range of HBUS
-		mbus_range_2_base_addr = (1 << (self.ADDR_WIDTH-1))
-		mbus_range_2_addr_width = self.ADDR_WIDTH - 1
-		mbus_range_2_end_addr = (1 << self.ADDR_WIDTH) - 1
+		mbus_range_2_base_addr = max(self.ASGN_RANGE_END_ADDR) + 1
+		mbus_range_2_addr_width = self.ASGN_RANGE_ADDR_WIDTH[0]
+		mbus_range_2_end_addr = self.compute_range_end_addr(mbus_range_2_base_addr, mbus_range_2_addr_width)
 
 		self.logger.simply_v_warning(
 			f"To accommodate ADDR_WIDTH, constrain the base address of the MBUS "
@@ -94,6 +92,7 @@ class NonLeafBus(Bus):
 
 
 	def father_enable_loopback(self):
+		self.logger.simply_v_warning("NEED TO CHECK FATHER ENABLE LOOPBACK IMPLEMENTATION (wrong name convention)")
 		self.MASTER_NAMES.append("HBUS_" + str(self.num_loopbacks))
 		self.num_loopbacks += 1
 		self.NUM_SI += 1

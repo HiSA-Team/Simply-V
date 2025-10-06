@@ -10,7 +10,7 @@ from abc import abstractmethod, ABC
 
 
 class Bus(Node, ABC):
-	def __init__(self, file_name: str, axi_addr_width: int, axi_data_width: int, \
+	def __init__(self, name: str, file_name: str, axi_addr_width: int, axi_data_width: int, \
 			  asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
 
 		self.ID_WIDTH			 : int = 4		# ID Data Width for MI and SI (a subset of it is used by the Interfaces Thread IDs)
@@ -23,7 +23,6 @@ class Bus(Node, ABC):
 		self.DATA_WIDTH: int = axi_data_width
 		self.file_name: str = file_name
 		self.logger: Logger = Logger(file_name)		# Utils object used for logging
-		self.children : list[Node] = []
 
 		self.ADDR_RANGES : int = 1 
 		self.RANGE_BASE_ADDR : list[int]
@@ -32,7 +31,7 @@ class Bus(Node, ABC):
 
 				
 		# init Node object
-		super().__init__(asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
+		super().__init__(name, asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 
 
         # Must match a legal prefix exactly OR prefix + '_' + integer.

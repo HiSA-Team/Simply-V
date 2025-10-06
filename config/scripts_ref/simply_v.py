@@ -49,6 +49,10 @@ class SimplyV:
 		self.mbus = MBus(mbus_data_dict, mbus_file_name, axi_addr_width, axi_data_width, asgn_addr_ranges, \
 								asgn_range_base_addr, asgn_range_addr_width, clock)
 
+		print("PERIPHERALS:")
+		peripherals =  self.mbus.get_peripherals()
+		pprint([p.__dict__ for p in peripherals])
+
 		pprint(vars(self.mbus))
 
 

@@ -1,7 +1,13 @@
 from nonleafbus import NonLeafBus
+from peripheral import Peripheral
+from pbus import PBus
+from utils import *
+import os
+import re
+from pprint import pprint
 
 class HBus(NonLeafBus):
-	def __init__(self, hbus_data_dict: dict, hbus_file_name: str, asgn_addr_ranges: int, \
+	def __init__(self, name: str, hbus_data_dict: dict, hbus_file_name: str, asgn_addr_ranges: int, \
 			asgn_range_base_addr: list, asgn_range_addr_width: list, \
 			axi_addr_width: int ,father: NonLeafBus, clock: int):
 
@@ -14,7 +20,7 @@ class HBus(NonLeafBus):
 		axi_data_width = 512
 		
 		# init Bus object
-		super().__init__(hbus_file_name, axi_addr_width, axi_data_width, \
+		super().__init__(name, hbus_file_name, axi_addr_width, axi_data_width, \
 				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 
 		try:
@@ -30,14 +36,16 @@ class HBus(NonLeafBus):
 		## always check inter before adding the loopback
 		## so the checks don't break on the MBUS addresses
 		self.check_inter()
+
+		self.check_peripherals(self.LEGAL_PERIPHERALS)
+
+		self.generate_children()
 	
 		if (self.LOOPBACK == 1):
 			self.father.father_enable_loopback()
 			self.child_enable_loopback()
 
-		self.check_peripherals(self.LEGAL_PERIPHERALS)
 
-		self.generate_children()
 	
 
 
@@ -72,6 +80,12 @@ class HBus(NonLeafBus):
 										"to rearrange RANGES in order to accomodate "
 										"the loopback configuration")
 
+			min_base_addr = min(self.ASGN_RANGE_BASE_ADDR)
+
+			# Force base addr to power of 2
+			if(not ((min_base_addr & (min_base_addr -1) == 0) and min_base_addr != 0)):
+				self.logger.simply_v_crash("When using LOOPBACK base address must be a power of 2")
+
 		# Check valid clock domains
 		self.logger.simply_v_warning("HBUS check_intra isn't fully implemented (missing clocks checks)")
 	
@@ -80,4 +94,44 @@ class HBus(NonLeafBus):
 		super().check_inter()
 
 	def generate_children(self):
-		return
+		self.logger.simply_v_warning("HBUS GENERATE CHILDREN IS A TEMPORARY COPYPASTE")
+		pbus_pattern = r"PBUS(?:_\d+)?"
+		hbus_pattern = r"HBUS(?:_\d+)?"
+
+		root_dir = os.path.join("/", *self.file_name.split("/")[:-1])
+		
+		for i, node_name in enumerate(self.RANGE_NAMES):
+			match = re.search(pbus_pattern, node_name)
+			if (match):
+				pbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv")
+				pbus_data_dict = parse_csv(pbus_file_name)
+
+				node = PBus(match.group(), pbus_data_dict, pbus_file_name, self.ADDR_RANGES, \
+						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_CLOCK_DOMAINS[i])
+
+				pprint(vars(node))
+				self.children.append(node)
+				continue
+
+			match = re.search(hbus_pattern, node_name)
+			if (match):
+				hbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv") 
+				hbus_data_dict = parse_csv(hbus_file_name)
+				node = HBus(match.group(), hbus_data_dict, hbus_file_name, self.ADDR_RANGES, \
+						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
+				pprint(vars(node))
+				self.children.append(node)
+				continue
+
+			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
+						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_CLOCK_DOMAINS[i])
+
+			pprint(vars(node))
+			self.children.append(node)
+

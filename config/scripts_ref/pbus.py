@@ -4,8 +4,8 @@ from peripheral import Peripheral
 from pprint import pprint
 
 class PBus(Bus):
-	def __init__(self, pbus_data_dict: dict, pbus_file_name: str, asgn_addr_ranges: int, asgn_range_base_addr: list, \
-			asgn_range_addr_width: list, clock: int):
+	def __init__(self, name: str, pbus_data_dict: dict, pbus_file_name: str, asgn_addr_ranges: int, \
+			asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
 
 		self.LEGAL_PERIPHERALS: list[str] = ["UART", "GPIO_out", "GPIO_in", "TIM"]
 		self.VALID_PROTOCOLS: list[str] = ["AXI4LITE", "DISABLE"]
@@ -13,7 +13,7 @@ class PBus(Bus):
 		axi_addr_width = 32
 		axi_data_width = 32
 		
-		super().__init__(pbus_file_name, axi_addr_width, axi_data_width, \
+		super().__init__(name, pbus_file_name, axi_addr_width, axi_data_width, \
 				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 
 		self.check_assign_params(pbus_data_dict)

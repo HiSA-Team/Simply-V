@@ -3,6 +3,7 @@ from utils import *
 from peripheral import Peripheral
 from pprint import pprint
 from pbus import PBus
+from node import Node
 from hbus import HBus
 import re 
 import os
@@ -19,7 +20,7 @@ class MBus(NonLeafBus):
 		
 
 		# init NonLeafBus object
-		super().__init__( mbus_file_name, axi_addr_width, axi_data_width, \
+		super().__init__("MBUS", mbus_file_name, axi_addr_width, axi_data_width, \
 				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
 
 		try:
@@ -38,6 +39,21 @@ class MBus(NonLeafBus):
 
 		#generate children nodes
 		self.generate_children()
+	
+	def get_peripherals(self) -> list[Node]:
+		peripherals: list[Node] = []
+		busses: list[Node] = [self]
+		idx = 0
+		while(idx < len(busses)):
+			for node in busses[idx].children:
+				# this is a peripheral node (no children)
+				if (node.children == []):
+					peripherals.append(node)
+				else:
+					busses.append(node)
+			idx += 1
+
+		return peripherals
 
 	def check_assign_params(self, data_dict):
 		super().check_assign_params(data_dict)
@@ -62,14 +78,14 @@ class MBus(NonLeafBus):
 			# Check if all the main_clock_domain slaves have the same frequency as MAIN_CLOCK_DOMAIN
 			self.logger.simply_v_warning("MBUS check_intra isn't fully implemented")
 
-			if (self.RANGE_NAMES[i] == "DDR") or (self.RANGE_NAMES[i] == "HBUS"):
-				if self.RANGE_CLOCK_DOMAINS[i] != self.DDR_FREQUENCY:
-					simply_v_crash(f"The DDR and HBUS frequency {self.RANGE_CLOCK_DOMAINS[i]} must be the same of DDR board clock {self.DDR_FREQUENCY}")
-
-			else:
-				if (self.RANGE_NAMES[i] != "PBUS"):
-					if self.RANGE_CLOCK_DOMAINS[i] != self.CLOCK:
-						simply_v_crash(f"The {self.RANGE_NAMES[i]} frequency {self.RANGE_CLOCK_DOMAINS[i]} must be the same as MAIN_CLOCK_DOMAIN")
+			# if (self.RANGE_NAMES[i] == "DDR") or (self.RANGE_NAMES[i] == "HBUS"):
+			# 	if self.RANGE_CLOCK_DOMAINS[i] != self.DDR_FREQUENCY:
+			# 		simply_v_crash(f"The DDR and HBUS frequency {self.RANGE_CLOCK_DOMAINS[i]} must be the same of DDR board clock {self.DDR_FREQUENCY}")
+			#
+			# else:
+			# 	if (self.RANGE_NAMES[i] != "PBUS"):
+			# 		if self.RANGE_CLOCK_DOMAINS[i] != self.CLOCK:
+			# 			simply_v_crash(f"The {self.RANGE_NAMES[i]} frequency {self.RANGE_CLOCK_DOMAINS[i]} must be the same as MAIN_CLOCK_DOMAIN")
 
 			# Check if the DDR has the right frequency
 
@@ -89,7 +105,7 @@ class MBus(NonLeafBus):
 				pbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv")
 				pbus_data_dict = parse_csv(pbus_file_name)
 
-				node = PBus(pbus_data_dict, pbus_file_name, self.ADDR_RANGES, \
+				node = PBus(match.group(), pbus_data_dict, pbus_file_name, self.ADDR_RANGES, \
 						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_CLOCK_DOMAINS[i])
@@ -102,10 +118,10 @@ class MBus(NonLeafBus):
 			if (match):
 				hbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv") 
 				hbus_data_dict = parse_csv(hbus_file_name)
-				node = HBus(hbus_data_dict, hbus_file_name, self.ADDR_RANGES, \
+				node = HBus(match.group(), hbus_data_dict, hbus_file_name, self.ADDR_RANGES, \
 						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i])
+						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
 				pprint(vars(node))
 				self.children.append(node)
 				continue
