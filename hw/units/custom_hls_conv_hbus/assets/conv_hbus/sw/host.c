@@ -17,7 +17,10 @@ void dump_conv_hbus_csrs () {
     printf( "   AXI_W_ADDR  = 0x%04x\n\r", Xil_In32(Xkrnl_AXI_ADDR_W) );
     printf( "   IER         = 0x%04x    ", Xil_In32(Xkrnl_IER       ) );
     printf( "   AXI_O_ADDR  = 0x%04x\n\r", Xil_In32(Xkrnl_AXI_ADDR_O) );
-    printf( "   ISR         = 0x%04x\n\r", Xil_In32(Xkrnl_ISR       ) );
+    printf( "   ISR         = 0x%04x    ", Xil_In32(Xkrnl_ISR       ) );
+    printf( "   AXI_N       = 0x%04x\n\r", Xil_In32(Xkrnl_ISR       ) );
+    printf( "                            AXI_C       = 0x%04x\n\r", Xil_In32(Xkrnl_C       ) );
+    printf( "                            AXI_K       = 0x%04x\n\r", Xil_In32(Xkrnl_K       ) );
 }
 
 // Print each field of a control CSR word

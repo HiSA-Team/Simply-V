@@ -60,7 +60,7 @@
 
 *
 ******************************************************************************/
-static INLINE u8 Xil_In8(UINTPTR Addr)
+static INLINE u8 Xil_In8(uintptr_t Addr)
 {
 	return *(volatile u8 *) Addr;
 }
@@ -77,7 +77,7 @@ static INLINE u8 Xil_In8(UINTPTR Addr)
 * @return	The 16 bit Value read from the specified input address.
 *
 ******************************************************************************/
-static INLINE u16 Xil_In16(UINTPTR Addr)
+static INLINE u16 Xil_In16(uintptr_t Addr)
 {
 	return *(volatile u16 *) Addr;
 }
@@ -94,7 +94,7 @@ static INLINE u16 Xil_In16(UINTPTR Addr)
 * @return	The 32 bit Value read from the specified input address.
 *
 ******************************************************************************/
-static INLINE u32 Xil_In32(UINTPTR Addr)
+static INLINE u32 Xil_In32(uintptr_t Addr)
 {
 	return *(volatile u32 *) Addr;
 }
@@ -111,7 +111,7 @@ static INLINE u32 Xil_In32(UINTPTR Addr)
 // * @return	The 64 bit Value read from the specified input address.
 // *
 // ******************************************************************************/
-// static INLINE u64 Xil_In64(UINTPTR Addr)
+// static INLINE u64 Xil_In64(uintptr_t Addr)
 // {
 // 	return *(volatile u64 *) Addr;
 // }
@@ -129,7 +129,7 @@ static INLINE u32 Xil_In32(UINTPTR Addr)
 * @return	None.
 *
 ******************************************************************************/
-static INLINE void Xil_Out8(UINTPTR Addr, u8 Value)
+static INLINE void Xil_Out8(uintptr_t Addr, u8 Value)
 {
 	/* write 8 bit value to specified address */
 	volatile u8 *LocalAddr = (volatile u8 *)Addr;
@@ -148,7 +148,7 @@ static INLINE void Xil_Out8(UINTPTR Addr, u8 Value)
 * @return	None.
 *
 ******************************************************************************/
-static INLINE void Xil_Out16(UINTPTR Addr, u16 Value)
+static INLINE void Xil_Out16(uintptr_t Addr, u16 Value)
 {
 	/* write 16 bit value to specified address */
 	volatile u16 *LocalAddr = (volatile u16 *)Addr;
@@ -168,7 +168,7 @@ static INLINE void Xil_Out16(UINTPTR Addr, u16 Value)
 * @return	None.
 *
 ******************************************************************************/
-static INLINE void Xil_Out32(UINTPTR Addr, u32 Value)
+static INLINE void Xil_Out32(uintptr_t Addr, u32 Value)
 {
 	/* write 32 bit value to specified address */
 	volatile u32 *LocalAddr = (volatile u32 *)Addr;
@@ -187,7 +187,7 @@ static INLINE void Xil_Out32(UINTPTR Addr, u32 Value)
 // * @return	None.
 // *
 // ******************************************************************************/
-// static INLINE void Xil_Out64(UINTPTR Addr, u64 Value)
+// static INLINE void Xil_Out64(uintptr_t Addr, u64 Value)
 // {
 // 	/* write 64 bit value to specified address */
 // 	volatile u64 *LocalAddr = (volatile u64 *)Addr;

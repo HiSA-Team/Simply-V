@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-// Init I and W tensors with random values
+// Init I and W tensors with pseudo-random values
 // Init O tensor with constant 0x55555555
 void init_data (
                     target_type_t I[N][C][ Y][ X],

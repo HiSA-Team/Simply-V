@@ -11,8 +11,6 @@ typedef uint16_t u16;
 typedef int32_t s32;
 typedef uint32_t u32;
 typedef int sint32;
-typedef uint32_t UINTPTR;
-typedef int32_t INTPTR;
 
 // Inlcude I/O macros
 #include "xil_io.h"
