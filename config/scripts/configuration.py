@@ -70,7 +70,7 @@ class Configuration:
 		# 	self.ADDR_WIDTH = value
 		# elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (value in range(12, 65))):
 		# 	self.ADDR_WIDTH = value
-		# elif self.PROTOCOL == "MOCK":
+		# elif self.PROTOCOL == "DISABLE":
 		# 	# Skip mock buses
 		# 	return
 		# else:
