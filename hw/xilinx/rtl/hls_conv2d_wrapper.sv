@@ -5,20 +5,25 @@
 //  This is static for now, but could be extended to a generic shell for HLS IP, with CDC support, multiple interfaces, etc.
 //
 // Architecture: HLS IP integration (with CDC)
-//    _____________________________
-//   |                             |
-//   |  xlnx_axi_clock_converter_u |<-------------------- HLS_CONTROL (from MBUS)
-//   |_____________________________|
-//                     | HLS_CONTROL
-//    _________________v_______________________
+//    _________________________________________
+//   |                                         |
+//   |       xlnx_axi_clock_converter_u        |<-------------------- HLS_CONTROL (from MBUS)
+//   |_________________________________________|
+//        |
+//        | HLS_CONTROL (HBUS clock domain)
+//    ____v____________________________________
 //   |                                         |
 //   |   xlnx_axi4_to_axilite_converter_hls_u  |
 //   |_________________________________________|
-//                     | HLS_CONTROL_axilite
-//                  ___v____
-//                 |        |  HLS_gmem0_d512
-//                 | HLS IP |-----------------------------> to HBUS
-//                 |________|
+//        |
+//        | HLS_CONTROL_axilite
+//        |         ________
+//        |        |        |  HLS_gmem0_d512
+//        \------->|        |------------------------------------> HLS_gmem0_d512 (to HBUS)
+//                 | HLS IP |                   ______________
+//                 |        |  interrupt       |              | (MBUS clock domain)
+//                 |        |----------------->| synchronizer |--> to PLIC
+//                 |________|                  |______________|
 //
 
 module hls_conv2d_wrapper # (
