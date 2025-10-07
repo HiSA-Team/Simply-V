@@ -32,12 +32,24 @@ open_ila:
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/set_ila_trigger.tcl
 
 # Read back from address
-OFFSET	?= 0x40000
+OFFSET	?= 0x00000
 NUM_BYTES ?= 16
-readback_jtag2axi:
+
+# Load the binary into SoC memory (BRAM for now)
+# Call the specific load script based on the SOC_CONFIG (HPC or EMBEDDED)
+readback: readback_${SOC_CONFIG}
+
+# Embedded profile
+readback_embedded:
 	${XILINX_VIVADO_ENV} ${XILINX_VIVADO} \
 	-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
-	-source ${XILINX_SCRIPTS_UTILS_ROOT}/$@.tcl -tclargs ${OFFSET} ${NUM_BYTES}
+	-source ${XILINX_SCRIPTS_UTILS_ROOT}/readback_jtag2axi.tcl -tclargs ${OFFSET} ${NUM_BYTES}
+
+# TODO: remove this and find BAR from dev automatically
+PCIE_BAR ?= 0x92000000
+readback_hpc:
+	@bash -c "source ${XILINX_SCRIPTS_UTILS_ROOT}/readback_xdma.sh \
+		${PCIE_BAR} ${OFFSET} ${NUM_BYTES}"
 
 # Trigger a reset pulse on VIO probes
 vio_resetn:
@@ -59,8 +71,8 @@ program_bitstream_embedded:
 PCIE_DEV ?= 01:00.0 # TODO: remove this and find the dev automatically in the script
 program_bitstream_hpc:
 #	Kill pending virtual_uart instances (if any)
-#	TODO: This might be overkill, as only that one instance should cause problems 
-	-killall virtual_uart 
+#	TODO: This might be overkill, as only that one instance should cause problems
+	-killall virtual_uart
 #	Program
 	${XILINX_VIVADO} \
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
