@@ -46,8 +46,6 @@ class HBus(NonLeafBus):
 			self.child_enable_loopback()
 
 
-	
-
 
 	def check_assign_params(self, data_dict):
 		super().check_assign_params(data_dict)
@@ -112,7 +110,7 @@ class HBus(NonLeafBus):
 						self.RANGE_CLOCK_DOMAINS[i])
 
 				pprint(vars(node))
-				self.children.append(node)
+				self.children_busses.append(node)
 				continue
 
 			match = re.search(hbus_pattern, node_name)
@@ -124,7 +122,7 @@ class HBus(NonLeafBus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
 				pprint(vars(node))
-				self.children.append(node)
+				self.children_nonleaf_busses.append(node)
 				continue
 
 			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
@@ -133,5 +131,5 @@ class HBus(NonLeafBus):
 						self.RANGE_CLOCK_DOMAINS[i])
 
 			pprint(vars(node))
-			self.children.append(node)
+			self.children_peripherals.append(node)
 

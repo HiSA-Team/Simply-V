@@ -1,3 +1,4 @@
+from peripheral import Peripheral
 from node import Node
 from logger import Logger
 from utils import *
@@ -28,6 +29,7 @@ class Bus(Node, ABC):
 		self.RANGE_BASE_ADDR : list[int]
 		self.RANGE_ADDR_WIDTH : list[int]
 		self.RANGE_END_ADDR : list[int]	= []	# computed from RANGE_BASE_ADDR and RANGE_ADDR_WIDTH
+		self.children_peripherals : list[Peripheral] = []
 
 				
 		# init Node object
@@ -68,14 +70,7 @@ class Bus(Node, ABC):
 	def generate_children(self):
 		return
 
-	def compute_range_end_addr(self, base_addr: int, addr_width: int) -> int:
-		return base_addr + ~(~1 << (addr_width-1))
 
-	def compute_range_end_addresses(self, base_addresses: list[int], addr_widths: list[int]) -> list[int]: 
-		end_addresses = []
-		for i in range(len(base_addresses)):
-			end_addresses.append(self.compute_range_end_addr(base_addresses[i], addr_widths[i]))
-		return end_addresses
 
 	def check_assign_params(self, data_dict: dict):
 		simply_v_crash = self.logger.simply_v_crash
@@ -134,11 +129,8 @@ class Bus(Node, ABC):
 			if(range_addr > 64):
 				simply_v_crash(f"RANGE_ADDR_WIDTH {range_addr} greather than 64")
 
-		
 		if ("ADDR_RANGES" in data_dict):
 			self.ADDR_RANGES = data_dict["ADDR_RANGES"]
-
-		self.RANGE_END_ADDR = self.compute_range_end_addresses(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)
 
 
 
@@ -168,7 +160,9 @@ class Bus(Node, ABC):
 				simply_v_crash(f"RANGE_ADDR_WIDTH is less than {MIN_AXI4_ADDR_WIDTH}")
 			if self.PROTOCOL == "AXI4LITE" and addr_width < MIN_AXI4LITE_ADDR_WIDTH:
 				simply_v_crash(f"RANGE_ADDR_WIDTH is less than {MIN_AXI4LITE_ADDR_WIDTH}")
-		
+			
+		# compute end addresses after all the checks
+		self.RANGE_END_ADDR = self.compute_range_end_addresses(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)
 
 		for i in range(len(self.RANGE_BASE_ADDR)):
 			base_address = self.RANGE_BASE_ADDR[i]
@@ -176,20 +170,23 @@ class Bus(Node, ABC):
 
 			# Check if the base addr does not fall into the addr range (e.g. base_addr: 0x100 is not allowed with range_width=12)
 			if (base_address & ~(~1 << (self.RANGE_ADDR_WIDTH[i]-1)) ) != 0:
-				simply_v_crash(f"BASE_ADDR does not match RANGE_ADDR_WIDTH")
+				simply_v_crash(f"BASE_ADDR [{i}] does not match RANGE_ADDR_WIDTH [{i}]")
 
 				# Check if the current address does not fall into the addr range one of the previous slaves
-				for j in range(len(self.RANGE_BASE_ADDR)):
-					# Skip yourself from the check
-					if (i == j):
-						continue
-						
-					if  ((base_address <= end_addresses[j])   and (base_address >= base_addresses[j])) or \
-						((end_address >= base_addresses[j])   and (base_address <= base_addresses[j])) or \
-						((base_address <= base_addresses[j])  and (end_address >= end_addresses[j])  ) or \
-						((base_address >= base_addresses[j])  and (end_address <= end_addresses[j])  ):
+			for j in range(len(self.RANGE_BASE_ADDR)):
+				# Skip yourself from the check
+				if (i == j):
+					continue
+					
+				if  ((base_address < self.RANGE_END_ADDR[j])   and (base_address >= self.RANGE_BASE_ADDR[j])) or \
+					((end_address > self.RANGE_BASE_ADDR[j])   and (base_address <= self.RANGE_BASE_ADDR[j])) or \
+					((base_address <= self.RANGE_BASE_ADDR[j])  and (end_address >= self.RANGE_END_ADDR[j])  ) or \
+					((base_address >= self.RANGE_BASE_ADDR[j])  and (end_address <= self.RANGE_END_ADDR[j])  ):
 
-						simply_v_crash(f"Address of {self.RANGE_NAMES[i]} overlaps with {self.RANGE_NAMES[j]}")
+					simply_v_crash(f"Address of {self.RANGE_NAMES[i]} overlaps with {self.RANGE_NAMES[j]}")
+		
+
+
 
 	def check_inter(self):
 		# Check that all the RANGES are included in the Bus addresses ranges

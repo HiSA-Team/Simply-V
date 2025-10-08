@@ -55,4 +55,4 @@ class PBus(Bus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.CLOCK)
 			pprint(vars(node))
-			self.children.append(node)
+			self.children_peripherals.append(node)

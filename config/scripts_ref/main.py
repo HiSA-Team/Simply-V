@@ -27,4 +27,8 @@ if __name__ == "__main__":
 
 	system = SimplyV(sys_config_file_path, mbus_config_path, soc_profile)
 
+	peripherals = system.get_peripherals()
+
+	system.create_linker_script('/home/Salvatore/Uninasoc.ld', peripherals)
+
 	pprint(vars(system))

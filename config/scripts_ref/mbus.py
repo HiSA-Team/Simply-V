@@ -1,3 +1,4 @@
+from bus import Bus
 from nonleafbus import NonLeafBus
 from utils import *
 from peripheral import Peripheral
@@ -40,20 +41,23 @@ class MBus(NonLeafBus):
 		#generate children nodes
 		self.generate_children()
 	
-	def get_peripherals(self) -> list[Node]:
-		peripherals: list[Node] = []
-		busses: list[Node] = [self]
+	def get_peripherals(self) -> list[Peripheral]:
+		peripherals: list[Peripheral] = self.children_peripherals
+		busses: list[Bus] = self.children_busses
+		nonleaf_busses: list[NonLeafBus] = self.children_nonleaf_busses
 		idx = 0
-		while(idx < len(busses)):
-			for node in busses[idx].children:
-				# this is a peripheral node (no children)
-				if (node.children == []):
-					peripherals.append(node)
-				else:
-					busses.append(node)
+		while(idx < len(nonleaf_busses)):
+			peripherals.extend(nonleaf_busses[idx].children_peripherals)
+			nonleaf_busses.extend(nonleaf_busses[idx].children_nonleaf_busses)
+			busses.extend(nonleaf_busses[idx].children_busses)
 			idx += 1
 
-		return peripherals
+		idx = 0
+		while(idx < len(busses)):
+			peripherals.extend(busses[idx].children_peripherals)
+			idx += 1
+
+		return peripherals 
 
 	def check_assign_params(self, data_dict):
 		super().check_assign_params(data_dict)
@@ -111,7 +115,7 @@ class MBus(NonLeafBus):
 						self.RANGE_CLOCK_DOMAINS[i])
 
 				pprint(vars(node))
-				self.children.append(node)
+				self.children_busses.append(node)
 				continue
 
 			match = re.search(hbus_pattern, node_name)
@@ -123,7 +127,7 @@ class MBus(NonLeafBus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
 				pprint(vars(node))
-				self.children.append(node)
+				self.children_nonleaf_busses.append(node)
 				continue
 
 			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
@@ -132,5 +136,5 @@ class MBus(NonLeafBus):
 						self.RANGE_CLOCK_DOMAINS[i])
 
 			pprint(vars(node))
-			self.children.append(node)
+			self.children_peripherals.append(node)
 

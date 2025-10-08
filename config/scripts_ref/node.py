@@ -10,10 +10,14 @@ class Node(ABC):
 		self.ASGN_RANGE_ADDR_WIDTH : list[int] = asgn_range_addr_width 
 		self.ASGN_RANGE_END_ADDR : list[int] = []	# computed from ASGN_RANGE_BASE_ADDR and ASGN_RANGE_ADDR_WIDTH
 		self.CLOCK: int = clock
-		self.children : list[Node] = []
+
+		self.ASGN_RANGE_END_ADDR = self.compute_range_end_addresses(self.ASGN_RANGE_BASE_ADDR, self.ASGN_RANGE_ADDR_WIDTH)
 		
+	def compute_range_end_addr(self, base_addr: int, addr_width: int) -> int:
+		return base_addr + ~(~1 << (addr_width-1)) + 1
 
-		for i in range(self.ASGN_ADDR_RANGES):
-			# RANGE_ADDR_WIDTH contained in the "Node" object of this bus
-			self.ASGN_RANGE_END_ADDR.append(self.ASGN_RANGE_BASE_ADDR[i] + ~(~1 << (self.ASGN_RANGE_ADDR_WIDTH[i]-1)))
-
+	def compute_range_end_addresses(self, base_addresses: list[int], addr_widths: list[int]) -> list[int]: 
+		end_addresses = []
+		for i in range(len(base_addresses)):
+			end_addresses.append(self.compute_range_end_addr(base_addresses[i], addr_widths[i]))
+		return end_addresses

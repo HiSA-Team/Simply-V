@@ -5,6 +5,8 @@ class NonLeafBus(Bus):
 			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
 
 		self.RANGE_CLOCK_DOMAINS: list[int] = []
+		self.children_busses: list[Bus] = []
+		self.children_nonleaf_busses: list[NonLeafBus] = []
 		self.num_loopbacks: int = 0
 
 		# init Bus object
