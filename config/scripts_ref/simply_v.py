@@ -1,5 +1,6 @@
 import re
 from peripheral import Peripheral
+from peripheral import Peripheral
 from utils import *
 from peripheral import Peripheral
 import os
@@ -54,6 +55,9 @@ class SimplyV:
 
 		self.mbus = MBus(mbus_data_dict, mbus_file_name, axi_addr_width, axi_data_width, asgn_addr_ranges, \
 								asgn_range_base_addr, asgn_range_addr_width, clock)
+
+		#generate children nodes
+		self.mbus.generate_children()
 
 		pprint(vars(self.mbus))
 
@@ -123,6 +127,9 @@ class SimplyV:
 	def get_peripherals(self) -> list[Peripheral]:
 		peripherals_names = set()
 		peripherals = self.mbus.get_peripherals()
+		print("PERIPHERALS")
+		for p in peripherals:
+			print(p.NAME + "\n")
 		# Check redundant names
 		for p in peripherals:
 			if (p.NAME in peripherals_names):
@@ -141,6 +148,10 @@ class SimplyV:
 
 		# For each node
 		for n in nodes:
+			if(n.NAME == "DDR"):
+				print("DDR")
+				pprint(vars(n))
+
 			if(n.IS_A_MEMORY):
 				memories.append(n)
 			else:
@@ -159,12 +170,11 @@ class SimplyV:
 		fd.write("{\n")
 
 		for block in memories:
-			# Generalizing on the number of RANGES
-			idx = block.ASGN_ADDR_RANGES
-			# Base is always the first base of the ranges
-			base_addr = block.ASGN_RANGE_BASE_ADDR[0]
-			# End addr is always the last base of the ranges
-			end_addr = block.ASGN_RANGE_END_ADDR[idx-1]
+			base_addr = block.get_base_addr()
+			end_addr = block.get_end_addr()
+			#we're assuming that memories has a contiguous address space,
+			#so the lenght is effectively end_addr - base_addr
+			#this isn't guaranteed when using multiple address ranges that aren't contiguous
 			length = end_addr - base_addr
 			fd.write("\t" + block.NAME + " (xrw) : ORIGIN = 0x" + format(base_addr, "016x") + ",  LENGTH = " + hex(length) + "\n")
 
@@ -208,10 +218,10 @@ class SimplyV:
 		found = False
 
 		for mem in memories:
-			if(min(mem.ASGN_RANGE_BASE_ADDR) == self.BOOT_MEMORY_BLOCK):
-				block_memory_base = min(mem.ASGN_RANGE_BASE_ADDR)
+			if(mem.get_base_addr() == self.BOOT_MEMORY_BLOCK):
+				block_memory_base = mem.get_base_addr()
 				block_memory_name = mem.NAME
-				stack_start = max(mem.ASGN_RANGE_END_ADDR)
+				stack_start = mem.get_end_addr()
 				found = True
 				break
 
@@ -270,4 +280,11 @@ class SimplyV:
 		# Files closing
 		fd.write("\n")
 		fd.close()
+
+
+	def dump_reachability(self, dump_file_name: str, peripherals: list[Peripheral]):
+		fd = open(dump_file_name,  "w")
+		for p in peripherals:
+			fd.write(p.NAME + "," + " ".join(p.REACHABLE_FROM) + "\n")
+
 

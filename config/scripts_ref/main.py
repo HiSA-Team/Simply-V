@@ -31,4 +31,6 @@ if __name__ == "__main__":
 
 	system.create_linker_script('/home/Salvatore/Uninasoc.ld', peripherals)
 
+	system.dump_reachability('/home/Salvatore/Uninasoc.csv', peripherals)
+
 	pprint(vars(system))

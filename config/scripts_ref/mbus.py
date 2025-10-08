@@ -18,6 +18,7 @@ class MBus(NonLeafBus):
 		self.VALID_PROTOCOLS: list[str] = ["AXI4", "DISABLE"]
 
 		self.DDR_FREQUENCY = 300
+		self.children_hbusses: list[HBus] = []
 		
 
 		# init NonLeafBus object
@@ -38,26 +39,6 @@ class MBus(NonLeafBus):
 
 		self.check_peripherals(self.LEGAL_PERIPHERALS)
 
-		#generate children nodes
-		self.generate_children()
-	
-	def get_peripherals(self) -> list[Peripheral]:
-		peripherals: list[Peripheral] = self.children_peripherals
-		busses: list[Bus] = self.children_busses
-		nonleaf_busses: list[NonLeafBus] = self.children_nonleaf_busses
-		idx = 0
-		while(idx < len(nonleaf_busses)):
-			peripherals.extend(nonleaf_busses[idx].children_peripherals)
-			nonleaf_busses.extend(nonleaf_busses[idx].children_nonleaf_busses)
-			busses.extend(nonleaf_busses[idx].children_busses)
-			idx += 1
-
-		idx = 0
-		while(idx < len(busses)):
-			peripherals.extend(busses[idx].children_peripherals)
-			idx += 1
-
-		return peripherals 
 
 	def check_assign_params(self, data_dict):
 		super().check_assign_params(data_dict)
@@ -114,8 +95,8 @@ class MBus(NonLeafBus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_CLOCK_DOMAINS[i])
 
-				pprint(vars(node))
 				self.children_busses.append(node)
+				pprint(vars(node))
 				continue
 
 			match = re.search(hbus_pattern, node_name)
@@ -126,8 +107,9 @@ class MBus(NonLeafBus):
 						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
+
+				self.children_hbusses.append(node)
 				pprint(vars(node))
-				self.children_nonleaf_busses.append(node)
 				continue
 
 			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
@@ -135,6 +117,24 @@ class MBus(NonLeafBus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_CLOCK_DOMAINS[i])
 
-			pprint(vars(node))
 			self.children_peripherals.append(node)
+			pprint(vars(node))
 
+		#Recursively generate children
+		for bus in self.children_busses:
+			bus.generate_children()
+		for hbus in self.children_hbusses:
+			hbus.generate_children()
+
+		self.add_reachability()
+
+
+	def add_reachability(self):
+		super().add_reachability()
+		# add this BUS to all the NONLEAFBUSSES that are reachable from MBUS
+		# + trigger the same mechanism on the NONLEAFBUSSES
+		for hbus in self.children_hbusses:
+			hbus.add_to_reachable(self.NAME)
+			#everything that can reach this node can also reach the nodes reachable from this node
+			hbus.add_reachability()
+		# add "MBUS" to all the nodes that are reachable from MBUS

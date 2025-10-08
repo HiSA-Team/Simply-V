@@ -27,8 +27,6 @@ class PBus(Bus):
 
 		self.check_peripherals(self.LEGAL_PERIPHERALS)
 
-		self.generate_children()
-
 
 	def check_assign_params(self, data_dict):
 		super().check_assign_params(data_dict)
@@ -56,3 +54,8 @@ class PBus(Bus):
 						self.CLOCK)
 			pprint(vars(node))
 			self.children_peripherals.append(node)
+			# all the peripherals of PBUS are reachable from PBUS and everything that
+			# can reach PBUS
+			node.add_to_reachable(self.NAME)
+			node.add_list_to_reachable(self.REACHABLE_FROM)
+

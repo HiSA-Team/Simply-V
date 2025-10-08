@@ -1,4 +1,5 @@
 from bus import Bus
+from peripheral import Peripheral
 
 class NonLeafBus(Bus):
 	def __init__(self, name:str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
@@ -21,6 +22,25 @@ class NonLeafBus(Bus):
 
 		if self.NUM_MI != len(self.RANGE_CLOCK_DOMAINS):
 			simply_v_crash(f"The NUM_MI value {self.NUM_MI} does not match the number of RANGE_CLOCK_DOMAINS")
+	
+	
+	def get_peripherals(self) -> list[Peripheral]:
+		peripherals: list[Peripheral] = self.children_peripherals.copy()
+		busses: list[Bus] = self.children_busses.copy()
+		nonleaf_busses: list[NonLeafBus] = self.children_nonleaf_busses.copy()
+		idx = 0
+		while(idx < len(nonleaf_busses)):
+			peripherals.extend(nonleaf_busses[idx].children_peripherals)
+			nonleaf_busses.extend(nonleaf_busses[idx].children_nonleaf_busses)
+			busses.extend(nonleaf_busses[idx].children_busses)
+			idx += 1
+
+		idx = 0
+		while(idx < len(busses)):
+			peripherals.extend(busses[idx].children_peripherals)
+			idx += 1
+
+		return peripherals 
 
 
 	def check_assign_params(self, data_dict: dict):
@@ -40,7 +60,6 @@ class NonLeafBus(Bus):
 		## place MBus as a slave, assign it 2 RANGE_BASE_ADDR, RANGE_ADDR_WIDTH and RANGE_END_ADDR
 		## according to everything outside of your addr ranges (ASGN variables)
 
-
 		self.ADDR_RANGES = 2
 		self.NUM_MI += 1
 
@@ -56,7 +75,7 @@ class NonLeafBus(Bus):
 			
 			first_end = self.compute_range_end_addr(first_base, first_width) 
 
-			second_base = first_end + 1 
+			second_base = first_end
 
 			temp_base_addresses.append(first_base)
 			temp_base_addresses.append(second_base)
@@ -73,7 +92,7 @@ class NonLeafBus(Bus):
 		mbus_range_1_end_addr = self.compute_range_end_addr(mbus_range_1_base_addr, mbus_range_1_addr_width)
 
 		# this is the range of all the addresses AFTER the range of HBUS
-		mbus_range_2_base_addr = max(self.ASGN_RANGE_END_ADDR) + 1
+		mbus_range_2_base_addr = self.get_end_addr()
 		mbus_range_2_addr_width = self.ASGN_RANGE_ADDR_WIDTH[0]
 		mbus_range_2_end_addr = self.compute_range_end_addr(mbus_range_2_base_addr, mbus_range_2_addr_width)
 
@@ -98,4 +117,24 @@ class NonLeafBus(Bus):
 		self.MASTER_NAMES.append("HBUS_" + str(self.num_loopbacks))
 		self.num_loopbacks += 1
 		self.NUM_SI += 1
+	
+	def add_reachability(self):
+		# add this BUS to all the BUSSES that are reachable from MBUS
+		# + trigger the same mechanism on the BUSSES
+		super().add_reachability()
+		for bus in self.children_busses:
+			bus.add_to_reachable(self.NAME)
+			#everything that can reach this node can also reach the nodes reachable from this node
+			bus.add_list_to_reachable(self.REACHABLE_FROM)
+			bus.add_reachability()
+
+		# add this BUS to all the NONLEAFBUSSES that are reachable from MBUS
+		# + trigger the same mechanism on the NONLEAFBUSSES
+		for nonleafbus in self.children_nonleaf_busses:
+			nonleafbus.add_to_reachable(self.NAME)
+			#everything that can reach this node can also reach the nodes reachable from this node
+			nonleafbus.add_list_to_reachable(self.REACHABLE_FROM)
+			#nonleafbus.add_reachability()
+
+		# class Bus add_reachability
 

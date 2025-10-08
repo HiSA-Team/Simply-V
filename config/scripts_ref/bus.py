@@ -70,6 +70,11 @@ class Bus(Node, ABC):
 	def generate_children(self):
 		return
 
+	#Set all the peripherals as reachable from this bus
+	def add_reachability(self):
+		for peripheral in self.children_peripherals:
+			peripheral.add_to_reachable(self.NAME)
+			peripheral.add_list_to_reachable(self.REACHABLE_FROM)
 
 
 	def check_assign_params(self, data_dict: dict):
@@ -186,26 +191,10 @@ class Bus(Node, ABC):
 					simply_v_crash(f"Address of {self.RANGE_NAMES[i]} overlaps with {self.RANGE_NAMES[j]}")
 		
 
-
-
 	def check_inter(self):
-		# Check that all the RANGES are included in the Bus addresses ranges
-		# the "ASGN" variables are the one assigned to the current bus
-		# not the one relatives to the nodes that we're trying to "allocate"
-		# on this bus
-		
-		bus_base_addresses = self.ASGN_RANGE_BASE_ADDR
-		bus_end_addresses = self.ASGN_RANGE_END_ADDR
 		#for each node connected to the bus check if it's included in at least
 		#one bus address range
 		for base, end in zip(self.RANGE_BASE_ADDR, self.RANGE_END_ADDR):
-			included = 0
-			# Check if all the Nodes attached to this bus, fit in the assigned Address range
-			for bus_base, bus_end in zip(bus_base_addresses, bus_end_addresses):
-				if ((base >= bus_base) and (end <= bus_end)):
-					included = 1
-					break
-
-			if(included == 0):
+			if (not self.contains(base, end)):
 				self.logger.simply_v_crash(f"The addresses assigned to some Node (Peripheral or Bus) in this bus "
 						"don't fit in the address ranges assigned to this bus from his parent bus.")

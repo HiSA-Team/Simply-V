@@ -13,10 +13,11 @@ class HBus(NonLeafBus):
 
 
 		self.father = father
+		self.LOOPBACK: int
+		#RANGES OF FATHER WHEN ENABLING LOOPBACK
 		self.LEGAL_PERIPHERALS: list[str] = ["DDR", "MBUS"]
 		self.VALID_PROTOCOLS: list[str] = ["AXI4", "DISABLE"]
 
-		self.LOOPBACK: int
 		axi_data_width = 512
 		
 		# init Bus object
@@ -39,12 +40,10 @@ class HBus(NonLeafBus):
 
 		self.check_peripherals(self.LEGAL_PERIPHERALS)
 
-		self.generate_children()
 	
 		if (self.LOOPBACK == 1):
 			self.father.father_enable_loopback()
 			self.child_enable_loopback()
-
 
 
 	def check_assign_params(self, data_dict):
@@ -99,6 +98,10 @@ class HBus(NonLeafBus):
 		root_dir = os.path.join("/", *self.file_name.split("/")[:-1])
 		
 		for i, node_name in enumerate(self.RANGE_NAMES):
+			# SKIP MBUS in case of LOOPBACK
+			if (node_name == "MBUS"):
+				continue
+
 			match = re.search(pbus_pattern, node_name)
 			if (match):
 				pbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv")
@@ -109,8 +112,11 @@ class HBus(NonLeafBus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_CLOCK_DOMAINS[i])
 
-				pprint(vars(node))
 				self.children_busses.append(node)
+				# all the peripherals of PBUS are reachable from PBUS and everything that
+				# can reach HBUS
+				node.add_list_to_reachable(self.REACHABLE_FROM)
+				pprint(vars(node))
 				continue
 
 			match = re.search(hbus_pattern, node_name)
@@ -121,8 +127,8 @@ class HBus(NonLeafBus):
 						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
-				pprint(vars(node))
 				self.children_nonleaf_busses.append(node)
+				pprint(vars(node))
 				continue
 
 			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
@@ -130,6 +136,28 @@ class HBus(NonLeafBus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_CLOCK_DOMAINS[i])
 
-			pprint(vars(node))
 			self.children_peripherals.append(node)
+			pprint(vars(node))
+
+		#Recursively generate children
+		for bus in self.children_busses:
+			bus.generate_children()
+		for nonleafbus in self.children_nonleaf_busses:
+			nonleafbus.generate_children()
+		
+	def add_reachability(self):
+		super().add_reachability()
+		# If loopback enabled this HBUS can also reach
+		# the peripherals in the father bus
+		if(self.LOOPBACK == 1):
+			#assuming that MBUS ranges are the last 2
+			father_base_addr_1 = self.RANGE_BASE_ADDR[-2]
+			father_base_addr_2 = self.RANGE_BASE_ADDR[-1]
+			father_end_addr_1 = self.RANGE_END_ADDR[-2]
+			father_end_addr_2 = self.RANGE_END_ADDR[-1]
+			peripherals = self.father.get_peripherals()
+			for p in peripherals:
+				if (p.is_contained(father_base_addr_1, father_end_addr_1) or
+					p.is_contained(father_base_addr_2, father_end_addr_2)):
+					p.add_to_reachable(self.NAME)
 
