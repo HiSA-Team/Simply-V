@@ -8,7 +8,7 @@ ARGC=$#;
 
 # Print the right usage
 help (){
-    echo  "Usage: source ${BASH_SOURCE[0]} <file_name> <base_address> <read_back>";
+    echo  "Usage: source ${BASH_SOURCE[0]} <PCIe BAR> <file_name> <base_address> <read_back>";
     echo  "    PCIe BAR      :  target BAR of PCIe device";
     echo  "    binary_file   :  path to bin file to transfer";
     echo  "    base_address  :  offset from PCIe BAR";
