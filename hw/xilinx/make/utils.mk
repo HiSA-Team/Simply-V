@@ -45,9 +45,7 @@ readback_embedded:
 	-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
 	-source ${XILINX_SCRIPTS_UTILS_ROOT}/readback_jtag2axi.tcl -tclargs ${OFFSET} ${NUM_BYTES}
 
-# TODO: remove this and find the PCIE_DEV automatically
-PCIE_DEV ?= 01:00.0
-PCIE_BAR ?= 0x$(lspci -vv -s ${PCIE_DEV} | grep Region | awk '{print $5}')
+# HPC profile
 readback_hpc:
 	@bash -c "source ${XILINX_SCRIPTS_UTILS_ROOT}/readback_xdma.sh \
 		${PCIE_BAR} ${OFFSET} ${NUM_BYTES}"

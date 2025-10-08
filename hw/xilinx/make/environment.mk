@@ -2,7 +2,7 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Description:
-#    Hold all the environment variables for Xilinx tools.
+#    Hold all the environment variables for Xilinx tools and PCIe offsets.
 
 # Basic variables for Vivado
 XILINX_VIVADO_CMD ?= vivado
@@ -121,3 +121,7 @@ XILINX_VIVADO_ENV ?=                                \
 # Package Vivado command in a single variable
 XILINX_VIVADO := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode ${XILINX_VIVADO_MODE}
 XILINX_VIVADO_BATCH := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode batch
+
+# PCIe device and address
+PCIE_DEV ?= 01:00.0 # TODO: remove this and find the PCIE_DEV automatically
+PCIE_BAR ?= 0x$(shell lspci -vv -s ${PCIE_DEV} | grep Region | awk '{print $$5}')
