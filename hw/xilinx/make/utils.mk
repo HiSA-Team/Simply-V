@@ -45,8 +45,9 @@ readback_embedded:
 	-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
 	-source ${XILINX_SCRIPTS_UTILS_ROOT}/readback_jtag2axi.tcl -tclargs ${OFFSET} ${NUM_BYTES}
 
-# TODO: remove this and find BAR from dev automatically
-PCIE_BAR ?= 0x92000000
+# TODO: remove this and find the PCIE_DEV automatically
+PCIE_DEV ?= 01:00.0
+PCIE_BAR ?= 0x$(lspci -vv -s ${PCIE_DEV} | grep Region | awk '{print $5}')
 readback_hpc:
 	@bash -c "source ${XILINX_SCRIPTS_UTILS_ROOT}/readback_xdma.sh \
 		${PCIE_BAR} ${OFFSET} ${NUM_BYTES}"
@@ -68,7 +69,6 @@ program_bitstream_embedded:
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/program_bitstream.tcl
 
 # Program bitstream for HPC profile
-PCIE_DEV ?= 01:00.0 # TODO: remove this and find the dev automatically in the script
 program_bitstream_hpc:
 #	Kill pending virtual_uart instances (if any)
 #	TODO: This might be overkill, as only that one instance should cause problems
