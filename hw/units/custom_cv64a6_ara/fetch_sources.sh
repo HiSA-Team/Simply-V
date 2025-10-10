@@ -23,7 +23,7 @@ GIT_BRANCH=main
 GIT_COMMIT=a6436df6ad4011c77b5b40e0432acdbf4668639f
 CLONE_DIR=${THIS_DIR}/ara
 printf "${YELLOW}[FETCH_SOURCES] Cloning source repository${NC}\n"
-# git clone ${GIT_URL} -b ${GIT_BRANCH} ${CLONE_DIR}
+git clone ${GIT_URL} -b ${GIT_BRANCH} ${CLONE_DIR}
 cd ${CLONE_DIR};
 git checkout ${GIT_COMMIT}
 
@@ -31,7 +31,7 @@ git checkout ${GIT_COMMIT}
 printf "${YELLOW}[FETCH_SOURCES] Download Bender${NC}\n"
 # Version from Ara repo
 BENDER_VERSION=0.27.3
-# curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh	-s -- ${BENDER_VERSION}
+curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh	-s -- ${BENDER_VERSION}
 
 # Patch Bender file
 sed -i "|.+vendor/pulp-platform/fpga-support/fpga-support-stubs.sv|d" CVA6_BENDER_FILE
@@ -50,19 +50,9 @@ BENDER_DEFINES=../bender_vivado_defines.tcl
 BENDER_RTL_LIST=$(realpath ${BENDER_RTL_LIST})
 BENDER_DEFINES=$(realpath ${BENDER_DEFINES})
 
-# TMP
-BENDER_SCRIPT=../bender_vivado.tcl
-./bender script vivado ${BENDER_TARGETS} > ${BENDER_SCRIPT}
-
 ###########
 # Patches #
 ###########
-
-# Patch bender script to import, not add, sources
-# sed -E -i 's/add_files/import_files/g' ${BENDER_SCRIPT}
-
-# Remove lines between "set_property include_dirs" and "] [current_fileset]" in bender script, including those lines
-# sed -i '/set_property include_dirs/,/\] \[current_fileset\]/d' ${BENDER_SCRIPT}
 
 printf "${YELLOW}[FETCH_SOURCES] Patching Bender-generated file list${NC}\n"
 
