@@ -8,7 +8,7 @@
 // Original Author: Jean-Roch COULON - Thales
 
 
-// Author: Stefano Mercogliano
+// Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 //    This configuration file is a slightly modified version compare to the OpenHW one.
 //    Differently, we support FpgaEn and Setup our own debug addresses
 
