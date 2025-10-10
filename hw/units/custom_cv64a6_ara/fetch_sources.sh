@@ -46,6 +46,10 @@ BENDER_RTL_LIST=../rtl.flist
 ./bender script flist ${BENDER_TARGETS} > ${BENDER_RTL_LIST}
 BENDER_DEFINES=../bender_vivado_defines.tcl
 ./bender script vivado ${BENDER_TARGETS} --only-defines > ${BENDER_DEFINES}
+# Export to absolute paths
+BENDER_RTL_LIST=$(realpath ${BENDER_RTL_LIST})
+BENDER_DEFINES=$(realpath ${BENDER_DEFINES})
+
 # TMP
 BENDER_SCRIPT=../bender_vivado.tcl
 ./bender script vivado ${BENDER_TARGETS} > ${BENDER_SCRIPT}
@@ -54,44 +58,52 @@ BENDER_SCRIPT=../bender_vivado.tcl
 # Patches #
 ###########
 
-printf "${YELLOW}[FETCH_SOURCES] Patching Bender-generated file list${NC}\n"
-
-# Remove include directives
-sed -i "/+incdir+/d" ${BENDER_RTL_LIST}
-
-# Remove silly constraint on FPGA support
-sed -i "/fpga-support-stubs.sv/d" ${BENDER_RTL_LIST}
-FPGA_SUPPORT_RTL=${CLONE_DIR}/hardware/deps/cva6/vendor/pulp-platform/fpga-support/rtl/
-fpga_files=($(realpath $(ls ${FPGA_SUPPORT_RTL} )))
-echo ${fpga_files[*]} >> ${BENDER_RTL_LIST}
-
-
 # Patch bender script to import, not add, sources
 # sed -E -i 's/add_files/import_files/g' ${BENDER_SCRIPT}
 
 # Remove lines between "set_property include_dirs" and "] [current_fileset]" in bender script, including those lines
 # sed -i '/set_property include_dirs/,/\] \[current_fileset\]/d' ${BENDER_SCRIPT}
 
+printf "${YELLOW}[FETCH_SOURCES] Patching Bender-generated file list${NC}\n"
+
+# Remove line containing "ara_system.sv" and "ara_soc.sv" in bender script
+# Remove include directives
+sed -i "/+incdir+/d" ${BENDER_RTL_LIST}
+# Remove lines
+sed -i '/ara_system\.sv/d' ${BENDER_RTL_LIST}
+sed -i '/ara_soc\.sv/d' ${BENDER_RTL_LIST}
+# Remove unused apb modules
+sed -i -E '/.+apb.*\.sv/d' ${BENDER_RTL_LIST}
+# Remove unsupported AXI interface file
+sed -i '/.+axi_intf\.sv/d' ${BENDER_RTL_LIST}
+# Remove stub
+sed -i '/.+cva6_accel_first_pass_decoder_stub\.sv/d' ${BENDER_RTL_LIST}
+
+# Remove silly constraint on FPGA support by PULP
+# Remove error-triggering file
+sed -i "/fpga-support-stubs.sv/d" ${BENDER_RTL_LIST}
+# Include FPGA-support files
+FPGA_SUPPORT_RTL=${CLONE_DIR}/hardware/deps/cva6/vendor/pulp-platform/fpga-support/rtl/
+fpga_files=($(ls ${FPGA_SUPPORT_RTL} ))
+for fpga_file in "${fpga_files[@]}"; do
+    echo ${FPGA_SUPPORT_RTL}/$fpga_file >> ${BENDER_RTL_LIST}
+done
+
 # Overwrite configuration file location in bender script
 escaped=$(echo "${ASSETS_DIR}" | sed 's/\//\\\//g')
 # sed -E -i "s/.+${CVA6_BENDER_TARGET}_config_pkg.sv/    ${escaped}\/cv64a6_config_pkg.sv/g" ${BENDER_SCRIPT}
 sed -E -i "s/.+${CVA6_BENDER_TARGET}_config_pkg.sv/${escaped}\/cv64a6_config_pkg.sv/g" ${BENDER_RTL_LIST}
 
-# Remove line containing "ara_system.sv" and "ara_soc.sv" in bender script
-sed -i '/ara_system\.sv/d' ${BENDER_RTL_LIST}
-sed -i '/ara_soc\.sv/d' ${BENDER_RTL_LIST}
-# Remove unused apb
-sed -i '/.+apb\.sv/d' ${BENDER_RTL_LIST}
-
+# Work around bender bug for Vivado filelist
 # Replace tech cells with Xilinx versions
-sed -i "s|.*/tech_cells_generic/src/rtl/tc_sram\.sv|${CLONE_DIR}/hardware/deps/tech_cells_generic/src/fpga/tc_sram_xilinx.sv|" ${BENDER_RTL_LIST}
-sed -i "s|.*/tech_cells_generic/src/rtl/tc_clk\.sv|${CLONE_DIR}/hardware/deps/tech_cells_generic/src/fpga/tc_clk_xilinx.sv|" ${BENDER_RTL_LIST}
-# Append pad_functional (not necessary)
-# echo "${CLONE_DIR}/hardware/deps/tech_cells_generic/src/fpga/pad_functional_xilinx.sv" >> ${BENDER_RTL_LIST}
+FPGA_SRC_DIR=${CLONE_DIR}/hardware/deps/tech_cells_generic/src/fpga
+sed -i "s|.*/tech_cells_generic/src/rtl/tc_sram\.sv|${FPGA_SRC_DIR}/tc_sram_xilinx.sv|" ${BENDER_RTL_LIST}
+sed -i "s|.*/tech_cells_generic/src/rtl/tc_clk\.sv|${FPGA_SRC_DIR}/tc_clk_xilinx.sv|" ${BENDER_RTL_LIST}
+sed -i "s|.*/tech_cells_generic/src/deprecated/pad_functional\.sv|${FPGA_SRC_DIR}/pad_functional_xilinx.sv|" ${BENDER_RTL_LIST}
 
-##########################
-# Copy-in target headers #
-##########################
+########################
+# Copy-in target files #
+########################
 
 # Create RTL dir
 mkdir -p ${RTL_DIR}
@@ -102,10 +114,11 @@ mapfile -t headers < ${ASSETS_DIR}/headers.flist
 for i in "${!headers[@]}"; do headers[$i]="${headers[$i]//\$\{DIR\}/${CLONE_DIR}}"; done
 
 # Copy into new dir
-printf "${YELLOW}[FETCH_SOURCES] Copy headers into header dir ${HEADER_DIR}${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES] Copy headers into RTL dir ${RTL_DIR}${NC}\n"
 cp ${headers[*]} ${RTL_DIR}/
 
 # Copy all files from bender flist
+printf "${YELLOW}[FETCH_SOURCES] Copy sources into RTL dir ${RTL_DIR}${NC}\n"
 cp $(cat ${BENDER_RTL_LIST}) ${RTL_DIR}
 
 # Loop through all files in the rtl directory
@@ -116,22 +129,6 @@ for rtl_file in ${RTL_DIR}/*; do
         sed -i 's#`include "[^/]*/\([^"]*\.svh\)"#`include "\1"#g' $rtl_file
     fi
 done
-
-#######################
-# Remove faulty files #
-#######################
-
-# Remove unsupported AXI interface file
-rm -f ${RTL_DIR}/axi_intf.sv
-
-############
-# Clean up #
-############
-
-# Delete the cloned repo and temporary flist
-# printf "${YELLOW}[FETCH_SOURCES] Clean all artifacts${NC}\n"
-# sudo rm -rf ${CLONE_DIR}
-# rm rtl.flist bender
 
 ########
 # Exit #
