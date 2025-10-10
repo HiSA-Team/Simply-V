@@ -63,7 +63,8 @@ package uninasoc_pkg;
         CORE_MICROBLAZEV_RV32,
         // 64-bits Cores
         CORE_MICROBLAZEV_RV64,
-        CORE_CV64A6
+        CORE_CV64A6,
+        CORE_CV64A6_ARA
     } core_selector_t;
 
     // Select core from macro

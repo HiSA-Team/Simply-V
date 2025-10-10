@@ -49,6 +49,10 @@ module rv_socket # (
     localparam logic [LOCAL_ADDR_WIDTH-1:0] dm_HaltAddress = 'h800;
     localparam logic [LOCAL_ADDR_WIDTH-1:0] dm_ExceptionAddress = dm_HaltAddress + 16;
 
+    // Extended boot_addr_i to 64-bits
+    // - For cores that have a fixed adddress width
+    logic [CVA6_ADDR_WIDTH -1 : 0] extended_a64_boot_addr = {{1'b0}'(64-LOCAL_ADDR_WIDTH), bootaddr_i }
+
     //////////////////////////////////////
     //    ___ _                _        //
     //   / __(_)__ _ _ _  __ _| |___    //
@@ -86,7 +90,7 @@ module rv_socket # (
 
     // Check if the selected Core is compatible with the system XLEN
     if ( LOCAL_DATA_WIDTH == 64 && CORE_SELECTOR inside {CORE_PICORV32,CORE_CV32E40P,CORE_IBEX,CORE_MICROBLAZEV_RV32} ||
-         LOCAL_DATA_WIDTH == 32 && CORE_SELECTOR inside {CORE_CV64A6, CORE_MICROBLAZEV_RV64} ) begin : xlen_core_error
+         LOCAL_DATA_WIDTH == 32 && CORE_SELECTOR inside {CORE_CV64A6, CORE_CV64A6_ARA, CORE_MICROBLAZEV_RV64} ) begin : xlen_core_error
         $error($sformatf("[Socket] Illegal CORE (%s) for the selected XLEN (%0d)",
                         core_selector_to_string(CORE_SELECTOR), LOCAL_DATA_WIDTH));
     end : xlen_core_error
@@ -853,17 +857,18 @@ module rv_socket # (
         else if (CORE_SELECTOR == CORE_CV64A6) begin: core_cv64a6
 
             ////////////////////////
-            //      CV32A6        //
+            //      CV64A6        //
             ////////////////////////
 
             // CVA6 only has one Master port (for both data and instruction)
             `DECLARE_AXI_BUS(cv64a6, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
 
+            // CVA6 IP
             custom_cv64a6 cv64a6_core (
 
                 .clk_i           ( clk_i                            ),
                 .rst_ni          ( core_resetn_internal             ),
-                .boot_addr_i     ( bootaddr_i                       ),
+                .boot_addr_i     ( extended_a64_boot_addr           ),
                 .hart_id_i       ( hart_id                          ),
                 .irq_i           ( {0,irq_i[CORE_EXT_INTERRUPT]}    ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
                 .ipi_i           ( irq_i[CORE_SW_INTERRUPT]         ), // Shoult be SW interrupt
@@ -916,7 +921,117 @@ module rv_socket # (
             `ASSIGN_AXI_BUS( rv_socket_data , cv64a6 );
             `SINK_AXI_MASTER_INTERFACE(rv_socket_instr);
 
-        end
+        end : core_cv64a6
+        else if (CORE_SELECTOR == CORE_CV64A6_ARA) begin : core_cv64a6_ara
+
+            // Declare AXI buses
+            // CVA6 only has one Master port (for both data and instruction)
+            `DECLARE_AXI_BUS(cv64a6    , LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            // Ara has only one data port
+            `DECLARE_AXI_BUS(ara_narrow, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+
+            // Attach to socket
+            // Use instruction and data port for CVA6 and Ara, respectively
+            `ASSIGN_AXI_BUS( rv_socket_instr , cv64a6     );
+            `ASSIGN_AXI_BUS( rv_socket_data  , ara_narrow );
+
+            // CVA6 + Ara IP
+            custom_cv64a6_ara cv64a6_ara_core (
+                .clk_i             ( clk_i                         ),
+                .rst_ni            ( core_resetn_internal          ),
+                .boot_addr_i       ( extended_a64_boot_addr       ),
+                .hart_id_i         ( hart_id                       ),
+                // Interrupts
+                .irq_i             ( {1'b0,irq_i[CORE_EXT_INTERRUPT]} ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
+                .ipi_i             ( irq_i[CORE_SW_INTERRUPT]      ), // Shoult be SW interrupt
+                .time_irq_i        ( irq_i[CORE_TIM_INTERRUPT]     ), // Should be TIM interrupt
+                .debug_req_i       ( debug_req_core                ),
+
+                // CVA6 AXI master
+                .cva6_axi_awaddr   ( cv64a6_axi_awaddr             ), // output wire [31 : 0] m_axi_awaddr
+                .cva6_axi_awlen    ( cv64a6_axi_awlen              ), // output wire [7 : 0] m_axi_awlen
+                .cva6_axi_awsize   ( cv64a6_axi_awsize             ), // output wire [2 : 0] m_axi_awsize
+                .cva6_axi_awburst  ( cv64a6_axi_awburst            ), // output wire [1 : 0] m_axi_awburst
+                .cva6_axi_awlock   ( cv64a6_axi_awlock             ), // output wire [0 : 0] m_axi_awlock
+                .cva6_axi_awcache  ( cv64a6_axi_awcache            ), // output wire [3 : 0] m_axi_awcache
+                .cva6_axi_awprot   ( cv64a6_axi_awprot             ), // output wire [2 : 0] m_axi_awprot
+                .cva6_axi_awregion ( cv64a6_axi_awregion           ), // output wire [3 : 0] m_axi_awregion
+                .cva6_axi_awqos    ( cv64a6_axi_awqos              ), // output wire [3 : 0] m_axi_awqos
+                .cva6_axi_awvalid  ( cv64a6_axi_awvalid            ), // output wire m_axi_awvalid
+                .cva6_axi_awready  ( cv64a6_axi_awready            ), // input wire m_axi_awready
+                .cva6_axi_awid     ( cv64a6_axi_awid               ),
+                .cva6_axi_wdata    ( cv64a6_axi_wdata              ), // output wire [31 : 0] m_axi_wdata
+                .cva6_axi_wstrb    ( cv64a6_axi_wstrb              ), // output wire [3 : 0] m_axi_wstrb
+                .cva6_axi_wlast    ( cv64a6_axi_wlast              ), // output wire m_axi_wlast
+                .cva6_axi_wvalid   ( cv64a6_axi_wvalid             ), // output wire m_axi_wvalid
+                .cva6_axi_wready   ( cv64a6_axi_wready             ), // input wire m_axi_wready
+                .cva6_axi_bresp    ( cv64a6_axi_bresp              ), // input wire [1 : 0] m_axi_bresp
+                .cva6_axi_bvalid   ( cv64a6_axi_bvalid             ), // input wire m_axi_bvalid
+                .cva6_axi_bready   ( cv64a6_axi_bready             ), // output wire m_axi_bready
+                .cva6_axi_bid      ( cv64a6_axi_bid                ), // output wire m_axi_bready
+                .cva6_axi_araddr   ( cv64a6_axi_araddr             ), // output wire [31 : 0] m_axi_araddr
+                .cva6_axi_arlen    ( cv64a6_axi_arlen              ), // output wire [7 : 0] m_axi_arlen
+                .cva6_axi_arsize   ( cv64a6_axi_arsize             ), // output wire [2 : 0] m_axi_arsize
+                .cva6_axi_arburst  ( cv64a6_axi_arburst            ), // output wire [1 : 0] m_axi_arburst
+                .cva6_axi_arlock   ( cv64a6_axi_arlock             ), // output wire [0 : 0] m_axi_arlock
+                .cva6_axi_arcache  ( cv64a6_axi_arcache            ), // output wire [3 : 0] m_axi_arcache
+                .cva6_axi_arprot   ( cv64a6_axi_arprot             ), // output wire [2 : 0] m_axi_arprot
+                .cva6_axi_arregion ( cv64a6_axi_arregion           ), // output wire [3 : 0] m_axi_arregion
+                .cva6_axi_arqos    ( cv64a6_axi_arqos              ), // output wire [3 : 0] m_axi_arqos
+                .cva6_axi_arvalid  ( cv64a6_axi_arvalid            ), // output wire m_axi_arvalid
+                .cva6_axi_arready  ( cv64a6_axi_arready            ), // input wire m_axi_arready
+                .cva6_axi_arid     ( cv64a6_axi_arid               ),
+                .cva6_axi_rdata    ( cv64a6_axi_rdata              ), // input wire [31 : 0] m_axi_rdata
+                .cva6_axi_rresp    ( cv64a6_axi_rresp              ), // input wire [1 : 0] m_axi_rresp
+                .cva6_axi_rlast    ( cv64a6_axi_rlast              ), // input wire m_axi_rlast
+                .cva6_axi_rvalid   ( cv64a6_axi_rvalid             ), // input wire m_axi_rvalid
+                .cva6_axi_rready   ( cv64a6_axi_rready             ), // output wire m_axi_rready
+                .cva6_axi_rid      ( cv64a6_axi_rid                ), // output wire m_axi_rready
+
+                // Ara AXI master
+                .ara_narrow_axi_awaddr    ( ara_narrow_axi_awaddr                ), // output wire [31 : 0] m_axi_awaddr
+                .ara_narrow_axi_awlen     ( ara_narrow_axi_awlen                 ), // output wire [7 : 0] m_axi_awlen
+                .ara_narrow_axi_awsize    ( ara_narrow_axi_awsize                ), // output wire [2 : 0] m_axi_awsize
+                .ara_narrow_axi_awburst   ( ara_narrow_axi_awburst               ), // output wire [1 : 0] m_axi_awburst
+                .ara_narrow_axi_awlock    ( ara_narrow_axi_awlock                ), // output wire [0 : 0] m_axi_awlock
+                .ara_narrow_axi_awcache   ( ara_narrow_axi_awcache               ), // output wire [3 : 0] m_axi_awcache
+                .ara_narrow_axi_awprot    ( ara_narrow_axi_awprot                ), // output wire [2 : 0] m_axi_awprot
+                .ara_narrow_axi_awregion  ( ara_narrow_axi_awregion              ), // output wire [3 : 0] m_axi_awregion
+                .ara_narrow_axi_awqos     ( ara_narrow_axi_awqos                 ), // output wire [3 : 0] m_axi_awqos
+                .ara_narrow_axi_awvalid   ( ara_narrow_axi_awvalid               ), // output wire m_axi_awvalid
+                .ara_narrow_axi_awready   ( ara_narrow_axi_awready               ), // input wire m_axi_awready
+                .ara_narrow_axi_awid      ( ara_narrow_axi_awid                  ),
+                .ara_narrow_axi_wdata     ( ara_narrow_axi_wdata                 ), // output wire [31 : 0] m_axi_wdata
+                .ara_narrow_axi_wstrb     ( ara_narrow_axi_wstrb                 ), // output wire [3 : 0] m_axi_wstrb
+                .ara_narrow_axi_wlast     ( ara_narrow_axi_wlast                 ), // output wire m_axi_wlast
+                .ara_narrow_axi_wvalid    ( ara_narrow_axi_wvalid                ), // output wire m_axi_wvalid
+                .ara_narrow_axi_wready    ( ara_narrow_axi_wready                ), // input wire m_axi_wready
+                .ara_narrow_axi_bresp     ( ara_narrow_axi_bresp                 ), // input wire [1 : 0] m_axi_bresp
+                .ara_narrow_axi_bvalid    ( ara_narrow_axi_bvalid                ), // input wire m_axi_bvalid
+                .ara_narrow_axi_bready    ( ara_narrow_axi_bready                ), // output wire m_axi_bready
+                .ara_narrow_axi_bid       ( ara_narrow_axi_bid                   ), // output wire m_axi_bready
+                .ara_narrow_axi_araddr    ( ara_narrow_axi_araddr                ), // output wire [31 : 0] m_axi_araddr
+                .ara_narrow_axi_arlen     ( ara_narrow_axi_arlen                 ), // output wire [7 : 0] m_axi_arlen
+                .ara_narrow_axi_arsize    ( ara_narrow_axi_arsize                ), // output wire [2 : 0] m_axi_arsize
+                .ara_narrow_axi_arburst   ( ara_narrow_axi_arburst               ), // output wire [1 : 0] m_axi_arburst
+                .ara_narrow_axi_arlock    ( ara_narrow_axi_arlock                ), // output wire [0 : 0] m_axi_arlock
+                .ara_narrow_axi_arcache   ( ara_narrow_axi_arcache               ), // output wire [3 : 0] m_axi_arcache
+                .ara_narrow_axi_arprot    ( ara_narrow_axi_arprot                ), // output wire [2 : 0] m_axi_arprot
+                .ara_narrow_axi_arregion  ( ara_narrow_axi_arregion              ), // output wire [3 : 0] m_axi_arregion
+                .ara_narrow_axi_arqos     ( ara_narrow_axi_arqos                 ), // output wire [3 : 0] m_axi_arqos
+                .ara_narrow_axi_arvalid   ( ara_narrow_axi_arvalid               ), // output wire m_axi_arvalid
+                .ara_narrow_axi_arready   ( ara_narrow_axi_arready               ), // input wire m_axi_arready
+                .ara_narrow_axi_arid      ( ara_narrow_axi_arid                  ),
+                .ara_narrow_axi_rdata     ( ara_narrow_axi_rdata                 ), // input wire [31 : 0] m_axi_rdata
+                .ara_narrow_axi_rresp     ( ara_narrow_axi_rresp                 ), // input wire [1 : 0] m_axi_rresp
+                .ara_narrow_axi_rlast     ( ara_narrow_axi_rlast                 ), // input wire m_axi_rlast
+                .ara_narrow_axi_rvalid    ( ara_narrow_axi_rvalid                ), // input wire m_axi_rvalid
+                .ara_narrow_axi_rready    ( ara_narrow_axi_rready                ), // output wire m_axi_rready
+                .ara_narrow_axi_rid       ( ara_narrow_axi_rid                   )  // output wire m_axi_rready
+            );
+
+
+        end : core_cv64a6_ara
 
 
     endgenerate
@@ -940,9 +1055,10 @@ module rv_socket # (
 
     // Few exceptions:
     // - MICROBLAZE-V have their own interfaces and debug module
-    // - CVA6 Already has an AXI interface
+    // - CVA6 already has an AXI interface
+    // - CVA6+Ara already has two AXI interfaces
     // - TODO: Rocket
-    if ( !( CORE_SELECTOR inside {CORE_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6} ) ) begin : mem_convert
+    if ( !( CORE_SELECTOR inside {CORE_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA} ) ) begin : mem_convert
 
         // Connect memory interfaces to socket output memory ports
         `ASSIGN_AXI_BUS( rv_socket_instr, core_instr_to_socket_instr );
@@ -1170,11 +1286,11 @@ module rv_socket # (
         );
 
     end : dm_rv32_gen
-    else if ( CORE_SELECTOR inside {CORE_CV64A6} ) begin : dm_rv64_gen
+    else if ( CORE_SELECTOR inside {CORE_CV64A6, CORE_CV64A6_ARA} ) begin : dm_rv64_gen
 
-        // Debug Core built to use 64-bits interface.
-        // It is technically compatible with all execution-based debug-mode cores.
-        // In practice, it has only been used with CVA6
+        // Debug Core with 64-bits memory interface.
+        // It is technically compatible with all PULP cores.
+        // In practice, it has only been used with CVA6.
         //  BSCANE2 tap
         (* keep_hierarchy = "yes" *)  // DEBUG
         custom_rv64_dbg_bscane riscv_dbg_u (
