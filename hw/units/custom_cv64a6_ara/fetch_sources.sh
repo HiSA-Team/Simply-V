@@ -59,15 +59,17 @@ printf "${YELLOW}[FETCH_SOURCES] Patching Bender-generated file list${NC}\n"
 # Remove line containing "ara_system.sv" and "ara_soc.sv" in bender script
 # Remove include directives
 sed -i "/+incdir+/d" ${BENDER_RTL_LIST}
-# Remove lines
+# Remove unsupported AXI interface file
+# - Vivado does not support SystemVerilog interfaces during IP packaging
+sed -i -E '/.+axi_intf\.sv/d' ${BENDER_RTL_LIST}
+# Remove decoder stub
+# - Vivado picks this one instead of Ara's
+sed -i -E '/.+cva6_accel_first_pass_decoder_stub\.sv/d' ${BENDER_RTL_LIST}
+# Remove unused integration files
 sed -i '/ara_system\.sv/d' ${BENDER_RTL_LIST}
 sed -i '/ara_soc\.sv/d' ${BENDER_RTL_LIST}
 # Remove unused apb modules
 sed -i -E '/.+apb.*\.sv/d' ${BENDER_RTL_LIST}
-# Remove unsupported AXI interface file
-sed -i '/.+axi_intf\.sv/d' ${BENDER_RTL_LIST}
-# Remove stub
-sed -i '/.+cva6_accel_first_pass_decoder_stub\.sv/d' ${BENDER_RTL_LIST}
 
 # Remove silly constraint on FPGA support by PULP
 # Remove error-triggering file
