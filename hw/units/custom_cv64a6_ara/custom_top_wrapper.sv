@@ -73,9 +73,7 @@ module custom_top_wrapper # (
 
     // AXI Master Interface Array
     `DEFINE_AXI_MASTER_PORTS(cva6, LOCAL_AXI_DATA_WIDTH, LOCAL_AXI_ADDR_WIDTH, LOCAL_AXI_ID_WIDTH),
-
-    // AXI Master Interface Array
-    `DEFINE_AXI_MASTER_PORTS(ara_axi_narrow, LOCAL_AXI_DATA_WIDTH, LOCAL_AXI_ADDR_WIDTH, LOCAL_AXI_ID_WIDTH)
+    `DEFINE_AXI_MASTER_PORTS(ara_narrow, LOCAL_AXI_DATA_WIDTH, LOCAL_AXI_ADDR_WIDTH, LOCAL_AXI_ID_WIDTH)
 );
 
     // Architecture:
@@ -94,7 +92,7 @@ module custom_top_wrapper # (
     //      | CVXIF                            | inval_addr/valid/ready
     //      | (w/ MMU)                   ______v____________
     //   ___v_____                      |                   |                       _____________
-    //  |         |    ara_axi_wide     | L1D$ Invalidation |  ara_axi_wide_inval  |             | ara_axi_narrow
+    //  |         |    ara_axi_wide     | L1D$ Invalidation |  ara_axi_wide_inval  |             | ara_narrow
     //  |   Ara   |-------------------->|       Filter      |--------------------->| dwidth_conv | ----------->
     //  |_________|    d(32*NrLanes)    |___________________|     d(32*NrLanes)    |_____________|   d64
     //
@@ -159,8 +157,8 @@ module custom_top_wrapper # (
     /////////////////////////
 
     // Narrow 64-bits
-    axi_req_t  cva6_axi_req, ara_axi_narrow_req;
-    axi_resp_t cva6_axi_resp, ara_axi_narrow_resp;
+    axi_req_t  cva6_axi_req, ara_narrow_req;
+    axi_resp_t cva6_axi_resp, ara_narrow_resp;
     // Wide Ara ports
     ara_axi_wide_req_t  ara_axi_wide_inval_req, ara_axi_wide_req;
     ara_axi_wide_resp_t ara_axi_wide_inval_resp, ara_axi_wide_resp;
@@ -291,7 +289,7 @@ module custom_top_wrapper # (
         .inval_ready_i( inval_ready             )
     );
 
-    // Convert from AraWideDataWidth (ara_axi_wide_inval) to LOCAL_AXI_DATA_WIDTH (ara_axi_narrow)
+    // Convert from AraWideDataWidth (ara_axi_wide_inval) to LOCAL_AXI_DATA_WIDTH (ara_narrow)
     axi_dw_converter #(
         .AxiSlvPortDataWidth ( AraWideDataWidth       ),
         .AxiMstPortDataWidth ( LOCAL_AXI_DATA_WIDTH   ),
@@ -314,8 +312,8 @@ module custom_top_wrapper # (
         .rst_ni     ( rst_ni                  ),
         .slv_req_i  ( ara_axi_wide_inval_req  ),
         .slv_resp_o ( ara_axi_wide_inval_resp ),
-        .mst_req_o  ( ara_axi_narrow_req      ),
-        .mst_resp_i ( ara_axi_narrow_resp     )
+        .mst_req_o  ( ara_narrow_req          ),
+        .mst_resp_i ( ara_narrow_resp         )
     );
 
     /////////////////////////////
@@ -367,45 +365,45 @@ module custom_top_wrapper # (
 
     // AraNarrow
     // Outputs
-    assign ara_axi_narrow_axi_awid      = ara_axi_narrow_req.aw.id;
-    assign ara_axi_narrow_axi_awaddr    = ara_axi_narrow_req.aw.addr;
-    assign ara_axi_narrow_axi_awlen     = ara_axi_narrow_req.aw.len;
-    assign ara_axi_narrow_axi_awsize    = ara_axi_narrow_req.aw.size;
-    assign ara_axi_narrow_axi_awburst   = ara_axi_narrow_req.aw.burst;
-    assign ara_axi_narrow_axi_awlock    = ara_axi_narrow_req.aw.lock;
-    assign ara_axi_narrow_axi_awcache   = ara_axi_narrow_req.aw.cache;
-    assign ara_axi_narrow_axi_awprot    = ara_axi_narrow_req.aw.prot;
-    assign ara_axi_narrow_axi_awqos     = ara_axi_narrow_req.aw.qos;
-    assign ara_axi_narrow_axi_awregion  = ara_axi_narrow_req.aw.region;
-    assign ara_axi_narrow_axi_awvalid   = ara_axi_narrow_req.aw_valid;
-    assign ara_axi_narrow_axi_wdata     = ara_axi_narrow_req.w.data;
-    assign ara_axi_narrow_axi_wstrb     = ara_axi_narrow_req.w.strb;
-    assign ara_axi_narrow_axi_wlast     = ara_axi_narrow_req.w.last;
-    assign ara_axi_narrow_axi_wvalid    = ara_axi_narrow_req.w_valid;
-    assign ara_axi_narrow_axi_bready    = ara_axi_narrow_req.b_ready;
-    assign ara_axi_narrow_ara_axiddr    = ara_axi_narrow_req.ar.addr;
-    assign ara_axi_narrow_axi_arlen     = ara_axi_narrow_req.ar.len;
-    assign ara_axi_narrow_axi_arsize    = ara_axi_narrow_req.ar.size;
-    assign ara_axi_narrow_axi_arburst   = ara_axi_narrow_req.ar.burst;
-    assign ara_axi_narrow_axi_arlock    = ara_axi_narrow_req.ar.lock;
-    assign ara_axi_narrow_axi_arcache   = ara_axi_narrow_req.ar.cache;
-    assign ara_axi_narrow_axi_arprot    = ara_axi_narrow_req.ar.prot;
-    assign ara_axi_narrow_axi_arqos     = ara_axi_narrow_req.ar.qos;
-    assign ara_axi_narrow_axi_arregion  = ara_axi_narrow_req.ar.region;
-    assign ara_axi_narrow_axi_arvalid   = ara_axi_narrow_req.ar_valid;
-    assign ara_axi_narrow_axi_rready    = ara_axi_narrow_req.r_ready;
-    assign ara_axi_narrow_axi_arid      = ara_axi_narrow_req.ar.id;
+    assign ara_narrow_axi_awid      = ara_narrow_req.aw.id;
+    assign ara_narrow_axi_awaddr    = ara_narrow_req.aw.addr;
+    assign ara_narrow_axi_awlen     = ara_narrow_req.aw.len;
+    assign ara_narrow_axi_awsize    = ara_narrow_req.aw.size;
+    assign ara_narrow_axi_awburst   = ara_narrow_req.aw.burst;
+    assign ara_narrow_axi_awlock    = ara_narrow_req.aw.lock;
+    assign ara_narrow_axi_awcache   = ara_narrow_req.aw.cache;
+    assign ara_narrow_axi_awprot    = ara_narrow_req.aw.prot;
+    assign ara_narrow_axi_awqos     = ara_narrow_req.aw.qos;
+    assign ara_narrow_axi_awregion  = ara_narrow_req.aw.region;
+    assign ara_narrow_axi_awvalid   = ara_narrow_req.aw_valid;
+    assign ara_narrow_axi_wdata     = ara_narrow_req.w.data;
+    assign ara_narrow_axi_wstrb     = ara_narrow_req.w.strb;
+    assign ara_narrow_axi_wlast     = ara_narrow_req.w.last;
+    assign ara_narrow_axi_wvalid    = ara_narrow_req.w_valid;
+    assign ara_narrow_axi_bready    = ara_narrow_req.b_ready;
+    assign ara_narrow_ara_axiddr    = ara_narrow_req.ar.addr;
+    assign ara_narrow_axi_arlen     = ara_narrow_req.ar.len;
+    assign ara_narrow_axi_arsize    = ara_narrow_req.ar.size;
+    assign ara_narrow_axi_arburst   = ara_narrow_req.ar.burst;
+    assign ara_narrow_axi_arlock    = ara_narrow_req.ar.lock;
+    assign ara_narrow_axi_arcache   = ara_narrow_req.ar.cache;
+    assign ara_narrow_axi_arprot    = ara_narrow_req.ar.prot;
+    assign ara_narrow_axi_arqos     = ara_narrow_req.ar.qos;
+    assign ara_narrow_axi_arregion  = ara_narrow_req.ar.region;
+    assign ara_narrow_axi_arvalid   = ara_narrow_req.ar_valid;
+    assign ara_narrow_axi_rready    = ara_narrow_req.r_ready;
+    assign ara_narrow_axi_arid      = ara_narrow_req.ar.id;
     // Inputs
-    assign ara_axi_narrow_resp.aw_ready = ara_axi_narrow_axi_awready;
-    assign ara_axi_narrow_resp.w_ready  = ara_axi_narrow_axi_wready;
-    assign ara_axi_narrow_resp.b.id     = ara_axi_narrow_axi_bid;
-    assign ara_axi_narrow_resp.b.resp   = ara_axi_narrow_axi_bresp;
-    assign ara_axi_narrow_resp.b_valid  = ara_axi_narrow_axi_bvalid;
-    assign ara_axi_narrow_resp.ar_ready = ara_axi_narrow_axi_arready;
-    assign ara_axi_narrow_resp.r.id     = ara_axi_narrow_axi_rid;
-    assign ara_axi_narrow_resp.r.data   = ara_axi_narrow_axi_rdata;
-    assign ara_axi_narrow_resp.r.resp   = ara_axi_narrow_axi_rresp;
-    assign ara_axi_narrow_resp.r.last   = ara_axi_narrow_axi_rlast;
-    assign ara_axi_narrow_resp.r_valid  = ara_axi_narrow_axi_rvalid;
+    assign ara_narrow_resp.aw_ready = ara_narrow_axi_awready;
+    assign ara_narrow_resp.w_ready  = ara_narrow_axi_wready;
+    assign ara_narrow_resp.b.id     = ara_narrow_axi_bid;
+    assign ara_narrow_resp.b.resp   = ara_narrow_axi_bresp;
+    assign ara_narrow_resp.b_valid  = ara_narrow_axi_bvalid;
+    assign ara_narrow_resp.ar_ready = ara_narrow_axi_arready;
+    assign ara_narrow_resp.r.id     = ara_narrow_axi_rid;
+    assign ara_narrow_resp.r.data   = ara_narrow_axi_rdata;
+    assign ara_narrow_resp.r.resp   = ara_narrow_axi_rresp;
+    assign ara_narrow_resp.r.last   = ara_narrow_axi_rlast;
+    assign ara_narrow_resp.r_valid  = ara_narrow_axi_rvalid;
 
 endmodule : custom_top_wrapper
