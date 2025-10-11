@@ -39,5 +39,5 @@ riscv$XLEN-unknown-elf-gdb $ELF_NAME \
     -ex "file $ELF_NAME" \
     -ex 'load ' \
     -ex "b _exit_wfi" \
-    -ex "run" \
+    -ex "c" \
     -ex "quit"
