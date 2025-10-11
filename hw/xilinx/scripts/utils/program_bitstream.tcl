@@ -4,7 +4,7 @@
 # Set programming files
 set_property PROGRAM.FILE $::env(XILINX_BITSTREAM) $hw_device
 program_hw_devices $hw_device
-refresh_hw_device [lindex $hw_device 0]
+refresh_hw_device  $hw_device
 
 puts "Query the design"
 # Debug
