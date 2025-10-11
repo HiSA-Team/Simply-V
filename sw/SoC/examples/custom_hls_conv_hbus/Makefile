@@ -39,7 +39,7 @@ LIB_OBJ_UNINASOC  = $(LIB_DIR)/uninasoc/lib/libuninasoc.a
 LIB_INC_UNINASOC  = -I$(LIB_DIR)/uninasoc/inc
 
 LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO) $(LIB_OBJ_UNINASOC)
-LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_UNINASOC)
+LIB_INC_LIST     = -I$(INC_DIR)/xlnx $(LIB_INC_TINYIO) $(LIB_INC_UNINASOC)
 
 
 #############

@@ -7,20 +7,37 @@
 #include "utils.h"
 
 void dump_conv_hbus_csrs () {
-    // Init
-    uint32_t csr = -1;
-    // Read & print
+    // Read in order
+    uint32_t AP_CTRL     = Xil_In32(Xkrnl_Control   );
+    uint32_t GIE         = Xil_In32(Xkrnl_GIE       );
+    uint32_t IER         = Xil_In32(Xkrnl_IER       );
+    uint32_t ISR         = Xil_In32(Xkrnl_ISR       );
+    uint32_t AXI_I_ADDR  = Xil_In32(Xkrnl_AXI_ADDR_I);
+    uint32_t AXI_W_ADDR  = Xil_In32(Xkrnl_AXI_ADDR_W);
+    uint32_t AXI_O_ADDR  = Xil_In32(Xkrnl_AXI_ADDR_O);
+    uint32_t AXI_N       = Xil_In32(Xkrnl_N         );
+    uint32_t AXI_C       = Xil_In32(Xkrnl_C         );
+    uint32_t AXI_K       = Xil_In32(Xkrnl_K         );
+
+    // Print
     printf( "CSR DUMP:\n\r");
-    printf( "   AP_CTRL     = 0x%04x    ", Xil_In32(Xkrnl_Control   ) );
-    printf( "   AXI_I_ADDR  = 0x%04x\n\r", Xil_In32(Xkrnl_AXI_ADDR_I) );
-    printf( "   GIE         = 0x%04x    ", Xil_In32(Xkrnl_GIE       ) );
-    printf( "   AXI_W_ADDR  = 0x%04x\n\r", Xil_In32(Xkrnl_AXI_ADDR_W) );
-    printf( "   IER         = 0x%04x    ", Xil_In32(Xkrnl_IER       ) );
-    printf( "   AXI_O_ADDR  = 0x%04x\n\r", Xil_In32(Xkrnl_AXI_ADDR_O) );
-    printf( "   ISR         = 0x%04x    ", Xil_In32(Xkrnl_ISR       ) );
-    printf( "   AXI_N       = 0x%04x\n\r", Xil_In32(Xkrnl_ISR       ) );
-    printf( "                            AXI_C       = 0x%04x\n\r", Xil_In32(Xkrnl_C       ) );
-    printf( "                            AXI_K       = 0x%04x\n\r", Xil_In32(Xkrnl_K       ) );
+    // Use formatting, e.g.
+    //    AP_CTRL     = 0x0000       AXI_I_ADDR  = 0x0000
+    //    GIE         = 0x0000       AXI_W_ADDR  = 0x0000
+    //    IER         = 0x0000       AXI_O_ADDR  = 0x0000
+    //    ISR         = 0x0000       AXI_N       = 0x0000
+    //                               AXI_C       = 0x0000
+    //                               AXI_K       = 0x0000
+    printf( "   AP_CTRL     = 0x%04x    ", AP_CTRL    );
+    printf( "   AXI_I_ADDR  = 0x%04x\n\r", AXI_I_ADDR );
+    printf( "   GIE         = 0x%04x    ", GIE        );
+    printf( "   AXI_W_ADDR  = 0x%04x\n\r", AXI_W_ADDR );
+    printf( "   IER         = 0x%04x    ", IER        );
+    printf( "   AXI_O_ADDR  = 0x%04x\n\r", AXI_O_ADDR );
+    printf( "   ISR         = 0x%04x    ", ISR        );
+    printf( "   AXI_N       = 0x%04x\n\r", AXI_N      );
+    printf( "                              AXI_C       = 0x%04x\n\r", AXI_C );
+    printf( "                              AXI_K       = 0x%04x\n\r", AXI_K );
 }
 
 // Print each field of a control CSR word
@@ -36,7 +53,7 @@ void print_control_csr ( uint32_t csr_read_in ) {
     printf("    INTERRUPT   =  0x%x\n\r", ( csr_read_in & AP_INTERRUPT) >> (AP_INTERRUPT_BIT));
 }
 
-#define PRINT_LEAP 10000
+#define PRINT_LEAP 10
 
 int main() {
 
@@ -61,6 +78,21 @@ int main() {
     printf("- HLS CONV HBUS  -\n\r");
     printf("------------------\n\r");
     printf("\n\r");
+
+    // Debug
+    printf("Convolution parameters:\n\r");
+    printf("    I = 0x%p\n\r", (uintptr_t)I);
+    printf("    W = 0x%p\n\r", (uintptr_t)W);
+    printf("    O = 0x%p\n\r", (uintptr_t)O);
+    printf("    N = %hhu\n\r", (uint8_t)N);
+    printf("    C = %hhu\n\r", (uint8_t)C);
+    printf("    K = %hhu\n\r", (uint8_t)K);
+    printf("    Y = %hhu\n\r", (uint8_t)  Y);
+    printf("    X = %hhu\n\r", (uint8_t)  X);
+    printf("    R = %hhu\n\r", (uint8_t)  R);
+    printf("    S = %hhu\n\r", (uint8_t)  S);
+    printf("   Y1 = %hhu\n\r", (uint8_t) Y1);
+    printf("   X1 = %hhu\n\r", (uint8_t) X1);
 
     // Initializing input/output data
     init_data(I, W, O);
@@ -130,13 +162,13 @@ int main() {
         }
     } while ( XKrnl_IsDone() );
 
-    // // Read pending interrupts
-    // printf( "   ISR     = 0x%04x\n\r", XKrnl_InterruptGetStatus() );
-    // // Clear interrupts
+    // Read pending interrupts
+    printf( "   ISR     = 0x%04x\n\r", XKrnl_InterruptGetStatus() );
+    // Clear interrupts
     XKrnl_InterruptClear_ap_done();
     // XKrnl_InterruptClear_ap_ready();
     // Read pending interrupts
-    // printf( "   ISR     = 0x%04x\n\r", XKrnl_InterruptGetStatus() );
+    printf( "   ISR     = 0x%04x\n\r", XKrnl_InterruptGetStatus() );
 
     // // Write continue
     // XKrnl_Continue();

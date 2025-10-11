@@ -1,8 +1,8 @@
-#ifndef __CONV_OPT1_H__
-#define __CONV_OPT1_H__
+#ifndef __CONV2D_HBUS_H
+#define __CONV2D_HBUS_H
 
 #include <stdint.h> // uint32_t
-#include "xlnx/ap_int.h"
+#include "ap_int.h"
 
 ///////////////////////////
 // Notation from MAESTRO //

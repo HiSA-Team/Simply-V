@@ -61,7 +61,7 @@ void print_tensor (
     }
 }
 
-// Compute expected result
+// Compute expected result with software
 void compute_expected (
                     target_type_t        I[N][C][ Y][ X],
                     target_type_t        W[K][C][ R][ S],
