@@ -554,6 +554,7 @@ module uninasoc (
     // Platform-Level Interrupt Controller (PLIC)
     logic [31:0] plic_int_line;
     logic plic_int_irq_o;
+    logic hls_interrupt_to_plic;
 
     always_comb begin : system_interrupts
 
@@ -563,11 +564,13 @@ module uninasoc (
 
         // Mapping PLIC input interrupts (only from pbus at the moment)
         // Mapping is static (refer to uninasoc_pkg.sv)
+        // TODO154: generate by config
         plic_int_line[PLIC_RESERVED_INTERRUPT]  = 1'b0;
         plic_int_line[PLIC_GPIOIN_INTERRUPT]    = pbus_int_line[PBUS_GPIOIN_INTERRUPT];
         plic_int_line[PLIC_TIM0_INTERRUPT]      = pbus_int_line[PBUS_TIM0_INTERRUPT];
         plic_int_line[PLIC_TIM1_INTERRUPT]      = pbus_int_line[PBUS_TIM1_INTERRUPT];
         plic_int_line[PLIC_UART_INTERRUPT]      = pbus_int_line[PBUS_UART_INTERRUPT];
+        plic_int_line[PLIC_HLS_INTERRUPT]       = hls_interrupt_to_plic;
 
         // Map system-interrupts pins to socket interrupts
         rv_socket_interrupt_line[CORE_EXT_INTERRUPT] = plic_int_irq_o;
@@ -892,7 +895,9 @@ module uninasoc (
         .m_HLS_gmem0_d512_axi_rresp     ( HLS_gmem0_d512_axi_rresp    ),
         .m_HLS_gmem0_d512_axi_rlast     ( HLS_gmem0_d512_axi_rlast    ),
         .m_HLS_gmem0_d512_axi_rvalid    ( HLS_gmem0_d512_axi_rvalid   ),
-        .m_HLS_gmem0_d512_axi_rready    ( HLS_gmem0_d512_axi_rready   )
+        .m_HLS_gmem0_d512_axi_rready    ( HLS_gmem0_d512_axi_rready   ),
+        // Interrupt
+        .hls_interrupt_o                ( hls_interrupt_to_plic       )
     );
 
     //////////

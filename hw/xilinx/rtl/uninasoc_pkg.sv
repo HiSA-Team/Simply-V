@@ -90,11 +90,13 @@ package uninasoc_pkg;
     // PLIC Interrupts mapping
     // We support 32 possible sources of platform interrupts, which are statically mapped
     // regardless of the configuration.
+    // TODO154: this is static for now, must generate by config
     localparam int unsigned PLIC_RESERVED_INTERRUPT = 0;    // PLIC line 0 is reserved
     localparam int unsigned PLIC_GPIOIN_INTERRUPT = 1;      // GPIO In (From PBUS)[embedded only]
     localparam int unsigned PLIC_TIM0_INTERRUPT = 2;        // Timer 0 (From PBUS)
     localparam int unsigned PLIC_TIM1_INTERRUPT = 3;        // Timer 1 (From PBUS)
     localparam int unsigned PLIC_UART_INTERRUPT = 4;        // UART    (From PBUS)
+    localparam int unsigned PLIC_HLS_INTERRUPT = 5;         // HLS     (From HLS core) [HPC only]
 
     ///////////////
     // Functions //
