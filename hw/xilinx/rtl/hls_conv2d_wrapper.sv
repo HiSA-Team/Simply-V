@@ -283,7 +283,6 @@ module hls_conv2d_wrapper # (
     end : no_dwidth_conv
 
     // AXI converter for HLS_DOTPROD_CONTROL
-    // NOTE: for MBUS_DATA_WIDTH=64, this is going to clip incoming r/wdata ports to 32
     xlnx_axi4_to_axilite_d32_converter xlnx_axi4_to_axilite_u (
         // Clock and reset
         .aclk               ( HLS_CONTROL_clk_i         ), // input wire s_aclk

@@ -11,7 +11,7 @@ help (){
     echo  "Usage: source ${BASH_SOURCE[0]} <PCIe BAR> <file_name> <base_address> <read_back>";
     echo  "    PCIe BAR      :  target BAR of PCIe device";
     echo  "    binary_file   :  path to bin file to transfer";
-    echo  "    base_address  :  offset from PCIe BAR";
+    echo  "    offset        :  offset in SoC";
     echo  "    read_back     :  whether to read-back data after writing";
     return;
 }
@@ -27,7 +27,7 @@ fi
 # Get the args
 PCIE_BAR=$1
 FILE_NAME=$2;
-BASE_ADDRESS=$3;
+OFFSET=$3;
 READBACK=$4;
 
 # Get the file size in bytes
@@ -63,7 +63,7 @@ fi
 golden_hex=""
 
 # Write the binary
-addr=$(($PCIE_BAR + $BASE_ADDRESS))
+addr=$(($PCIE_BAR + $OFFSET))
 echo "Start writing...";
 # For each transaction
 for i in $(seq 1 $num_trans);
@@ -100,7 +100,7 @@ echo "Write complete!";
 if [[ ${READBACK} == "true" ]];
 then
     echo "Start readback...";
-    addr=$(($PCIE_BAR + $BASE_ADDRESS))
+    addr=$(($PCIE_BAR + $OFFSET))
     readback_data="";
     for i in $(seq 0 $(($num_trans-1)));
     do
