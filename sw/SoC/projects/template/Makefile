@@ -45,4 +45,3 @@ CFLAGS         = -march=rv32imad_zicsr_zifencei -O0 -c
 LDFLAGS     = $(LIB_OBJ_LIST) -nostdlib -T$(LD_SCRIPT)
 
 include $(SW_ROOT)/SoC/common/Makefile
-
