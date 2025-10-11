@@ -76,7 +76,7 @@ program_bitstream_hpc:
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/program_bitstream.tcl
 #	Rescan PCIe device
-	sudo ${XILINX_SCRIPTS_UTILS_ROOT}/pcie_hot_reset.sh ${PCIE_DEV}
+	sudo ${XILINX_SCRIPTS_UTILS_ROOT}/pcie_hot_reset.sh ${PCIE_BDF}
 
 # PHONIES
 .PHONY: open_prj open_gui start_hw_server open_hw_manager open_ila program_bitstream program_bitstream_embedded program_bitstream_hpc

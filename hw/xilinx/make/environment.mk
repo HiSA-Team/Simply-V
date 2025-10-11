@@ -81,7 +81,6 @@ XILINX_PROBE_LTX ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl
 # Whether to use ILA probes (0|1)
 XILINX_ILA ?= 0
 # Clock net for ILA probes, use main clock by default
-# NOTE: of course, probing in faster-clock domains requires a faster clock
 XILINX_ILA_CLOCK ?= main_clk
 
 # Full environment variables list for Vivado
@@ -101,6 +100,7 @@ XILINX_VIVADO_ENV ?=                                \
     HBUS_NUM_SI=${HBUS_NUM_SI}                      \
     HBUS_ID_WIDTH=${HBUS_ID_WIDTH}                  \
     XILINX_ILA=${XILINX_ILA}                        \
+    XILINX_ILA_CLOCK=${XILINX_ILA_CLOCK}            \
     SYNTH_STRATEGY=${SYNTH_STRATEGY}                \
     IMPL_STRATEGY=${IMPL_STRATEGY}                  \
     XILINX_PART_NUMBER=${XILINX_PART_NUMBER}        \
@@ -123,5 +123,5 @@ XILINX_VIVADO := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode ${XILINX_VIVADO
 XILINX_VIVADO_BATCH := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode batch
 
 # PCIe device and address
-PCIE_DEV ?= 01:00.0 # TODO: remove this and find the PCIE_DEV automatically
-PCIE_BAR ?= 0x$(shell lspci -vv -s ${PCIE_DEV} | grep Region | awk '{print $$5}')
+PCIE_BDF ?= 01:00.0 # TODO: remove this and find the PCIE_BDF automatically
+PCIE_BAR ?= 0x$(shell lspci -vv -s ${PCIE_BDF} | grep Region | awk '{print $$5}')
