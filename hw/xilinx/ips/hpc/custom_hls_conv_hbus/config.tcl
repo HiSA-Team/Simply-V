@@ -1,1 +1,1 @@
-../tcl/custom_config.tcl
+../../common/tcl/custom_config.tcl
