@@ -57,7 +57,15 @@ ifeq (${SOC_CONFIG}, hpc)
         TMP_XILINX_IP_LIST_XCI    := ${XILINX_IP_LIST_XCI}
         XILINX_IP_LIST            := $(filter-out $(FILTER_IP),$(TMP_XILINX_IP_LIST))
         XILINX_IP_LIST_XCI        := $(filter-out $(FILTER_IP_XCI),$(TMP_XILINX_IP_LIST_XCI))
+    else # Remove HBM ip if not au280; TODO55: quick workaround for PR 146, extend this for all selectable IPs
+        FILTER_IP                 := xlnx_hbm
+        FILTER_IP_XCI             := $(foreach ip,${FILTER_IP},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+        TMP_XILINX_IP_LIST        := ${XILINX_IP_LIST}
+        TMP_XILINX_IP_LIST_XCI    := ${XILINX_IP_LIST_XCI}
+        XILINX_IP_LIST            := $(filter-out $(FILTER_IP),$(TMP_XILINX_IP_LIST))
+        XILINX_IP_LIST_XCI        := $(filter-out $(FILTER_IP_XCI),$(TMP_XILINX_IP_LIST_XCI))
     endif
+
 else ifeq (${SOC_CONFIG}, embedded)
     XILINX_IP_LIST         += ${XILINX_EMBEDDED_IP_LIST}
     XILINX_IP_LIST_XCI     += ${XILINX_EMBEDDED_IP_LIST_XCI}
