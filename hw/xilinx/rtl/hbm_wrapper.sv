@@ -139,13 +139,14 @@ module hbm_wrapper #(
 
      // Map HBM address signals
     // Zero extend them if the address width is 32, otherwise clip them down.
-    assign hbm_axi_awaddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_awaddr } : dwidth_conv_to_hbm_axi_awaddr[HBM_CHANNEL_ADDRESS_WIDTH-1:0];
-    assign hbm_axi_araddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_araddr } : dwidth_conv_to_hbm_axi_araddr[HBM_CHANNEL_ADDRESS_WIDTH-1:0];
+    assign hbm_axi_awaddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_awaddr } : dwidth_conv_to_hbm_axi_awaddr[HBM_ADDRESS_WIDTH-1:0];
+    assign hbm_axi_araddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_araddr } : dwidth_conv_to_hbm_axi_araddr[HBM_ADDRESS_WIDTH-1:0];
 
 
     xlnx_hbm hbm_u (
         // Clocks and resets
-        .HBM_REF_CLK_0   ( hbm_ref_clk_i ),    // PLL reference clock (100 MHz)
+        .HBM_REF_CLK_0   ( hbm_ref_clk_i ),    // PLL reference clock stack 0 (100 MHz)
+        .HBM_REF_CLK_1   ( hbm_ref_clk_i ),    // PLL reference clock stack 1 (100 MHz)
         .AXI_00_ACLK     ( clock_i       ),    // AXI slave 00 aclock // TODO: check this
         .AXI_00_ARESET_N ( reset_ni      ),    // AXI slave 00 resetn
 
@@ -194,7 +195,7 @@ module hbm_wrapper #(
         .apb_complete_0      ( /* empty */   ), // output
 
         .DRAM_0_STAT_CATTRIP ( /* empty */   ), // output
-        .DRAM_0_STAT_TEMP    ( /* empty */   )  // output [6:0]
+        .DRAM_0_STAT_TEMP    ( /* empty */   ),  // output [6:0]
 
         // Stack 1
         .APB_1_PCLK          ( hbm_ref_clk_i ), // input
