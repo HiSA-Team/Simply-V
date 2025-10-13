@@ -103,6 +103,7 @@ XILINX_ILA_CLOCK ?= main_clk
 
 # Full environment variables list for Vivado
 XILINX_VIVADO_ENV ?=                                \
+    BOARD=${BOARD}                                  \
     MBUS_DATA_WIDTH=${MBUS_DATA_WIDTH}              \
     MBUS_ADDR_WIDTH=${MBUS_ADDR_WIDTH}              \
     CORE_SELECTOR=${CORE_SELECTOR}                  \

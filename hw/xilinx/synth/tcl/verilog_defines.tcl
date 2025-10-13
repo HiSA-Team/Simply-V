@@ -9,6 +9,9 @@ set verilog_defines ""
 # HPC/EMBEDDED
 if { "$::env(SOC_CONFIG)" == "hpc" } {
     lappend verilog_defines HPC=1
+    if {"$::env(BOARD)" == "au280"} {
+        lappend verilog_defines AU280=1
+    }
 } elseif { "$::env(SOC_CONFIG)" == "embedded" } {
     lappend verilog_defines EMBEDDED=1
 } else {

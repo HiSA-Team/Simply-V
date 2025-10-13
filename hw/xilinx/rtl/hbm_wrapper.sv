@@ -137,20 +137,21 @@ module hbm_wrapper #(
     assign dwidth_conv_to_hbm_axi_arid = '0;
     assign dwidth_conv_to_hbm_axi_rid  = '0;
 
-     // Map HBM address signals
+    // Map HBM address signals
     // Zero extend them if the address width is 32, otherwise clip them down.
     assign hbm_axi_awaddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_awaddr } : dwidth_conv_to_hbm_axi_awaddr[HBM_ADDRESS_WIDTH-1:0];
     assign hbm_axi_araddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_araddr } : dwidth_conv_to_hbm_axi_araddr[HBM_ADDRESS_WIDTH-1:0];
 
-
+    // HBM IP
     xlnx_hbm hbm_u (
         // Clocks and resets
         .HBM_REF_CLK_0   ( hbm_ref_clk_i ),    // PLL reference clock stack 0 (100 MHz)
         .HBM_REF_CLK_1   ( hbm_ref_clk_i ),    // PLL reference clock stack 1 (100 MHz)
-        .AXI_00_ACLK     ( clock_i       ),    // AXI slave 00 aclock // TODO: check this
+        .AXI_00_ACLK     ( clock_i       ),    // AXI slave 00 aclock
         .AXI_00_ARESET_N ( reset_ni      ),    // AXI slave 00 resetn
 
         // AXI4 slave 00
+        // NOTE: The documentation (PG276) states that must be fixed: AxSIZE = 0x5 and AxLEN = 0x1 (minimum). This should be done by the dwidth conv
         .AXI_00_ARADDR  ( hbm_axi_araddr                 ),    // input [32:0]
         .AXI_00_ARBURST ( dwidth_conv_to_hbm_axi_arburst ),    // input [1:0]
         .AXI_00_ARID    ( dwidth_conv_to_hbm_axi_arid    ),    // input [5:0]
@@ -186,24 +187,41 @@ module hbm_wrapper #(
         .AXI_00_BVALID  ( dwidth_conv_to_hbm_axi_bvalid  ),    // output
 
 
-        .AXI_00_WDATA_PARITY ( '0            ), // input  [31:0]
-        .AXI_00_RDATA_PARITY ( /* empty */   ), // output [31:0]
+        .AXI_00_WDATA_PARITY ( '0             ), // input  [31:0]
+        .AXI_00_RDATA_PARITY ( /* empty */    ), // output [31:0]
 
+        // APB interface to access Memory Controller (MC) CSR (unused)
         // Stack 0
-        .APB_0_PCLK          ( hbm_ref_clk_i ), // input
-        .APB_0_PRESET_N      ( 1'b1          ), // input
-        .apb_complete_0      ( /* empty */   ), // output
+        .APB_0_PCLK          ( hbm_ref_clk_i  ), // input
+        .APB_0_PRESET_N      ( 1'b1           ), // input
+        .APB_0_PWDATA        ( '0             ), // input [31:0]
+        .APB_0_PADDR         ( '0             ), // input [21:0]
+        .APB_0_PENABLE       ( 1'b0           ), // input
+        .APB_0_PSEL          ( 1'b0           ), // input
+        .APB_0_PWRITE        ( 1'b0           ), // input
+        .APB_0_PRDATA        ( /* empty */    ), // output [31:0]
+        .APB_0_PREADY        ( /* empty */    ), // output
+        .APB_0_PSLVERR       ( /* empty */    ), // output
+        .apb_complete_0      ( /* empty */    ), // output
 
-        .DRAM_0_STAT_CATTRIP ( /* empty */   ), // output
-        .DRAM_0_STAT_TEMP    ( /* empty */   ),  // output [6:0]
+        .DRAM_0_STAT_CATTRIP ( /* empty */    ), // output
+        .DRAM_0_STAT_TEMP    ( /* empty */    ),  // output [6:0]
 
         // Stack 1
-        .APB_1_PCLK          ( hbm_ref_clk_i ), // input
-        .APB_1_PRESET_N      ( 1'b1          ), // input
-        .apb_complete_1      ( /* empty */   ), // output
+        .APB_1_PCLK          ( hbm_ref_clk_i  ), // input
+        .APB_1_PRESET_N      ( 1'b1           ), // input
+        .APB_1_PWDATA        ( '0             ), // input [31:0]
+        .APB_1_PADDR         ( '0             ), // input [21:0]
+        .APB_1_PENABLE       ( 1'b0           ), // input
+        .APB_1_PSEL          ( 1'b0           ), // input
+        .APB_1_PWRITE        ( 1'b0           ), // input
+        .APB_1_PRDATA        ( /* empty */    ), // output [31:0]
+        .APB_1_PREADY        ( /* empty */    ), // output
+        .APB_1_PSLVERR       ( /* empty */    ), // output
+        .apb_complete_1      ( /* empty */    ), // output
 
-        .DRAM_1_STAT_CATTRIP ( /* empty */   ), // output
-        .DRAM_1_STAT_TEMP    ( /* empty */   )  // output [6:0]
+        .DRAM_1_STAT_CATTRIP ( /* empty */    ), // output
+        .DRAM_1_STAT_TEMP    ( /* empty */    )  // output [6:0]
     );
 
 endmodule

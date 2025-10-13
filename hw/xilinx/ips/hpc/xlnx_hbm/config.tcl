@@ -4,7 +4,7 @@
 create_ip -name hbm -vendor xilinx.com -library ip -version 1.0 -module_name $::env(IP_NAME)
 
 set_property -dict [list \
-  CONFIG.USER_APB_EN {false} \
+  CONFIG.USER_APB_EN {true} \
   CONFIG.USER_HBM_DENSITY {8GB} \
   CONFIG.USER_SAXI_00 {true} \
   CONFIG.USER_SAXI_01 {false} \
@@ -38,4 +38,5 @@ set_property -dict [list \
   CONFIG.USER_SAXI_29 {false} \
   CONFIG.USER_SAXI_30 {false} \
   CONFIG.USER_SAXI_31 {false} \
+  CONFIG.USER_XSDB_INTF_EN {true} \
 ] [get_ips $::env(IP_NAME)]

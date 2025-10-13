@@ -169,6 +169,10 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
                 if config.RANGE_CLOCK_DOMAINS[i] != DDR_FREQUENCY:
                     print_error(f"The DDR and HBUS frequency {config.RANGE_CLOCK_DOMAINS[i]} must be the same of DDR board clock {DDR_FREQUENCY}")
                     return False
+            # Check if the HBM is used only when using au280
+            if config.RANGE_NAMES[i] == "HBM" and os.getenv("BOARD")!="au280":
+                print_error(f"{os.getenv('BOARD')} does not support the HBM")
+                return False
 
     # Check the presence of multiple BRAMs, for now a single occurrence of BRAM is supported
     # Assume BRAM as prefix for any BRAM declaration

@@ -2022,3 +2022,6 @@ set_property PACKAGE_PIN AL11             [get_ports pci_exp_txp_o[0]      ]    
 #set_property PACKAGE_PIN E7               [get_ports "Not Connected"]                      ;# Bank 235 - MGTYTXP1_235
 #set_property PACKAGE_PIN C7               [get_ports "Not Connected"]                      ;# Bank 235 - MGTYTXP2_235
 #set_property PACKAGE_PIN A6               [get_ports "Not Connected"]                      ;# Bank 235 - MGTYTXP3_235
+
+# force debug hub to use HBM APB clock to prevent timing closure issues
+connect_debug_port dbg_hub/clk [get_nets */*/APB_0_PCLK]
