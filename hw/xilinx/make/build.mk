@@ -18,7 +18,7 @@ define build_ip
 	cd	   ${IP_DIR}/build;                                  \
 	export IP_DIR=${IP_DIR};                                 \
 	export IP_NAME=$(patsubst ips/%.xci,%,$@);               \
-	export IP_PRJ_NAME=${IP_NAME}_prj;                       \
+	export IP_PRJ_NAME=$${IP_NAME}_prj;                      \
 	${XILINX_VIVADO}                                         \
 		-source ${XILINX_IPS_ROOT}/common/tcl/pre_config.tcl \
 		-source ${IP_DIR}/config.tcl                         \
