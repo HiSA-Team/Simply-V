@@ -55,7 +55,7 @@ void krnl_conv_hbus (
         I_fetch_line [ fetch_index ] = I [ fetch_index ];
     }
     // Fetch byte-wise
-    // NOTE: no need, since I it is already m_axi_port_type_t-aligned
+    // NOTE: no need, since it is already m_axi_port_type_t-aligned
 
     // Pre-fetch all filter weights
     #define FETCH_LEN_W ((SIZE_W/sizeof(m_axi_port_type_t))+1)
