@@ -109,7 +109,8 @@ for i in range(len(RANGE_NAMES)):
 	for device in RANGE_NAMES[i]:
 		match device:
 			# memory blocks
-			case "BRAM" | "DDR" | "HBM":
+			# TODO77: extend for multiple BRAMs
+			case d if d in {"BRAM", "HBM"} or d.startswith("DDR4CH"):
 				device_dict['memory'].append({'device': device, 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
 
 			# peripherals

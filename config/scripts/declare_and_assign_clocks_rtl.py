@@ -38,7 +38,7 @@ def declare_and_assign_clocks(config : configuration.Configuration) -> None:
     file.write(f"logic rstn_300MHz;\n")
     for i in range(len(config.RANGE_CLOCK_DOMAINS)):
         # Exclude the DDR from this since it has its own clock
-        if config.RANGE_NAMES[i] not in {"DDR"}:
+        if not config.RANGE_NAMES[i].startswith("DDR4CH"):
             # Special case for HBUS, it comes with its own clock, to feed accelerators on the MBUS
             if config.RANGE_NAMES[i] in {"HBUS"}:
                 file.write(f"logic HBUS_clk;\n")
