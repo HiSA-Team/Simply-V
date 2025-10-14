@@ -277,7 +277,7 @@ module hls_conv2d_wrapper # (
     end : gen_dwidth_conv
     else begin : no_dwidth_conv
 
-        // Pass though
+        // Pass through
         `ASSIGN_AXI_BUS (to_prot_conv, sync_HLS_CONTROL)
 
     end : no_dwidth_conv

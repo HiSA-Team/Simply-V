@@ -72,7 +72,7 @@ module highperformance_bus #(
     `DEFINE_AXI_SLAVE_PORTS(s_acc, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH),
 
     // TODO: expose an array of NUM_DDR_CHANNELS pins and interfaces
-    // DDR4 CH0 clock and reset
+    // DDR4 CH<x> clock and reset
     input logic clk_300mhz_x_p_i,
     input logic clk_300mhz_x_n_i,
     // DDR4 channel output clock and reset

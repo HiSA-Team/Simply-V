@@ -90,8 +90,7 @@ void krnl_conv_hbus (
             target_type_t accumulator[Y1 * X1] = {0};
 
             // For each input channel
-            // for ( uint8_t c = 0; c < C_input; c++ ) {
-            for ( uint8_t c = 0; c < C; c++ ) {
+            for ( uint8_t c = 0; c < C_input; c++ ) {
                 // Local buffers for W [K][C][R][S]
                 target_type_t W_local [R * S];
                 // Preload buffer
@@ -109,7 +108,6 @@ void krnl_conv_hbus (
                         for ( uint8_t r = 0; r < R; r++ ) {
                             for ( uint8_t s = 0; s < S; s++ ) {
                                 #define INDEX_W_LOCAL ( r * S + s )
-                                // #define INDEX_I ( ( ( ( n * C_input ) + c ) * Y + (y1+r) ) * X + (x1+s) )
                                 #define INDEX_I ( ( ( c * Y ) + (y1+r) ) * X + (x1+s) )
                                 #define INDEX_ACC ( y1 * X1 + x1 )
                                 accumulator[INDEX_ACC] += W_local [INDEX_W_LOCAL] * ((target_type_t*)I_fetch_line) [INDEX_I];

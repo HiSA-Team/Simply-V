@@ -27,7 +27,7 @@ module ddr4_channel_wrapper # (
     input logic clock_i,
     input logic reset_ni,
 
-    // DDR4 CH0 clock and reset
+    // DDR4 CH<x> clock and reset
     input logic clk_300mhz_x_p_i,
     input logic clk_300mhz_x_n_i,
 

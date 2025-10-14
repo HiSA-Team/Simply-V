@@ -6,11 +6,7 @@
 
 int main(int argc, const char **argv) {
 
-    // Pre-allocate tensors
-    // target_type_t I       [N][C][ Y][ X];
-    // target_type_t W       [K][C][ R][ S];
-    // target_type_t O       [N][K][Y1][X1];
-    // target_type_t expected[N][K][Y1][X1] = {0};
+    // Pre-allocate tensors, with alignment
     target_type_t I       [N][C][ Y][ X]__attribute__((aligned(sizeof(m_axi_port_type_t))));
     target_type_t W       [K][C][ R][ S]__attribute__((aligned(sizeof(m_axi_port_type_t))));
     target_type_t O       [N][K][Y1][X1]__attribute__((aligned(sizeof(m_axi_port_type_t))));
@@ -26,7 +22,6 @@ int main(int argc, const char **argv) {
 
     // Call to kernel
     printf("[INFO] Call to kernel\n");
-    // TODO: fix m_axi_port_type_t and taarget_type_t
     krnl_conv_hbus(
             (m_axi_port_type_t*)I,
             (m_axi_port_type_t*)W,
