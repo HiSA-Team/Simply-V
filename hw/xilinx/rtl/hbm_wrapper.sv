@@ -15,6 +15,9 @@
 // NOTE: The HBM IP can be imported only with boards supporting it (au280, au50)
 // NOTE: For now, we use only one AXI port connected to all the HBM space.
 
+// TODO: update description
+
+`include "uninasoc_apb.svh"
 
 module hbm_wrapper #(
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32, // These are MBUS WIDTHS
@@ -22,12 +25,25 @@ module hbm_wrapper #(
     parameter int unsigned    LOCAL_ID_WIDTH    = 32
 ) (
     // Clocks and resets
+    // Reference clock used by the HBM IP internally to drive PLL for clocking the memory controllers and stacks
     input logic hbm_ref_clk_i,
+
+    // Clock and reset for AXI4 slaves
     input logic clock_i,
     input logic reset_ni,
 
+    // Clock and reset for Axilite (CSR) slaves
+    input logic csr_clock_i,
+    input logic csr_reset_ni,
+
     // AXI4 Slave port 0
-    `DEFINE_AXI_SLAVE_PORTS(s0, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    `DEFINE_AXI_SLAVE_PORTS(s0, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+
+    // Axilite Slave port to access HBM APB interface for stack 0
+    `DEFINE_AXILITE_SLAVE_PORTS(s0, 32, 22, LOCAL_ID_WIDTH),
+
+    // Axilite Slave port to access HBM APB interface for stack 1
+    `DEFINE_AXILITE_SLAVE_PORTS(s1, 32, 22, LOCAL_ID_WIDTH)
 );
 
     // HBM local parameters
@@ -35,12 +51,22 @@ module hbm_wrapper #(
     localparam HBM_DATA_WIDTH = 256;
     localparam HBM_ID_WIDTH = 6;
 
+    localparam APB_ADDRESS_WIDTH = 22;
+    localparam APB_DATA_WIDTH    = 32;
+    localparam APB_NUM_SLAVE     = 1;
+
     // HBM 33-bits address signals
     logic [HBM_ADDRESS_WIDTH-1:0] hbm_axi_awaddr;
     logic [HBM_ADDRESS_WIDTH-1:0] hbm_axi_araddr;
 
-    // AXI4 bus from dwith converter to HBM IP
+    // AXI4 bus from dwith converter to HBM IP AXI4 interface
     `DECLARE_AXI_BUS(dwidth_conv_to_hbm, HBM_DATA_WIDTH, LOCAL_ADDR_WIDTH, HBM_ID_WIDTH)
+
+    // APB bus from axilite to APB converter to HBM IP APB interface for stack 0
+    `DECLARE_APB_BUS(prot_conv_to_hbm_stack_0, APB_DATA_WIDTH, APB_ADDRESS_WIDTH, APB_NUM_SLAVE)
+
+    // APB bus from axilite to APB converter to HBM IP APB interface for stack 1
+    `DECLARE_APB_BUS(prot_conv_to_hbm_stack_1, APB_DATA_WIDTH, APB_ADDRESS_WIDTH, APB_NUM_SLAVE)
 
     // AXI dwith converter from XLEN bit (global AXI data width) to 256 bit (AXI user interface HBM data width)
     xlnx_axi_dwidth_to256_converter axi_dwidth_conv_u (
@@ -137,6 +163,68 @@ module hbm_wrapper #(
     assign dwidth_conv_to_hbm_axi_arid = '0;
     assign dwidth_conv_to_hbm_axi_rid  = '0;
 
+    xlnx_axilite_to_apb_converter axilite_to_apb_stack_0_conv_u (
+        .s_axi_aclk    ( csr_clock_i  ),
+        .s_axi_aresetn ( csr_reset_ni ),
+
+        .s_axi_awaddr   ( s0_axilite_awaddr   ),
+        .s_axi_awvalid  ( s0_axilite_awvalid  ),
+        .s_axi_awready  ( s0_axilite_awready  ),
+        .s_axi_wdata    ( s0_axilite_wdata    ),
+        .s_axi_wvalid   ( s0_axilite_wvalid   ),
+        .s_axi_wready   ( s0_axilite_wready   ),
+        .s_axi_bresp    ( s0_axilite_bresp    ),
+        .s_axi_bvalid   ( s0_axilite_bvalid   ),
+        .s_axi_bready   ( s0_axilite_bready   ),
+        .s_axi_araddr   ( s0_axilite_araddr   ),
+        .s_axi_arvalid  ( s0_axilite_arvalid  ),
+        .s_axi_arready  ( s0_axilite_arready  ),
+        .s_axi_rdata    ( s0_axilite_rdata    ),
+        .s_axi_rresp    ( s0_axilite_rresp    ),
+        .s_axi_rvalid   ( s0_axilite_rvalid   ),
+        .s_axi_rready   ( s0_axilite_rready   ),
+
+        .m_apb_paddr    ( prot_conv_to_hbm_stack_0_apb_paddr   ),
+        .m_apb_pwdata   ( prot_conv_to_hbm_stack_0_apb_pwdata  ),
+        .m_apb_prdata   ( prot_conv_to_hbm_stack_0_apb_prdata  ),
+        .m_apb_penable  ( prot_conv_to_hbm_stack_0_apb_penable ),
+        .m_apb_psel     ( prot_conv_to_hbm_stack_0_apb_psel    ),
+        .m_apb_pwrite   ( prot_conv_to_hbm_stack_0_apb_pwrite  ),
+        .m_apb_pready   ( prot_conv_to_hbm_stack_0_apb_pready  ),
+        .m_apb_pslverr  ( prot_conv_to_hbm_stack_0_apb_pslverr )
+    );
+
+    xlnx_axilite_to_apb_converter axilite_to_apb_stack_1_conv_u (
+        .s_axi_aclk    ( csr_clock_i  ),
+        .s_axi_aresetn ( csr_reset_ni ),
+
+        .s_axi_awaddr   ( s1_axilite_awaddr   ),
+        .s_axi_awvalid  ( s1_axilite_awvalid  ),
+        .s_axi_awready  ( s1_axilite_awready  ),
+        .s_axi_wdata    ( s1_axilite_wdata    ),
+        .s_axi_wvalid   ( s1_axilite_wvalid   ),
+        .s_axi_wready   ( s1_axilite_wready   ),
+        .s_axi_bresp    ( s1_axilite_bresp    ),
+        .s_axi_bvalid   ( s1_axilite_bvalid   ),
+        .s_axi_bready   ( s1_axilite_bready   ),
+        .s_axi_araddr   ( s1_axilite_araddr   ),
+        .s_axi_arvalid  ( s1_axilite_arvalid  ),
+        .s_axi_arready  ( s1_axilite_arready  ),
+        .s_axi_rdata    ( s1_axilite_rdata    ),
+        .s_axi_rresp    ( s1_axilite_rresp    ),
+        .s_axi_rvalid   ( s1_axilite_rvalid   ),
+        .s_axi_rready   ( s1_axilite_rready   ),
+
+        .m_apb_paddr    ( prot_conv_to_hbm_stack_1_apb_paddr   ),
+        .m_apb_pwdata   ( prot_conv_to_hbm_stack_1_apb_pwdata  ),
+        .m_apb_prdata   ( prot_conv_to_hbm_stack_1_apb_prdata  ),
+        .m_apb_penable  ( prot_conv_to_hbm_stack_1_apb_penable ),
+        .m_apb_psel     ( prot_conv_to_hbm_stack_1_apb_psel    ),
+        .m_apb_pwrite   ( prot_conv_to_hbm_stack_1_apb_pwrite  ),
+        .m_apb_pready   ( prot_conv_to_hbm_stack_1_apb_pready  ),
+        .m_apb_pslverr  ( prot_conv_to_hbm_stack_1_apb_pslverr )
+    );
+
     // Map HBM address signals
     // Zero extend them if the address width is 32, otherwise clip them down.
     assign hbm_axi_awaddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_awaddr } : dwidth_conv_to_hbm_axi_awaddr[HBM_ADDRESS_WIDTH-1:0];
@@ -192,32 +280,32 @@ module hbm_wrapper #(
 
         // APB interface to access Memory Controller (MC) CSR (unused)
         // Stack 0
-        .APB_0_PCLK          ( hbm_ref_clk_i  ), // input
-        .APB_0_PRESET_N      ( 1'b1           ), // input
-        .APB_0_PWDATA        ( '0             ), // input [31:0]
-        .APB_0_PADDR         ( '0             ), // input [21:0]
-        .APB_0_PENABLE       ( 1'b0           ), // input
-        .APB_0_PSEL          ( 1'b0           ), // input
-        .APB_0_PWRITE        ( 1'b0           ), // input
-        .APB_0_PRDATA        ( /* empty */    ), // output [31:0]
-        .APB_0_PREADY        ( /* empty */    ), // output
-        .APB_0_PSLVERR       ( /* empty */    ), // output
+        .APB_0_PCLK          ( csr_clock_i    ), // input
+        .APB_0_PRESET_N      ( csr_reset_ni   ), // input
+        .APB_0_PWDATA        ( prot_conv_to_hbm_stack_0_apb_pwdata  ), // input [31:0]
+        .APB_0_PADDR         ( prot_conv_to_hbm_stack_0_apb_paddr   ), // input [21:0]
+        .APB_0_PENABLE       ( prot_conv_to_hbm_stack_0_apb_penable ), // input
+        .APB_0_PSEL          ( prot_conv_to_hbm_stack_0_apb_psel    ), // input
+        .APB_0_PWRITE        ( prot_conv_to_hbm_stack_0_apb_pwrite  ), // input
+        .APB_0_PRDATA        ( prot_conv_to_hbm_stack_0_apb_prdata  ), // output [31:0]
+        .APB_0_PREADY        ( prot_conv_to_hbm_stack_0_apb_pready  ), // output
+        .APB_0_PSLVERR       ( prot_conv_to_hbm_stack_0_apb_pslverr ), // output
         .apb_complete_0      ( /* empty */    ), // output
 
         .DRAM_0_STAT_CATTRIP ( /* empty */    ), // output
         .DRAM_0_STAT_TEMP    ( /* empty */    ),  // output [6:0]
 
         // Stack 1
-        .APB_1_PCLK          ( hbm_ref_clk_i  ), // input
-        .APB_1_PRESET_N      ( 1'b1           ), // input
-        .APB_1_PWDATA        ( '0             ), // input [31:0]
-        .APB_1_PADDR         ( '0             ), // input [21:0]
-        .APB_1_PENABLE       ( 1'b0           ), // input
-        .APB_1_PSEL          ( 1'b0           ), // input
-        .APB_1_PWRITE        ( 1'b0           ), // input
-        .APB_1_PRDATA        ( /* empty */    ), // output [31:0]
-        .APB_1_PREADY        ( /* empty */    ), // output
-        .APB_1_PSLVERR       ( /* empty */    ), // output
+        .APB_1_PCLK          ( csr_clock_i    ), // input
+        .APB_1_PRESET_N      ( csr_reset_ni   ), // input
+        .APB_1_PWDATA        ( prot_conv_to_hbm_stack_1_apb_pwdata  ), // input [31:0]
+        .APB_1_PADDR         ( prot_conv_to_hbm_stack_1_apb_paddr   ), // input [21:0]
+        .APB_1_PENABLE       ( prot_conv_to_hbm_stack_1_apb_penable ), // input
+        .APB_1_PSEL          ( prot_conv_to_hbm_stack_1_apb_psel    ), // input
+        .APB_1_PWRITE        ( prot_conv_to_hbm_stack_1_apb_pwrite  ), // input
+        .APB_1_PRDATA        ( prot_conv_to_hbm_stack_1_apb_prdata  ), // output [31:0]
+        .APB_1_PREADY        ( prot_conv_to_hbm_stack_1_apb_pready  ), // output
+        .APB_1_PSLVERR       ( prot_conv_to_hbm_stack_1_apb_pslverr ), // output
         .apb_complete_1      ( /* empty */    ), // output
 
         .DRAM_1_STAT_CATTRIP ( /* empty */    ), // output

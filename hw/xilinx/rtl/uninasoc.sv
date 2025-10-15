@@ -772,9 +772,11 @@ module uninasoc (
         ) hbm_wrapper_u (
 
             // Clocks and resets
-            .hbm_ref_clk_i  ( clk_100MHz ),
-            .clock_i        ( main_clk   ),
-            .reset_ni       ( main_rstn  ),
+            .hbm_ref_clk_i  ( clk_100MHz  ),
+            .clock_i        ( main_clk    ),
+            .reset_ni       ( main_rstn   ),
+            .csr_clock_i    ( clk_100MHz  ),
+            .csr_reset_ni   ( rstn_100MHz ),
 
             // AXI4 Slave 0 from MBUS
             .s0_axi_awid     ( MBUS_to_HBM_axi_awid     ),
@@ -815,7 +817,49 @@ module uninasoc (
             .s0_axi_arcache  ( MBUS_to_HBM_axi_arcache  ),
             .s0_axi_arprot   ( MBUS_to_HBM_axi_arprot   ),
             .s0_axi_arqos    ( MBUS_to_HBM_axi_arqos    ),
-            .s0_axi_arregion ( MBUS_to_HBM_axi_arregion )
+            .s0_axi_arregion ( MBUS_to_HBM_axi_arregion ),
+
+            // AXILITE interface for accessing memory controllers' CSRs stack 0 - not connected
+            .s0_axilite_awaddr  ( '0 ),
+            .s0_axilite_awprot  ( '0 ),
+            .s0_axilite_awvalid ( '0 ),
+            .s0_axilite_awready (    ),
+            .s0_axilite_wdata   ( '0 ),
+            .s0_axilite_wstrb   ( '0 ),
+            .s0_axilite_wvalid  ( '0 ),
+            .s0_axilite_wready  (    ),
+            .s0_axilite_bresp   (    ),
+            .s0_axilite_bvalid  (    ),
+            .s0_axilite_bready  ( '0 ),
+            .s0_axilite_araddr  ( '0 ),
+            .s0_axilite_arprot  ( '0 ),
+            .s0_axilite_arvalid ( '0 ),
+            .s0_axilite_arready (    ),
+            .s0_axilite_rdata   (    ),
+            .s0_axilite_rresp   (    ),
+            .s0_axilite_rvalid  (    ),
+            .s0_axilite_rready  ( '0 ),
+
+            // AXILITE interface for accessing memory controllers' CSRs stack 1 - not connected
+            .s1_axilite_awaddr  ( '0 ),
+            .s1_axilite_awprot  ( '0 ),
+            .s1_axilite_awvalid ( '0 ),
+            .s1_axilite_awready (    ),
+            .s1_axilite_wdata   ( '0 ),
+            .s1_axilite_wstrb   ( '0 ),
+            .s1_axilite_wvalid  ( '0 ),
+            .s1_axilite_wready  (    ),
+            .s1_axilite_bresp   (    ),
+            .s1_axilite_bvalid  (    ),
+            .s1_axilite_bready  ( '0 ),
+            .s1_axilite_araddr  ( '0 ),
+            .s1_axilite_arprot  ( '0 ),
+            .s1_axilite_arvalid ( '0 ),
+            .s1_axilite_arready (    ),
+            .s1_axilite_rdata   (    ),
+            .s1_axilite_rresp   (    ),
+            .s1_axilite_rvalid  (    ),
+            .s1_axilite_rready  ( '0 )
         );
     `endif // HBM_IS_SUPPORTED
 
