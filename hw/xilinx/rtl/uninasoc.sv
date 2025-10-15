@@ -76,11 +76,11 @@ module uninasoc (
         input  logic [GPIO_IN_WIDTH  -1 : 0]  gpio_in_i,
         output logic [GPIO_OUT_WIDTH -1 : 0]  gpio_out_o
     `elsif HPC
-        // // DDR4 Channel 0 differential clock
-        // input logic clk_300mhz_0_p_i,
-        // input logic clk_300mhz_0_n_i,
-        // // DDR4 Channel 0 interface
-        // `DEFINE_DDR4_PORTS(0),
+        // DDR4 Channel 0 differential clock
+        input logic clk_300mhz_0_p_i,
+        input logic clk_300mhz_0_n_i,
+        // DDR4 Channel 0 interface
+        `DEFINE_DDR4_PORTS(0),
 
         // DDR4 Channel 1 differential clock
         input logic clk_300mhz_1_p_i,
@@ -88,11 +88,11 @@ module uninasoc (
         // DDR4 Channel 1 interface
         `DEFINE_DDR4_PORTS(1),
 
-        // DDR4 Channel 2 differential clock
-        input logic clk_300mhz_2_p_i,
-        input logic clk_300mhz_2_n_i,
-        // DDR4 Channel 2 interface
-        `DEFINE_DDR4_PORTS(2),
+        // // DDR4 Channel 2 differential clock
+        // input logic clk_300mhz_2_p_i,
+        // input logic clk_300mhz_2_n_i,
+        // // DDR4 Channel 2 interface
+        // `DEFINE_DDR4_PORTS(2),
 
         // PCIe clock and reset
         input logic pcie_refclk_p_i,
@@ -701,6 +701,10 @@ module uninasoc (
     // DDR4 Channel 1 //
     ////////////////////
 
+    // TODO127: export these to config
+    logic ddr4ch1_clk300MHz;
+    logic ddr4ch1_rst300MHz;
+
     // DDR channle on MBUS
     ddr4_channel_wrapper # (
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
@@ -712,6 +716,10 @@ module uninasoc (
         // DDR4 differential clock
         .clk_300mhz_x_p_i     ( clk_300mhz_1_p_i  ),
         .clk_300mhz_x_n_i     ( clk_300mhz_1_n_i  ),
+
+        // Output clock and reset
+        .ddr_clk_o            ( ddr4ch1_clk300MHz ),
+        .ddr_rst_o            ( ddr4ch1_rst300MHz ),
 
         // Connect DDR4 channel 1
         .cx_ddr4_adr          ( c1_ddr4_adr       ),
@@ -748,45 +756,45 @@ module uninasoc (
         .s_ctrl_axilite_rresp    (       ),
 
         // Slave interface
-        .s_axi_awid           ( MBUS_to_DDR1_axi_awid     ),
-        .s_axi_awaddr         ( MBUS_to_DDR1_axi_awaddr   ),
-        .s_axi_awlen          ( MBUS_to_DDR1_axi_awlen    ),
-        .s_axi_awsize         ( MBUS_to_DDR1_axi_awsize   ),
-        .s_axi_awburst        ( MBUS_to_DDR1_axi_awburst  ),
-        .s_axi_awlock         ( MBUS_to_DDR1_axi_awlock   ),
-        .s_axi_awcache        ( MBUS_to_DDR1_axi_awcache  ),
-        .s_axi_awprot         ( MBUS_to_DDR1_axi_awprot   ),
-        .s_axi_awregion       ( MBUS_to_DDR1_axi_awregion ),
-        .s_axi_awqos          ( MBUS_to_DDR1_axi_awqos    ),
-        .s_axi_awvalid        ( MBUS_to_DDR1_axi_awvalid  ),
-        .s_axi_awready        ( MBUS_to_DDR1_axi_awready  ),
-        .s_axi_wdata          ( MBUS_to_DDR1_axi_wdata    ),
-        .s_axi_wstrb          ( MBUS_to_DDR1_axi_wstrb    ),
-        .s_axi_wlast          ( MBUS_to_DDR1_axi_wlast    ),
-        .s_axi_wvalid         ( MBUS_to_DDR1_axi_wvalid   ),
-        .s_axi_wready         ( MBUS_to_DDR1_axi_wready   ),
-        .s_axi_bid            ( MBUS_to_DDR1_axi_bid      ),
-        .s_axi_bresp          ( MBUS_to_DDR1_axi_bresp    ),
-        .s_axi_bvalid         ( MBUS_to_DDR1_axi_bvalid   ),
-        .s_axi_bready         ( MBUS_to_DDR1_axi_bready   ),
-        .s_axi_arid           ( MBUS_to_DDR1_axi_arid     ),
-        .s_axi_araddr         ( MBUS_to_DDR1_axi_araddr   ),
-        .s_axi_arlen          ( MBUS_to_DDR1_axi_arlen    ),
-        .s_axi_arsize         ( MBUS_to_DDR1_axi_arsize   ),
-        .s_axi_arburst        ( MBUS_to_DDR1_axi_arburst  ),
-        .s_axi_arlock         ( MBUS_to_DDR1_axi_arlock   ),
-        .s_axi_arcache        ( MBUS_to_DDR1_axi_arcache  ),
-        .s_axi_arprot         ( MBUS_to_DDR1_axi_arprot   ),
-        .s_axi_arregion       ( MBUS_to_DDR1_axi_arregion ),
-        .s_axi_arqos          ( MBUS_to_DDR1_axi_arqos    ),
-        .s_axi_arvalid        ( MBUS_to_DDR1_axi_arvalid  ),
-        .s_axi_arready        ( MBUS_to_DDR1_axi_arready  ),
-        .s_axi_rid            ( MBUS_to_DDR1_axi_rid      ),
-        .s_axi_rdata          ( MBUS_to_DDR1_axi_rdata    ),
-        .s_axi_rresp          ( MBUS_to_DDR1_axi_rresp    ),
-        .s_axi_rlast          ( MBUS_to_DDR1_axi_rlast    ),
-        .s_axi_rvalid         ( MBUS_to_DDR1_axi_rvalid   ),
-        .s_axi_rready         ( MBUS_to_DDR1_axi_rready   )
+        .s_axi_awid           ( MBUS_to_DDR4CH1_axi_awid     ),
+        .s_axi_awaddr         ( MBUS_to_DDR4CH1_axi_awaddr   ),
+        .s_axi_awlen          ( MBUS_to_DDR4CH1_axi_awlen    ),
+        .s_axi_awsize         ( MBUS_to_DDR4CH1_axi_awsize   ),
+        .s_axi_awburst        ( MBUS_to_DDR4CH1_axi_awburst  ),
+        .s_axi_awlock         ( MBUS_to_DDR4CH1_axi_awlock   ),
+        .s_axi_awcache        ( MBUS_to_DDR4CH1_axi_awcache  ),
+        .s_axi_awprot         ( MBUS_to_DDR4CH1_axi_awprot   ),
+        .s_axi_awregion       ( MBUS_to_DDR4CH1_axi_awregion ),
+        .s_axi_awqos          ( MBUS_to_DDR4CH1_axi_awqos    ),
+        .s_axi_awvalid        ( MBUS_to_DDR4CH1_axi_awvalid  ),
+        .s_axi_awready        ( MBUS_to_DDR4CH1_axi_awready  ),
+        .s_axi_wdata          ( MBUS_to_DDR4CH1_axi_wdata    ),
+        .s_axi_wstrb          ( MBUS_to_DDR4CH1_axi_wstrb    ),
+        .s_axi_wlast          ( MBUS_to_DDR4CH1_axi_wlast    ),
+        .s_axi_wvalid         ( MBUS_to_DDR4CH1_axi_wvalid   ),
+        .s_axi_wready         ( MBUS_to_DDR4CH1_axi_wready   ),
+        .s_axi_bid            ( MBUS_to_DDR4CH1_axi_bid      ),
+        .s_axi_bresp          ( MBUS_to_DDR4CH1_axi_bresp    ),
+        .s_axi_bvalid         ( MBUS_to_DDR4CH1_axi_bvalid   ),
+        .s_axi_bready         ( MBUS_to_DDR4CH1_axi_bready   ),
+        .s_axi_arid           ( MBUS_to_DDR4CH1_axi_arid     ),
+        .s_axi_araddr         ( MBUS_to_DDR4CH1_axi_araddr   ),
+        .s_axi_arlen          ( MBUS_to_DDR4CH1_axi_arlen    ),
+        .s_axi_arsize         ( MBUS_to_DDR4CH1_axi_arsize   ),
+        .s_axi_arburst        ( MBUS_to_DDR4CH1_axi_arburst  ),
+        .s_axi_arlock         ( MBUS_to_DDR4CH1_axi_arlock   ),
+        .s_axi_arcache        ( MBUS_to_DDR4CH1_axi_arcache  ),
+        .s_axi_arprot         ( MBUS_to_DDR4CH1_axi_arprot   ),
+        .s_axi_arregion       ( MBUS_to_DDR4CH1_axi_arregion ),
+        .s_axi_arqos          ( MBUS_to_DDR4CH1_axi_arqos    ),
+        .s_axi_arvalid        ( MBUS_to_DDR4CH1_axi_arvalid  ),
+        .s_axi_arready        ( MBUS_to_DDR4CH1_axi_arready  ),
+        .s_axi_rid            ( MBUS_to_DDR4CH1_axi_rid      ),
+        .s_axi_rdata          ( MBUS_to_DDR4CH1_axi_rdata    ),
+        .s_axi_rresp          ( MBUS_to_DDR4CH1_axi_rresp    ),
+        .s_axi_rlast          ( MBUS_to_DDR4CH1_axi_rlast    ),
+        .s_axi_rvalid         ( MBUS_to_DDR4CH1_axi_rvalid   ),
+        .s_axi_rready         ( MBUS_to_DDR4CH1_axi_rready   )
     );
 
     ///////////////////
@@ -1043,26 +1051,26 @@ module uninasoc (
         .s_acc_axi_rready   ( s_acc_HBUS_axi_rready   ),
 
         // DDR4 differential clock
-        .clk_300mhz_x_p_i     ( clk_300mhz_2_p_i  ),
-        .clk_300mhz_x_n_i     ( clk_300mhz_2_n_i  ),
+        .clk_300mhz_x_p_i     ( clk_300mhz_0_p_i  ),
+        .clk_300mhz_x_n_i     ( clk_300mhz_0_n_i  ),
         // DDR4 user clock and reset
         .clk_300MHz_o         ( clk_300MHz        ),
         .rstn_300MHz_o        ( rstn_300MHz       ),
-        // Connect DDR4 channel 2
-        .cx_ddr4_adr          ( c2_ddr4_adr       ),
-        .cx_ddr4_ba           ( c2_ddr4_ba        ),
-        .cx_ddr4_cke          ( c2_ddr4_cke       ),
-        .cx_ddr4_cs_n         ( c2_ddr4_cs_n      ),
-        .cx_ddr4_dq           ( c2_ddr4_dq        ),
-        .cx_ddr4_dqs_t        ( c2_ddr4_dqs_t     ),
-        .cx_ddr4_dqs_c        ( c2_ddr4_dqs_c     ),
-        .cx_ddr4_odt          ( c2_ddr4_odt       ),
-        .cx_ddr4_parity       ( c2_ddr4_parity    ),
-        .cx_ddr4_bg           ( c2_ddr4_bg        ),
-        .cx_ddr4_act_n        ( c2_ddr4_act_n     ),
-        .cx_ddr4_reset_n      ( c2_ddr4_reset_n   ),
-        .cx_ddr4_ck_t         ( c2_ddr4_ck_t      ),
-        .cx_ddr4_ck_c         ( c2_ddr4_ck_c      ),
+        // Connect DDR4 channel 0
+        .cx_ddr4_adr          ( c0_ddr4_adr       ),
+        .cx_ddr4_ba           ( c0_ddr4_ba        ),
+        .cx_ddr4_cke          ( c0_ddr4_cke       ),
+        .cx_ddr4_cs_n         ( c0_ddr4_cs_n      ),
+        .cx_ddr4_dq           ( c0_ddr4_dq        ),
+        .cx_ddr4_dqs_t        ( c0_ddr4_dqs_t     ),
+        .cx_ddr4_dqs_c        ( c0_ddr4_dqs_c     ),
+        .cx_ddr4_odt          ( c0_ddr4_odt       ),
+        .cx_ddr4_parity       ( c0_ddr4_parity    ),
+        .cx_ddr4_bg           ( c0_ddr4_bg        ),
+        .cx_ddr4_act_n        ( c0_ddr4_act_n     ),
+        .cx_ddr4_reset_n      ( c0_ddr4_reset_n   ),
+        .cx_ddr4_ck_t         ( c0_ddr4_ck_t      ),
+        .cx_ddr4_ck_c         ( c0_ddr4_ck_c      ),
 
         // AXILITE interface - for ECC status and control - not connected
         .s_ctrl_axilite_awvalid  ( 1'b0  ),

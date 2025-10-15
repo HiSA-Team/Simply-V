@@ -34,6 +34,10 @@ module ddr4_channel_wrapper # (
     // DDR4 channel interface (to PHYs)
     `DEFINE_DDR4_PORTS(x),
 
+    // DDR4 output clk and rst
+    output logic ddr_clk_o,
+    output logic ddr_rst_o,
+
     // AXI-lite CSR interface
     `DEFINE_AXILITE_SLAVE_PORTS(s_ctrl, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
 
@@ -56,10 +60,6 @@ module ddr4_channel_wrapper # (
             ddr4_reset <= 1'b0;
         end
     end
-
-    // DDR4 output clk and rst
-    logic ddr_clk;
-    logic ddr_rst;
 
     // DDR4 34-bits address signals
     logic [DDR4_CHANNEL_ADDRESS_WIDTH-1:0] ddr4_axi_awaddr;
@@ -87,8 +87,8 @@ module ddr4_channel_wrapper # (
         .s_axi_aclk     ( clock_i        ),
         .s_axi_aresetn  ( reset_ni       ),
 
-        .m_axi_aclk     ( ddr_clk        ),
-        .m_axi_aresetn  ( ~ddr_rst       ),
+        .m_axi_aclk     ( ddr_clk_o      ),
+        .m_axi_aresetn  ( ~ddr_rst_o     ),
 
         .s_axi_awid     ( s_axi_awid     ),
         .s_axi_awaddr   ( s_axi_awaddr   ),
@@ -175,8 +175,8 @@ module ddr4_channel_wrapper # (
 
     // AXI dwith converter from XLEN bit (global AXI data width) to 512 bit (AXI user interface DDR data width)
     xlnx_axi_dwidth_to512_converter axi_dwidth_conv_u (
-        .s_axi_aclk     ( ddr_clk      ),
-        .s_axi_aresetn  ( ~ddr_rst     ),
+        .s_axi_aclk     ( ddr_clk_o    ),
+        .s_axi_aresetn  ( ~ddr_rst_o   ),
 
         // Slave from clock conv
         .s_axi_awid     ( clk_conv_to_dwidth_conv_axi_awid    ),
@@ -296,10 +296,10 @@ module ddr4_channel_wrapper # (
         .c0_ddr4_ck_t                ( cx_ddr4_ck_t     ),
         .c0_ddr4_ck_c                ( cx_ddr4_ck_c     ),
 
-        .c0_ddr4_ui_clk              ( ddr_clk          ),
-        .c0_ddr4_ui_clk_sync_rst     ( ddr_rst          ),
+        .c0_ddr4_ui_clk              ( ddr_clk_o        ),
+        .c0_ddr4_ui_clk_sync_rst     ( ddr_rst_o        ),
 
-        .c0_ddr4_aresetn             ( ~ddr_rst         ),
+        .c0_ddr4_aresetn             ( ~ddr_rst_o       ),
 
         // AXILITE interface - for status and control
         .c0_ddr4_s_axi_ctrl_awvalid  ( s_ctrl_axilite_awvalid ),
