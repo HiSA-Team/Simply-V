@@ -764,7 +764,7 @@ module uninasoc (
 
     // Instantiate the HBM only if board is au280 (or au50 in the future)
 
-    `ifdef AU280
+    `ifdef HBM_IS_SUPPORTED
         hbm_wrapper # (
             .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
             .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
@@ -817,7 +817,7 @@ module uninasoc (
             .s0_axi_arqos    ( MBUS_to_HBM_axi_arqos    ),
             .s0_axi_arregion ( MBUS_to_HBM_axi_arregion )
         );
-    `endif // AU280
+    `endif // HBM_IS_SUPPORTED
 
 
 
