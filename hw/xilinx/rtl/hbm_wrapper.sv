@@ -7,10 +7,10 @@
 //              It has the following sub-architecture
 //
 //
-//   ADDR: XELN    ____________  ADDR: XLEN       ADDR: 33 bit    ____________
-//   DATA: XLEN   |   Dwidth   | DATA: 256 bit    DATA: 256 bit  |            |
-// -------------->| Converter  |-------------------------------->|   HBM IP   |
-//                |____________|                                 |____________|
+//   ADDR: PHYSICAL_ADDR_WIDTH    ____________  ADDR: PHYSICAL_ADDR_WIDTH       ADDR: 33 bit    ____________
+//   DATA: XLEN                  |   Dwidth   | DATA: 256 bit                   DATA: 256 bit  |            |
+// ----------------------------->| Converter  |----------------------------------------------->|   HBM IP   |
+//                               |____________|                                                |____________|
 //
 // NOTE: The HBM IP can be imported only with boards supporting it (au280, au50)
 // NOTE: For now, we use only one AXI port connected to all the HBM space.
@@ -224,5 +224,5 @@ module hbm_wrapper #(
         .DRAM_1_STAT_TEMP    ( /* empty */    )  // output [6:0]
     );
 
-endmodule
+endmodule : hbm_wrapper
 

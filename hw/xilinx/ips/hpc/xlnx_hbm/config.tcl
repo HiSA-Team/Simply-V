@@ -1,5 +1,8 @@
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
-# Description: HBM IP configuration file
+# Description: HBM IP configuration file:
+#                  - Basic HBM IP configuration
+#                  - Single AXI Slave connected to all the memory space
+#                  - Two stack enabled (8GB)
 
 create_ip -name hbm -vendor xilinx.com -library ip -version 1.0 -module_name $::env(IP_NAME)
 
