@@ -705,7 +705,7 @@ module uninasoc (
     logic ddr4ch1_clk300MHz;
     logic ddr4ch1_rst300MHz;
 
-    // DDR channle on MBUS
+    // DDR channel 1 on MBUS
     ddr4_channel_wrapper # (
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
@@ -1050,6 +1050,7 @@ module uninasoc (
         .s_acc_axi_rvalid   ( s_acc_HBUS_axi_rvalid   ),
         .s_acc_axi_rready   ( s_acc_HBUS_axi_rready   ),
 
+        // DDR channel 0 on MBUS
         // DDR4 differential clock
         .clk_300mhz_x_p_i     ( clk_300mhz_0_p_i  ),
         .clk_300mhz_x_n_i     ( clk_300mhz_0_n_i  ),
