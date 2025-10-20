@@ -3,7 +3,7 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 // Author: Zaira Abdel Majid <z.abdelmajid@studenti.unina.it>
 // Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
-// Description: Basic version of UninaSoC that allows to work with axi transactions to and from slaves (ToBeUpdated)
+// Description: FPGA-ready top-level soft-SoC module for both hpc and embedded profiles.
 
 // System architecture:
 //
