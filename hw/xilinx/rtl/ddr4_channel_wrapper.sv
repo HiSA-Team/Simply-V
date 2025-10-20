@@ -3,8 +3,8 @@
 // Description: This module is a wrapper for a single DDR4 channel.
 //              It includes :
 //                 - A clock converter to increase the frequency to 300 MHz
-//                 - A datawidth converter to increase the datawidth to 512 bit
 //                 - An optional System Cache (enabled if ENABLE_CACHE=1)
+//                 - A datawidth converter to increase the datawidth to 512 bit (enabled if ENABLE_CACHE=0)
 //                 - A DDR4 (MIG) IP
 //
 //              Depending on the ENABLE_CACHE parameter, the architecture
