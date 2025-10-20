@@ -1,6 +1,6 @@
 // Author: Valerio Di Domenico <valerio.didomenico@unina.it>
 // Description:
-//   This program performs a memory access test over a defined DDR address range, validating both normal read/write accesses 
+//   This program performs a memory access test over a defined DDR address range, validating both normal read/write accesses
 //   and atomic LR/SC (Load-Reserved / Store-Conditional) accesses.
 
 #include "uninasoc.h"
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
         * NOTE:
         * On the MicroBlaze V processor, TEST3_W and TEST6_W return "FAILED"
         * even though the memory content remains unchanged — which means the behavior
-        * is actually correct. 
+        * is actually correct.
         * The tests are marked as FAILED because, in these specific cases,
         * MicroBlaze V does not write a non-zero value to the destination register
         * to indicate the failure of the SC instruction.
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
             : "memory"
         );
 
-        // Second SC.W executed immediately after must fail (not valid LR.W anymore) --> success2 != 0 
+        // Second SC.W executed immediately after must fail (not valid LR.W anymore) --> success2 != 0
         // Memory must contain the value from the first SC.W
         printf("TEST RESULT: %s (SC1=%d, SC2=%d, mem=0x%08x)\n\r",
                (success == 0 && success2 != 0) ? "PASSED" : "FAILED",
@@ -277,7 +277,7 @@ int main(int argc, char* argv[]) {
         printf("Memory value before SC : 0x%08x\n\r", *addr_aligned_w);
         printf("Executing SC...\n\r");
         success = lr_w_aq_sc_rl_sequence(addr_aligned_w, new_val_w);
-        read_back = *addr_aligned_w;    
+        read_back = *addr_aligned_w;
 
         // SC returns 0 if the store was successful.
         // Therefore, PASS requires:
@@ -380,7 +380,7 @@ int main(int argc, char* argv[]) {
             : "memory"
         );
 
-        // Second SC.W.rl executed immediately after must fail (not valid LR.W.aq anymore) --> success2 != 0 
+        // Second SC.W.rl executed immediately after must fail (not valid LR.W.aq anymore) --> success2 != 0
         // Memory must contain the value from the first SC.W.rl
         printf("TEST RESULT: %s (SC1=%d, SC2=%d, mem=0x%08x)\n\r",
                (success == 0 && success2 != 0) ? "PASSED" : "FAILED",
@@ -478,7 +478,7 @@ int main(int argc, char* argv[]) {
         printf("Memory value after SC : 0x%08x\n\n\r", *addr_aligned_w);
 
         // === Postconditions ===
-        *addr_aligned_w = init_val_w;  
+        *addr_aligned_w = init_val_w;
 
 
         // -------------------------------------------------------------------
@@ -567,7 +567,7 @@ int main(int argc, char* argv[]) {
             : "memory"
         );
 
-        // Second SC.W.rl executed immediately after must fail (not valid LR.W.aq anymore) --> success2 != 0 
+        // Second SC.W.rl executed immediately after must fail (not valid LR.W.aq anymore) --> success2 != 0
         // Memory must contain the value from the first SC.W.rl
         printf("TEST RESULT: %s (SC1=%d, SC2=%d, mem=0x%08x)\n\r",
                (success == 0 && success2 != 0) ? "PASSED" : "FAILED",
@@ -758,7 +758,7 @@ int main(int argc, char* argv[]) {
             : "memory"
         );
 
-        // Second SC.D executed immediately after must fail (not valid LR.D anymore) --> success2 != 0 
+        // Second SC.D executed immediately after must fail (not valid LR.D anymore) --> success2 != 0
         // Memory must contain the value from the first SC.D
         printf("TEST RESULT: %s (SC1=%d, SC2=%d, mem=0x%016llx))\n\r",
                (success == 0 && success2 != 0) ? "PASSED" : "FAILED",
@@ -856,7 +856,7 @@ int main(int argc, char* argv[]) {
         printf("Memory value after SC : 0x%08x\n\n\r", *addr_aligned_d);
 
         // === Postconditions ===
-        *addr_aligned_d = init_val_d;  
+        *addr_aligned_d = init_val_d;
 
 
         // -------------------------------------------------------------------
@@ -947,7 +947,7 @@ int main(int argc, char* argv[]) {
             : "memory"
         );
 
-        // Second SC.D executed immediately after must fail (not valid LR.D anymore) --> success2 != 0 
+        // Second SC.D executed immediately after must fail (not valid LR.D anymore) --> success2 != 0
         // Memory must contain the value from the first SC.D
         printf("TEST RESULT: %s (SC1=%d, SC2=%d, mem=0x%016llx))\n\r",
                (success == 0 && success2 != 0) ? "PASSED" : "FAILED",
@@ -1044,7 +1044,7 @@ int main(int argc, char* argv[]) {
         printf("Memory value after SC : 0x%08x\n\n\r", *addr_aligned_d);
 
         // === Postconditions ===
-        *addr_aligned_d = init_val_d;   
+        *addr_aligned_d = init_val_d;
 
 
         // -------------------------------------------------------------------
@@ -1135,7 +1135,7 @@ int main(int argc, char* argv[]) {
             : "memory"
         );
 
-        // Second SC.D.aqrl executed immediately after must fail (not valid LR.D.aqrl anymore) --> success2 != 0 
+        // Second SC.D.aqrl executed immediately after must fail (not valid LR.D.aqrl anymore) --> success2 != 0
         // Memory must contain the value from the first SC.D
         printf("TEST RESULT: %s (SC1=%d, SC2=%d, mem=0x%016llx))\n\r",
                (success == 0 && success2 != 0) ? "PASSED" : "FAILED",
@@ -1205,7 +1205,7 @@ int main(int argc, char* argv[]) {
 
         // === Postconditions ===
         *addr_aligned_d = init_val_d;
-    
+
     #endif
 
     } // end loop

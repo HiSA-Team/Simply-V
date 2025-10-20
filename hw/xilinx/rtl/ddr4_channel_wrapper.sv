@@ -75,16 +75,16 @@ module ddr4_channel_wrapper # (
     // DDR4 34-bits address signals
     logic [DDR4_CHANNEL_ADDRESS_WIDTH-1:0] ddr4_axi_awaddr;
     logic [DDR4_CHANNEL_ADDRESS_WIDTH-1:0] ddr4_axi_araddr;
-    
+
     // AXI bus from the cache to the clock converter
     `DECLARE_AXI_BUS(to_clk_conv, DDR4_CHANNEL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 
     // AXI bus from the clock converter to the dwidth converter
     `DECLARE_AXI_BUS(clk_conv_to_dwidth_conv, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
-    
+
     // AXI bus from the cache to the DDR4
     `DECLARE_AXI_BUS(clk_conv_to_ddr4, DDR4_CHANNEL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
-    
+
     generate
     if (ENABLE_CACHE == 1 ) begin : with_cache
 
@@ -170,7 +170,7 @@ module ddr4_channel_wrapper # (
                 .M0_AXI_RVALID      ( to_clk_conv_axi_rvalid  ), // input wire M0_AXI_RVALID
                 .M0_AXI_RREADY      ( to_clk_conv_axi_rready  )  // output wire M0_AXI_RREADY
                 );
-    
+
     end else begin : no_cache
 
         // Dwidth converter master ID signals assigned to 0
@@ -184,7 +184,7 @@ module ddr4_channel_wrapper # (
                 .s_axi_aclk     ( clock_i      ),
                 .s_axi_aresetn  ( reset_ni     ),
 
-                // Slave 
+                // Slave
                 .s_axi_awid     ( s_axi_awid     ),
                 .s_axi_awaddr   ( s_axi_awaddr   ),
                 .s_axi_awlen    ( s_axi_awlen    ),

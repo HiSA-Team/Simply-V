@@ -23,9 +23,9 @@ int lr_d_sc_sequence(volatile unsigned long long* addr, unsigned long long new_v
 
 // LR.D.aq / SC.D.rl function
 int lr_d_aq_sc_rl_sequence(volatile unsigned long long* addr, unsigned long long new_val);
- 
+
 // LR.D.aqrl / SC.D.aqrl function
 int lr_d_aqrl_sc_aqrl_sequence(volatile unsigned long long* addr, unsigned long long new_val);
-    
+
 #endif
 #endif
