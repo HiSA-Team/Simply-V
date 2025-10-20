@@ -12,16 +12,16 @@
 //              direct Data Width Converter (ENABLE_CACHE=0) before connecting
 //              to the Clock Converter and DDR4 (MIG).
 //
-//              It has the following sub-architecture                                 
-//                                
-//                                                                     _____________                      ADDR: XLEN    ____________           ADDR: 64 bit    ____________  
-//                                              ENABLE_CACHE = 1      |   System    | Main Clock Domain   DATA: 512    |   Clock    | 300 MHz  DATA: 512 bit  |            |
+//              It has the following sub-architecture
+//                                                                                          Main Clock Domain                                  DDR4CH<n> Clock Domain  
+//                                                                     _____________        ADDR: MBUS_ADDR_WIDTH       ____________           ADDR: 34 bit    ____________  
+//                                              ENABLE_CACHE = 1      |   System    |       DATA: 512                  |   Clock    | 300 MHz  DATA: 512 bit  |            |
 //                                        --------------------------->|    Cache    |--------------------------------->| Converter  |------------------------>| DDR4 (MIG) |
-//                       ADDR: XLEN       |                           |_____________|                                  |____________|                         |____________|
-//   Main Clock Domain   DATA: 64         |
-// ---------------------------------------                                                       
-//                                        |                            _____________                      ADDR: XLEN    ____________           ADDR: 64 bit    ____________ 
-//                                        |     ENABLE_CACHE = 0      |    Dwidth   | Main Clock Domain   DATA: 512    |   Clock    | 300 MHz  DATA: 512 bit  |            |
+//                                        |                           |_____________|                                  |____________|                         |____________|
+//   Main Clock Domain                    |
+// ---------------------------------------                                                  Main Clock Domain                                  DDR4CH<n> Clock Domain
+//                 ADDR: MBUS_ADDR_WIDTH  |                            _____________        ADDR: MBUS_ADDR_WIDTH       ____________           ADDR: 34 bit    ____________ 
+//                 DATA: MBUS_DATA_WIDTH  |     ENABLE_CACHE = 0      |    Dwidth   |       DATA: 512                  |   Clock    | 300 MHz  DATA: 512 bit  |            |
 //                                        --------------------------->|  Converter  |--------------------------------->| Converter  |------------------------>| DDR4 (MIG) |
 //                                                                    |_____________|                                  |____________|                         |____________|
 
