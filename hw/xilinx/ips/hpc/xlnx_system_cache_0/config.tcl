@@ -9,7 +9,7 @@ create_ip -name system_cache -vendor xilinx.com -library ip -version 5.0 -module
 #   - Data width: $::env(MBUS_DATA_WIDTH)
 #   - ID width: $::env(MBUS_ID_WIDTH)
 #   - Address width: $::env(MBUS_ADDR_WIDTH)
-# - Enable AXI master interface (C_M0_AXI_*) 
+# - Enable AXI master interface (C_M0_AXI_*)
 #   - Data width: 512 bit (keep same as DDR for now)
 #   - Thread ID width: $::env(MBUS_ID_WIDTH)
 #   - Address width: $::env(MBUS_ADDR_WIDTH)
