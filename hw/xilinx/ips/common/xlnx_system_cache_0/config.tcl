@@ -5,25 +5,25 @@ create_ip -name system_cache -vendor xilinx.com -library ip -version 5.0 -module
 ##############
 # Interfaces #
 ##############
-# - Enable AXI memory interface (S0 generic port)
-#   - Data width: 64 bit (S0_AXI_GEN)
+# - Enable AXI memory interface (S0 generic port, S0_AXI_GEN_*)
+#   - Data width: $::env(MBUS_DATA_WIDTH)
 #   - ID width: $::env(MBUS_ID_WIDTH)
 #   - Address width: $::env(MBUS_ADDR_WIDTH)
-# - Enable AXI master interface
-#   - Data width: 512 bit
+# - Enable AXI master interface (C_M0_AXI_*)
+#   - Data width: 512 bit (keep same as DDR for now)
 #   - Thread ID width: $::env(MBUS_ID_WIDTH)
 #   - Address width: $::env(MBUS_ADDR_WIDTH)
 # - Exclusive access support enabled (C_ENABLE_EXCLUSIVE = 1)
-# - Base address: 0x30000
-# - High address: 0x3FFFF
-# - Cache line length: 32 bytes
-# - CCIX0 cache line size: 128 bytes
+# - Base address: Absolute address of start of cachable range
+# - High address: Absolute address of end of cachable range
+# - Cache line length: 32 bytes, constant for now
+# - CCIX0 cache line size: 128 bytes, constant for now
 # - Other optional interfaces (ACE, CHI, CCIX, snoop, coherency, etc.) disabled
 
 # Set the cache BASEADDR and HIGHADDR
 # WARNING: Do not change the following line, it is modified by config-based script
-set CACHE_BASEADDR {0x30000}
-set CACHE_HIGHADDR {0x3ffff}
+set CACHE_BASEADDR {0x40000}
+set CACHE_HIGHADDR {0x4ffff}
 
 set_property -dict [list \
   CONFIG.C_CACHE_LINE_LENGTH {32} \
@@ -78,5 +78,7 @@ set_property -dict [list \
   CONFIG.C_SNOOP_PASS_READ_CLEAN {0} \
   CONFIG.C_SNOOP_PASS_READ_NSD {0} \
   CONFIG.C_DEFAULT_DOMAIN {0} \
-  CONFIG.C_ENABLE_FAST_INIT_SIM {0} \
 ] [get_ips $::env(IP_NAME)]
+
+# TODO152: This does not exist for Vivado 2023.1 and au280. Make this version/board dependent.
+#  CONFIG.C_ENABLE_FAST_INIT_SIM {0}

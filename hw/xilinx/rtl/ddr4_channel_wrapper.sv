@@ -3,8 +3,8 @@
 // Description: This module is a wrapper for a single DDR4 channel.
 //              It includes :
 //                 - A clock converter to increase the frequency to 300 MHz
-//                 - A datawidth converter to increase the datawidth to 512 bit
 //                 - An optional System Cache (enabled if ENABLE_CACHE=1)
+//                 - A datawidth converter to increase the datawidth to 512 bit (enabled if ENABLE_CACHE=0)
 //                 - A DDR4 (MIG) IP
 //
 //              Depending on the ENABLE_CACHE parameter, the architecture
@@ -12,18 +12,17 @@
 //              direct Data Width Converter (ENABLE_CACHE=0) before connecting
 //              to the Clock Converter and DDR4 (MIG).
 //
-//              It has the following sub-architecture
-//
-//                                                                     _____________                      ADDR: XLEN    ____________           ADDR: 64 bit    ____________
-//                                              ENABLE_CACHE = 1      |   System    | Main Clock Domain   DATA: 512    |   Clock    | 300 MHz  DATA: 512 bit  |            |
-//                                        --------------------------->|    Cache    |--------------------------------->| Converter  |------------------------>| DDR4 (MIG) |
-//                       ADDR: XLEN       |                           |_____________|                                  |____________|                         |____________|
-//   Main Clock Domain   DATA: 64         |
-// ---------------------------------------
-//                                        |                            _____________                      ADDR: XLEN    ____________           ADDR: 64 bit    ____________
-//                                        |     ENABLE_CACHE = 0      |    Dwidth   | Main Clock Domain   DATA: 512    |   Clock    | 300 MHz  DATA: 512 bit  |            |
-//                                        --------------------------->|  Converter  |--------------------------------->| Converter  |------------------------>| DDR4 (MIG) |
-//                                                                    |_____________|                                  |____________|                         |____________|
+//              It has the following sub-architecture:
+//                                                 _____________
+//                                                |   System    |
+//   Main Clock Domain        /------------------>|    Cache    |---->|  Main Clock Domain                     DDR4CH<n> Clock Domain
+//   ADDR: MBUS_ADDR_WIDTH    | ENABLE_CACHE = 1  |_____________|     |  ADDR: MBUS_ADDR_WIDTH  ____________   ADDR: 34 bit     ____________
+//   DATA: MBUS_DATA_WIDTH    |                                       |  DATA: 512             |   Clock    |  DATA: 512 bit   |            |
+// ------------------------ ->|                                       |----------------------->| Converter  |----------------->| DDR4 (MIG) |
+//         s_axi              |                     _____________     |      to_clk_conv       |____________| clk_conv_to_ddr4 |____________|
+//                            | ENABLE_CACHE = 0   |    Dwidth   |    |
+//                            \------------------->|  Converter  |--->|
+//                                                 |_____________|
 
 
 `include "uninasoc_pcie.svh"
@@ -76,6 +75,9 @@ module ddr4_channel_wrapper # (
     // DDR4 34-bits address signals
     logic [DDR4_CHANNEL_ADDRESS_WIDTH-1:0] ddr4_axi_awaddr;
     logic [DDR4_CHANNEL_ADDRESS_WIDTH-1:0] ddr4_axi_araddr;
+
+    // AXI bus from the cache to the clock converter
+    `DECLARE_AXI_BUS(to_clk_conv, DDR4_CHANNEL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 
     // AXI bus from the cache to the clock converter
     `DECLARE_AXI_BUS(to_clk_conv, DDR4_CHANNEL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
@@ -171,7 +173,6 @@ module ddr4_channel_wrapper # (
                 .M0_AXI_RVALID      ( to_clk_conv_axi_rvalid  ), // input wire M0_AXI_RVALID
                 .M0_AXI_RREADY      ( to_clk_conv_axi_rready  )  // output wire M0_AXI_RREADY
                 );
-
     end else begin : no_cache
 
         // Dwidth converter master ID signals assigned to 0
@@ -181,7 +182,7 @@ module ddr4_channel_wrapper # (
         assign to_clk_conv_axi_arid = '0;
 
         // AXI dwith converter from XLEN bit (global AXI data width) to 512 bit (AXI user interface DDR data width)
-        xlnx_axi_dwidth_to512_converter axi_dwidth_conv_u (
+            xlnx_axi_dwidth_to512_converter axi_dwidth_conv_u (
                 .s_axi_aclk     ( clock_i      ),
                 .s_axi_aresetn  ( reset_ni     ),
 
