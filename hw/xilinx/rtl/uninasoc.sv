@@ -707,7 +707,7 @@ module uninasoc (
 
     // DDR channel 1 on MBUS
     ddr4_channel_wrapper # (
-        .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH0
+        .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH1
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
