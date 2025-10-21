@@ -79,9 +79,6 @@ module ddr4_channel_wrapper # (
     // AXI bus from the cache to the clock converter
     `DECLARE_AXI_BUS(to_clk_conv, DDR4_CHANNEL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 
-    // AXI bus from the cache to the clock converter
-    `DECLARE_AXI_BUS(to_clk_conv, DDR4_CHANNEL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
-
     // AXI bus from the clock converter to the dwidth converter
     `DECLARE_AXI_BUS(clk_conv_to_dwidth_conv, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 
@@ -173,6 +170,7 @@ module ddr4_channel_wrapper # (
                 .M0_AXI_RVALID      ( to_clk_conv_axi_rvalid  ), // input wire M0_AXI_RVALID
                 .M0_AXI_RREADY      ( to_clk_conv_axi_rready  )  // output wire M0_AXI_RREADY
                 );
+
     end else begin : no_cache
 
         // Dwidth converter master ID signals assigned to 0
