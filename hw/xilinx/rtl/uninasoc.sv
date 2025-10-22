@@ -3,33 +3,37 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 // Author: Zaira Abdel Majid <z.abdelmajid@studenti.unina.it>
 // Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
-// Description: Basic version of UninaSoC that allows to work with axi transactions to and from slaves (ToBeUpdated)
+// Description: FPGA-ready top-level soft-SoC module for both hpc and embedded profiles.
 
 // System architecture:
-//                                                                                    ________
-//                                                     __________                    |        |
-//                                                    |          |                   |  Main  |
-//                                                    |          |------------------>| Memory |
-//                                                    |   Main   |                   |________|
-//   ____________                                     |   Bus    |                    __________________
-//  |            |                                    |          |                   |                  |
-//  | sys_master |----------------------------------->|          |------------------>| High-performance |
-//  |____________|                                    |          |                   |       bus        |
-//   ______________                                   |          |<------------------|     (HBUS)       |
-//  |              |--------------------------------->|          |                   |__________________|
-//  | Debug Module |                                  |          |                    ________________
-//  |______________|<---------------------------------|          |                   |                |
-//                                                    |          |------------------>| Peripheral bus |---------|
+//
+//                                                     __________                     ________
+//   ____________                                     |          |                   |        |
+//  |            |                                    |          |------------------>|  BRAM  |
+//  | sys_master |----------------------------------->|          |                   |________|
+//  |____________|                                    |          |                    ___________
+//   ______________                                   |          |                   |           |
+//  |              |--------------------------------->|          |------------------>|  DDR4CH1  |
+//  | Debug Module |                                  |   Main   |                   |___________|
+//  |______________|<---------------------------------|   Bus    |                    __________________
+//                                                    |  (MBUS)  |                   |                  |
+//                                                    |          |------------------>| High-performance |
+//                                                    |          |                   |       bus        |
+//                                                    |          |<------------------|     (HBUS)       |
+//                                                    |          |                   |__________________|
+//                                                    |          |                    ________________
+//                                                    |          |                   |                |
+//                                                    |          |------------------>| Peripheral bus |---------\
 //                                                    |          |                   |     (PBUS)     |         |
 //                                                    |          |                   |________________|         | peripheral
 //   _________              ____________              |          |                    ________________          | interrupts
 //  |         |            |            |             |          |                   |                |         |
-//  |   vio   |----------->| rv_socket  |------------>|          |------------------>|      PLIC      |<--------|
+//  |   vio   |----------->| rv_socket  |------------>|          |------------------>|      PLIC      |<--------/
 //  |_________|            |____________|             |          |                   |________________|
 //                                ^                   |          |                            |
 //                                |                   |__________|                            |
 //                                |                                                           |
-//                                |___________________________________________________________|
+//                                \___________________________________________________________/
 //                                                 platform interrupt
 
 /////////////////////
@@ -676,6 +680,7 @@ module uninasoc (
 
     // DDR4 Channel 0
     ddr4_channel_wrapper # (
+        .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH0
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
