@@ -14,11 +14,11 @@ CONFIG_BUS_CSVS ?= ${CONFIG_MBUS_CSV} \
 
 all: config_main_bus config_peripheral_bus config_highperformance_bus config_ld config_sw config_xilinx
 
-config_main_bus:
-config_peripheral_bus:
-config_highperformance_bus:
+config_main_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_main_crossbar/config.tcl
+config_peripheral_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_peripheral_crossbar/config.tcl
+config_highperformance_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/hpc/xlnx_highperformance_crossbar/config.tcl
 config_%_bus: CONFIG_BUS_CSV = ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_$*_bus.csv
-config_%_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_$*_crossbar/config.tcl
+config_%_bus:
 config_%_bus: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_crossbar_config.py \
 		${CONFIG_SYSTEM_CSV} \

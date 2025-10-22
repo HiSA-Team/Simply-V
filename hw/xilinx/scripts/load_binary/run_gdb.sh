@@ -9,9 +9,9 @@ ARGC=$#;
 # Print the right usage
 help (){
     echo  "Usage: source ${BASH_SOURCE[0]} <elf_name> <backend_port>";
-    echo  "    elf_name         :  path to the elf file";
-    echo  "    backend_port     :  port backend (We use 3004 for both vivado hw_server (32-bits) and openocd. 3005 for vivado hw_server riscv 64 bits)";
-    echo  "    xlen             :  system xlen (32 or 64 bits)";
+    echo  "    elf_name          :  path to the elf file";
+    echo  "    backend [ip:port] :  port backend (We use 3004 for both vivado hw_server (32-bits) and openocd. Port 3005 for vivado hw_server riscv 64 bits)";
+    echo  "    xlen              :  system xlen (32 or 64 bits)";
     return;
 }
 
@@ -25,15 +25,19 @@ fi
 
 # Get the args
 ELF_NAME=$1;
-BACKEND_PORT=$2;
+BACKEND_IP_PORT=$2;
 XLEN=$3
 
 echo "Running GDB $XLEN-bits version";
 echo "Loading ELF $ELF_NAME";
-echo "Connecting to port $BACKEND_PORT";
+echo "Connecting to $BACKEND_IP_PORT";
 
 # Run GDB
 riscv$XLEN-unknown-elf-gdb $ELF_NAME \
     -ex 'set architecture riscv:rv'$XLEN \
-    -ex 'target extended-remote:'$BACKEND_PORT \
-    -ex 'load '$ELF_NAME;
+    -ex 'target extended-remote '$BACKEND_IP_PORT \
+    -ex "file $ELF_NAME" \
+    -ex 'load ' \
+    -ex "b _exit_wfi" \
+    -ex "c" \
+    -ex "quit"

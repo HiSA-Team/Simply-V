@@ -51,6 +51,5 @@ dow $ELF_FILE
 # Wait 0.5 seconds
 after 500
 # Start execution
-puts "\[INFO\] Run \"con\" to start execution"
 puts "\[INFO\] Starting execution"
 con

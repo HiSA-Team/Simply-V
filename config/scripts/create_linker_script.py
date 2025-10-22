@@ -84,9 +84,9 @@ for config_df in config_dfs:
 BOOT_MEMORY_BLOCK = 0x0
 
 
-# ################
-# # Sanity check #
-# ################
+################
+# Sanity check #
+################
 # For each bus
 for i in range(len(NUM_MI)):
 	assert (NUM_MI[i] == len(RANGE_NAMES[i])) & (NUM_MI[i] == len(RANGE_BASE_ADDR[i]) ) & (NUM_MI[i]  == len(RANGE_ADDR_WIDTH[i])), \
@@ -109,7 +109,8 @@ for i in range(len(RANGE_NAMES)):
 	for device in RANGE_NAMES[i]:
 		match device:
 			# memory blocks
-			case "BRAM" | "DDR" | "HBM":
+			# TODO77: extend for multiple BRAMs
+			case d if d in {"BRAM", "HBM"} or d.startswith("DDR4CH"):
 				device_dict['memory'].append({'device': device, 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
 
 			# peripherals

@@ -38,12 +38,16 @@ module ddr4_channel_wrapper # (
     input logic clock_i,
     input logic reset_ni,
 
-    // DDR4 CH0 clock and reset
-    input logic clk_300mhz_0_p_i,
-    input logic clk_300mhz_0_n_i,
+    // DDR4 CH<x> clock and reset
+    input logic clk_300mhz_x_p_i,
+    input logic clk_300mhz_x_n_i,
 
     // DDR4 channel interface (to PHYs)
     `DEFINE_DDR4_PORTS(x),
+
+    // DDR4 output clk and rst
+    output logic ddr_clk_o,
+    output logic ddr_rst_o,
 
     // AXI-lite CSR interface
     `DEFINE_AXILITE_SLAVE_PORTS(s_ctrl, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
@@ -67,10 +71,6 @@ module ddr4_channel_wrapper # (
             ddr4_reset <= 1'b0;
         end
     end
-
-    // DDR4 output clk and rst
-    logic ddr_clk;
-    logic ddr_rst;
 
     // DDR4 34-bits address signals
     logic [DDR4_CHANNEL_ADDRESS_WIDTH-1:0] ddr4_axi_awaddr;
@@ -277,8 +277,8 @@ module ddr4_channel_wrapper # (
         .s_axi_aclk     ( clock_i        ),
         .s_axi_aresetn  ( reset_ni       ),
 
-        .m_axi_aclk     ( ddr_clk        ),
-        .m_axi_aresetn  ( ~ddr_rst       ),
+        .m_axi_aclk     ( ddr_clk_o        ),
+        .m_axi_aresetn  ( ~ddr_rst_o       ),
         // Slave from Cache or Dwidth Converter
         .s_axi_awid     ( to_clk_conv_axi_awid     ),
         .s_axi_awaddr   ( to_clk_conv_axi_awaddr   ),
@@ -369,8 +369,8 @@ module ddr4_channel_wrapper # (
     assign ddr4_axi_araddr = (LOCAL_ADDR_WIDTH == 32) ? { 2'b00, clk_conv_to_ddr4_axi_araddr } : clk_conv_to_ddr4_axi_araddr[DDR4_CHANNEL_ADDRESS_WIDTH-1:0];
 
     xlnx_ddr4 ddr4_u (
-        .c0_sys_clk_n                ( clk_300mhz_0_n_i ),
-        .c0_sys_clk_p                ( clk_300mhz_0_p_i ),
+        .c0_sys_clk_n                ( clk_300mhz_x_n_i ),
+        .c0_sys_clk_p                ( clk_300mhz_x_p_i ),
 
         .sys_rst                     ( ddr4_reset       ),
 
@@ -391,17 +391,17 @@ module ddr4_channel_wrapper # (
         .c0_ddr4_dqs_t               ( cx_ddr4_dqs_t    ),
         .c0_ddr4_dqs_c               ( cx_ddr4_dqs_c    ),
         .c0_ddr4_odt                 ( cx_ddr4_odt      ),
-        .c0_ddr4_parity              ( cx_ddr4_par      ),
+        .c0_ddr4_parity              ( cx_ddr4_parity   ),
         .c0_ddr4_bg                  ( cx_ddr4_bg       ),
         .c0_ddr4_reset_n             ( cx_ddr4_reset_n  ),
         .c0_ddr4_act_n               ( cx_ddr4_act_n    ),
         .c0_ddr4_ck_t                ( cx_ddr4_ck_t     ),
         .c0_ddr4_ck_c                ( cx_ddr4_ck_c     ),
 
-        .c0_ddr4_ui_clk              ( ddr_clk          ),
-        .c0_ddr4_ui_clk_sync_rst     ( ddr_rst          ),
+        .c0_ddr4_ui_clk              ( ddr_clk_o        ),
+        .c0_ddr4_ui_clk_sync_rst     ( ddr_rst_o        ),
 
-        .c0_ddr4_aresetn             ( ~ddr_rst         ),
+        .c0_ddr4_aresetn             ( ~ddr_rst_o       ),
 
         // AXILITE interface - for status and control
         .c0_ddr4_s_axi_ctrl_awvalid  ( s_ctrl_axilite_awvalid ),

@@ -128,7 +128,6 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
     for i in range(len(config.BASE_ADDR)):
         base_address = int(config.BASE_ADDR[i], 16)
         end_address = base_address + ~(~1 << (config.RANGE_ADDR_WIDTH[i]-1))
-
         # Check if the base addr does not fall into the addr range (e.g. base_addr: 0x100 is not allowed with range_width=12)
         if (base_address & ~(~1 << (config.RANGE_ADDR_WIDTH[i]-1)) ) != 0:
             print_error(f"BASE_ADDR does not match RANGE_ADDR_WIDTH in {config_file_name}")
@@ -155,8 +154,9 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         # Check valid clock domains
         for i in range(len(config.RANGE_CLOCK_DOMAINS)):
             # Check if the clock frequency is valid (DDR has its own clock domain)
-            # TODO: decide a prefix for HBUS-attached accelerators here, maybe ACC_* or HBUS_*
-            if config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG] and config.RANGE_NAMES[i] not in {"DDR", "HBUS"}:
+            # TOD143: decide a prefix for HBUS-attached accelerators here, maybe ACC_* or HBUS_*
+            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS", "HLS_CONTROL"]
+            if ( config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG] ) and ( config.RANGE_NAMES[i] not in exclude_list):
                 print_error(f"The clock domain {config.RANGE_CLOCK_DOMAINS[i]}MHz is not supported")
                 return False
             # Check if all the main_clock_domain slaves have the same frequency as MAIN_CLOCK_DOMAIN
@@ -165,8 +165,10 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
                     print_error(f"The {config.RANGE_NAMES[i]} frequency {config.RANGE_CLOCK_DOMAINS[i]} must be the same as MAIN_CLOCK_DOMAIN {config.MAIN_CLOCK_DOMAIN}")
                     return False
             # Check if the DDR has the right frequency
-            if config.RANGE_NAMES[i] in {"DDR", "HBUS"}:
+            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS", "HLS_CONTROL"]
+            if config.RANGE_NAMES[i] in exclude_list:
                 if config.RANGE_CLOCK_DOMAINS[i] != DDR_FREQUENCY:
+                    # TODO143: for now, limit HBUS to DDR clock (this also impacts PR128)
                     print_error(f"The DDR and HBUS frequency {config.RANGE_CLOCK_DOMAINS[i]} must be the same of DDR board clock {DDR_FREQUENCY}")
                     return False
 
@@ -203,7 +205,6 @@ def check_inter_config(configs : list) -> bool:
             if config.RANGE_NAMES[mi_index] in CONFIG_NAMES.values():
                 # Find the child bus configuration
                 for child_config in configs:
-                    # TODO: allow loop back to MBUS
                     if child_config.CONFIG_NAME == config.RANGE_NAMES[mi_index] and child_config.CONFIG_NAME != "MBUS":
                         # Compute the base and the end address of the parent bus
                         parent_base_address = int(config.BASE_ADDR[mi_index], 16)

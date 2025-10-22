@@ -37,7 +37,8 @@ load_binary_embedded: ${BIN_PATH}
 
 # Write the binary to BRAM/DDR through XDMA
 load_binary_hpc: ${BIN_PATH}
-	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/xdma_load_binary.sh ${BIN_PATH} ${BASE_ADDRESS} ${LOAD_BINARY_READBACK}"
+	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/xdma_load_binary.sh
+		${PCIE_BAR} ${BIN_PATH} ${BASE_ADDRESS} ${LOAD_BINARY_READBACK}"
 
 ######################
 # Load ELF - Backend #
@@ -56,7 +57,8 @@ XSDB ?= xsdb
 # - 3005 for 64-bit
 # Although if one of the port has already been used, hw_server will not switch and use the active one for either 32 or 64 bits.
 # If using OpenOCD, we always connect to port 3004
-DEBUG_PORT ?= 3004
+GDB_HOST ?= localhost
+GDB_PORT ?= 3004
 
 xsdb_run:
 	${XSDB} -interactive ${XILINX_SCRIPTS_LOAD_ROOT}/xsdb_backend.tcl
@@ -76,7 +78,7 @@ openocd_run:
 # Use GDB to load the ELF and run (open the backend in a shell before)
 
 gdb_run:
-	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/run_gdb.sh ${ELF_PATH} ${DEBUG_PORT} ${XLEN}"
+	${XILINX_SCRIPTS_LOAD_ROOT}/run_gdb.sh ${ELF_PATH} ${GDB_HOST}:${GDB_PORT} ${XLEN}
 
 # Run XSBD to load the ELF and run directly
 xsdb_run_elf:

@@ -1,4 +1,5 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Description:
 #  This is a global makefile for the System-on-Chip software projects.
 #  It can be used to compile all default examples
@@ -17,7 +18,7 @@ include $(SW_ROOT)/SoC/common/config.mk
 all: lib examples
 
 # Compile all examples in the example dir
-examples:
+examples: lib
 	@echo "[Make] Compile all the example projects"
 	@for example in ${EXAMPLES_LIST}; do \
 		echo "[Make] Compiling project $$example" ; \
@@ -40,6 +41,8 @@ clean:
 		${MAKE} -C $$example clean; \
 		echo "\n[Make] Done\n" ; \
 	done
-
+	@echo "[Make] Clean library projects"
+	${MAKE} -C lib/tinyio clean
+	${MAKE} -C lib/uninasoc clean
 
 .PHONY: examples lib
