@@ -33,9 +33,6 @@ printf "${YELLOW}[FETCH_SOURCES] Download Bender${NC}\n"
 BENDER_VERSION=0.27.3
 curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh	-s -- ${BENDER_VERSION}
 
-# Patch Bender file
-sed -i "|.+vendor/pulp-platform/fpga-support/fpga-support-stubs.sv|d" CVA6_BENDER_FILE
-
 # Download dependencies (specify Target RTL and FPGA)
 printf "${YELLOW}[FETCH_SOURCES] Resolve dependencies with Bender${NC}\n"
 ./bender checkout
@@ -71,15 +68,15 @@ sed -i '/ara_soc\.sv/d' ${BENDER_RTL_LIST}
 # Remove unused apb modules
 sed -i -E '/.+apb.*\.sv/d' ${BENDER_RTL_LIST}
 
-# Remove silly constraint on FPGA support by PULP
-# Remove error-triggering file
-sed -i "/fpga-support-stubs.sv/d" ${BENDER_RTL_LIST}
-# Include FPGA-support files
-FPGA_SUPPORT_RTL=${CLONE_DIR}/hardware/deps/cva6/vendor/pulp-platform/fpga-support/rtl/
-fpga_files=($(ls ${FPGA_SUPPORT_RTL} ))
-for fpga_file in "${fpga_files[@]}"; do
-    echo ${FPGA_SUPPORT_RTL}/$fpga_file >> ${BENDER_RTL_LIST}
-done
+# # Remove silly constraint on FPGA support by PULP
+# # Remove error-triggering file
+# sed -i "/fpga-support-stubs.sv/d" ${BENDER_RTL_LIST}
+# # Include FPGA-support files
+# FPGA_SUPPORT_RTL=${CLONE_DIR}/hardware/deps/cva6/vendor/pulp-platform/fpga-support/rtl/
+# fpga_files=($(ls ${FPGA_SUPPORT_RTL} ))
+# for fpga_file in "${fpga_files[@]}"; do
+#     echo ${FPGA_SUPPORT_RTL}/$fpga_file >> ${BENDER_RTL_LIST}
+# done
 
 # Overwrite configuration file location in bender script
 escaped=$(echo "${ASSETS_DIR}" | sed 's/\//\\\//g')

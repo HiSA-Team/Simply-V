@@ -51,7 +51,7 @@ module rv_socket # (
 
     // Extended boot_addr_i to 64-bits
     // - For cores that have a fixed adddress width
-    logic [CVA6_ADDR_WIDTH -1 : 0] extended_a64_boot_addr = {{1'b0}'(64-LOCAL_ADDR_WIDTH), bootaddr_i }
+    logic [63 : 0] extended_a64_boot_addr = {{1'b0}'(64-LOCAL_ADDR_WIDTH), bootaddr_i };
 
     //////////////////////////////////////
     //    ___ _                _        //
@@ -936,6 +936,7 @@ module rv_socket # (
             `ASSIGN_AXI_BUS( rv_socket_data  , ara_narrow );
 
             // CVA6 + Ara IP
+            (* keep_hierarchy = "TRUE" *)  // DEBUG
             custom_cv64a6_ara cv64a6_ara_core (
                 .clk_i             ( clk_i                         ),
                 .rst_ni            ( core_resetn_internal          ),

@@ -20,7 +20,8 @@ package cva6_config_pkg;
   localparam CVA6ConfigVlen   = 64;
 
   // FPGA optimizations
-  localparam CVA6ConfigFpgaEn = 1;
+  // localparam CVA6ConfigFpgaEn = 1;
+  localparam CVA6ConfigFpgaEn = 0; // Under test
 
   // Debug memory
   localparam CVA6ConfigDmBaseAddress = 64'h10000;
@@ -29,6 +30,7 @@ package cva6_config_pkg;
 
   // RISC-V extensions
   localparam CVA6ConfigRVF = 1;
+  localparam CVA6ConfigRVD = 1;
   localparam CVA6ConfigF16En = 0;
   localparam CVA6ConfigF16AltEn = 0;
   localparam CVA6ConfigF8En = 0;
@@ -41,7 +43,7 @@ package cva6_config_pkg;
   localparam CVA6ConfigZcmpExtEn = 0;
   localparam CVA6ConfigAExtEn = 1;
   localparam CVA6ConfigBExtEn = 1;
-  localparam CVA6ConfigHExtEn = 0;
+  localparam CVA6ConfigHExtEn = 0; // Disable for Ara
   localparam CVA6ConfigVExtEn = 1; // Enables Ara!
   localparam CVA6ConfigRVZiCond = 1;
   localparam CVA6ConfigSclicExtEn = 0;
@@ -57,19 +59,20 @@ package cva6_config_pkg;
 
   // L1 Caches
   localparam CachedAddrBeg = 64'h8000_0000; // TODO121: align this with config
-  localparam CVA6ConfigIcacheByteSize = 16384;
-  localparam CVA6ConfigIcacheSetAssoc = 4;
-  localparam CVA6ConfigIcacheLineWidth = 128;
-  localparam CVA6ConfigDcacheByteSize = 32768;
-  localparam CVA6ConfigDcacheSetAssoc = 8;
-  localparam CVA6ConfigDcacheLineWidth = 128;
-  // From cv64a6_imafdcv_sv39_config_pkg
-  // localparam CVA6ConfigIcacheByteSize = 4096;
+  // localparam CVA6ConfigIcacheByteSize = 16384;
   // localparam CVA6ConfigIcacheSetAssoc = 4;
   // localparam CVA6ConfigIcacheLineWidth = 128;
-  // localparam CVA6ConfigDcacheByteSize = 8192;
-  // localparam CVA6ConfigDcacheSetAssoc = 4;
-  // localparam CVA6ConfigDcacheLineWidth = 256;
+  // localparam CVA6ConfigDcacheByteSize = 32768;
+  // localparam CVA6ConfigDcacheSetAssoc = 8;
+  // localparam CVA6ConfigDcacheLineWidth = 128;
+  // From cv64a6_imafdcv_sv39_config_pkg
+  // TODO: Under test
+  localparam CVA6ConfigIcacheByteSize = 4096;
+  localparam CVA6ConfigIcacheSetAssoc = 4;
+  localparam CVA6ConfigIcacheLineWidth = 128;
+  localparam CVA6ConfigDcacheByteSize = 8192;
+  localparam CVA6ConfigDcacheSetAssoc = 4;
+  localparam CVA6ConfigDcacheLineWidth = 256;
 
   localparam CVA6ConfigDcacheFlushOnFence = 1'b0;
   localparam CVA6ConfigDcacheInvalidateOnFlush = 1'b0;
@@ -118,14 +121,14 @@ package cva6_config_pkg;
       MemTidWidth: unsigned'(CVA6ConfigMemTidWidth),
       NrLoadBufEntries: unsigned'(CVA6ConfigNrLoadBufEntries),
       RVF: bit'(CVA6ConfigRVF),
-      RVD: bit'(CVA6ConfigRVF),
-      XF8ALT: bit'(1),
+      RVD: bit'(CVA6ConfigRVD),
       XF16: bit'(CVA6ConfigF16En),
       XF16ALT: bit'(CVA6ConfigF16AltEn),
       XF8: bit'(CVA6ConfigF8En),
+      XF8ALT: bit'(CVA6ConfigF8AltEn),
       RVA: bit'(CVA6ConfigAExtEn),
       RVB: bit'(CVA6ConfigBExtEn),
-      ZKN: bit'(1),
+      ZKN: bit'(0),
       RVV: bit'(CVA6ConfigVExtEn),
       RVC: bit'(CVA6ConfigCExtEn),
       RVH: bit'(CVA6ConfigHExtEn),

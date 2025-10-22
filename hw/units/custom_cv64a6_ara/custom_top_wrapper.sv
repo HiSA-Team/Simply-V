@@ -11,12 +11,10 @@
 // Import PULP headers
 `include "typedef.svh" // axi/typedef.svh
 `include "intf_typedef.svh" // ara/intf_typedef.svh
+`include "rvfi_types.svh" // for RVFI probes
 
-// Import CVA6 configuration package
-// import config_pkg::*;
-// import cva6_config_pkg::*;
-
-module custom_top_wrapper # (
+// DEBUG
+(* keep_hierarchy = "yes" *) module custom_top_wrapper # (
 
     //////////////////////////////////////
     //  Add here IP-related parameters  //
@@ -189,6 +187,16 @@ module custom_top_wrapper # (
     // Modules //
     /////////////
 
+    // RVFI PROBES
+    // localparam type rvfi_probes_instr_t = `RVFI_PROBES_INSTR_T(CVA6AraConfig);
+    // localparam type rvfi_probes_csr_t = `RVFI_PROBES_CSR_T(CVA6AraConfig);
+    // localparam type rvfi_probes_t = struct packed {
+    //     rvfi_probes_csr_t csr;
+    //     rvfi_probes_instr_t instr;
+    // };
+    // // Mark debug
+    // (* mark_debug = "true" *) rvfi_probes_t rvfi_probes_cva6;
+
     // CVA6
     cva6 #(
         .CVA6Cfg            ( CVA6AraConfig      ),
@@ -225,7 +233,8 @@ module custom_top_wrapper # (
         .clic_kill_req_i  ( '0             ),
         .clic_kill_ack_o  (                ), // Open
         // RVFI probes
-        .rvfi_probes_o    (                ), // Open
+        // .rvfi_probes_o    (                ), // Open
+        .rvfi_probes_o    ( rvfi_probes_cva6 ),
         // Accelerator interface
         .cvxif_req_o      ( acc_req        ),
         .cvxif_resp_i     ( acc_resp_pack  ),
