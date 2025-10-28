@@ -1,8 +1,6 @@
 import re
 from peripheral import Peripheral
-from peripheral import Peripheral
 from utils import *
-from peripheral import Peripheral
 import os
 from mbus import MBus
 from node import Node
@@ -10,20 +8,18 @@ from logger import Logger
 from pprint import pprint
 
 class SimplyV:
-	def __init__(self, sys_config_file_name: str, mbus_file_name: str, soc_profile: str):
+	def __init__(self, sys_config_file_name: str, mbus_file_name: str):
 		# defaults
 		self.SUPPORTED_CORES : list = ["CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", \
 										"CORE_MICROBLAZEV_RV64", "CORE_CV64A6"]
 		self.BOOT_MEMORY_BLOCK = 0x0
-		self.EMBEDDED_SUPPORTED_CLOCKS : list[int] = [10, 20, 50, 100]
-		self.HPC_SUPPORTED_CLOCKS : list[int] = [10, 20, 50, 100, 250]
+
 		self.CORE_SELECTOR : str
+		self.MAIN_CLOCK_DOMAIN: int
 		self.VIO_RESETN_DEFAULT : int = 1
 		self.XLEN : int = 32
 		self.PHYSICAL_ADDR_WIDTH : int = 32
-		self.MAIN_CLOCK_DOMAIN : int
 		self.logger: Logger = Logger(sys_config_file_name)
-		self.soc_profile : str = soc_profile
 		self.mbus : "MBus"
 		
 		# read config file
@@ -49,17 +45,14 @@ class SimplyV:
 		asgn_addr_ranges = 1
 		asgn_range_base_addr = [0]
 		asgn_range_addr_width = [self.PHYSICAL_ADDR_WIDTH]
-		clock = self.MAIN_CLOCK_DOMAIN
 
 		mbus_data_dict = parse_csv(mbus_file_name)
 
 		self.mbus = MBus(mbus_data_dict, mbus_file_name, axi_addr_width, axi_data_width, asgn_addr_ranges, \
-								asgn_range_base_addr, asgn_range_addr_width, clock)
+								asgn_range_base_addr, asgn_range_addr_width, self.MAIN_CLOCK_DOMAIN)
 
 		#generate children nodes
 		self.mbus.generate_children()
-
-		pprint(vars(self.mbus))
 
 
 	def check_assign_params(self, data_dict: dict):
@@ -89,9 +82,10 @@ class SimplyV:
 				simply_v_crash("PHYSICAL_ADDR_WIDTH can't be outside [32,64]")
 
 		if ("MAIN_CLOCK_DOMAIN" not in data_dict):
-			simply_v_crash("MAIN_CLOCK_DOMAIN is mandatory")
+			self.logger.simply_v_crash("MAIN_CLOCK_DOMAIN is mandatory")
 
 		self.MAIN_CLOCK_DOMAIN = int(data_dict["MAIN_CLOCK_DOMAIN"])
+
 
 
 	def check_intra(self):
@@ -109,15 +103,7 @@ class SimplyV:
 		if((self.XLEN == 64) and ((self.PHYSICAL_ADDR_WIDTH == 32) or (self.PHYSICAL_ADDR_WIDTH > 64))):
 			simply_v_crash("PHYSICAL_ADDR_WIDTH should be in range (32,64] when XLEN = 64")
 
-		# check profile and MAIN_CLOCK_DOMAIN interaction
-		if (self.soc_profile == "embedded"):
-			if (self.MAIN_CLOCK_DOMAIN not in self.EMBEDDED_SUPPORTED_CLOCKS):
-				simply_v_crash(f"Unsupported MAIN_CLOCK_DOMAIN value (supported values\
-						for {self.soc_profile} profile: {self.EMBEDDED_SUPPORTED_CLOCKS})")
-		else: #hpc
-			if (self.MAIN_CLOCK_DOMAIN not in self.HPC_SUPPORTED_CLOCKS):
-				simply_v_crash(f"Unsupported MAIN_CLOCK_DOMAIN value (supported values\
-						for {self.soc_profile} profile: {self.HPC_SUPPORTED_CLOCKS})")
+
 
 		## check CORE_SELECTOR and VIO_RESETN_DEFAULT interaction
 		if self.CORE_SELECTOR == "CORE_PICORV32" and self.VIO_RESETN_DEFAULT != 0:
@@ -281,10 +267,37 @@ class SimplyV:
 		fd.write("\n")
 		fd.close()
 
-
 	def dump_reachability(self, dump_file_name: str, peripherals: list[Peripheral]):
 		fd = open(dump_file_name,  "w")
+
+		#Avoid duplicates
+		busses = set()
 		for p in peripherals:
-			fd.write(p.NAME + "," + " ".join(p.REACHABLE_FROM) + "\n")
+			for bus in p.REACHABLE_FROM:
+				busses.add(bus)
 
+		#"busses_list" is the source of truth for the rest of the configuration
+		#in order to have coherent results about the same bus in different rows (peripherals)
+		busses_list = list(busses)
 
+		#HEADER
+		busses_list_hdr = ",".join(busses_list)
+		fd.write(f"NAME,BASE_ADDR,END_ADDR,{busses_list_hdr}\n")
+
+		#BODY
+		for p in peripherals:
+			list_of_reachables = ["N"] * len(busses_list)
+			str_of_reachables = ""
+
+			for bus in p.REACHABLE_FROM:
+				#index will never throw exception in this case
+				position = busses_list.index(bus)
+				list_of_reachables[position] = "Y"
+
+			str_of_reachables = ",".join(list_of_reachables)
+			#write row
+			fd.write(f"{p.NAME},{hex(p.get_base_addr())},{hex(p.get_end_addr()-1)},{str_of_reachables}\n")
+
+	def print_vars(self):
+		pprint(vars(self))
+		self.mbus.print_vars()

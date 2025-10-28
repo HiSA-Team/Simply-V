@@ -76,7 +76,6 @@ class Bus(Node, ABC):
 			peripheral.add_to_reachable(self.NAME)
 			peripheral.add_list_to_reachable(self.REACHABLE_FROM)
 
-
 	def check_assign_params(self, data_dict: dict):
 		simply_v_crash = self.logger.simply_v_crash
 
@@ -138,12 +137,10 @@ class Bus(Node, ABC):
 			self.ADDR_RANGES = data_dict["ADDR_RANGES"]
 
 
-
 	def check_intra(self):
 		simply_v_crash = self.logger.simply_v_crash
 		MIN_AXI4_ADDR_WIDTH = 12
 		MIN_AXI4LITE_ADDR_WIDTH = 1
-
 
 		if (self.NUM_MI != len(self.RANGE_NAMES)):
 			simply_v_crash(f"The NUM_MI value {self.NUM_MI} does not match the number of RANGE_NAMES")
@@ -198,3 +195,12 @@ class Bus(Node, ABC):
 			if (not self.contains(base, end)):
 				self.logger.simply_v_crash(f"The addresses assigned to some Node (Peripheral or Bus) in this bus "
 						"don't fit in the address ranges assigned to this bus from his parent bus.")
+
+	
+	def get_peripherals(self) -> list[Peripheral]:
+		return self.children_peripherals
+
+
+	def print_vars(self):
+		for peripheral in self.children_peripherals:
+			pprint(vars(peripheral))

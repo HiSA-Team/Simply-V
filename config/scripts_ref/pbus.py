@@ -1,6 +1,5 @@
 from bus import Bus
 from peripheral import Peripheral
-
 from pprint import pprint
 
 class PBus(Bus):
@@ -47,15 +46,12 @@ class PBus(Bus):
 		super().check_inter()
 
 	def generate_children(self):
-		for i, node_name in enumerate(self.RANGE_NAMES):
+		for i in range(len(self.RANGE_NAMES)):
 			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
 						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.CLOCK)
-			pprint(vars(node))
 			self.children_peripherals.append(node)
 			# all the peripherals of PBUS are reachable from PBUS and everything that
 			# can reach PBUS
-			node.add_to_reachable(self.NAME)
-			node.add_list_to_reachable(self.REACHABLE_FROM)
-
+		super().add_reachability()

@@ -1,13 +1,19 @@
+import os
+import re
+from pprint import pprint
+from abc import abstractmethod
 from bus import Bus
+from utils import parse_csv
 from peripheral import Peripheral
 
 class NonLeafBus(Bus):
+	bus_registry = {}
+
 	def __init__(self, name:str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
 			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
 
 		self.RANGE_CLOCK_DOMAINS: list[int] = []
 		self.children_busses: list[Bus] = []
-		self.children_nonleaf_busses: list[NonLeafBus] = []
 		self.num_loopbacks: int = 0
 
 		# init Bus object
@@ -23,25 +29,6 @@ class NonLeafBus(Bus):
 		if self.NUM_MI != len(self.RANGE_CLOCK_DOMAINS):
 			simply_v_crash(f"The NUM_MI value {self.NUM_MI} does not match the number of RANGE_CLOCK_DOMAINS")
 	
-	
-	def get_peripherals(self) -> list[Peripheral]:
-		peripherals: list[Peripheral] = self.children_peripherals.copy()
-		busses: list[Bus] = self.children_busses.copy()
-		nonleaf_busses: list[NonLeafBus] = self.children_nonleaf_busses.copy()
-		idx = 0
-		while(idx < len(nonleaf_busses)):
-			peripherals.extend(nonleaf_busses[idx].children_peripherals)
-			nonleaf_busses.extend(nonleaf_busses[idx].children_nonleaf_busses)
-			busses.extend(nonleaf_busses[idx].children_busses)
-			idx += 1
-
-		idx = 0
-		while(idx < len(busses)):
-			peripherals.extend(busses[idx].children_peripherals)
-			idx += 1
-
-		return peripherals 
-
 
 	def check_assign_params(self, data_dict: dict):
 		simply_v_crash = self.logger.simply_v_crash
@@ -111,7 +98,6 @@ class NonLeafBus(Bus):
 		self.RANGE_ADDR_WIDTH = temp_addr_widths 
 		self.RANGE_END_ADDR = self.compute_range_end_addresses(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)
 
-
 	def father_enable_loopback(self):
 		self.logger.simply_v_warning("NEED TO CHECK FATHER ENABLE LOOPBACK IMPLEMENTATION (wrong name convention)")
 		self.MASTER_NAMES.append("HBUS_" + str(self.num_loopbacks))
@@ -119,22 +105,25 @@ class NonLeafBus(Bus):
 		self.NUM_SI += 1
 	
 	def add_reachability(self):
-		# add this BUS to all the BUSSES that are reachable from MBUS
-		# + trigger the same mechanism on the BUSSES
 		super().add_reachability()
 		for bus in self.children_busses:
 			bus.add_to_reachable(self.NAME)
 			#everything that can reach this node can also reach the nodes reachable from this node
 			bus.add_list_to_reachable(self.REACHABLE_FROM)
-			bus.add_reachability()
 
-		# add this BUS to all the NONLEAFBUSSES that are reachable from MBUS
-		# + trigger the same mechanism on the NONLEAFBUSSES
-		for nonleafbus in self.children_nonleaf_busses:
-			nonleafbus.add_to_reachable(self.NAME)
-			#everything that can reach this node can also reach the nodes reachable from this node
-			nonleafbus.add_list_to_reachable(self.REACHABLE_FROM)
-			#nonleafbus.add_reachability()
+	def get_peripherals(self) -> list[Peripheral]:
+		peripherals: list[Peripheral] = []
+		#get all the peripherals on this bus
+		peripherals.extend(super().get_peripherals())
+		#recursively get peripherals of children_busses
+		for bus in self.children_busses:
+			peripherals.extend(bus.get_peripherals())
 
-		# class Bus add_reachability
+		return peripherals
 
+	def print_vars(self):
+		#print peripherals
+		super().print_vars()
+		for bus in self.children_busses:
+			pprint(vars(bus))
+			bus.print_vars()

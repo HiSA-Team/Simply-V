@@ -25,12 +25,13 @@ if __name__ == "__main__":
 		logging.error("Unknown SoC profile")
 		exit(1)
 
-	system = SimplyV(sys_config_file_path, mbus_config_path, soc_profile)
+	system = SimplyV(sys_config_file_path, mbus_config_path)
+
+	system.print_vars()
 
 	peripherals = system.get_peripherals()
 
 	system.create_linker_script('/home/Salvatore/Uninasoc.ld', peripherals)
-
 	system.dump_reachability('/home/Salvatore/Uninasoc.csv', peripherals)
 
-	pprint(vars(system))
+

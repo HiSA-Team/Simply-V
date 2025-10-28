@@ -11,7 +11,6 @@ class Node(ABC):
 		self.ASGN_RANGE_ADDR_WIDTH : list[int] = asgn_range_addr_width 
 		self.ASGN_RANGE_END_ADDR : list[int] = []	# computed from ASGN_RANGE_BASE_ADDR and ASGN_RANGE_ADDR_WIDTH
 		self.CLOCK: int = clock
-
 		self.ASGN_RANGE_END_ADDR = self.compute_range_end_addresses(self.ASGN_RANGE_BASE_ADDR, self.ASGN_RANGE_ADDR_WIDTH)
 		# list of busses that can reach this node
 		self.REACHABLE_FROM : list[str] = []
@@ -49,6 +48,7 @@ class Node(ABC):
 		return min(self.ASGN_RANGE_BASE_ADDR)
 
 	#GENERALIZING ON NUMBER OF ADDR_RANGES
+	#this is the last address NOT addressable
 	def get_end_addr(self):
 		return max(self.ASGN_RANGE_END_ADDR)
 

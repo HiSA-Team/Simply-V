@@ -11,7 +11,6 @@ class HBus(NonLeafBus):
 			asgn_range_base_addr: list, asgn_range_addr_width: list, \
 			axi_addr_width: int ,father: NonLeafBus, clock: int):
 
-
 		self.father = father
 		self.LOOPBACK: int
 		#RANGES OF FATHER WHEN ENABLING LOOPBACK
@@ -39,11 +38,11 @@ class HBus(NonLeafBus):
 		self.check_inter()
 
 		self.check_peripherals(self.LEGAL_PERIPHERALS)
-
 	
 		if (self.LOOPBACK == 1):
 			self.father.father_enable_loopback()
 			self.child_enable_loopback()
+			self.RANGE_CLOCK_DOMAINS.append(father.CLOCK)
 
 
 	def check_assign_params(self, data_dict):
@@ -86,65 +85,9 @@ class HBus(NonLeafBus):
 		# Check valid clock domains
 		self.logger.simply_v_warning("HBUS check_intra isn't fully implemented (missing clocks checks)")
 	
-
 	def check_inter(self):
 		super().check_inter()
 
-	def generate_children(self):
-		self.logger.simply_v_warning("HBUS GENERATE CHILDREN IS A TEMPORARY COPYPASTE")
-		pbus_pattern = r"PBUS(?:_\d+)?"
-		hbus_pattern = r"HBUS(?:_\d+)?"
-
-		root_dir = os.path.join("/", *self.file_name.split("/")[:-1])
-		
-		for i, node_name in enumerate(self.RANGE_NAMES):
-			# SKIP MBUS in case of LOOPBACK
-			if (node_name == "MBUS"):
-				continue
-
-			match = re.search(pbus_pattern, node_name)
-			if (match):
-				pbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv")
-				pbus_data_dict = parse_csv(pbus_file_name)
-
-				node = PBus(match.group(), pbus_data_dict, pbus_file_name, self.ADDR_RANGES, \
-						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
-						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-						self.RANGE_CLOCK_DOMAINS[i])
-
-				self.children_busses.append(node)
-				# all the peripherals of PBUS are reachable from PBUS and everything that
-				# can reach HBUS
-				node.add_list_to_reachable(self.REACHABLE_FROM)
-				pprint(vars(node))
-				continue
-
-			match = re.search(hbus_pattern, node_name)
-			if (match):
-				hbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv") 
-				hbus_data_dict = parse_csv(hbus_file_name)
-				node = HBus(match.group(), hbus_data_dict, hbus_file_name, self.ADDR_RANGES, \
-						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
-						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
-				self.children_nonleaf_busses.append(node)
-				pprint(vars(node))
-				continue
-
-			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
-						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
-						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-						self.RANGE_CLOCK_DOMAINS[i])
-
-			self.children_peripherals.append(node)
-			pprint(vars(node))
-
-		#Recursively generate children
-		for bus in self.children_busses:
-			bus.generate_children()
-		for nonleafbus in self.children_nonleaf_busses:
-			nonleafbus.generate_children()
-		
 	def add_reachability(self):
 		super().add_reachability()
 		# If loopback enabled this HBUS can also reach
@@ -161,3 +104,5 @@ class HBus(NonLeafBus):
 					p.is_contained(father_base_addr_2, father_end_addr_2)):
 					p.add_to_reachable(self.NAME)
 
+	def generate_children(self):
+		return super().generate_children()
