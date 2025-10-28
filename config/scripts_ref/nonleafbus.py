@@ -3,23 +3,29 @@ import re
 from pprint import pprint
 from abc import abstractmethod
 from bus import Bus
+from clock_domain import Clock_Domain
 from utils import parse_csv
 from peripheral import Peripheral
 
 class NonLeafBus(Bus):
-	bus_registry = {}
-
 	def __init__(self, name:str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
-			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
+			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
 
-		self.RANGE_CLOCK_DOMAINS: list[int] = []
+		self.RANGE_CLOCK_DOMAINS: list[str] = []
 		self.children_busses: list[Bus] = []
 		self.num_loopbacks: int = 0
+		self.clock_domains: Clock_Domain
 
 		# init Bus object
 		super().__init__(name, mbus_file_name, axi_addr_width, axi_data_width, \
-				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
+				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
 
+	def init_clock_domains(self):
+		nodes = []
+		nodes.extend(self.children_peripherals)
+		nodes.extend(self.children_busses)
+		self.clock_domains = Clock_Domain(nodes)
+		return
 
 	def check_intra(self):
 		super().check_intra()
@@ -37,7 +43,7 @@ class NonLeafBus(Bus):
 		if("RANGE_CLOCK_DOMAINS" not in data_dict):
 			simply_v_crash("RANGE_CLOCK_DOMAINS is mandatory")
 			
-		self.RANGE_CLOCK_DOMAINS = [int(x) for x in data_dict["RANGE_CLOCK_DOMAINS"].split(" ")]
+		self.RANGE_CLOCK_DOMAINS = data_dict["RANGE_CLOCK_DOMAINS"].split(" ")
 	
 	def child_enable_loopback(self):
 

@@ -15,7 +15,7 @@ class SimplyV:
 		self.BOOT_MEMORY_BLOCK = 0x0
 
 		self.CORE_SELECTOR : str
-		self.MAIN_CLOCK_DOMAIN: int
+		self.MAIN_CLOCK_DOMAIN: str
 		self.VIO_RESETN_DEFAULT : int = 1
 		self.XLEN : int = 32
 		self.PHYSICAL_ADDR_WIDTH : int = 32
@@ -84,7 +84,7 @@ class SimplyV:
 		if ("MAIN_CLOCK_DOMAIN" not in data_dict):
 			self.logger.simply_v_crash("MAIN_CLOCK_DOMAIN is mandatory")
 
-		self.MAIN_CLOCK_DOMAIN = int(data_dict["MAIN_CLOCK_DOMAIN"])
+		self.MAIN_CLOCK_DOMAIN = data_dict["MAIN_CLOCK_DOMAIN"]
 
 
 
@@ -113,9 +113,6 @@ class SimplyV:
 	def get_peripherals(self) -> list[Peripheral]:
 		peripherals_names = set()
 		peripherals = self.mbus.get_peripherals()
-		print("PERIPHERALS")
-		for p in peripherals:
-			print(p.NAME + "\n")
 		# Check redundant names
 		for p in peripherals:
 			if (p.NAME in peripherals_names):
@@ -134,10 +131,6 @@ class SimplyV:
 
 		# For each node
 		for n in nodes:
-			if(n.NAME == "DDR"):
-				print("DDR")
-				pprint(vars(n))
-
 			if(n.IS_A_MEMORY):
 				memories.append(n)
 			else:

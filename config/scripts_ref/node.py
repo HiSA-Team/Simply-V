@@ -3,17 +3,22 @@ import re
 
 class Node(ABC):
 	def __init__(self, name: str, asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width:\
-			list, clock: int,):
+			list, clock_domain: str):
 
 		self.NAME: str = name
 		self.ASGN_ADDR_RANGES : int = asgn_addr_ranges 
 		self.ASGN_RANGE_BASE_ADDR : list[int] = asgn_range_base_addr 
 		self.ASGN_RANGE_ADDR_WIDTH : list[int] = asgn_range_addr_width 
 		self.ASGN_RANGE_END_ADDR : list[int] = []	# computed from ASGN_RANGE_BASE_ADDR and ASGN_RANGE_ADDR_WIDTH
-		self.CLOCK: int = clock
+		self.CLOCK_FREQUENCY: int
+		self.CLOCK_DOMAIN: str = clock_domain
 		self.ASGN_RANGE_END_ADDR = self.compute_range_end_addresses(self.ASGN_RANGE_BASE_ADDR, self.ASGN_RANGE_ADDR_WIDTH)
+
 		# list of busses that can reach this node
 		self.REACHABLE_FROM : list[str] = []
+		
+		# CLOCK DOMAIN IS DOMAIN_FREQUENCY (ex Main_300)
+		self.CLOCK_FREQUENCY =  int(self.CLOCK_DOMAIN.split("_")[1])
 		
 	def compute_range_end_addr(self, base_addr: int, addr_width: int) -> int:
 		return base_addr + ~(~1 << (addr_width-1)) + 1
@@ -72,3 +77,5 @@ class Node(ABC):
 		if ((base_addr <= self.get_base_addr()) and (self.get_end_addr() <= end_addr)):
 			return True
 		return False
+
+

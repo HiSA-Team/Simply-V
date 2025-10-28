@@ -9,7 +9,7 @@ from pprint import pprint
 class HBus(NonLeafBus):
 	def __init__(self, name: str, hbus_data_dict: dict, hbus_file_name: str, asgn_addr_ranges: int, \
 			asgn_range_base_addr: list, asgn_range_addr_width: list, \
-			axi_addr_width: int ,father: NonLeafBus, clock: int):
+			axi_addr_width: int ,father: NonLeafBus, clock_domain: str):
 
 		self.father = father
 		self.LOOPBACK: int
@@ -21,7 +21,7 @@ class HBus(NonLeafBus):
 		
 		# init Bus object
 		super().__init__(name, hbus_file_name, axi_addr_width, axi_data_width, \
-				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
+				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
 
 		try:
 			self.check_assign_params(hbus_data_dict)
@@ -42,7 +42,7 @@ class HBus(NonLeafBus):
 		if (self.LOOPBACK == 1):
 			self.father.father_enable_loopback()
 			self.child_enable_loopback()
-			self.RANGE_CLOCK_DOMAINS.append(father.CLOCK)
+			self.RANGE_CLOCK_DOMAINS.append(father.CLOCK_DOMAIN)
 
 
 	def check_assign_params(self, data_dict):
@@ -105,4 +105,5 @@ class HBus(NonLeafBus):
 					p.add_to_reachable(self.NAME)
 
 	def generate_children(self):
-		return super().generate_children()
+		super().generate_children()
+		self.init_clock_domains()

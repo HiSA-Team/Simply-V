@@ -4,7 +4,7 @@ from pprint import pprint
 
 class PBus(Bus):
 	def __init__(self, name: str, pbus_data_dict: dict, pbus_file_name: str, asgn_addr_ranges: int, \
-			asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
+			asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
 
 		self.LEGAL_PERIPHERALS: list[str] = ["UART", "GPIO_out", "GPIO_in", "TIM"]
 		self.VALID_PROTOCOLS: list[str] = ["AXI4LITE", "DISABLE"]
@@ -13,7 +13,7 @@ class PBus(Bus):
 		axi_data_width = 32
 		
 		super().__init__(name, pbus_file_name, axi_addr_width, axi_data_width, \
-				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
+				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
 
 		self.check_assign_params(pbus_data_dict)
 
@@ -50,7 +50,7 @@ class PBus(Bus):
 			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
 						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-						self.CLOCK)
+						self.CLOCK_DOMAIN)
 			self.children_peripherals.append(node)
 			# all the peripherals of PBUS are reachable from PBUS and everything that
 			# can reach PBUS

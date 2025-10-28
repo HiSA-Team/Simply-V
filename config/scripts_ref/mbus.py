@@ -12,16 +12,14 @@ import os
 class MBus(NonLeafBus):
 
 	def __init__(self, mbus_data_dict: dict, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
-			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock: int):
+			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
 
 		self.LEGAL_PERIPHERALS: list[str] = ["BRAM", "DM_mem", "PBUS", "PLIC", "DDR", "HBUS"]
 		self.VALID_PROTOCOLS: list[str] = ["AXI4", "DISABLE"]
-		self.MAIN_CLOCK_DOMAIN: int
-		self.DDR_FREQUENCY = 300
 
 		# init NonLeafBus object
 		super().__init__("MBUS", mbus_file_name, axi_addr_width, axi_data_width, \
-				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock)
+				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
 
 		try:
 			self.check_assign_params(mbus_data_dict)
@@ -51,30 +49,24 @@ class MBus(NonLeafBus):
 		if self.PROTOCOL not in self.VALID_PROTOCOLS:
 			simply_v_crash(f"Unsupported protocol: {self.PROTOCOL}")
 
-
-		# Check valid clock domains
-		for i in range(len(self.RANGE_CLOCK_DOMAINS)):
-
-			# UNIMPLEMENTED
-			# if config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG] and config.RANGE_NAMES[i] not in {"DDR", "HBUS"}:
-			# 	print_error(f"The clock domain {config.RANGE_CLOCK_DOMAINS[i]}MHz is not supported")
-			# 	return False
-			# Check if all the main_clock_domain slaves have the same frequency as MAIN_CLOCK_DOMAIN
-			self.logger.simply_v_warning("MBUS check_intra isn't fully implemented")
-
-			# if (self.RANGE_NAMES[i] == "DDR") or (self.RANGE_NAMES[i] == "HBUS"):
-			# 	if self.RANGE_CLOCK_DOMAINS[i] != self.DDR_FREQUENCY:
-			# 		simply_v_crash(f"The DDR and HBUS frequency {self.RANGE_CLOCK_DOMAINS[i]} must be the same of DDR board clock {self.DDR_FREQUENCY}")
-			#
-			# else:
-			# 	if (self.RANGE_NAMES[i] != "PBUS"):
-			# 		if self.RANGE_CLOCK_DOMAINS[i] != self.CLOCK:
-			# 			simply_v_crash(f"The {self.RANGE_NAMES[i]} frequency {self.RANGE_CLOCK_DOMAINS[i]} must be the same as MAIN_CLOCK_DOMAIN")
-
-			# Check if the DDR has the right frequency
-
 	def check_inter(self):
 		super().check_inter()
+
+	#To be called after generating children of this node (init_clock_domains uses this node list of children)
+	def check_clock_domains(self):
+		simply_v_crash = self.logger.simply_v_crash
+		super().init_clock_domains()
+		#Add MBus custom checks
+		failed_checks = []
+		peripherals_to_check = ["PLIC", "BRAM", "DM_mem"]
+		for p in peripherals_to_check:
+			ret = self.clock_domains.is_in_domain(p, self.CLOCK_DOMAIN)
+			if(not ret):
+				failed_checks.append(p)
+
+		if (len(failed_checks) != 0):
+			simply_v_crash(f"-{', '.join(failed_checks)}- need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
+
 
 	def add_reachability(self):
 		super().add_reachability()
@@ -119,14 +111,10 @@ class MBus(NonLeafBus):
 							self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 							self.RANGE_CLOCK_DOMAINS[i])
 
-				# skip in case of loopback
-				if (node_name == "MBUS"):
-					continue
-
 				self.children_peripherals.append(node)
 
 			self.add_reachability()
-
+			self.check_clock_domains()
 
 			#Recursively generate children
 			for bus in self.children_busses:
