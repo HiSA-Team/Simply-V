@@ -23,6 +23,8 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/plic_wrapper.sv                  \
     $::env(XILINX_ROOT)/rtl/uninasoc.sv                      \
     $::env(XILINX_ROOT)/rtl/plic_wrapper.sv                  \
+    $::env(XILINX_ROOT)/ips/common/xlnx_axi_cdma/build/xlnx_axi_cdma_prj.gen/sources_1/ip/xlnx_axi_cdma/synth/xlnx_axi_cdma.vhd      \
+
 ]
 
 # Add files to project

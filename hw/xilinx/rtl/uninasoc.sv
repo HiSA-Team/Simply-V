@@ -555,6 +555,7 @@ module uninasoc (
     logic [31:0] plic_int_line;
     logic plic_int_irq_o;
     logic hls_interrupt_to_plic;
+    logic irq_cdma;
 
     always_comb begin : system_interrupts
 
@@ -571,7 +572,7 @@ module uninasoc (
         plic_int_line[PLIC_TIM1_INTERRUPT]      = pbus_int_line[PBUS_TIM1_INTERRUPT];
         plic_int_line[PLIC_UART_INTERRUPT]      = pbus_int_line[PBUS_UART_INTERRUPT];
         plic_int_line[PLIC_HLS_INTERRUPT]       = hls_interrupt_to_plic;
-
+        plic_int_line[PLIC_CDMA_INTERRUPT]      = irq_cdma;
         // Map system-interrupts pins to socket interrupts
         rv_socket_interrupt_line[CORE_EXT_INTERRUPT] = plic_int_irq_o;
 
@@ -692,6 +693,86 @@ module uninasoc (
         .s_axi_rlast    ( MBUS_to_PBUS_axi_rlast    ),
         .s_axi_rvalid   ( MBUS_to_PBUS_axi_rvalid   ),
         .s_axi_rready   ( MBUS_to_PBUS_axi_rready   )
+    );
+
+
+    ////////////////////////////////////////////
+    // AXI Central DMA (custom_axi_cdma)      //
+    ////////////////////////////////////////////
+
+    
+    // AXI CDMA IP Core — Simple DMA Mode
+    xlnx_axi_cdma u_cdma (
+        //=====================
+        // Clocks & Reset
+        //=====================
+        .m_axi_aclk         (main_clk),   // Clock domain MBUS
+        .s_axi_lite_aclk    (main_clk),   
+        .s_axi_lite_aresetn (main_rstn),
+
+        //=====================
+        // Interrupt
+        //=====================
+        .cdma_introut       (irq_cdma),
+        
+        .s_axi_lite_awvalid (MBUS_to_CDMA_axi_awvalid),
+        .s_axi_lite_awready (MBUS_to_CDMA_axi_awready),
+        .s_axi_lite_awaddr  (MBUS_to_CDMA_axi_awaddr[5:0]),
+        .s_axi_lite_wvalid  (MBUS_to_CDMA_axi_wvalid),
+        .s_axi_lite_wready  (MBUS_to_CDMA_axi_wready),
+        .s_axi_lite_wdata   (MBUS_to_CDMA_axi_wdata[31:0]),
+        .s_axi_lite_bvalid  (MBUS_to_CDMA_axi_bvalid),
+        .s_axi_lite_bready  (MBUS_to_CDMA_axi_bready),
+        .s_axi_lite_bresp   (MBUS_to_CDMA_axi_bresp),
+        .s_axi_lite_arvalid (MBUS_to_CDMA_axi_arvalid),
+        .s_axi_lite_arready (MBUS_to_CDMA_axi_arready),
+        .s_axi_lite_araddr  (MBUS_to_CDMA_axi_araddr[5:0]),
+        .s_axi_lite_rvalid  (MBUS_to_CDMA_axi_rvalid),
+        .s_axi_lite_rready  (MBUS_to_CDMA_axi_rready),
+        .s_axi_lite_rdata   (MBUS_to_CDMA_axi_rdata[31:0]),
+        .s_axi_lite_rresp   (MBUS_to_CDMA_axi_rresp),
+
+        //=====================
+        // Main AXI Master (MBUS)
+        //=====================
+        .m_axi_awaddr   (CDMA_to_MBUS_axi_awaddr),
+        .m_axi_awlen    (CDMA_to_MBUS_axi_awlen),
+        .m_axi_awsize   (CDMA_to_MBUS_axi_awsize),
+        .m_axi_awburst  (CDMA_to_MBUS_axi_awburst),
+        .m_axi_awprot   (CDMA_to_MBUS_axi_awprot),
+        .m_axi_awcache  (CDMA_to_MBUS_axi_awcache),
+        .m_axi_awvalid  (CDMA_to_MBUS_axi_awvalid),
+        .m_axi_awready  (CDMA_to_MBUS_axi_awready),
+        .m_axi_wdata    (CDMA_to_MBUS_axi_wdata),
+        .m_axi_wstrb    (CDMA_to_MBUS_axi_wstrb),
+        .m_axi_wlast    (CDMA_to_MBUS_axi_wlast),
+        .m_axi_wvalid   (CDMA_to_MBUS_axi_wvalid),
+        .m_axi_wready   (CDMA_to_MBUS_axi_wready),
+        .m_axi_bvalid   (CDMA_to_MBUS_axi_bvalid),
+        .m_axi_bready   (CDMA_to_MBUS_axi_bready),
+        .m_axi_bresp    (CDMA_to_MBUS_axi_bresp),
+        .m_axi_araddr   (CDMA_to_MBUS_axi_araddr),
+        .m_axi_arlen    (CDMA_to_MBUS_axi_arlen),
+        .m_axi_arsize   (CDMA_to_MBUS_axi_arsize),
+        .m_axi_arburst  (CDMA_to_MBUS_axi_arburst),
+        .m_axi_arprot   (CDMA_to_MBUS_axi_arprot),
+        .m_axi_arcache  (CDMA_to_MBUS_axi_arcache),
+        .m_axi_arvalid  (CDMA_to_MBUS_axi_arvalid),
+        .m_axi_arready  (CDMA_to_MBUS_axi_arready),
+        .m_axi_rdata    (CDMA_to_MBUS_axi_rdata),
+        .m_axi_rresp    (CDMA_to_MBUS_axi_rresp),
+        .m_axi_rlast    (CDMA_to_MBUS_axi_rlast),
+        .m_axi_rvalid   (CDMA_to_MBUS_axi_rvalid),
+        .m_axi_rready   (CDMA_to_MBUS_axi_rready),
+        //=====================
+        // Scatter-Gather interface not present in Simple DMA mode
+        //=====================
+        // (No m_axi_sg_* ports)
+
+        //=====================
+        // Unused vector out
+        //=====================
+        .cdma_tvect_out   ()
     );
 
 // In HPC profile
