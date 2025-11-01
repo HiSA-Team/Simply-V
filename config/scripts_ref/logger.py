@@ -11,5 +11,8 @@ class Logger():
 	def simply_v_crash(self, message: str):
 		logging.error(f"[{self.file_name}] \n---{message}---\n")
 		exit(1)
+	
+	def simply_v_info(self, message: str):
+		logging.info(f"[{self.file_name}] \n---{message}---\n")
 
 

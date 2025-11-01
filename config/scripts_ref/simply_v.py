@@ -54,7 +54,7 @@ class SimplyV:
 		#generate children nodes
 		self.mbus.generate_children()
 
-
+	
 	def check_assign_params(self, data_dict: dict):
 		simply_v_crash = self.logger.simply_v_crash
 
@@ -293,4 +293,5 @@ class SimplyV:
 
 	def print_vars(self):
 		pprint(vars(self))
+		pprint(vars(self.mbus))
 		self.mbus.print_vars()

@@ -13,5 +13,7 @@ class Peripheral(Node):
 		else:
 			self.IS_A_MEMORY = False
 
+		# need to check for DDR clock
+
 
 		

@@ -2,6 +2,7 @@ from peripheral import Peripheral
 from node import Node
 from logger import Logger
 from utils import *
+import os
 
 from pprint import pprint
 
@@ -65,11 +66,9 @@ class Bus(Node, ABC):
 				if int(idx) in seen[prefix]:  # duplicate index not allowed
 					simply_v_crash(f"Duplicate \"_NUM\" in peripheral {p}")
 				seen[prefix].add(int(idx))
-
-	@abstractmethod
-	def generate_children(self):
-		return
-
+	
+	
+	
 	#Set all the peripherals as reachable from this bus
 	def add_reachability(self):
 		for peripheral in self.children_peripherals:
@@ -204,3 +203,13 @@ class Bus(Node, ABC):
 	def print_vars(self):
 		for peripheral in self.children_peripherals:
 			pprint(vars(peripheral))
+
+	
+	#COMPOSITE INTERFACE
+	@abstractmethod
+	def generate_children(self):
+		pass
+
+	@abstractmethod
+	def get_busses(self) -> list["Bus"]:
+		pass

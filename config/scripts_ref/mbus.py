@@ -67,56 +67,54 @@ class MBus(NonLeafBus):
 		if (len(failed_checks) != 0):
 			simply_v_crash(f"-{', '.join(failed_checks)}- need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
 
+	
 
-	def add_reachability(self):
-		super().add_reachability()
-		for bus in self.children_busses:
-			bus.add_to_reachable(self.NAME)
-			bus.add_reachability()
+	#COMPOSITE INTERFACE IMPLEMENTATION
 
 	def generate_children(self):
-			pbus_pattern = r"PBUS(?:_\d+)?"
-			hbus_pattern = r"HBUS(?:_\d+)?"
+		pbus_pattern = r"PBUS(?:_\d+)?"
+		hbus_pattern = r"HBUS(?:_\d+)?"
 
-			root_dir = os.path.join("/", *self.file_name.split("/")[:-1])
-			
-			for i, node_name in enumerate(self.RANGE_NAMES):
-				match = re.search(pbus_pattern, node_name)
-				if (match):
-					pbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv")
-					pbus_data_dict = parse_csv(pbus_file_name)
+		root_dir = os.path.join("/", *self.file_name.split("/")[:-1])
+		
+		for i, node_name in enumerate(self.RANGE_NAMES):
+			match = re.search(pbus_pattern, node_name)
+			if (match):
+				pbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv")
+				pbus_data_dict = parse_csv(pbus_file_name)
 
-					node = PBus(match.group(), pbus_data_dict, pbus_file_name, self.ADDR_RANGES, \
-							self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
-							self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-							self.RANGE_CLOCK_DOMAINS[i])
+				node = PBus(match.group(), pbus_data_dict, pbus_file_name, self.ADDR_RANGES, \
+						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_CLOCK_DOMAINS[i])
 
-					self.children_busses.append(node)
-					continue
+				self.children_busses.append(node)
+				continue
 
-				match = re.search(hbus_pattern, node_name)
-				if (match):
-					hbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv") 
-					hbus_data_dict = parse_csv(hbus_file_name)
-					node = HBus(match.group(), hbus_data_dict, hbus_file_name, self.ADDR_RANGES, \
-							self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
-							self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-							self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
+			match = re.search(hbus_pattern, node_name)
+			if (match):
+				hbus_file_name = os.path.join(root_dir, "config_" + match.group().lower() + ".csv") 
+				hbus_data_dict = parse_csv(hbus_file_name)
+				node = HBus(match.group(), hbus_data_dict, hbus_file_name, self.ADDR_RANGES, \
+						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
 
-					self.children_busses.append(node)
-					continue
+				self.children_busses.append(node)
+				continue
 
-				node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
-							self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
-							self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-							self.RANGE_CLOCK_DOMAINS[i])
+			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
+						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_CLOCK_DOMAINS[i])
 
-				self.children_peripherals.append(node)
+			self.children_peripherals.append(node)
 
-			self.add_reachability()
-			self.check_clock_domains()
 
-			#Recursively generate children
-			for bus in self.children_busses:
-				bus.generate_children()
+		#Recursively generate children
+		for bus in self.children_busses:
+			bus.generate_children()
+
+		self.add_reachability()
+		self.check_clock_domains()
 

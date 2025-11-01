@@ -88,8 +88,12 @@ class HBus(NonLeafBus):
 	def check_inter(self):
 		super().check_inter()
 
+	# Need to be called after enabling loopback
+	# and generating all the nodes of the tree (generate_children() from MBUS)
 	def add_reachability(self):
+		# add reachability to your peripherals
 		super().add_reachability()
+
 		# If loopback enabled this HBUS can also reach
 		# the peripherals in the father bus
 		if(self.LOOPBACK == 1):
@@ -98,12 +102,21 @@ class HBus(NonLeafBus):
 			father_base_addr_2 = self.RANGE_BASE_ADDR[-1]
 			father_end_addr_1 = self.RANGE_END_ADDR[-2]
 			father_end_addr_2 = self.RANGE_END_ADDR[-1]
+			#get all the peripherals and busses of the configuration
+			#and check if this HBus can reach them
 			peripherals = self.father.get_peripherals()
+			busses = self.father.get_busses()
 			for p in peripherals:
 				if (p.is_contained(father_base_addr_1, father_end_addr_1) or
 					p.is_contained(father_base_addr_2, father_end_addr_2)):
 					p.add_to_reachable(self.NAME)
+					p.add_list_to_reachable(self.REACHABLE_FROM)
+			for b in busses:
+				if (b.is_contained(father_base_addr_1, father_end_addr_1) or
+					b.is_contained(father_base_addr_2, father_end_addr_2)):
+					b.add_to_reachable(self.NAME)
+					b.add_list_to_reachable(self.REACHABLE_FROM)
 
 	def generate_children(self):
-		super().generate_children()
+		#add implementation when HBus will need to generate new busses
 		self.init_clock_domains()

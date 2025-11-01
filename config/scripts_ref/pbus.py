@@ -45,6 +45,9 @@ class PBus(Bus):
 	def check_inter(self):
 		super().check_inter()
 
+
+	#COMPOSITE INTERFACE IMPLEMENTATION
+
 	def generate_children(self):
 		for i in range(len(self.RANGE_NAMES)):
 			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
@@ -55,3 +58,7 @@ class PBus(Bus):
 			# all the peripherals of PBUS are reachable from PBUS and everything that
 			# can reach PBUS
 		super().add_reachability()
+
+
+	def get_busses(self) -> list["Bus"]:
+		return [self]

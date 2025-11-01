@@ -11,7 +11,6 @@ class NonLeafBus(Bus):
 	def __init__(self, name:str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
 			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
 
-		self.RANGE_CLOCK_DOMAINS: list[str] = []
 		self.children_busses: list[Bus] = []
 		self.num_loopbacks: int = 0
 		self.clock_domains: Clock_Domain
@@ -19,7 +18,8 @@ class NonLeafBus(Bus):
 		# init Bus object
 		super().__init__(name, mbus_file_name, axi_addr_width, axi_data_width, \
 				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
-
+	
+	
 	def init_clock_domains(self):
 		nodes = []
 		nodes.extend(self.children_peripherals)
@@ -116,6 +116,8 @@ class NonLeafBus(Bus):
 			bus.add_to_reachable(self.NAME)
 			#everything that can reach this node can also reach the nodes reachable from this node
 			bus.add_list_to_reachable(self.REACHABLE_FROM)
+			#recursion
+			bus.add_reachability()
 
 	def get_peripherals(self) -> list[Peripheral]:
 		peripherals: list[Peripheral] = []
@@ -133,3 +135,14 @@ class NonLeafBus(Bus):
 		for bus in self.children_busses:
 			pprint(vars(bus))
 			bus.print_vars()
+
+
+	#COMPOSITE INTERFACE IMPLEMENTATION
+
+	#generate_children is implemented in the classes that inherit from this one
+
+	def get_busses(self) -> list[Bus]:
+		busses: list[Bus] = [self]
+		for bus in self.children_busses:
+			busses.extend(bus.get_busses())
+		return busses
