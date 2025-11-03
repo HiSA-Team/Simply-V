@@ -1,5 +1,4 @@
 from abc import ABC
-import re
 
 class Node(ABC):
 	def __init__(self, name: str, asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width:\
@@ -20,6 +19,7 @@ class Node(ABC):
 		# CLOCK DOMAIN IS DOMAIN_FREQUENCY (ex Main_300)
 		self.CLOCK_FREQUENCY =  int(self.CLOCK_DOMAIN.split("_")[1])
 		
+		# end address is the first address AFTER the last addressable with the given "addr_width"
 	def compute_range_end_addr(self, base_addr: int, addr_width: int) -> int:
 		return base_addr + ~(~1 << (addr_width-1)) + 1
 

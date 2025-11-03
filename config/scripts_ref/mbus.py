@@ -1,10 +1,8 @@
-from bus import Bus
+from env import *
 from nonleafbus import NonLeafBus
 from utils import *
 from peripheral import Peripheral
-from pprint import pprint
 from pbus import PBus
-from node import Node
 from hbus import HBus
 import re 
 import os
@@ -14,7 +12,8 @@ class MBus(NonLeafBus):
 	def __init__(self, mbus_data_dict: dict, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
 			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
 
-		self.LEGAL_PERIPHERALS: list[str] = ["BRAM", "DM_mem", "PBUS", "PLIC", "DDR", "HBUS"]
+		self.LEGAL_PERIPHERALS: list[str] = ["BRAM", "DM_mem", "PBUS", "PLIC", "HBUS"]
+		self.LEGAL_PERIPHERALS_HPC: list[str] = self.LEGAL_PERIPHERALS + ["DDR4CH", "HLS_CONTROL"]
 		self.VALID_PROTOCOLS: list[str] = ["AXI4", "DISABLE"]
 
 		# init NonLeafBus object
@@ -33,7 +32,11 @@ class MBus(NonLeafBus):
 
 		self.check_inter()
 
-		self.check_peripherals(self.LEGAL_PERIPHERALS)
+
+		if(soc_profile=="embedded"):
+			self.check_peripherals(self.LEGAL_PERIPHERALS)
+		elif(soc_profile=="hpc"):
+			self.check_peripherals(self.LEGAL_PERIPHERALS_HPC)
 
 
 	def check_assign_params(self, data_dict):
@@ -66,8 +69,14 @@ class MBus(NonLeafBus):
 
 		if (len(failed_checks) != 0):
 			simply_v_crash(f"-{', '.join(failed_checks)}- need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
-
 	
+	def init_configurations(self):
+		# generate all the hierarchy
+		self.generate_children()
+		# put reachability values in the nodes based on the hierarchy created
+		self.add_reachability()
+		# check configuration of clock domains on this bus
+		self.check_clock_domains()
 
 	#COMPOSITE INTERFACE IMPLEMENTATION
 
@@ -88,7 +97,8 @@ class MBus(NonLeafBus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_CLOCK_DOMAINS[i])
 
-				self.children_busses.append(node)
+				if(node.is_enabled()):
+					self.children_busses.append(node)
 				continue
 
 			match = re.search(hbus_pattern, node_name)
@@ -100,7 +110,8 @@ class MBus(NonLeafBus):
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.ADDR_WIDTH, self, self.RANGE_CLOCK_DOMAINS[i] )
 
-				self.children_busses.append(node)
+				if(node.is_enabled()):
+					self.children_busses.append(node)
 				continue
 
 			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
@@ -110,11 +121,6 @@ class MBus(NonLeafBus):
 
 			self.children_peripherals.append(node)
 
-
 		#Recursively generate children
 		for bus in self.children_busses:
 			bus.generate_children()
-
-		self.add_reachability()
-		self.check_clock_domains()
-

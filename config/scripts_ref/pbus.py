@@ -1,6 +1,5 @@
 from bus import Bus
 from peripheral import Peripheral
-from pprint import pprint
 
 class PBus(Bus):
 	def __init__(self, name: str, pbus_data_dict: dict, pbus_file_name: str, asgn_addr_ranges: int, \

@@ -1,18 +1,16 @@
-import os
-import re
 from pprint import pprint
-from abc import abstractmethod
+from typing import Optional
 from bus import Bus
 from clock_domain import Clock_Domain
-from utils import parse_csv
 from peripheral import Peripheral
 
 class NonLeafBus(Bus):
 	def __init__(self, name:str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
-			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
+			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str,
+			  father: Optional["NonLeafBus"] = None):
 
+		self.father = father 
 		self.children_busses: list[Bus] = []
-		self.num_loopbacks: int = 0
 		self.clock_domains: Clock_Domain
 
 		# init Bus object
@@ -76,7 +74,7 @@ class NonLeafBus(Bus):
 			temp_addr_widths.append(second_width)
 
 		# insert the MBUS addr ranges
-		self.RANGE_NAMES.append("MBUS")
+		self.RANGE_NAMES.append(self.father.NAME)
 
 		# this is the range of all the addresses BEFORE the range of HBUS
 		
@@ -90,10 +88,8 @@ class NonLeafBus(Bus):
 		mbus_range_2_end_addr = self.compute_range_end_addr(mbus_range_2_base_addr, mbus_range_2_addr_width)
 
 		self.logger.simply_v_warning(
-			f"To accommodate ADDR_WIDTH, constrain the base address of the MBUS "
-			f"starting AFTER the address range of HBUS is {mbus_range_2_base_addr:#010x} "
-			f"and its end address is {mbus_range_2_end_addr:#010x}, so make sure to allocate "
-			f"all the slaves AFTER the HBUS in this range"
+			f"The address range addressable from {self.NAME} in the loopback configuration"
+			f"is up until {mbus_range_2_end_addr:#010x} (excluded)"
 		)
 
 		temp_base_addresses.extend([mbus_range_1_base_addr, mbus_range_2_base_addr])
@@ -104,10 +100,8 @@ class NonLeafBus(Bus):
 		self.RANGE_ADDR_WIDTH = temp_addr_widths 
 		self.RANGE_END_ADDR = self.compute_range_end_addresses(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)
 
-	def father_enable_loopback(self):
-		self.logger.simply_v_warning("NEED TO CHECK FATHER ENABLE LOOPBACK IMPLEMENTATION (wrong name convention)")
-		self.MASTER_NAMES.append("HBUS_" + str(self.num_loopbacks))
-		self.num_loopbacks += 1
+	def father_enable_loopback(self, child_name: str):
+		self.MASTER_NAMES.append(child_name)
 		self.NUM_SI += 1
 	
 	def add_reachability(self):
@@ -133,7 +127,9 @@ class NonLeafBus(Bus):
 		#print peripherals
 		super().print_vars()
 		for bus in self.children_busses:
+			print(f"Printing {bus.NAME}\n")
 			pprint(vars(bus))
+			print("\n")
 			bus.print_vars()
 
 

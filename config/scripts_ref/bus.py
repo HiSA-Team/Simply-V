@@ -2,7 +2,6 @@ from peripheral import Peripheral
 from node import Node
 from logger import Logger
 from utils import *
-import os
 
 from pprint import pprint
 
@@ -43,7 +42,7 @@ class Bus(Node, ABC):
 		simply_v_crash = self.logger.simply_v_crash
 
 		seen = defaultdict(set)  # prefix -> set of used suffixes
-		pattern = re.compile(r"^(?P<prefix>[A-Za-z_]+)(?:_(?P<idx>\d+))?$")
+		pattern = re.compile(r"^(?P<prefix>[A-Za-z0-9_]+?)(?:_(?P<idx>\d+))?$")
 
 		for p in self.RANGE_NAMES:
 			match = pattern.match(p)
@@ -67,6 +66,9 @@ class Bus(Node, ABC):
 					simply_v_crash(f"Duplicate \"_NUM\" in peripheral {p}")
 				seen[prefix].add(int(idx))
 	
+
+	def is_enabled(self):
+		return not (self.PROTOCOL == "DISABLE")
 	
 	
 	#Set all the peripherals as reachable from this bus
@@ -202,7 +204,9 @@ class Bus(Node, ABC):
 
 	def print_vars(self):
 		for peripheral in self.children_peripherals:
+			print(f"Printing {peripheral.NAME}\n")
 			pprint(vars(peripheral))
+			print("\n")
 
 	
 	#COMPOSITE INTERFACE

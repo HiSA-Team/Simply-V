@@ -3,15 +3,7 @@
 from simply_v import SimplyV
 import logging
 import os
-from pprint import pprint
-
-# SoC Profile
-soc_profile = os.environ["SOC_CONFIG"]
-# Paths
-configs_root = os.path.join(os.environ["CONFIG_ROOT"], "configs")
-configs_common = os.path.join(configs_root, "common")
-configs_embedded = os.path.join(configs_root, "embedded")
-configs_hpc = os.path.join(configs_root, "hpc")
+from env import *
 
 if __name__ == "__main__":
 	sys_config_file_path = os.path.join(configs_common, "config_system.csv")
@@ -31,7 +23,5 @@ if __name__ == "__main__":
 
 	peripherals = system.get_peripherals()
 
-	system.create_linker_script('/home/Salvatore/Uninasoc.ld', peripherals)
-	system.dump_reachability('/home/Salvatore/Uninasoc.csv', peripherals)
-
-
+	system.create_linker_script(os.path.join(sw_soc_common, "UninaSoC.ld"), peripherals)
+	system.dump_reachability(os.path.join(configs_root, "peripherals.csv"), peripherals)

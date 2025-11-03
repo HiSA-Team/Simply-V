@@ -11,3 +11,6 @@ build*/
 tmp*
 backup*
 *.log
+
+# Generated config file
+peripherals.csv

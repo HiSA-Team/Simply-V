@@ -3,7 +3,6 @@ from peripheral import Peripheral
 from utils import *
 import os
 from mbus import MBus
-from node import Node
 from logger import Logger
 from pprint import pprint
 
@@ -51,8 +50,7 @@ class SimplyV:
 		self.mbus = MBus(mbus_data_dict, mbus_file_name, axi_addr_width, axi_data_width, asgn_addr_ranges, \
 								asgn_range_base_addr, asgn_range_addr_width, self.MAIN_CLOCK_DOMAIN)
 
-		#generate children nodes
-		self.mbus.generate_children()
+		self.mbus.init_configurations()
 
 	
 	def check_assign_params(self, data_dict: dict):
@@ -292,6 +290,10 @@ class SimplyV:
 			fd.write(f"{p.NAME},{hex(p.get_base_addr())},{hex(p.get_end_addr()-1)},{str_of_reachables}\n")
 
 	def print_vars(self):
+		print("Printing SIMPLY_V\n")
 		pprint(vars(self))
+		print("\n")
+		print("Printing MBUS\n")
 		pprint(vars(self.mbus))
+		print("\n")
 		self.mbus.print_vars()

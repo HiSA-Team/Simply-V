@@ -1,27 +1,21 @@
 from nonleafbus import NonLeafBus
 from peripheral import Peripheral
-from pbus import PBus
 from utils import *
-import os
-import re
-from pprint import pprint
 
 class HBus(NonLeafBus):
 	def __init__(self, name: str, hbus_data_dict: dict, hbus_file_name: str, asgn_addr_ranges: int, \
 			asgn_range_base_addr: list, asgn_range_addr_width: list, \
 			axi_addr_width: int ,father: NonLeafBus, clock_domain: str):
 
-		self.father = father
 		self.LOOPBACK: int
-		#RANGES OF FATHER WHEN ENABLING LOOPBACK
-		self.LEGAL_PERIPHERALS: list[str] = ["DDR", "MBUS"]
+		self.LEGAL_PERIPHERALS: list[str] = ["DDR4CH", "MBUS"]
 		self.VALID_PROTOCOLS: list[str] = ["AXI4", "DISABLE"]
 
 		axi_data_width = 512
 		
-		# init Bus object
+		# init NonleafBus object
 		super().__init__(name, hbus_file_name, axi_addr_width, axi_data_width, \
-				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
+				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain, father)
 
 		try:
 			self.check_assign_params(hbus_data_dict)
@@ -40,7 +34,7 @@ class HBus(NonLeafBus):
 		self.check_peripherals(self.LEGAL_PERIPHERALS)
 	
 		if (self.LOOPBACK == 1):
-			self.father.father_enable_loopback()
+			self.father.father_enable_loopback(self.NAME)
 			self.child_enable_loopback()
 			self.RANGE_CLOCK_DOMAINS.append(father.CLOCK_DOMAIN)
 
@@ -119,4 +113,17 @@ class HBus(NonLeafBus):
 
 	def generate_children(self):
 		#add implementation when HBus will need to generate new busses
+		
+		#SKIP MBUS in case of loopback
+		for i, p in enumerate(self.RANGE_NAMES):
+			if (p == "MBUS"):
+				continue
+
+			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
+							self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+							self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+							self.RANGE_CLOCK_DOMAINS[i])
+
+			self.children_peripherals.append(node)
+
 		self.init_clock_domains()
