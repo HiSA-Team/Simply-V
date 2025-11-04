@@ -705,79 +705,97 @@ module uninasoc (
 
 // AXI-Lite bus from adapter to CDMA control interface
 `DECLARE_AXILITE_BUS(AXILITE_to_CDMA, 32, 32, 4)
-
-
 // ===========================================================
-// Xilinx AXI Protocol Converter (AXI4 → AXI4-Lite)
-// Converts MBUS AXI4 control access into AXI-Lite
+// AXI4 (MBUS) → AXI4-Lite (CDMA control) converter
 // ===========================================================
-xlnx_axilite_to_axi4_d32_converter u_axi_to_axilite_cdma (
-    .aclk        (main_clk),
-    .aresetn     (main_rstn),
+xlnx_axi4_to_axilite_d32_converter u_axi4_to_axilite_cdma (
+    .aclk        ( main_clk    ),
+    .aresetn     ( main_rstn   ),
 
-    // Slave side — AXI4 from MBUS
-    .s_axi_awaddr  (MBUS_to_AXI_CDMA_axi_awaddr),
-    .s_axi_awprot  (MBUS_to_AXI_CDMA_axi_awprot),
-    .s_axi_awvalid (MBUS_to_AXI_CDMA_axi_awvalid),
-    .s_axi_awready (MBUS_to_AXI_CDMA_axi_awready),
-    .s_axi_wdata   (MBUS_to_AXI_CDMA_axi_wdata),
-    .s_axi_wstrb   (MBUS_to_AXI_CDMA_axi_wstrb),
-    .s_axi_wvalid  (MBUS_to_AXI_CDMA_axi_wvalid),
-    .s_axi_wready  (MBUS_to_AXI_CDMA_axi_wready),
-    .s_axi_bresp   (MBUS_to_AXI_CDMA_axi_bresp),
-    .s_axi_bvalid  (MBUS_to_AXI_CDMA_axi_bvalid),
-    .s_axi_bready  (MBUS_to_AXI_CDMA_axi_bready),
-    .s_axi_araddr  (MBUS_to_AXI_CDMA_axi_araddr),
-    .s_axi_arprot  (MBUS_to_AXI_CDMA_axi_arprot),
-    .s_axi_arvalid (MBUS_to_AXI_CDMA_axi_arvalid),
-    .s_axi_arready (MBUS_to_AXI_CDMA_axi_arready),
-    .s_axi_rdata   (MBUS_to_AXI_CDMA_axi_rdata),
-    .s_axi_rresp   (MBUS_to_AXI_CDMA_axi_rresp),
-    .s_axi_rvalid  (MBUS_to_AXI_CDMA_axi_rvalid),
-    .s_axi_rready  (MBUS_to_AXI_CDMA_axi_rready),
+    // ======================================================
+    // Slave side — AXI4 full bus (from MBUS)
+    // ======================================================
+    .s_axi_awid     ( MBUS_to_AXI_CDMA_axi_awid     ),
+    .s_axi_awaddr   ( MBUS_to_AXI_CDMA_axi_awaddr   ),
+    .s_axi_awlen    ( MBUS_to_AXI_CDMA_axi_awlen    ),
+    .s_axi_awsize   ( MBUS_to_AXI_CDMA_axi_awsize   ),
+    .s_axi_awburst  ( MBUS_to_AXI_CDMA_axi_awburst  ),
+    .s_axi_awlock   ( MBUS_to_AXI_CDMA_axi_awlock   ),
+    .s_axi_awcache  ( MBUS_to_AXI_CDMA_axi_awcache  ),
+    .s_axi_awprot   ( MBUS_to_AXI_CDMA_axi_awprot   ),
+    .s_axi_awregion ( MBUS_to_AXI_CDMA_axi_awregion ),
+    .s_axi_awqos    ( MBUS_to_AXI_CDMA_axi_awqos    ),
+    .s_axi_awvalid  ( MBUS_to_AXI_CDMA_axi_awvalid  ),
+    .s_axi_awready  ( MBUS_to_AXI_CDMA_axi_awready  ),
 
-    // Master side — AXI-Lite to CDMA
-    .m_axi_awaddr  (AXILITE_to_CDMA_axilite_awaddr),
-    .m_axi_awlen   (), // not used in AXI-Lite
-    .m_axi_awsize  (),
-    .m_axi_awburst (),
-    .m_axi_awlock  (),
-    .m_axi_awcache (),
-    .m_axi_awprot  (AXILITE_to_CDMA_axilite_awprot),
-    .m_axi_awregion(),
-    .m_axi_awqos   (),
-    .m_axi_awvalid (AXILITE_to_CDMA_axilite_awvalid),
-    .m_axi_awready (AXILITE_to_CDMA_axilite_awready),
+    .s_axi_wdata    ( MBUS_to_AXI_CDMA_axi_wdata    ),
+    .s_axi_wstrb    ( MBUS_to_AXI_CDMA_axi_wstrb    ),
+    .s_axi_wlast    ( MBUS_to_AXI_CDMA_axi_wlast    ),
+    .s_axi_wvalid   ( MBUS_to_AXI_CDMA_axi_wvalid   ),
+    .s_axi_wready   ( MBUS_to_AXI_CDMA_axi_wready   ),
 
-    .m_axi_wdata   (AXILITE_to_CDMA_axilite_wdata),
-    .m_axi_wstrb   (AXILITE_to_CDMA_axilite_wstrb),
-    .m_axi_wlast   (),
-    .m_axi_wvalid  (AXILITE_to_CDMA_axilite_wvalid),
-    .m_axi_wready  (AXILITE_to_CDMA_axilite_wready),
+    .s_axi_bid      ( MBUS_to_AXI_CDMA_axi_bid      ),
+    .s_axi_bresp    ( MBUS_to_AXI_CDMA_axi_bresp    ),
+    .s_axi_bvalid   ( MBUS_to_AXI_CDMA_axi_bvalid   ),
+    .s_axi_bready   ( MBUS_to_AXI_CDMA_axi_bready   ),
 
-    .m_axi_bresp   (AXILITE_to_CDMA_axilite_bresp),
-    .m_axi_bvalid  (AXILITE_to_CDMA_axilite_bvalid),
-    .m_axi_bready  (AXILITE_to_CDMA_axilite_bready),
+    .s_axi_arid     ( MBUS_to_AXI_CDMA_axi_arid     ),
+    .s_axi_araddr   ( MBUS_to_AXI_CDMA_axi_araddr   ),
+    .s_axi_arlen    ( MBUS_to_AXI_CDMA_axi_arlen    ),
+    .s_axi_arsize   ( MBUS_to_AXI_CDMA_axi_arsize   ),
+    .s_axi_arburst  ( MBUS_to_AXI_CDMA_axi_arburst  ),
+    .s_axi_arlock   ( MBUS_to_AXI_CDMA_axi_arlock   ),
+    .s_axi_arcache  ( MBUS_to_AXI_CDMA_axi_arcache  ),
+    .s_axi_arprot   ( MBUS_to_AXI_CDMA_axi_arprot   ),
+    .s_axi_arregion ( MBUS_to_AXI_CDMA_axi_arregion ),
+    .s_axi_arqos    ( MBUS_to_AXI_CDMA_axi_arqos    ),
+    .s_axi_arvalid  ( MBUS_to_AXI_CDMA_axi_arvalid  ),
+    .s_axi_arready  ( MBUS_to_AXI_CDMA_axi_arready  ),
 
-    .m_axi_araddr  (AXILITE_to_CDMA_axilite_araddr),
-    .m_axi_arlen   (),
-    .m_axi_arsize  (),
-    .m_axi_arburst (),
-    .m_axi_arlock  (),
-    .m_axi_arcache (),
-    .m_axi_arprot  (AXILITE_to_CDMA_axilite_arprot),
-    .m_axi_arregion(),
-    .m_axi_arqos   (),
-    .m_axi_arvalid (AXILITE_to_CDMA_axilite_arvalid),
-    .m_axi_arready (AXILITE_to_CDMA_axilite_arready),
+    .s_axi_rid      ( MBUS_to_AXI_CDMA_axi_rid      ),
+    .s_axi_rdata    ( MBUS_to_AXI_CDMA_axi_rdata    ),
+    .s_axi_rresp    ( MBUS_to_AXI_CDMA_axi_rresp    ),
+    .s_axi_rlast    ( MBUS_to_AXI_CDMA_axi_rlast    ),
+    .s_axi_rvalid   ( MBUS_to_AXI_CDMA_axi_rvalid   ),
+    .s_axi_rready   ( MBUS_to_AXI_CDMA_axi_rready   ),
 
-    .m_axi_rdata   (AXILITE_to_CDMA_axilite_rdata),
-    .m_axi_rresp   (AXILITE_to_CDMA_axilite_rresp),
-    .m_axi_rlast   (1'b1),
-    .m_axi_rvalid  (AXILITE_to_CDMA_axilite_rvalid),
-    .m_axi_rready  (AXILITE_to_CDMA_axilite_rready)
+    // ======================================================
+    // Master side — AXI4-Lite (to CDMA control interface)
+    // ======================================================
+    .m_axi_awaddr   ( AXILITE_to_CDMA_axilite_awaddr  ),
+    .m_axi_awprot   ( AXILITE_to_CDMA_axilite_awprot  ),
+    .m_axi_awvalid  ( AXILITE_to_CDMA_axilite_awvalid ),
+    .m_axi_awready  ( AXILITE_to_CDMA_axilite_awready ),
+
+    .m_axi_wdata    ( AXILITE_to_CDMA_axilite_wdata   ),
+    .m_axi_wstrb    ( AXILITE_to_CDMA_axilite_wstrb   ),
+    .m_axi_wvalid   ( AXILITE_to_CDMA_axilite_wvalid  ),
+    .m_axi_wready   ( AXILITE_to_CDMA_axilite_wready  ),
+
+    .m_axi_bresp    ( AXILITE_to_CDMA_axilite_bresp   ),
+    .m_axi_bvalid   ( AXILITE_to_CDMA_axilite_bvalid  ),
+    .m_axi_bready   ( AXILITE_to_CDMA_axilite_bready  ),
+
+    .m_axi_araddr   ( AXILITE_to_CDMA_axilite_araddr  ),
+    .m_axi_arprot   ( AXILITE_to_CDMA_axilite_arprot  ),
+    .m_axi_arvalid  ( AXILITE_to_CDMA_axilite_arvalid ),
+    .m_axi_arready  ( AXILITE_to_CDMA_axilite_arready ),
+
+    .m_axi_rdata    ( AXILITE_to_CDMA_axilite_rdata   ),
+    .m_axi_rresp    ( AXILITE_to_CDMA_axilite_rresp   ),
+    .m_axi_rvalid   ( AXILITE_to_CDMA_axilite_rvalid  ),
+    .m_axi_rready   ( AXILITE_to_CDMA_axilite_rready  )
 );
-
+// ===========================================================
+// Tie-off signals for unused AXI fields in CDMA → MBUS path
+// (Prevents driverless net errors during implementation)
+// ===========================================================
+assign AXI_CDMA_to_MBUS_axi_awid   = '0;
+assign AXI_CDMA_to_MBUS_axi_awlock = 1'b0;
+assign AXI_CDMA_to_MBUS_axi_awqos  = 4'b0000;
+assign AXI_CDMA_to_MBUS_axi_arid   = '0;
+assign AXI_CDMA_to_MBUS_axi_arlock = 1'b0;
+assign AXI_CDMA_to_MBUS_axi_arqos  = 4'b0000;
 
 // ===========================================================
 // Xilinx AXI CDMA — Simple DMA Mode
@@ -858,15 +876,6 @@ xlnx_axi_cdma u_cdma (
 
 
 
-// ===========================================================
-// Bus interconnections
-// ===========================================================
-
-// Connect AXI4 from MBUS to AXI Protocol Converter
-`ASSIGN_AXI_BUS(MBUS_to_AXI_CDMA, MBUS_to_AXI_CDMA)
-
-// Connect CDMA AXI master to MBUS
-`ASSIGN_AXI_BUS(AXI_CDMA_to_MBUS, AXI_CDMA_to_MBUS)
 
 
 

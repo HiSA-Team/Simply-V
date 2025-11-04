@@ -1,14 +1,16 @@
 # ============================================================
 # Xilinx AXI Central DMA (AXI CDMA) - config.tcl
-# Modalità Simple DMA (C_INCLUDE_SG=0)
+# Simple DMA Mode (C_INCLUDE_SG=0)
 # Author: Michele Giugliano <michele.giugliano2@studenti.unina.it>
 # ============================================================
 
-# Import IP
+# ------------------------------------------------------------
+# Import the IP core
+# ------------------------------------------------------------
 create_ip -name axi_cdma -vendor xilinx.com -library ip -version 4.1 -module_name $::env(IP_NAME)
 
 # ============================================================
-# Parametri principali
+# Main Parameters
 # ============================================================
 set CDMA_SG_MODE 0              ;# 0 = Simple DMA
 set CDMA_DATA_WIDTH 32          ;# 32-bit workaround (64-bit bug)
@@ -16,7 +18,7 @@ set CDMA_ADDR_WIDTH 32
 set CDMA_CLK_FREQ 100000000
 
 # ============================================================
-# Configurazione IP
+# IP Core Configuration
 # ============================================================
 set_property -dict [list \
     CONFIG.C_INCLUDE_SG              $CDMA_SG_MODE \
@@ -34,17 +36,17 @@ set_property -dict [list \
     CONFIG.S_AXI_LITE_ACLK.FREQ_HZ   $CDMA_CLK_FREQ \
 ] [get_ips $::env(IP_NAME)]
 
+
+# ------------------------------------------------------------
+# Optional: Generate synthesis checkpoint (stabilizes builds)
+# ------------------------------------------------------------
+# set_property GENERATE_SYNTH_CHECKPOINT true [get_files $::env(IP_NAME).xci]
+
+
+
+
+
 # ============================================================
-# Checkpoint synthesis (per stabilità build)
-# ============================================================
-#set_property GENERATE_SYNTH_CHECKPOINT true [get_files $::env(IP_NAME).xci]
-generate_target all [get_ips $::env(IP_NAME)]
-import_files -fileset constrs_1 $::env(XILINX_IPS_ROOT)/common/xlnx_axi_cdma/xlnx_axi_cdma_fix.xdc
-
-
-
-
-# ============================================================
-# Fine configurazione IP
+# End IP Core Configuration
 # ============================================================
 
