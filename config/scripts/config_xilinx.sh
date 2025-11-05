@@ -176,7 +176,7 @@ for slave in ${slaves[*]}; do
         ddr_high=$(( ddr_base + (1 << range_width) - 1 ))
 
         # Path to the system cache TCL config
-        cache_config=${XILINX_IPS_ROOT}/common/xlnx_system_cache_0/config.tcl
+        cache_config=${XILINX_IPS_ROOT}/hpc/xlnx_system_cache_0/config.tcl
 
         # Update CACHE_BASEADDR in TCL
         sed -E -i "s#(set CACHE_BASEADDR)[[:space:]]*\{[^}]+\}#\1 {0x$(printf '%x' $ddr_base)}#g" "${cache_config}"
