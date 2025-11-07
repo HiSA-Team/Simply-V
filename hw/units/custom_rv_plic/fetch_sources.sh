@@ -9,25 +9,31 @@ GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Directories
+RTL_DIR=$(pwd)/rtl
+ASSETS_DIR=$(pwd)/assets
+
+######################
+# Python Environment #
+######################
+
+# TODO142: migrate to venv
+
+# Install the required modules
+echo -e "${YELLOW}[FETCH_SOURCES] Installing Python modules: hjson, tabulate, pyyaml, mako ...${NC}"
+pip3.10 install --upgrade pip
+pip3.10 install hjson tabulate pyyaml mako
+
 #######################################
 # Fetch PLIC sources and depencencies #
 #######################################
-# TODO31: this PYTHON flow requires: hjson and tabulate
-# TODO31: Install them from here, as harmless if already installed
-# python3 -m pip install hjson tabulate
-
-# Check Python dependencies (hjson requires Python 3.3+). If you need more info, heck OpenTitan doc: https://opentitan.org/book/doc/contributing/style_guides/hjson_usage_style.html
-echo -e "${YELLOW}[FETCH_SOURCES] Checking and installin Python modules ... ${NC}"
-python3 -m pip install hjson tabulate
 
 # Create the rtl directory structure
 # Create rtl dir
 echo -e "${YELLOW}[FETCH_SOURCES] Creating the rtl directory structure${NC}"
-RTL_DIR=rtl
 mkdir ${RTL_DIR}
 
 echo -e "${YELLOW}[FETCH_SOURCES] Fetching Open-Titan Peripherals (aiming to PLIC) sources${NC}"
-
 # clone repo (Release v1.8.3 Jul 15 2024)
 GIT_URL=https://github.com/pulp-platform/opentitan_peripherals.git
 GIT_TAG=v0.4.0
@@ -35,17 +41,20 @@ CLONE_DIR=otp
 git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
 cd ${CLONE_DIR};
 
-# Patch bender file to download latest register_interface version
-# This is required as axi_to_reg_v1 is broken, and we need version 2
-sed -i 's/version: 0.3.9/version: 0.4.5/' Bender.yml
-# Add a fake commit
-git commit -i Bender.yml -m "Patch commit for axi_to_reg_v1"
-
+echo -e "${YELLOW}[FETCH_SOURCES] Use Bender to retrieve dependencies ${NC}"
 # Open-Titan peripherals (by PULP) requires a preliminar configuration and patching
 # Apply hjson configurations and patches
-echo -e "${YELLOW}[FETCH_SOURCES] Configure and Patch${NC}"
-make check;
+cp ${ASSETS_DIR}/Bender.yml ./
+cp ${ASSETS_DIR}/otp.mk ./
+make -B otp;
+cp ${ASSETS_DIR}/Bender.lock ./
 ./bender checkout;
+
+######################################
+# Move PLIC sources and depencencies #
+######################################
+
+echo -e "${YELLOW}[FETCH_SOURCES] Configure and Patch${NC}"
 DEP_REGISTER_INTERFACE="$(./bender path register_interface)"
 DEP_AXI="$(./bender path axi)"
 DEP_COMMON_CELLS="$(./bender path common_cells)"
@@ -67,15 +76,13 @@ cp ${DEP_COMMON_CELLS}/include/common_cells/*.svh ${RTL_DIR};
 for file in ${DEP_REGISTER_INTERFACE}/include/register_interface/*.svh; do [ -f "$file" ] && cp "$file" "${RTL_DIR}/reg_$(basename "$file")"; done
 for file in ${DEP_AXI}/include/axi/*.svh; do [ -f "$file" ] && cp "$file" "${RTL_DIR}/axi_$(basename "$file")"; done
 
-sudo rm -rf ${CLONE_DIR};
-
 #################
 # Patch sources #
 #################
 
 # We need a second step of local patching
 # 1 - Remove absolute path in source files in order to allow a flatten source code organization
-# 2 . Remove interface definitions as vivado complaints even if interfaces are not instantiated at all
+# 2 - Remove interface definitions as vivado complaints even if interfaces are not instantiated at all
 echo -e "${YELLOW}[PATCH_SOURCES] Patching include paths for flat includes and specific substitutions${NC}"
 for rtl_file in ${RTL_DIR}/*; do
     if [[ -f $rtl_file ]]; then
@@ -90,8 +97,18 @@ for rtl_file in ${RTL_DIR}/*; do
         sed -i "s|\`include \"prim_assert.sv\"|\`include \"assertions.svh\"|g" $rtl_file
 
         # Remove interfaces
-        sed -i '/module .*_intf/,$d' "$rtl_file"
+        sed -i '/_intf #/{:a;N;/endmodule/!ba;d;}' "$rtl_file"
+        #sed -i '/module .*_intf/,$d' "$rtl_file"
     fi
 done
 
+rm ${RTL_DIR}/reg_intf.sv
+
 echo -e "${GREEN}[FETCH_SOURCES] Completed${NC}"
+
+####################
+# Remove Artifacts #
+####################
+
+# remove open titan peripherals dir
+rm -rf ${CLONE_DIR};

@@ -10,16 +10,16 @@ TARGET_UNINASOC_RTL=hw/xilinx/rtl/uninasoc.sv
 
 HLS_CONFIGS=(
     # "conv_naive" # First naive version
-    # "conv_opt1"  # Memory coalescing (AXI bursts)
-    # "conv_opt2"  # Double buffering
-    # "conv_opt3"  # Split r/r/w interfaces
-    # "conv_opt4"  # Frequency scaling
-    # "conv_opt5"  # Lower bit-widths (ap_int)
+    "conv_opt1"  # Memory coalescing (AXI bursts)
+    "conv_opt2"  # Double buffering
+    "conv_opt3"  # Split r/r/w interfaces
+    "conv_opt4"  # Frequency scaling
+    "conv_opt5"  # Lower bit-widths (ap_int)
     "conv_opt6"  # Wide, single M_AXI for HBUS
 )
 
 # Preliminary builds
-make config sw
+make config # sw
 make units
 
 # For each config

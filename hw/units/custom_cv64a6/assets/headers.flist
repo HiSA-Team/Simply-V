@@ -1,0 +1,9 @@
+${DIR}/vendor/pulp-platform/common_cells/include/common_cells/assertions.svh
+${DIR}/vendor/pulp-platform/common_cells/include/common_cells/registers.svh
+${DIR}/vendor/pulp-platform/axi/include/axi/assign.svh
+${DIR}/vendor/pulp-platform/axi/include/axi/typedef.svh
+${DIR}/core/cache_subsystem/hpdcache/rtl/include/hpdcache_typedef.svh
+${DIR}/corev_apu/register_interface/include/register_interface/assign.svh
+${DIR}/corev_apu/register_interface/include/register_interface/typedef.svh
+${DIR}/core/include/cvxif_types.svh
+${DIR}/core/include/rvfi_types.svh

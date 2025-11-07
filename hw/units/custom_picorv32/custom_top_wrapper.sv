@@ -15,6 +15,11 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
+    // AXI/MEM macros parameter
+    parameter LOCAL_DATA_WIDTH  = 32,
+    parameter LOCAL_ADDR_WIDTH  = 32,
+
 	parameter [ 0:0] ENABLE_COUNTERS      = 1,
 	parameter [ 0:0] ENABLE_COUNTERS64    = 1,
 	parameter [ 0:0] ENABLE_REGS_16_31    = 1,
@@ -98,9 +103,9 @@ module custom_top_wrapper # (
     ////////////////////////////
 
     // MEM Master Interface Array
-    `DEFINE_MEM_MASTER_PORTS(instr),
+    `DEFINE_MEM_MASTER_PORTS(instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH),
     // MEM Slave Interface Array
-    `DEFINE_MEM_MASTER_PORTS(data)
+    `DEFINE_MEM_MASTER_PORTS(data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH)
 );
 
     //////////////////////////

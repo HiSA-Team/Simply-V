@@ -1,23 +1,38 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
-// Description: TBD
-//               _________________  DATA: 32  ____________  DATA: 512   ______________            ______________
-// s_MBUS       |                 | ADDR: 32 |            | ADDR: 32   |              |           |              |_
-// ------------>| Clock Converter |--------->|   Dwidth   |----------->|              |---------->| DDR channels | |
-//   Main clock |      32-bit     | HBUS     | Converter  |            |     High     |---------->|    (MIG)     | |
-//     domain   |_________________|  domain  |____________|            |  Performance |           |______________| |
-//                                                                     |     XBAR     |             |______________|
-// s_acc                                                               |              |            ______________
-// ------------------------------------------------------------------->|              |           |              |_
-// ------------------------------------------------------------------->|              |---------->| HBM channels | |
-//                                   HBUS clock                        |              |---------->|    (TBD)     | |
-//                                    domain                           |              |           |______________| |
-//                                                                     |              |              |_____________|
-//                                                                     |              |
-//                                                                     |              | DATA: 512  ____________  DATA: 32  _________________
-//                                                                     |              | ADDR: 32  |            | ADDR: 32 |                 |
-//                                                                     |              |---------->|   Dwidth   |--------->| Clock Converter |-------> m_MBUS
-//                                                                     |              |           | Converter  |   HBUS   |      32-bit     |  Main
-//                                                                     |______________|           |____________|  domain  |_________________| domain
+// Description:
+// Wrapper of the high-performance bus (HBUS) offering wide data interfaces, e.g. 512 bits. This bus offers several AXI interfaces:
+//     - masters:
+//        - to DDR channels (wide)
+//        - to HBM channels (wide)
+//        - m_MBUS: to MBUS (XLEN)
+//    - slaves:
+//        - s_MBUS: from MBUS (XLEN)
+//        - s_acc: from accelerators (wide)
+//    - Clocking
+//        - each DDR or HBM channel is clocked in its own physical clock domain
+//        - the core xbar is clocked on a high-speed clock from a physical DRAM domain, DDR channel 0 by default
+//        - the core xbar clock/reset are exposed externally, e.g. for accelerators
+//        - the MBUS interfaces (m_MBUS and s_MBUS) are already clock-bridged and data-width adapted
+//
+// Architecture:
+//               ___________              _____________              ______________             ______________
+// s_MBUS       |           | DATA: XLEN |             | DATA: 512  |              |           |              |_
+// ------------>|   Clock   |----------->|   Dwidth    |----------->|              |---------->| DDR channels | |
+//   Main clock | Converter |    HBUS    |  Converter  |            |     High     |---------->|    (MIG)     | |
+//     domain   |___________|   domain   |_____________|            |  Performance |           |______________| |
+//                                                                  |     XBAR     |             |______________|
+// s_acc                                                            |              |            ______________
+// ---------------------------------------------------------------->|              |           |              |_
+// ---------------------------------------------------------------->|              |---------->| HBM channels | |
+//                                   HBUS clock                     |              |---------->|    (TBD)     | |
+//                                    domain                        |              |           |______________| |
+//                                                                  |              |              |_____________|
+//                                                                  |              |
+//                                                                  |              |            _____________              ___________
+//                                                                  |              | DATA: 512 |             | DATA: XLEN |           |
+//                                                                  |              |---------->|   Dwidth    |----------->|   Clock   |-------> m_MBUS
+//                                                                  |              |           |  Converter  |    HBUS    | Converter |  Main
+//                                                                  |______________|           |_____________|   domain   |___________| domain
 //
 //
 
@@ -28,87 +43,45 @@ import uninasoc_pkg::*;
 `include "uninasoc_axi.svh"
 `include "uninasoc_ddr4.svh"
 
-
-// AXI4 SLAVE PORTS
-`define DEFINE_AXI_SLAVE_PORTS_dwidth(slave_name, DATA_WIDTH)         \
-  // AW channel                                    \
-  input  axi_id_t     ``slave_name``_axi_awid,     \
-  input  axi_addr_t   ``slave_name``_axi_awaddr,   \
-  input  axi_len_t    ``slave_name``_axi_awlen,    \
-  input  axi_size_t   ``slave_name``_axi_awsize,   \
-  input  axi_burst_t  ``slave_name``_axi_awburst,  \
-  input  axi_lock_t   ``slave_name``_axi_awlock,   \
-  input  axi_cache_t  ``slave_name``_axi_awcache,  \
-  input  axi_prot_t   ``slave_name``_axi_awprot,   \
-  input  axi_qos_t    ``slave_name``_axi_awqos,    \
-  input  axi_valid_t  ``slave_name``_axi_awvalid,  \
-  output axi_ready_t  ``slave_name``_axi_awready,  \
-  input  axi_region_t ``slave_name``_axi_awregion, \
-  // W channel                                     \
-  input  logic [DATA_WIDTH-1 : 0]      ``slave_name``_axi_wdata,    \
-  input  logic [(DATA_WIDTH/8)-1 : 0]  ``slave_name``_axi_wstrb,    \
-  input  axi_last_t   ``slave_name``_axi_wlast,    \
-  input  axi_valid_t  ``slave_name``_axi_wvalid,   \
-  output axi_ready_t  ``slave_name``_axi_wready,   \
-  // B channel                                     \
-  output axi_id_t     ``slave_name``_axi_bid,      \
-  output axi_resp_t   ``slave_name``_axi_bresp,    \
-  output axi_valid_t  ``slave_name``_axi_bvalid,   \
-  input  axi_ready_t  ``slave_name``_axi_bready,   \
-  // AR channel                                    \
-  input  axi_addr_t   ``slave_name``_axi_araddr,   \
-  input  axi_len_t    ``slave_name``_axi_arlen,    \
-  input  axi_size_t   ``slave_name``_axi_arsize,   \
-  input  axi_burst_t  ``slave_name``_axi_arburst,  \
-  input  axi_lock_t   ``slave_name``_axi_arlock,   \
-  input  axi_cache_t  ``slave_name``_axi_arcache,  \
-  input  axi_prot_t   ``slave_name``_axi_arprot,   \
-  input  axi_qos_t    ``slave_name``_axi_arqos,    \
-  input  axi_valid_t  ``slave_name``_axi_arvalid,  \
-  output axi_ready_t  ``slave_name``_axi_arready,  \
-  input  axi_id_t     ``slave_name``_axi_arid,     \
-  input  axi_region_t ``slave_name``_axi_arregion, \
-  // R channel                                     \
-  output axi_id_t     ``slave_name``_axi_rid,      \
-  output [DATA_WIDTH-1 : 0] ``slave_name``_axi_rdata,    \
-  output axi_resp_t   ``slave_name``_axi_rresp,    \
-  output axi_last_t   ``slave_name``_axi_rlast,    \
-  output axi_valid_t  ``slave_name``_axi_rvalid,   \
-  input  axi_ready_t  ``slave_name``_axi_rready
-
-
-
 module highperformance_bus #(
-    parameter int unsigned    HBUS_AXI_DATAWIDTH = 512, // In bits
-    parameter int unsigned    MBUS_AXI_DATAWIDTH = 32,  // In bits
-    parameter int unsigned    NUM_ACC_MASTERS    = 1, // Number of accelerator masters to HBUS (TBD)
-    parameter int unsigned    NUM_DDR_CHANNELS   = 1, // TBD
-    parameter int unsigned    NUM_HBM_CHANNELS   = 0  // TBD
+    // HBUS AXI parameters
+    parameter int unsigned    HBUS_DATA_WIDTH     = 512, // In bits
+    parameter int unsigned    HBUS_ADDR_WIDTH     = 34,  // In bits
+    parameter int unsigned    HBUS_ID_WIDTH       = 4,   // In bits
+    // MBUS AXI parameters
+    parameter int unsigned    MBUS_DATA_WIDTH     = 32,  // In bits, XLEN
+    parameter int unsigned    MBUS_ADDR_WIDTH     = 32,  // In bits, PHYSICAL_ADDR_WIDTH
+    parameter int unsigned    MBUS_ID_WIDTH       = 4,   // In bits
+    // Lengths of port arrays
+    parameter int unsigned    NUM_ACC_MASTERS     = 1,   // Number of accelerator masters to HBUS (TBD)
+    parameter int unsigned    NUM_DDR_CHANNELS    = 1,   // Number of DDR channels under HBUS (TBD)
+    parameter int unsigned    NUM_HBM_CHANNELS    = 0    // Number of HBM channels under HBUS (TBD)
 )(
 
     // MBUS clock and reset
     input logic main_clock_i,
     input logic main_reset_ni,
+
     // AXI4 Slave interface from MBUS
-    `DEFINE_AXI_SLAVE_PORTS(s_MBUS),
+    `DEFINE_AXI_SLAVE_PORTS(s_MBUS, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
     // AXI4 Master interface to MBUS
-    `DEFINE_AXI_MASTER_PORTS(m_MBUS),
+    `DEFINE_AXI_MASTER_PORTS(m_MBUS, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
 
     // TODO: expose an array of NUM_ACC_MASTERS interfaces
     // AXI4 Slave interface from accelerators
-    `DEFINE_AXI_SLAVE_PORTS_dwidth(s_acc, HBUS_AXI_DATAWIDTH),
+    `DEFINE_AXI_SLAVE_PORTS(s_acc, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH),
 
     // TODO: expose an array of NUM_DDR_CHANNELS pins and interfaces
-    // DDR4 CH0 clock and reset
-    input logic clk_300mhz_0_p_i,
-    input logic clk_300mhz_0_n_i,
+    // DDR4 CH<x> clock and reset
+    input logic clk_300mhz_x_p_i,
+    input logic clk_300mhz_x_n_i,
     // DDR4 channel output clock and reset
     output logic clk_300MHz_o,
     output logic rstn_300MHz_o,
     // DDR channel
     `DEFINE_DDR4_PORTS(x),
     // AXI-lite CSR interface
-    `DEFINE_AXILITE_SLAVE_PORTS(s_ctrl)
+    `DEFINE_AXILITE_SLAVE_PORTS(s_ctrl, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
 
     // TODO: expose an array of NUM_HBM_CHANNELS pins and interfaces
     // TBD
@@ -116,8 +89,14 @@ module highperformance_bus #(
 
     // Ensure HBUS has clock domain
     `ifndef HBUS_HAS_CLOCK_DOMAIN
-        $error("HBUS must be in 300MHz clock domain!");
+        $error("HBUS must be in have its own clock domain!");
     `endif
+
+    // For simplicity
+    initial begin : assert_properties
+        assert( MBUS_ID_WIDTH == HBUS_ID_WIDTH )
+            else $error("HBUS_ID_WIDTH (%d) must be the same as MBUS_ID_WIDTH (%d)", HBUS_ID_WIDTH, MBUS_ID_WIDTH);
+    end : assert_properties
 
     /////////////////
     // Assignments //
@@ -129,12 +108,12 @@ module highperformance_bus #(
     // Buses declaration and concatenation //
     /////////////////////////////////////////
     `include "hbus_buses.svinc"
-    // MBUS_AXI_DATAWIDTH
-    `DECLARE_AXI_BUS(s_MBUS_clock_conv_to_dwidth_conv, MBUS_AXI_DATAWIDTH)
-    `DECLARE_AXI_BUS(m_MBUS_dwidth_conv_to_clock_conv, MBUS_AXI_DATAWIDTH)
-    // HBUS_AXI_DATAWIDTH
-    `DECLARE_AXI_BUS(dwidth_conv_to_HBUS, HBUS_AXI_DATAWIDTH)
-    `DECLARE_AXI_BUS(dwidth_conv_from_HBUS, HBUS_AXI_DATAWIDTH)
+    // MBUS_DATA_WIDTH
+    `DECLARE_AXI_BUS(s_MBUS_clock_conv_to_dwidth_conv, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
+    `DECLARE_AXI_BUS(m_MBUS_dwidth_conv_to_clock_conv, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
+    // HBUS_DATA_WIDTH, and MBUS address and id width
+    `DECLARE_AXI_BUS(dwidth_conv_to_HBUS             , HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
+    `DECLARE_AXI_BUS(dwidth_conv_from_HBUS           , HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
 
     // HBUS <-> MBUS interconnect
     // - s_MBUS (slave from MBUS)
@@ -153,7 +132,11 @@ module highperformance_bus #(
 
     // Clock converter
     // s_MBUS -> s_MBUS_clock_conv_to_dwidth_conv
-    xlnx_axi_clock_converter xlnx_axi_clock_converter_s_MBUS_u (
+    axi_clock_converter_wrapper # (
+        .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
+        .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
+        .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
+    ) xlnx_axi_clock_converter_s_MBUS_u (
         // Slave from MBUS
         .s_axi_aclk     ( main_clock_i   ),
         .s_axi_aresetn  ( main_reset_ni  ),
@@ -207,8 +190,8 @@ module highperformance_bus #(
         .m_axi_awlock   ( s_MBUS_clock_conv_to_dwidth_conv_axi_awlock   ),
         .m_axi_awcache  ( s_MBUS_clock_conv_to_dwidth_conv_axi_awcache  ),
         .m_axi_awprot   ( s_MBUS_clock_conv_to_dwidth_conv_axi_awprot   ),
-        .m_axi_awregion ( s_MBUS_clock_conv_to_dwidth_conv_axi_awregion ),
-        .m_axi_awqos    ( s_MBUS_clock_conv_to_dwidth_conv_axi_awqos    ),
+        .m_axi_awregion ( s_MBUS_clock_conv_to_dwidth_conv_axi_awregion ), // Open
+        .m_axi_awqos    ( s_MBUS_clock_conv_to_dwidth_conv_axi_awqos    ), // Open
         .m_axi_awvalid  ( s_MBUS_clock_conv_to_dwidth_conv_axi_awvalid  ),
         .m_axi_awready  ( s_MBUS_clock_conv_to_dwidth_conv_axi_awready  ),
         .m_axi_wdata    ( s_MBUS_clock_conv_to_dwidth_conv_axi_wdata    ),
@@ -228,8 +211,8 @@ module highperformance_bus #(
         .m_axi_arlock   ( s_MBUS_clock_conv_to_dwidth_conv_axi_arlock   ),
         .m_axi_arcache  ( s_MBUS_clock_conv_to_dwidth_conv_axi_arcache  ),
         .m_axi_arprot   ( s_MBUS_clock_conv_to_dwidth_conv_axi_arprot   ),
-        .m_axi_arregion ( s_MBUS_clock_conv_to_dwidth_conv_axi_arregion ),
-        .m_axi_arqos    ( s_MBUS_clock_conv_to_dwidth_conv_axi_arqos    ),
+        .m_axi_arregion ( s_MBUS_clock_conv_to_dwidth_conv_axi_arregion ), // Open
+        .m_axi_arqos    ( s_MBUS_clock_conv_to_dwidth_conv_axi_arqos    ), // Open
         .m_axi_arvalid  ( s_MBUS_clock_conv_to_dwidth_conv_axi_arvalid  ),
         .m_axi_arready  ( s_MBUS_clock_conv_to_dwidth_conv_axi_arready  ),
         .m_axi_rid      ( s_MBUS_clock_conv_to_dwidth_conv_axi_rid      ),
@@ -241,6 +224,7 @@ module highperformance_bus #(
     );
 
     // AXI dwith converter from 32 bit (global AXI data width) to 512 bit (AXI user interface HBUS data width)
+    // Tie-off undriven nets
     // s_MBUS_clock_conv_to_dwidth_conv -> dwidth_conv_to_HBUS
     xlnx_axi_dwidth_to512_converter axi_dwidth_conv_s_MBUS_u (
         .s_axi_aclk     ( HBUS_clk     ),
@@ -278,13 +262,13 @@ module highperformance_bus #(
         .s_axi_awlock   ( s_MBUS_clock_conv_to_dwidth_conv_axi_awlock  ),
         .s_axi_awcache  ( s_MBUS_clock_conv_to_dwidth_conv_axi_awcache ),
         .s_axi_awprot   ( s_MBUS_clock_conv_to_dwidth_conv_axi_awprot  ),
-        .s_axi_awqos    ( '0   ),
-        .s_axi_awregion ( '0   ),
+        .s_axi_awqos    ( s_MBUS_clock_conv_to_dwidth_conv_axi_awqos   ),
+        .s_axi_awregion ( s_MBUS_clock_conv_to_dwidth_conv_axi_awregion),
         .s_axi_arlock   ( s_MBUS_clock_conv_to_dwidth_conv_axi_arlock  ),
         .s_axi_arcache  ( s_MBUS_clock_conv_to_dwidth_conv_axi_arcache ),
         .s_axi_arprot   ( s_MBUS_clock_conv_to_dwidth_conv_axi_arprot  ),
-        .s_axi_arqos    ( '0   ),
-        .s_axi_arregion ( '0   ),
+        .s_axi_arqos    ( s_MBUS_clock_conv_to_dwidth_conv_axi_arqos   ),
+        .s_axi_arregion ( s_MBUS_clock_conv_to_dwidth_conv_axi_arregion),
         // Master to DDR
         // .m_axi_awid     ( dwidth_conv_to_HBUS_axi_awid    ),
         .m_axi_awaddr   ( dwidth_conv_to_HBUS_axi_awaddr  ),
@@ -368,13 +352,13 @@ module highperformance_bus #(
         .s_axi_awlock   ( dwidth_conv_from_HBUS_axi_awlock  ),
         .s_axi_awcache  ( dwidth_conv_from_HBUS_axi_awcache ),
         .s_axi_awprot   ( dwidth_conv_from_HBUS_axi_awprot  ),
-        .s_axi_awqos    ( '0   ),
-        .s_axi_awregion ( '0   ),
+        .s_axi_awqos    ( dwidth_conv_from_HBUS_axi_awqos   ),
+        .s_axi_awregion ( dwidth_conv_from_HBUS_axi_awregion),
         .s_axi_arlock   ( dwidth_conv_from_HBUS_axi_arlock  ),
-        .s_axi_arcache  ( dwidth_conv_from_HBUS_axi_arcache ),
-        .s_axi_arprot   ( dwidth_conv_from_HBUS_axi_arprot  ),
-        .s_axi_arqos    ( '0   ),
-        .s_axi_arregion ( '0   ),
+        .s_axi_arcache  ( dwidth_conv_from_HBUS_axi_arcache ), // Open
+        .s_axi_arprot   ( dwidth_conv_from_HBUS_axi_arprot  ), // Open
+        .s_axi_arqos    ( dwidth_conv_from_HBUS_axi_arqos   ), // Open
+        .s_axi_arregion ( dwidth_conv_from_HBUS_axi_arregion), // Open
         // Master
         // .m_axi_awid     ( m_MBUS_dwidth_conv_to_clock_conv_axi_awid    ),
         .m_axi_awaddr   ( m_MBUS_dwidth_conv_to_clock_conv_axi_awaddr  ),
@@ -420,7 +404,11 @@ module highperformance_bus #(
 
     // Clock converter
     // s_MBUS_clock_conv_to_dwidth_conv -> m_MBUS
-    xlnx_axi_clock_converter xlnx_axi_clock_converter_m_MBUS_u (
+    axi_clock_converter_wrapper # (
+        .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
+        .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
+        .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
+    ) xlnx_axi_clock_converter_m_MBUS_u (
         // Slave from BUS
         .s_axi_aclk     ( HBUS_clk     ),
         .s_axi_aresetn  ( HBUS_rstn    ),
@@ -519,8 +507,8 @@ module highperformance_bus #(
 
     // AXI4 crossbar
     xlnx_highperformance_crossbar highperformance_xbar_u (
-        .aclk           ( HBUS_clk  ),
-        .aresetn        ( HBUS_rstn ),
+        .aclk           ( HBUS_clk                  ),
+        .aresetn        ( HBUS_rstn                 ),
         .s_axi_awid     ( HBUS_masters_axi_awid     ), // input
         .s_axi_awaddr   ( HBUS_masters_axi_awaddr   ), // input
         .s_axi_awlen    ( HBUS_masters_axi_awlen    ), // input
@@ -603,9 +591,10 @@ module highperformance_bus #(
     /////////////////
     // AXI4 Slaves //
     /////////////////
+
     // TODO: this is just a single DDR4 channel for now
     // TODO: generate over NUM_DDR_CHANNELS
-    // TODO: generate over NUM_HBM_CHANNELS
+    // TODO: integrate HBM a well and generate over NUM_HBM_CHANNELS
 
     // Synch DDR4 sys reset - it is active high
     logic ddr4_reset = 1'b1;
@@ -629,8 +618,8 @@ module highperformance_bus #(
 
     // DDR4 Channel 0
     xlnx_ddr4 ddr4_u (
-        .c0_sys_clk_n                ( clk_300mhz_0_n_i ),
-        .c0_sys_clk_p                ( clk_300mhz_0_p_i ),
+        .c0_sys_clk_n                ( clk_300mhz_x_n_i ),
+        .c0_sys_clk_p                ( clk_300mhz_x_p_i ),
 
         .sys_rst                     ( ddr4_reset       ),
 
@@ -651,7 +640,7 @@ module highperformance_bus #(
         .c0_ddr4_dqs_t               ( cx_ddr4_dqs_t    ),
         .c0_ddr4_dqs_c               ( cx_ddr4_dqs_c    ),
         .c0_ddr4_odt                 ( cx_ddr4_odt      ),
-        .c0_ddr4_parity              ( cx_ddr4_par      ),
+        .c0_ddr4_parity              ( cx_ddr4_parity   ),
         .c0_ddr4_bg                  ( cx_ddr4_bg       ),
         .c0_ddr4_reset_n             ( cx_ddr4_reset_n  ),
         .c0_ddr4_act_n               ( cx_ddr4_act_n    ),
@@ -686,43 +675,43 @@ module highperformance_bus #(
 
 
         // AXI4 interface
-        .c0_ddr4_s_axi_awid          ( HBUS_to_DDR_axi_awid    ),
-        .c0_ddr4_s_axi_awaddr        ( { 2'b00, HBUS_to_DDR_axi_awaddr } ), // 34 bits
-        .c0_ddr4_s_axi_awlen         ( HBUS_to_DDR_axi_awlen   ),
-        .c0_ddr4_s_axi_awsize        ( HBUS_to_DDR_axi_awsize  ),
-        .c0_ddr4_s_axi_awburst       ( HBUS_to_DDR_axi_awburst ),
-        .c0_ddr4_s_axi_awlock        ( HBUS_to_DDR_axi_awlock  ),
-        .c0_ddr4_s_axi_awcache       ( HBUS_to_DDR_axi_awcache ),
-        .c0_ddr4_s_axi_awprot        ( HBUS_to_DDR_axi_awprot  ),
-        .c0_ddr4_s_axi_awqos         ( HBUS_to_DDR_axi_awqos   ),
-        .c0_ddr4_s_axi_awvalid       ( HBUS_to_DDR_axi_awvalid ),
-        .c0_ddr4_s_axi_awready       ( HBUS_to_DDR_axi_awready ),
-        .c0_ddr4_s_axi_wdata         ( HBUS_to_DDR_axi_wdata   ),
-        .c0_ddr4_s_axi_wstrb         ( HBUS_to_DDR_axi_wstrb   ),
-        .c0_ddr4_s_axi_wlast         ( HBUS_to_DDR_axi_wlast   ),
-        .c0_ddr4_s_axi_wvalid        ( HBUS_to_DDR_axi_wvalid  ),
-        .c0_ddr4_s_axi_wready        ( HBUS_to_DDR_axi_wready  ),
-        .c0_ddr4_s_axi_bready        ( HBUS_to_DDR_axi_bready  ),
-        .c0_ddr4_s_axi_bid           ( HBUS_to_DDR_axi_bid     ),
-        .c0_ddr4_s_axi_bresp         ( HBUS_to_DDR_axi_bresp   ),
-        .c0_ddr4_s_axi_bvalid        ( HBUS_to_DDR_axi_bvalid  ),
-        .c0_ddr4_s_axi_arid          ( HBUS_to_DDR_axi_arid    ),
-        .c0_ddr4_s_axi_araddr        ( { 2'b00, HBUS_to_DDR_axi_araddr } ), // 34 bits
-        .c0_ddr4_s_axi_arlen         ( HBUS_to_DDR_axi_arlen   ),
-        .c0_ddr4_s_axi_arsize        ( HBUS_to_DDR_axi_arsize  ),
-        .c0_ddr4_s_axi_arburst       ( HBUS_to_DDR_axi_arburst ),
-        .c0_ddr4_s_axi_arlock        ( HBUS_to_DDR_axi_arlock  ),
-        .c0_ddr4_s_axi_arcache       ( HBUS_to_DDR_axi_arcache ),
-        .c0_ddr4_s_axi_arprot        ( HBUS_to_DDR_axi_arprot  ),
-        .c0_ddr4_s_axi_arqos         ( HBUS_to_DDR_axi_arqos   ),
-        .c0_ddr4_s_axi_arvalid       ( HBUS_to_DDR_axi_arvalid ),
-        .c0_ddr4_s_axi_arready       ( HBUS_to_DDR_axi_arready ),
-        .c0_ddr4_s_axi_rready        ( HBUS_to_DDR_axi_rready  ),
-        .c0_ddr4_s_axi_rlast         ( HBUS_to_DDR_axi_rlast   ),
-        .c0_ddr4_s_axi_rvalid        ( HBUS_to_DDR_axi_rvalid  ),
-        .c0_ddr4_s_axi_rresp         ( HBUS_to_DDR_axi_rresp   ),
-        .c0_ddr4_s_axi_rid           ( HBUS_to_DDR_axi_rid     ),
-        .c0_ddr4_s_axi_rdata         ( HBUS_to_DDR_axi_rdata   )
+        .c0_ddr4_s_axi_awid          ( HBUS_to_DDR4CH0_axi_awid    ),
+        .c0_ddr4_s_axi_awaddr        ( { 2'b00, HBUS_to_DDR4CH0_axi_awaddr } ), // 34 bits
+        .c0_ddr4_s_axi_awlen         ( HBUS_to_DDR4CH0_axi_awlen   ),
+        .c0_ddr4_s_axi_awsize        ( HBUS_to_DDR4CH0_axi_awsize  ),
+        .c0_ddr4_s_axi_awburst       ( HBUS_to_DDR4CH0_axi_awburst ),
+        .c0_ddr4_s_axi_awlock        ( HBUS_to_DDR4CH0_axi_awlock  ),
+        .c0_ddr4_s_axi_awcache       ( HBUS_to_DDR4CH0_axi_awcache ),
+        .c0_ddr4_s_axi_awprot        ( HBUS_to_DDR4CH0_axi_awprot  ),
+        .c0_ddr4_s_axi_awqos         ( HBUS_to_DDR4CH0_axi_awqos   ),
+        .c0_ddr4_s_axi_awvalid       ( HBUS_to_DDR4CH0_axi_awvalid ),
+        .c0_ddr4_s_axi_awready       ( HBUS_to_DDR4CH0_axi_awready ),
+        .c0_ddr4_s_axi_wdata         ( HBUS_to_DDR4CH0_axi_wdata   ),
+        .c0_ddr4_s_axi_wstrb         ( HBUS_to_DDR4CH0_axi_wstrb   ),
+        .c0_ddr4_s_axi_wlast         ( HBUS_to_DDR4CH0_axi_wlast   ),
+        .c0_ddr4_s_axi_wvalid        ( HBUS_to_DDR4CH0_axi_wvalid  ),
+        .c0_ddr4_s_axi_wready        ( HBUS_to_DDR4CH0_axi_wready  ),
+        .c0_ddr4_s_axi_bready        ( HBUS_to_DDR4CH0_axi_bready  ),
+        .c0_ddr4_s_axi_bid           ( HBUS_to_DDR4CH0_axi_bid     ),
+        .c0_ddr4_s_axi_bresp         ( HBUS_to_DDR4CH0_axi_bresp   ),
+        .c0_ddr4_s_axi_bvalid        ( HBUS_to_DDR4CH0_axi_bvalid  ),
+        .c0_ddr4_s_axi_arid          ( HBUS_to_DDR4CH0_axi_arid    ),
+        .c0_ddr4_s_axi_araddr        ( { 2'b00, HBUS_to_DDR4CH0_axi_araddr } ), // 34 bits
+        .c0_ddr4_s_axi_arlen         ( HBUS_to_DDR4CH0_axi_arlen   ),
+        .c0_ddr4_s_axi_arsize        ( HBUS_to_DDR4CH0_axi_arsize  ),
+        .c0_ddr4_s_axi_arburst       ( HBUS_to_DDR4CH0_axi_arburst ),
+        .c0_ddr4_s_axi_arlock        ( HBUS_to_DDR4CH0_axi_arlock  ),
+        .c0_ddr4_s_axi_arcache       ( HBUS_to_DDR4CH0_axi_arcache ),
+        .c0_ddr4_s_axi_arprot        ( HBUS_to_DDR4CH0_axi_arprot  ),
+        .c0_ddr4_s_axi_arqos         ( HBUS_to_DDR4CH0_axi_arqos   ),
+        .c0_ddr4_s_axi_arvalid       ( HBUS_to_DDR4CH0_axi_arvalid ),
+        .c0_ddr4_s_axi_arready       ( HBUS_to_DDR4CH0_axi_arready ),
+        .c0_ddr4_s_axi_rready        ( HBUS_to_DDR4CH0_axi_rready  ),
+        .c0_ddr4_s_axi_rlast         ( HBUS_to_DDR4CH0_axi_rlast   ),
+        .c0_ddr4_s_axi_rvalid        ( HBUS_to_DDR4CH0_axi_rvalid  ),
+        .c0_ddr4_s_axi_rresp         ( HBUS_to_DDR4CH0_axi_rresp   ),
+        .c0_ddr4_s_axi_rid           ( HBUS_to_DDR4CH0_axi_rid     ),
+        .c0_ddr4_s_axi_rdata         ( HBUS_to_DDR4CH0_axi_rdata   )
     );
 
 endmodule : highperformance_bus

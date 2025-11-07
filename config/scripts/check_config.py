@@ -33,7 +33,7 @@ import configuration
 from utils import *
 
 # Constants
-VALID_PROTOCOLS = ["AXI4", "AXI4LITE"]
+VALID_PROTOCOLS = ["AXI4", "AXI4LITE", "DISABLE"] # AXI3 not implemented yet
 MIN_AXI4_ADDR_WIDTH = 12
 MIN_AXI4LITE_ADDR_WIDTH = 1
 SOC_CONFIG = os.getenv("SOC_CONFIG", "embedded")
@@ -68,6 +68,14 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         if config.CORE_SELECTOR == "CORE_PICORV32" and config.VIO_RESETN_DEFAULT != 0:
             print_error(f"CORE_PICORV32 only supports VIO_RESETN_DEFAULT = 0! {config.VIO_RESETN_DEFAULT}")
             return False
+        # Microblaze-V is not allowed when building for au280
+        if (config.CORE_SELECTOR == "CORE_MICROBLAZEV_RV64" or config.CORE_SELECTOR == "CORE_MICROBLAZEV_RV32") and os.getenv("BOARD") == "au280":
+            print_error(f"CORE_MICROBLAZEV is not allowed when building for au280")
+        # Match XLEN with MicroblazeV type
+        if ((config.CORE_SELECTOR == "CORE_MICROBLAZEV_RV64" and config.XLEN == 32) or \
+            (config.CORE_SELECTOR == "CORE_MICROBLAZEV_RV32" and config.XLEN == 64)):
+            print_error(f"XLEN={config.XLEN} doesn't match {config.CORE_SELECTOR} data width.")
+            return False
 
         # All check passed
         return True
@@ -78,7 +86,7 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
 
     # Check if the protocol is valid
     if config.PROTOCOL not in VALID_PROTOCOLS:
-        print_error(f"Invalid protocol in {config_file_name}")
+        print_error(f"Invalid protocol {config.PROTOCOL} in {config_file_name}")
         return False
 
     # Check the number of slaves and relative data (range names, addresses, address widths, and clock domains)
@@ -120,7 +128,6 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
     for i in range(len(config.BASE_ADDR)):
         base_address = int(config.BASE_ADDR[i], 16)
         end_address = base_address + ~(~1 << (config.RANGE_ADDR_WIDTH[i]-1))
-
         # Check if the base addr does not fall into the addr range (e.g. base_addr: 0x100 is not allowed with range_width=12)
         if (base_address & ~(~1 << (config.RANGE_ADDR_WIDTH[i]-1)) ) != 0:
             print_error(f"BASE_ADDR does not match RANGE_ADDR_WIDTH in {config_file_name}")
@@ -147,9 +154,9 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         # Check valid clock domains
         for i in range(len(config.RANGE_CLOCK_DOMAINS)):
             # Check if the clock frequency is valid (DDR has its own clock domain)
-            # NOTE: add HLS_CONTROL as exception
-            # TODO: decide a pregfix for HBUS-attached accelerators here, maybe ACC_* or HBUS_*
-            if config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG] and config.RANGE_NAMES[i] not in {"DDR", "HBUS", "HLS_CONTROL"}:
+            # TOD143: decide a prefix for HBUS-attached accelerators here, maybe ACC_* or HBUS_*
+            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS", "HLS_CONTROL"]
+            if ( config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG] ) and ( config.RANGE_NAMES[i] not in exclude_list):
                 print_error(f"The clock domain {config.RANGE_CLOCK_DOMAINS[i]}MHz is not supported")
                 return False
             # Check if all the main_clock_domain slaves have the same frequency as MAIN_CLOCK_DOMAIN
@@ -158,8 +165,10 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
                     print_error(f"The {config.RANGE_NAMES[i]} frequency {config.RANGE_CLOCK_DOMAINS[i]} must be the same as MAIN_CLOCK_DOMAIN {config.MAIN_CLOCK_DOMAIN}")
                     return False
             # Check if the DDR has the right frequency
-            if config.RANGE_NAMES[i] in {"DDR", "HBUS"}:
+            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS"]  # , "HLS_CONTROL"]
+            if config.RANGE_NAMES[i] in exclude_list:
                 if config.RANGE_CLOCK_DOMAINS[i] != DDR_FREQUENCY:
+                    # TODO143: for now, limit HBUS to DDR clock (this also impacts PR128)
                     print_error(f"The DDR and HBUS frequency {config.RANGE_CLOCK_DOMAINS[i]} must be the same of DDR board clock {DDR_FREQUENCY}")
                     return False
 
@@ -196,9 +205,7 @@ def check_inter_config(configs : list) -> bool:
             if config.RANGE_NAMES[mi_index] in CONFIG_NAMES.values():
                 # Find the child bus configuration
                 for child_config in configs:
-                    # TODO: allow loop back to MBUS
                     if child_config.CONFIG_NAME == config.RANGE_NAMES[mi_index] and child_config.CONFIG_NAME != "MBUS":
-                        print(child_config.CONFIG_NAME)
                         # Compute the base and the end address of the parent bus
                         parent_base_address = int(config.BASE_ADDR[mi_index], 16)
                         parent_end_address = parent_base_address + ~(~1 << (config.RANGE_ADDR_WIDTH[mi_index]-1))
@@ -227,7 +234,7 @@ def parse_args(argv : list) -> list:
     config_file_names = CONFIG_NAMES
     if len(sys.argv) >= 5:
         # Get the array of bus/system names from the second arg to the last but one
-        config_file_names = sys.argv[1:5]
+        config_file_names = sys.argv[1:len(CONFIG_NAMES)+1]
     print_info("Parsing done!")
     return config_file_names
 

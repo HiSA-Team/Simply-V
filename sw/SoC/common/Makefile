@@ -16,6 +16,15 @@ OBJS	 = $(addprefix $(OBJ_DIR)/, $(notdir $(SRCS:.c=.o)))
 RM	  = rm -rf					 # Remove recursively command
 MKDIR   = @mkdir -p $(@D)			 # Creates folders if not present
 
+##########
+# MACROS #
+##########
+
+MACRO_LIST =
+ifeq ($(SOC_CONFIG), embedded)
+MACRO_LIST += -DIS_EMBEDDED
+endif
+
 ###############################################################################
 
 ###########
@@ -27,12 +36,12 @@ all: bin/$(PROGRAM_NAME).bin bin/$(PROGRAM_NAME).dump
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@echo "\n[OBJ] Creating OBJs $@ from SRC $^"
 	$(MKDIR)
-	$(CC) -o $@ $^ $(INC_FLAGS) $(LIB_INC_LIST) $(CFLAGS)
+	$(CC) -o $@ $^ -I$(INC_DIR) $(LIB_INC_LIST) $(CFLAGS) $(MACRO_LIST)
 
 obj/startup.o:
 	@echo "\n[OBJ] Creating OBJ $@ from SRC $(STARTUP_DIR)/startup.s"
 	$(MKDIR)
-	$(CC) -o obj/startup.o $(STARTUP_DIR)/startup.s $(CFLAGS) $(LIB_INC_LIST)
+	$(CC) -o obj/startup.o $(STARTUP_DIR)/startup.s $(LIB_INC_LIST) $(CFLAGS)
 
 bin/$(PROGRAM_NAME).elf: $(OBJS) obj/startup.o
 	@echo "\n[ELF] Linking $^ into $@"
@@ -40,16 +49,15 @@ bin/$(PROGRAM_NAME).elf: $(OBJS) obj/startup.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 bin/$(PROGRAM_NAME).bin: bin/$(PROGRAM_NAME).elf
-	@echo "\n[BIN] Creating bin file"
+	@echo "\n[ELF] Linking OBJs $^ into ELF $@"
 	$(OBJCOPY) -O binary bin/$(PROGRAM_NAME).elf bin/$(PROGRAM_NAME).bin
+
+dump: bin/$(PROGRAM_NAME).dump
+bin/$(PROGRAM_NAME).dump:
+	$(OBJDUMP) -D bin/$(PROGRAM_NAME).elf > $@
 
 clean:
 	-$(RM) obj
 	-$(RM) bin
 
 .PHONY: all clean
-
-dump: bin/$(PROGRAM_NAME).dump
-bin/$(PROGRAM_NAME).dump:
-	$(OBJDUMP) -D bin/$(PROGRAM_NAME).elf > $@
-

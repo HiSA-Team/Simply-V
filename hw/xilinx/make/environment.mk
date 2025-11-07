@@ -2,7 +2,7 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Description:
-#    Hold all the environment variables for Xilinx tools.
+#    Hold all the environment variables for Xilinx tools and PCIe offsets.
 
 # Basic variables for Vivado
 XILINX_VIVADO_CMD ?= vivado
@@ -34,9 +34,9 @@ CUSTOM_IP_LIST = ${CUSTOM_COMMON_IP_LIST}
 XILINX_COMMON_IP_LIST_XCI   := $(foreach ip,${XILINX_COMMON_IP_LIST},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 XILINX_HPC_IP_LIST_XCI      := $(foreach ip,${XILINX_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 XILINX_EMBEDDED_IP_LIST_XCI := $(foreach ip,${XILINX_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_COMMON_IP_LIST_XCI   :=  $(foreach ip,${CUSTOM_COMMON_IP_LIST},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_HPC_IP_LIST_XCI      := $(foreach ip,${CUSTOM_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_EMBEDDED_IP_LIST_XCI := $(foreach ip,${CUSTOM_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+CUSTOM_COMMON_IP_LIST_XCI   := $(foreach ip,${CUSTOM_COMMON_IP_LIST},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+CUSTOM_HPC_IP_LIST_XCI      := $(foreach ip,${CUSTOM_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+CUSTOM_EMBEDDED_IP_LIST_XCI := $(foreach ip,${CUSTOM_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
 
 # Board-independent XCI lists
 XILINX_IP_LIST_XCI := ${XILINX_COMMON_IP_LIST_XCI}
@@ -55,6 +55,17 @@ else ifeq (${SOC_CONFIG}, embedded)
     CUSTOM_IP_LIST_XCI     += ${CUSTOM_EMBEDDED_IP_LIST_XCI}
 else
 $(error "Unsupported config ${SOC_CONFIG}")
+endif
+
+# Remove Microblaze-V and Microblaze Debug Module V when building with Vivado < 2024
+# TODO55: quick workaround for PR 146, extend this for all selectable IPs
+ifeq ($(shell [ $(XILINX_VIVADO_VERSION) -lt 2024 ] && echo true),true)
+    FILTER_IP                 := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
+    FILTER_IP_XCI             := $(foreach ip,${FILTER_IP},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
+    TMP_XILINX_IP_LIST        := ${XILINX_IP_LIST}
+    TMP_XILINX_IP_LIST_XCI    := ${XILINX_IP_LIST_XCI}
+    XILINX_IP_LIST            := $(filter-out $(FILTER_IP),$(TMP_XILINX_IP_LIST))
+    XILINX_IP_LIST_XCI        := $(filter-out $(FILTER_IP_XCI),$(TMP_XILINX_IP_LIST_XCI))
 endif
 
 # Concatenate/create the final IP lists
@@ -80,23 +91,27 @@ XILINX_PROBE_LTX ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl
 
 # Whether to use ILA probes (0|1)
 XILINX_ILA ?= 0
+# Clock net for ILA probes: use main clock by default
+XILINX_ILA_CLOCK ?= main_clk
 
 # Full environment variables list for Vivado
 XILINX_VIVADO_ENV ?=                                \
-    DATA_WIDTH=${DATA_WIDTH}                        \
-    ADDR_WIDTH=${ADDR_WIDTH}                        \
-    ID_WIDTH=${ID_WIDTH}                            \
+    MBUS_DATA_WIDTH=${MBUS_DATA_WIDTH}              \
+    MBUS_ADDR_WIDTH=${MBUS_ADDR_WIDTH}              \
     CORE_SELECTOR=${CORE_SELECTOR}                  \
     VIO_RESETN_DEFAULT=${VIO_RESETN_DEFAULT}        \
-    NUM_SI=${NUM_SI}                                \
-    NUM_MI=${NUM_MI}                                \
-    BRAM_DEPTHS="${BRAM_DEPTHS}"                    \
+    MBUS_NUM_SI=${MBUS_NUM_SI}                      \
+    MBUS_NUM_MI=${MBUS_NUM_MI}                      \
+    MBUS_ID_WIDTH=${MBUS_ID_WIDTH}                  \
     MAIN_CLOCK_FREQ_MHZ=${MAIN_CLOCK_FREQ_MHZ}      \
     RANGE_CLOCK_DOMAINS="${RANGE_CLOCK_DOMAINS}"    \
     PBUS_NUM_MI=${PBUS_NUM_MI}                      \
+    PBUS_ID_WIDTH=${PBUS_ID_WIDTH}                  \
     HBUS_NUM_MI=${HBUS_NUM_MI}                      \
     HBUS_NUM_SI=${HBUS_NUM_SI}                      \
+    HBUS_ID_WIDTH=${HBUS_ID_WIDTH}                  \
     XILINX_ILA=${XILINX_ILA}                        \
+    XILINX_ILA_CLOCK=${XILINX_ILA_CLOCK}            \
     SYNTH_STRATEGY=${SYNTH_STRATEGY}                \
     IMPL_STRATEGY=${IMPL_STRATEGY}                  \
     XILINX_PART_NUMBER=${XILINX_PART_NUMBER}        \
@@ -117,3 +132,7 @@ XILINX_VIVADO_ENV ?=                                \
 # Package Vivado command in a single variable
 XILINX_VIVADO := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode ${XILINX_VIVADO_MODE}
 XILINX_VIVADO_BATCH := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode batch
+
+# PCIe device and address
+PCIE_BDF ?= 01:00.0 # TODO: remove this and find the PCIE_BDF automatically
+PCIE_BAR ?= 0x$(shell lspci -vv -s ${PCIE_BDF} | grep Region | awk '{print $$5}')

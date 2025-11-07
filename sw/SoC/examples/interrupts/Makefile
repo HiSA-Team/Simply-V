@@ -1,4 +1,5 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description:
 #   This Makefile defines the project name and paths for the common Makefile.
 #   Optionally, a user can define additional targets here.
@@ -31,20 +32,14 @@ LD_SCRIPT     = ld/user.ld
 # Libraries #
 #############
 
-LIB_OBJ_TINYIO     = $(LIB_DIR)/tinyio/lib/tinyio.a
+LIB_OBJ_TINYIO    = $(LIB_DIR)/tinyio/lib/tinyio.a
 LIB_INC_TINYIO    = -I$(LIB_DIR)/tinyio/inc
 
-LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO)
-LIB_INC_LIST     = $(LIB_INC_TINYIO)
+LIB_OBJ_UNINASOC  = $(LIB_DIR)/uninasoc/lib/libuninasoc.a
+LIB_INC_UNINASOC   = -I$(LIB_DIR)/uninasoc/inc
 
-##########
-# MACROS #
-##########
-
-MACRO_LIST =
-ifeq ($(SOC_CONFIG), embedded)
-MACRO_LIST += -DIS_EMBEDDED
-endif
+LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO) $(LIB_OBJ_UNINASOC)
+LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_UNINASOC)
 
 
 #############

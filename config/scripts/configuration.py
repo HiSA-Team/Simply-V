@@ -11,17 +11,19 @@ import logging
 class Configuration:
 	def __init__(self):
 		self.CONFIG_NAME         : str = "" # The name of the bus, used in check sanity
-		self.SUPPORTED_CORES	 : list = ["CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV"]
+		self.SUPPORTED_CORES	 : list = ["CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32",
+                                  "CORE_MICROBLAZEV_RV64", "CORE_CV64A6"]
 		self.CORE_SELECTOR		 : str = ""		# (Mandatory) No default core
 		self.VIO_RESETN_DEFAULT	 : int = 1      # Reset using Xilinx VIO
-		self.XLEN                : int = 32		# System-level len (only applicable to MBUS)
-		self.PROTOCOL			 : str = "AXI4"	# AXI PROTOCOL used
+		self.PROTOCOL			 : str = ""		# AXI PROTOCOL used, use "MOCK" to skip checks
+		self.XLEN                : int = 32		# MBUS, CPU and Toolchain data width
+		self.PHYSICAL_ADDR_WIDTH : int = 32 	# MBUS physical address width
 		self.CONNECTIVITY_MODE	 : str = "SAMD"	# Crossbar Configuration, Shared-Address/Multiple-Data(SAMD) or Shared-Address/Shared-Data(SASD)
 		self.ADDR_WIDTH			 : int = 32 	# Address Width
 		self.DATA_WIDTH			 : int = 32 	# Data Width
 		self.ID_WIDTH			 : int = 4		# ID Data Width for MI and SI (a subset of it is used by the Interfaces Thread IDs)
-		self.NUM_MI				 : int = 2 		# Master Interface (MI) Number
-		self.NUM_SI				 : int = 1 		# Slave Interface (SI) Number
+		self.NUM_MI				 : int = 0 		# Master Interface (MI) Number
+		self.NUM_SI				 : int = 0 		# Slave Interface (SI) Number
 		self.MASTER_NAMES        : list = []    # List of names of masters connected to the bus
 		self.RANGE_NAMES         : list = []    # List of names of slaves connected to the bus
 		self.ADDR_RANGES		 : list = 1 	# Number of Address Ranges for all MI
@@ -48,41 +50,53 @@ class Configuration:
 		self.MAIN_CLOCK_DOMAIN   : int = 100    # Core + mbus clock domain (the main clock domain)
 		self.RANGE_CLOCK_DOMAINS       : list = []    # MBUS slaves clock domains
 
-	###########
-	# Setters #
-	###########
-	# When XLEN parameter is parsed, ADDR_WIDTH and DATA_WIDTH are assigned accordingly
+    ###########
+    # Setters #
+    ###########
+    # When XLEN parameter is parsed, ADDR_WIDTH and DATA_WIDTH are assigned accordingly
 
 	def set_ADDR_WIDTH (self, value: int):
-		# Reads the Address Widdth applied to all Interfaces
-		# [AXI4 ; AXI3] => the range of possible values is (12..64)
-		# AXI4LITE => the range of possible values is (1..64)
-		# 32 is the default value in every scenario
-		# If the value is missing or is incorrect in the csv file,  default value is used
-		if ((self.PROTOCOL == "AXI4LITE") and (value in range(1, 65))):
-			self.ADDR_WIDTH = value
-		elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (value in range(12, 65))):
-			self.ADDR_WIDTH = value
-		else:
-			logging.warning("Address Width value isn't compatible with AXI PROTOCOL Used. Using default value.")
+
+		# TODO127: fix PHYSICAL_ADDR_WIDTH parsing
+		self.ADDR_WIDTH = value
+		logging.warning("ADDR_WIDTH value (" + str(value) + ") is not sanitized.")
+
+		# # Reads the Address Widdth applied to all Interfaces
+		# # [AXI4 ; AXI3] => the range of possible values is (12..64)
+		# # AXI4LITE => the range of possible values is (1..64)
+		# # 32 is the default value in every scenario
+		# # If the value is missing or is incorrect in the csv file,  default value is used
+		# if ((self.PROTOCOL == "AXI4LITE") and (value in range(1, 65))):
+		# 	self.ADDR_WIDTH = value
+		# elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (value in range(12, 65))):
+		# 	self.ADDR_WIDTH = value
+		# elif self.PROTOCOL == "DISABLE":
+		# 	# Skip mock buses
+		# 	return
+		# else:
+		# 	logging.warning("Address Width value isn't compatible with AXI PROTOCOL Used. Using default value.")
 
 	def set_DATA_WIDTH (self, value: int):
-		# Reads the Address Widdth applied to all Interfaces
-		# [AXI4 ; AXI3] => the range of possible values is {32 ,  64 ,  128 ,  256 ,  512 ,  1024}
-		# AXI4LITE => the range of possible values is {32 ,  64}
-		# 32 is the default value in every scenario
-		# If the value is missing or is incorrect in the csv file,  default value is used
-		DATA_WIDTH_Found = False
-		Base_Data = 32
-		while ((DATA_WIDTH_Found == False) and (Base_Data <= 1024)):
-			if (value == Base_Data):
-				DATA_WIDTH_Found = True
-			Base_Data = Base_Data * 2
-		if ((self.PROTOCOL == "AXI4LITE") and ((value == 32) or (value == 64))):
-			self.DATA_WIDTH = value
-		elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (DATA_WIDTH_Found == True)):
-			self.DATA_WIDTH = value
-		else:
-			logging.warning("Data Width value isn't compatible with AXI PROTOCOL Used. Using default value.")
 
 
+		# TODO127: fix XLEN parsing
+		self.DATA_WIDTH = value
+		logging.warning("DATA_WIDTH value (" + str(value) + ") is not sanitized.")
+
+		# # Reads the Address Widdth applied to all Interfaces
+		# # [AXI4 ; AXI3] => the range of possible values is {32 ,  64 ,  128 ,  256 ,  512 ,  1024}
+		# # AXI4LITE => the range of possible values is {32 ,  64}
+		# # 32 is the default value in every scenario
+		# # If the value is missing or is incorrect in the csv file,  default value is used
+		# DATA_WIDTH_Found = False
+		# Base_Data = 32
+		# while ((DATA_WIDTH_Found == False) and (Base_Data <= 1024)):
+		# 	if (value == Base_Data):
+		# 		DATA_WIDTH_Found = True
+		# 	Base_Data = Base_Data * 2
+		# if ((self.PROTOCOL == "AXI4LITE") and ((value == 32) or (value == 64))):
+		# 	self.DATA_WIDTH = value
+		# elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (DATA_WIDTH_Found == True)):
+		# 	self.DATA_WIDTH = value
+		# else:
+		# 	logging.warning("Data Width value isn't compatible with AXI PROTOCOL Used. Using default value.")

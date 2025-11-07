@@ -9,7 +9,11 @@ import uninasoc_pkg::*;
 `include "uninasoc_axi.svh"
 
 
-module virtual_uart (
+module virtual_uart # (
+    parameter int unsigned    LOCAL_DATA_WIDTH  = 32,
+    parameter int unsigned    LOCAL_ADDR_WIDTH  = 32,
+    parameter int unsigned    LOCAL_ID_WIDTH    = 32
+) (
     input logic clock_i,
     input logic reset_ni,
 
@@ -21,7 +25,7 @@ module virtual_uart (
     input  logic [1:0] int_ack_i,
 
     // AXILITE Slave interface
-    `DEFINE_AXILITE_SLAVE_PORTS(s)
+    `DEFINE_AXILITE_SLAVE_PORTS(s, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 );
 
 
@@ -46,7 +50,7 @@ module virtual_uart (
     localparam STS_TX_EMPTY_BIT = 2;     // Status  - TX register empty
     localparam STS_TX_FULL_BIT  = 3;     // Status  - TX register full
 
-    logic [AXI_DATA_WIDTH-1:0] uart_csr [0:4];
+    logic [LOCAL_DATA_WIDTH-1:0] uart_csr [0:4];
 
 
     /* AXILITE Write logic */

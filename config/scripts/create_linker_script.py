@@ -26,20 +26,20 @@ import pandas as pd
 
 # CSV configuration file path
 config_file_names = [
-		'config/axi_memory_map/configs/embedded/config_main_bus.csv',
-		'config/axi_memory_map/configs/embedded/config_peripheral_bus.csv',
-		'config/axi_memory_map/configs/embedded/config_highperformance_bus.csv',
+		'config/configs/embedded/config_main_bus.csv',
+		'config/configs/embedded/config_peripheral_bus.csv',
+		'config/configs/embedded/config_highperformance_bus.csv',
 	]
 
-if len(sys.argv) >= 4:
+if len(sys.argv) >= len(config_file_names)+1:
 	# Get the array of bus names from the second arg to the last but one
-	config_file_names = sys.argv[1:4]
+	config_file_names = sys.argv[1:len(config_file_names)+1]
 
 # Target linker script file
 ld_file_name = 'sw/SoC/common/UninaSoC.ld'
 if len(sys.argv) >= 5:
 	# Get the linker script name, the last arg
-	ld_file_name = sys.argv[4]
+	ld_file_name = sys.argv[len(config_file_names)+1]
 
 
 ###############
@@ -57,6 +57,11 @@ RANGE_BASE_ADDR = []
 RANGE_ADDR_WIDTH = []
 # For each bus
 for config_df in config_dfs:
+
+	# Skip DISABLE buses
+	if config_df.loc["PROTOCOL"]["Value"] == "DISABLE":
+		continue
+
 	# Read number of masters interfaces
 	NUM_MI.append(int(config_df.loc["NUM_MI"]["Value"]))
 	# print("[DEBUG] NUM_MI", NUM_MI)
@@ -104,7 +109,8 @@ for i in range(len(RANGE_NAMES)):
 	for device in RANGE_NAMES[i]:
 		match device:
 			# memory blocks
-			case "BRAM" | "DDR" | "HBM":
+			# TODO77: extend for multiple BRAMs
+			case d if d in {"BRAM", "HBM"} or d.startswith("DDR4CH"):
 				device_dict['memory'].append({'device': device, 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
 
 			# peripherals
@@ -159,6 +165,7 @@ fd.write("_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + 
 
 # The stack is allocated at the end of first memory block
 # _stack_end can be user-defined for the application, as bss and rodata
+# _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
 
 # Note: The memory size specified in the config.csv file may differ from the
 # physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
@@ -166,7 +173,7 @@ fd.write("_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + 
 # and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
 # 32KB for now, based on the current setting in `config.tcl`.
 
-stack_start = min(0x7ffc, device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x4)
+stack_start = device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x8
 fd.write("_stack_start = 0x" + format(stack_start, "016x") + ";\n")
 
 # Generate sections

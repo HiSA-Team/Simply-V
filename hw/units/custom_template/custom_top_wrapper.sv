@@ -15,6 +15,12 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
+    // AXI/MEM macros parameter
+    parameter LOCAL_DATA_WIDTH  = 32,
+    parameter LOCAL_ADDR_WIDTH  = 32,
+    parameter LOCAL_ID_WIDTH  = 2
+
 ) (
 
     ///////////////////////////////////
@@ -26,11 +32,11 @@ module custom_top_wrapper # (
     ////////////////////////////
 
     // AXI Master Interface Array (Add here as many master as required)
-    `DEFINE_AXI_MASTER_PORTS(name),
+    `DEFINE_AXI_MASTER_PORTS(name, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
     // AXI Slave Interface Array
-    `DEFINE_AXI_SLAVE_PORTS(name),
+    `DEFINE_AXI_SLAVE_PORTS(name, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
     // MEM Interface Array
-    `DEFINE_MEM_PORTS(name)
+    `DEFINE_MEM_PORTS(name, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH)
 );
 
 

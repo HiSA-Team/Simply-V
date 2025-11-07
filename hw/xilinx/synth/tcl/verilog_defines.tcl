@@ -17,14 +17,16 @@ if { "$::env(SOC_CONFIG)" == "hpc" } {
 }
 
 # AXI config
-lappend verilog_defines AXI_DATA_WIDTH=$::env(DATA_WIDTH)
-lappend verilog_defines AXI_ADDR_WIDTH=$::env(ADDR_WIDTH)
-lappend verilog_defines AXI_ID_WIDTH=$::env(ID_WIDTH)
-lappend verilog_defines NUM_SI=$::env(NUM_SI)
-lappend verilog_defines NUM_MI=$::env(NUM_MI)
+lappend verilog_defines MBUS_DATA_WIDTH=$::env(MBUS_DATA_WIDTH)
+lappend verilog_defines MBUS_ADDR_WIDTH=$::env(MBUS_ADDR_WIDTH)
+lappend verilog_defines MBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
+lappend verilog_defines MBUS_NUM_SI=$::env(MBUS_NUM_SI)
+lappend verilog_defines MBUS_NUM_MI=$::env(MBUS_NUM_MI)
 lappend verilog_defines PBUS_NUM_MI=$::env(PBUS_NUM_MI)
+lappend verilog_defines PBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
 lappend verilog_defines HBUS_NUM_MI=$::env(HBUS_NUM_MI)
 lappend verilog_defines HBUS_NUM_SI=$::env(HBUS_NUM_SI)
+lappend verilog_defines HBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
 # Core selection
 lappend verilog_defines CORE_SELECTOR=$::env(CORE_SELECTOR)
 # Clock domains

@@ -14,12 +14,13 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
     parameter LOCAL_MEM_ADDR_WIDTH    = 32,
     parameter LOCAL_MEM_DATA_WIDTH    = 32,
     parameter LOCAL_AXI_DATA_WIDTH    = 32,
     parameter LOCAL_AXI_ADDR_WIDTH    = 32,
     parameter LOCAL_AXI_STRB_WIDTH    = LOCAL_AXI_DATA_WIDTH / 8,
-    parameter LOCAL_AXI_ID_WIDTH      = 2,
+    parameter LOCAL_AXI_ID_WIDTH      = 4,
     parameter LOCAL_AXI_REGION_WIDTH  = 4,
     parameter LOCAL_AXI_LEN_WIDTH     = 8,
     parameter LOCAL_AXI_SIZE_WIDTH    = 3,
@@ -47,9 +48,9 @@ module custom_top_wrapper # (
     ////////////////////////////
 
     // AXI4 Full Master interface from SRAM protocol (mem)
-    `DEFINE_AXI_MASTER_PORTS (m),
+    `DEFINE_AXI_MASTER_PORTS (m, LOCAL_AXI_DATA_WIDTH, LOCAL_AXI_ADDR_WIDTH, LOCAL_AXI_ID_WIDTH),
     // Mem interface
-    `DEFINE_MEM_SLAVE_PORTS  (s)
+    `DEFINE_MEM_SLAVE_PORTS  (s, LOCAL_MEM_DATA_WIDTH, LOCAL_MEM_ADDR_WIDTH)
 );
 
     // Define the req_t and resp_t type using typedef.svh macro

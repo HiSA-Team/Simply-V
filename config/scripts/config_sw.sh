@@ -35,13 +35,13 @@ xlen_value=$(grep "XLEN" ${CONFIG_SYS_CSV} | grep -v RANGE | awk -F "," '{print 
 
 # TODO: 64 supported yet
 # if [[ "$xlen_value" == "32" || "$xlen_value" == "64" ]]; then
-if [[ "$xlen_value" == "32" ]]; then
+if [[ "$xlen_value" == "32" || "$xlen_value" == "64" ]]; then
 
     echo "[CONFIG_SW] Setting XLEN to ${xlen_value} "
     sed -E -i "s/XLEN.?\?=.+/XLEN \?= ${xlen_value}/g" ${OUTPUT_MK_FILE};
 
 else
-    echo  "[CONFIG_SW][ERROR] Invalid XLEN=$xlen_value value; no toolchain is supported for this XLEN value";
+    echo "[CONFIG_SW][ERROR] Invalid XLEN=$xlen_value value; no toolchain is supported for this XLEN value";
     exit 1;
 fi
 

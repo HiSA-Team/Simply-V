@@ -99,3 +99,5 @@ Each library must provide:
 - Any necessary header files for integration.
 
 For a practical example of integrating libraries into a project, refer to the `examples/hello_world` example.
+
+**Note**: currently tinyio is compiled with M and C extensions. If you want to run examples or projects depending on it, ensure to use a compatible CPU.

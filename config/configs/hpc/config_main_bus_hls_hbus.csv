@@ -1,4 +1,5 @@
 Property,Value
+PROTOCOL,AXI4
 ID_WIDTH,3
 NUM_SI,5
 NUM_MI,6

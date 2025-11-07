@@ -1,17 +1,16 @@
-// Description: Basic hello world application on platform
-
 #include "uninasoc.h"
+#include <stdint.h>
 
 int main()
 {
 
-  // Init platform
+  // Initialize HAL
   uninasoc_init();
 
   // Print
   printf("Hello World!\n\r");
 
-  // Return
+  // Return to caller
   return 0;
 
 }

@@ -8,5 +8,5 @@ set_property -dict [list \
 ] [get_ips $::env(IP_NAME)]
 
 # Use envvars out of list
-set_property CONFIG.MI_DATA_WIDTH  $::env(DATA_WIDTH)  [get_ips $::env(IP_NAME)]
-set_property CONFIG.SI_ID_WIDTH    $::env(ID_WIDTH)    [get_ips $::env(IP_NAME)]
+set_property CONFIG.SI_ID_WIDTH    $::env(HBUS_ID_WIDTH)    [get_ips $::env(IP_NAME)]
+set_property CONFIG.MI_DATA_WIDTH  $::env(MBUS_DATA_WIDTH)  [get_ips $::env(IP_NAME)]

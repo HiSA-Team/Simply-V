@@ -2,6 +2,7 @@
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+# Author: Valerio Di Domenico <valerio.didomenico@unina.it>
 # Description:
 #   Replace config-based content of output file (hw/make/config.mk) based on input MBUS and PBUS configurations.
 #   Target values are parsed and from inputs and updated in output file.
@@ -41,15 +42,19 @@ sys_target_values=(
         CORE_SELECTOR
         VIO_RESETN_DEFAULT
         XLEN
+        PHYSICAL_ADDR_WIDTH
     )
 
+# Always assume prefixed targets
 bus_target_values=(
-        ID_WIDTH
-        NUM_SI
-        NUM_MI
+        MBUS_NUM_SI
+        MBUS_NUM_MI
+        MBUS_ID_WIDTH
         PBUS_NUM_MI
+        PBUS_ID_WIDTH
         HBUS_NUM_MI
         HBUS_NUM_SI
+        HBUS_ID_WIDTH
     )
 
 # Loop over system targets
@@ -62,29 +67,37 @@ for target in ${sys_target_values[*]}; do
     # Replace in target file
     sed -E -i "s/${target}.?\?=.+/${target} \?= ${target_value}/g" ${OUTPUT_MK_FILE};
 
+    # Save XLEN for later
+    if [[ "$target" == "XLEN" ]]; then
+        XLEN_bytes=$(( $target_value / 8 ))
+    fi
+
 done
 
 # Loop over bus targets
 for target in ${bus_target_values[*]}; do
-
-    # Prefixed targets for PBUS nad HBUS
-    if [[ "$target" == "PBUS_"* || "$target" == "HBUS_"*  ]]; then
-        # Discard prefix (first 5 chars)
-        prefix_len=5
-        grep_target=${target:$prefix_len}
-        # Select source config file
-        if [[ "$target" == "PBUS_"* ]]; then
+    # Discard prefix (first 5 chars)
+    prefix_len=5
+    grep_target=${target:$prefix_len}
+    # Select source config file
+    case "$target" in
+        "MBUS_"*)
+            source_config=${CONFIG_MAIN_CSV}
+            ;;
+        "PBUS_"*)
             source_config=${CONFIG_PBUS_CSV}
-        fi
-        if [[ "$target" == "HBUS_"* ]]; then
+            ;;
+        "HBUS_"*)
             source_config=${CONFIG_HBUS_CSV}
-        fi
-        # Search for value
-        target_value=$(grep "${grep_target}" ${source_config} | awk -F "," '{print $2}');
-    else
-        # Search in main bus config
-        target_value=$(grep "${target}" ${CONFIG_MAIN_CSV} | grep -v RANGE | awk -F "," '{print $2}');
-    fi
+            ;;
+        *)
+            echo "[CONFIG_XILINX][ERROR] Unsupported prefix for property ${target} "
+            exit 1
+            ;;
+    esac
+
+    # Search for value
+    target_value=$(grep "${grep_target}" ${source_config} | awk -F "," '{print $2}');
 
     # Info print
     echo "[CONFIG_XILINX] Updating ${target} = ${target_value} "
@@ -99,7 +112,6 @@ done
 
 # Assume each BRAM name starts with BRAM
 bram_name=BRAM
-bram_size_name=BRAM_DEPTHS
 # Get all slave names
 slaves=$(grep "RANGE_NAMES" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}');
 # Get all slave range address widths
@@ -109,22 +121,75 @@ range_addr_widths=($(grep "RANGE_ADDR_WIDTH" ${CONFIG_MAIN_CSV} | awk -F "," '{p
 let cnt=0
 # prefix_len = strlen(bram_name)
 prefix_len=${#bram_name}
-bram_size_list=
 # Find the index for each BRAM into the slave names and get the right range_addr_width
 for slave in ${slaves[*]}; do
-    # Assume each BRAM name starts with BRAM
+    # TODO74: multiple BRAMs are not yet fully supported anyway
+    # TODO74: need legal name convention each BRAM in the CSV must have the index as suffix, e.g. BRAM_0, BRAM_1, ...
+    # Assume each BRAM name starts with BRAM and they are ordered in the CSV
     if [[ ${slave:0:$prefix_len} == $bram_name ]]; then
         range_width=${range_addr_widths[$cnt]}
-        bram_size=$(( (1 << $range_width )/8 ))
-        bram_size_list="$bram_size_list $bram_size"
+        bram_depth=$(( (1 << $range_width ) / $XLEN_bytes ))
+
+        # Get the target file
+        bram_config=${XILINX_IPS_ROOT}/common/xlnx_blk_mem_gen_${cnt}/config.tcl
+
+        # Replace in the target file
+        # NOTE: this will trigger the rebuild of the IP
+        sed -E -i "s#(set bram_depth)[[:space:]]*\{[^}]+\}#\1 {${bram_depth}}#g" "${bram_config}"
+        echo "[CONFIG_XILINX] Updating BRAM_DEPTH = ${bram_depth} for BRAM ${cnt}"
     fi
 
     # Increment counter
     ((cnt++))
 done
 
-# Replace in target file
-sed -E -i "s/${bram_size_name}.?\?=.+/${bram_size_name} \?= ${bram_size_list}/g" ${OUTPUT_MK_FILE};
+#################
+# CACHE CONFIG #
+#################
+
+# Name of the DDR memory block
+ddr_prefix=DDR
+
+# Extract all slave names from the main CSV
+slaves=$(grep "RANGE_NAMES" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}')
+
+# Extract all corresponding range widths
+range_addr_widths=($(grep "RANGE_ADDR_WIDTH" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}'))
+
+# Extract all base addresses
+range_base_addrs=($(grep "RANGE_BASE_ADDR" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}'))
+
+# Counter for iterating over slaves
+cnt=0
+
+# Iterate over all slave names
+for slave in ${slaves[*]}; do
+    # Check if this slave is DDR
+    if [[ "$slave" == "$ddr_prefix"* ]]; then
+        # Remove possible 0x prefix from base address
+        ddr_base_hex=${range_base_addrs[$cnt]#0x}
+        ddr_base=$((0x$ddr_base_hex))  # Convert to number
+
+        # Calculate the high address: base + (2^range_width) - 1
+        range_width=${range_addr_widths[$cnt]}
+        ddr_high=$(( ddr_base + (1 << range_width) - 1 ))
+
+        # Path to the system cache TCL config
+        cache_config=${XILINX_IPS_ROOT}/hpc/xlnx_system_cache_0/config.tcl
+
+        # Update CACHE_BASEADDR in TCL
+        sed -E -i "s#(set CACHE_BASEADDR)[[:space:]]*\{[^}]+\}#\1 {0x$(printf '%x' $ddr_base)}#g" "${cache_config}"
+        echo "[CONFIG_XILINX] Updating CACHE_BASEADDR = 0x$(printf '%x' $ddr_base)"
+
+        # Update CACHE_HIGHADDR in TCL
+        sed -E -i "s#(set CACHE_HIGHADDR)[[:space:]]*\{[^}]+\}#\1 {0x$(printf '%x' $ddr_high)}#g" "${cache_config}"
+        echo "[CONFIG_XILINX] Updating CACHE_HIGHADDR = 0x$(printf '%x' $ddr_high)"
+    fi
+
+    # Increment counter
+    ((cnt++))
+done
+
 
 #################
 # CLOCK DOMAINS #
@@ -163,10 +228,12 @@ done
 # Replace in target MK file
 sed -E -i "s/MAIN_CLOCK_FREQ_MHZ.?\?=.+/MAIN_CLOCK_FREQ_MHZ \?= ${main_clock_domain}/g" ${OUTPUT_MK_FILE};
 sed -E -i "s/RANGE_CLOCK_DOMAINS.?\?=.+/RANGE_CLOCK_DOMAINS \?= ${clock_domains_list}/g" ${OUTPUT_MK_FILE};
-# Replace in AXI Lite UART
-# NOTE: this will trigger the rebuild of the IP
-AXI_UARTLITE_CONFIG=${XILINX_IPS_ROOT}/embedded/xlnx_axi_uartlite/config.tcl
-sed -E -i "s/CONFIG.C_S_AXI_ACLK_FREQ_HZ ?\{[[:digit:]]+\}/CONFIG.C_S_AXI_ACLK_FREQ_HZ {${PBUS_CLOCK_FREQ_MHZ}000000}/g" ${AXI_UARTLITE_CONFIG};
+if [[ ${SOC_CONFIG} == "embedded" ]]; then
+    # Replace in AXI Lite UART
+    # NOTE: this will trigger the rebuild of the IP
+    AXI_UARTLITE_CONFIG=${XILINX_IPS_ROOT}/embedded/xlnx_axi_uartlite/config.tcl
+    sed -E -i "s/CONFIG.C_S_AXI_ACLK_FREQ_HZ ?\{[[:digit:]]+\}/CONFIG.C_S_AXI_ACLK_FREQ_HZ {${PBUS_CLOCK_FREQ_MHZ}000000}/g" ${AXI_UARTLITE_CONFIG};
+fi
 
 # Info print
 echo "[CONFIG_XILINX] Updating MAIN_CLOCK_FREQ_MHZ = ${main_clock_domain} "

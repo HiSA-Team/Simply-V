@@ -15,6 +15,16 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // MBUS parameters
+    parameter MBUS_ADDR_WIDTH = 32,
+    parameter MBUS_DATA_WIDTH = 32,
+    parameter MBUS_ID_WIDTH   = 4,
+    // HBUS parameters
+    parameter HBUS_DATA_WIDTH = 512,
+    parameter HBUS_ADDR_WIDTH = 32,
+    parameter HBUS_ID_WIDTH   = 4
+
+
 ) (
 
     ///////////////////////////////////
@@ -30,12 +40,13 @@ module custom_top_wrapper # (
     ////////////////////////////
 
     // AXI Master Interfaces
-    `DEFINE_AXI_MASTER_PORTS(gmem0),
-    `DEFINE_AXI_MASTER_PORTS(gmem1),
-    `DEFINE_AXI_MASTER_PORTS(gmem2),
+    `DEFINE_AXI_MASTER_PORTS(gmem0, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS(gmem1, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS(gmem2, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
 
     // AXI Slave Interfaces
-    `DEFINE_AXILITE_SLAVE_PORTS(control)
+    `DEFINE_AXILITE_SLAVE_PORTS(control, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
+
 );
 
     // HLS top

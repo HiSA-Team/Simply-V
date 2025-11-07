@@ -11,3 +11,4 @@ set_property -dict [list \
                         CONFIG.mode_64bit       {0} \
                       ] [get_ips $::env(IP_NAME)]
 
+# Note: ADDR_WIDTH is fixed at 5 bits, DATA_WIDTH is fixed at 32

@@ -62,7 +62,15 @@ module custom_top_wrapper # (
     //////////////////////////////////////
     //  Add here IP-related parameters  //
     //////////////////////////////////////
-    localparam HBUS_AXI_DATAWIDTH = 512
+    localparam HBUS_AXI_DATAWIDTH = 512,
+    localparam HBUS_AXI_ADDRWIDTH = 32,
+    localparam HBUS_AXI_IDWIDTH   = 4, 
+
+    localparam LOCAL_AXILITE_DATAWIDTH = 32,
+    localparam LOCAL_AXILITE_ADDRWIDTH = 32,
+    localparam LOCAL_AXILITE_IDWIDTH   = 4 
+
+
 
 ) (
 
@@ -79,10 +87,10 @@ module custom_top_wrapper # (
     ////////////////////////////
 
     // AXI Master Interfaces
-    `DEFINE_AXI_MASTER_PORTS_dwidth(gmem0, HBUS_AXI_DATAWIDTH),
+    `DEFINE_AXI_MASTER_PORTS(gmem0, HBUS_AXI_DATAWIDTH, HBUS_AXI_ADDRWIDTH, HBUS_AXI_IDWIDTH),
 
     // AXI Slave Interfaces
-    `DEFINE_AXILITE_SLAVE_PORTS(control)
+    `DEFINE_AXILITE_SLAVE_PORTS(control,LOCAL_AXILITE_DATAWIDTH, LOCAL_AXILITE_ADDRWIDTH,LOCAL_AXILITE_IDWIDTH)
 
 );
 

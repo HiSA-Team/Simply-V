@@ -35,9 +35,12 @@ The following table details the supported properties.
 
 | Name  | Description | Values | Default
 |-|-|-|-|
-| CORE_SELECTOR         | Select target RV core (**only for main_bus**)             | CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV | None (**mandatory value**)
-| VIO_RESETN_DEFAULT    | Select value for VIO resetn (**only for main_bus**)       | [0,1]                                                     | 1
-| XLEN                  | Defines Bus DATA_WIDTH, ADDRESS_WIDTH and Toolchain version | [32,64]                                                 | 32
+| CORE_SELECTOR         | Select target RV core       | CORE_PICORV32*, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6 | None (**mandatory value**)
+| VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1] | 1
+| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                 | 32
+| PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
+
+> \* the external PicoRV32 IP is currently bugged in CSR support. Any code running with CORE_PICORV32 must not perform any CSR operation.
 
 ### Bus Configuration
 
@@ -45,7 +48,7 @@ The following table details the supported properties.
 
 | Name  | Description | Values | Default
 |-|-|-|-|
-| PROTOCOL              | AXI PROTOCOL                                              | (AXI4, AXI4LITE, AXI3)                                    | AXI4
+| PROTOCOL              | AXI PROTOCOL                                              | (AXI4, AXI4LITE, AXI3, DISABLE*)                           | N/A
 | CONNECTIVITY_MODE     | Crossbar Interconnection                                  | Shared-Address, Multiple-Data(SAMD), Shared-Address/Shared-Data(SASD)                | SAMD
 | ID_WIDTH              | AXI ID Width                                              | (4..32)                                                   | 4
 | NUM_MI                | Number of Master Interfaces (number of slaves)            | (0..16)                                                   | 2
@@ -76,23 +79,28 @@ The following table details the supported properties.
 | RUSER_WIDTH           | AXI  R User width                                         | (0..1024)                                                 | 0
 | BUSER_WIDTH           | AXI  B User width                                         | (0..1024)                                                 | 0
 
+> \* Using `DISABLE` as AXI PROTOCOL, disable all checks for a given bus. Useful for non-instantiated buses, e.g. HBUS in `embedded` profile
+
 ## Genenerate Configurations
 After applying configuration changes to the target CSV files (`embedded` or `hpc`), apply though `make`.
 
 Alternatively, you can control the generation of single targets:
 ``` bash
-$ make config_check             # Preliminary sanity check for configuration
-$ make config_main_bus          # Generates main bus config
-$ make config_peripheral_bus    # Generates peripheral bus config
-$ make config_ld                # Generates linker script
-$ make config_xilinx            # Update xilinx config
-$ make config_sw                # Update software config
+$ make config_check               # Preliminary sanity check for configuration
+$ make config_main_bus            # Generates MBUS config
+$ make config_peripheral_bus      # Generates PBUS config
+$ make config_highperformance_bus # Generates HBUS config
+$ make config_ld                  # Generates linker script
+$ make config_xilinx              # Update xilinx config
+$ make config_sw                  # Update software config
 ```
 
 ### BRAM size configuration
-The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_gen` according to the `RANGE_ADDR_WIDTH` assigned to the BRAM in the CSV.
+The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_gen_<i>` (where i is the BRAM index) according to the `RANGE_ADDR_WIDTH` assigned to the BRAM in the CSV.
 
-> **NOTE**: The xlnx_blk_mem_gen/config.tcl file configures the first BRAM occurrence, hence it uses the index 0. For now, a single BRAM is supported, if multiple BRAMs are declared in the config (CSV) file, the config flow gives an error. Multiple BRAMs would be simple to add in the future.
+> **NOTE**: The `xlnx_blk_mem_gen_0/config.tcl` file configures the first BRAM occurrence, hence it uses the index 0. For now, a single BRAM is supported, if multiple BRAMs are declared in the config (CSV) file, the config flow gives an error. Multiple BRAMs would be simple to add in the future.
+
+> **NOTE**: All the `xlnx_blk_mem_gen_<i>/config.tcl` configuration files must be in the `ips/common` directory.
 
 ### Clock domains
 The configuration flow gives the possibility to specify clock domains.

@@ -18,6 +18,7 @@ host:
 SoC:
 #	Init and checkout tinyIO
 	git submodule update --init SoC/lib/tinyio
+#	Build SoC sw 	
 	make -C ${SW_SOC_ROOT}
 
 clean:

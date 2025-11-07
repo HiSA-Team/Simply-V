@@ -36,7 +36,7 @@ import_files -fileset constrs_1 -norecurse $::env(XILINX_ROOT)/synth/constraints
 import_files -fileset constrs_1 -norecurse $::env(XILINX_ROOT)/synth/constraints/$::env(BOARD).xdc
 
 # Import IPS
-read_ip $::env(IP_LIST_XCI)
+import_ip $::env(IP_LIST_XCI)
 
 ######################
 # Project properties #
@@ -54,6 +54,35 @@ update_compile_order -fileset sources_1
 set project_dir [get_property directory [current_project]]
 set report_dir $project_dir/reports
 exec mkdir -p $report_dir
+
+##########
+# Linter #
+##########
+
+# Run linter
+set lint_filename $report_dir/lint.log
+synth_design -lint -file $lint_filename
+
+# Read-back file
+set fp [open $lint_filename r]
+set file_data [read $fp]
+close $fp
+# Parse for critical warnings
+set lines [split $file_data "\n"]
+set substring "CRITICAL WARNING"
+set line_cnt 0
+set critical_found "false"
+foreach line_value $lines {
+    set line_cnt [expr $line_cnt + 1]
+    if {[string first $substring $line_value] != -1} {
+        puts "\[ERROR\] Found $substring during linting! $lint_filename:$line_cnt"
+        set critical_found "true"
+    }
+}
+# Exit if found
+if { $critical_found == "true" } {
+    exit 1
+}
 
 ###################
 # RTL elaboration #

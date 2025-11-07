@@ -3,14 +3,15 @@
 # Description: Load a binary into the SoC memory through the XDMA and PCIe
 # This is a bash script in the "tcl" directory ...
 
-EXPECTED_ARGC=3;
+EXPECTED_ARGC=4;
 ARGC=$#;
 
 # Print the right usage
 help (){
-    echo  "Usage: source ${BASH_SOURCE[0]} <file_name> <base_address> <read_back>";
+    echo  "Usage: source ${BASH_SOURCE[0]} <PCIe BAR> <file_name> <base_address> <read_back>";
+    echo  "    PCIe BAR      :  target BAR of PCIe device";
     echo  "    binary_file   :  path to bin file to transfer";
-    echo  "    base_address  :  base address of BRAM";
+    echo  "    offset        :  offset in SoC";
     echo  "    read_back     :  whether to read-back data after writing";
     return;
 }
@@ -24,9 +25,10 @@ then
 fi
 
 # Get the args
-FILE_NAME=$1;
-BASE_ADDRESS=$2;
-READBACK=$3;
+PCIE_BAR=$1
+FILE_NAME=$2;
+OFFSET=$3;
+READBACK=$4;
 
 # Get the file size in bytes
 FILE_SIZE=$(stat -c%s "$FILE_NAME");
@@ -61,7 +63,7 @@ fi
 golden_hex=""
 
 # Write the binary
-addr=$BASE_ADDRESS;
+addr=$(($PCIE_BAR + $OFFSET))
 echo "Start writing...";
 # For each transaction
 for i in $(seq 1 $num_trans);
@@ -98,7 +100,7 @@ echo "Write complete!";
 if [[ ${READBACK} == "true" ]];
 then
     echo "Start readback...";
-    addr=$BASE_ADDRESS;
+    addr=$(($PCIE_BAR + $OFFSET))
     readback_data="";
     for i in $(seq 0 $(($num_trans-1)));
     do

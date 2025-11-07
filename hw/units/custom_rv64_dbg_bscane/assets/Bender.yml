@@ -1,0 +1,7 @@
+package:
+  name: axi-riscv-dbg
+  authors:
+    - "Vincenzo Maisto <vincenzo.maisto2@unina.it>"
+dependencies:
+  axi:                      { git: "https://github.com/pulp-platform/axi.git",                    version: 0.39.6 }
+  riscv-dbg:                { git: "https://github.com/pulp-platform/riscv-dbg.git",              version: 0.8.1  }

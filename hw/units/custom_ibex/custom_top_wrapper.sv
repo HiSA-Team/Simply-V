@@ -22,6 +22,12 @@ module custom_top_wrapper import ibex_pkg::*; # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+
+    // TODO121: Automatically align with config
+    // AXI/MEM macros parameter
+    parameter LOCAL_DATA_WIDTH  = 32,
+    parameter LOCAL_ADDR_WIDTH  = 32,
+
     // Debug-related Parameters
     parameter unsigned DmBaseAddr = 32'h00010800,
     parameter unsigned DmAddrMask = 32'h00000FFF,
@@ -56,9 +62,9 @@ module custom_top_wrapper import ibex_pkg::*; # (
     ////////////////////////////
 
     // MEM Master Interface Array
-    `DEFINE_MEM_MASTER_PORTS(instr),
+    `DEFINE_MEM_MASTER_PORTS(instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH),
     // MEM Slave Interface Array
-    `DEFINE_MEM_MASTER_PORTS(data)
+    `DEFINE_MEM_MASTER_PORTS(data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH)
 );
 
     ibex_top #(
@@ -146,7 +152,7 @@ module custom_top_wrapper import ibex_pkg::*; # (
         .DmAddrMask         ( DmAddrMask        ),
         .DmHaltAddr         ( DmHaltAddr        ),
         .DmExceptionAddr    ( DmExceptionAddr   )
-        
+
     ) ibex_u (
         // Clock and Reset
         .clk_i                  ( clk_i ),
@@ -185,7 +191,7 @@ module custom_top_wrapper import ibex_pkg::*; # (
         .irq_software_i         ( irq_software_i ),
         .irq_timer_i            ( irq_timer_i ),
         .irq_external_i         ( irq_external_i ),
-        .irq_fast_i             ( irq_fast_i ), 
+        .irq_fast_i             ( irq_fast_i ),
         .irq_nm_i               ( irq_nm_i ),
 
         .scramble_key_valid_i   ('0 ),

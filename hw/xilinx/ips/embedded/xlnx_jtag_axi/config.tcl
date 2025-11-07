@@ -11,6 +11,6 @@ set_property -dict [list CONFIG.PROTOCOL {0} \
     ] [get_ips $::env(IP_NAME)]
 
 # Use envvars out of list
-set_property CONFIG.M_AXI_DATA_WIDTH  $::env(DATA_WIDTH)  [get_ips $::env(IP_NAME)]
-set_property CONFIG.M_AXI_ADDR_WIDTH  $::env(ADDR_WIDTH)  [get_ips $::env(IP_NAME)]
-set_property CONFIG.M_AXI_ID_WIDTH    $::env(ID_WIDTH)    [get_ips $::env(IP_NAME)]
+set_property CONFIG.M_AXI_DATA_WIDTH  32                        [get_ips $::env(IP_NAME)]
+set_property CONFIG.M_AXI_ADDR_WIDTH  $::env(MBUS_ADDR_WIDTH)   [get_ips $::env(IP_NAME)]
+set_property CONFIG.M_AXI_ID_WIDTH    $::env(MBUS_ID_WIDTH)     [get_ips $::env(IP_NAME)]
