@@ -104,11 +104,6 @@ done
 
 rm ${RTL_DIR}/reg_intf.sv
 
+# Info
 echo -e "${GREEN}[FETCH_SOURCES] Completed${NC}"
 
-####################
-# Remove Artifacts #
-####################
-
-# remove open titan peripherals dir
-rm -rf ${CLONE_DIR};

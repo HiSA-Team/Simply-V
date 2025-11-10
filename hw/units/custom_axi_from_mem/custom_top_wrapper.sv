@@ -1,6 +1,5 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description:
-// This module is intended as a top-level wrapper for the code in the rtl/ folder
+// Description: Top level wrapper module for PULP AXI axi_from_mem adapter.
 
 
 // Import headers

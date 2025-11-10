@@ -1,9 +1,6 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description:
-// This module is intended as a top-level wrapper for the code in ./rtl
-// IT might support either MEM protocol or AXI protocol, using the
-// uninasoc_axi and uninasoc_mem svh files in hw/xilinx/rtl
+// Description: Top level wrapper module for PULP DTM and AXI adapters, 32-bit version.
 
 
 // Import UninaSoC headers

@@ -1,8 +1,5 @@
 // Author: Vincenzo Merola <vincenzo.merola2@unina.it>
-// Description:
-// This module is intended as a top-level wrapper for the code in ./rtl
-// It might support either MEM protocol or AXI protocol, using the
-// uninasoc_axi and uninasoc_mem svh files in hw/xilinx/rtl
+// Description: Top level wrapper for HLS-generated IP, with configurable AXI master interface.
 
 
 // Import headers
@@ -14,12 +11,15 @@ module custom_top_wrapper # (
     //////////////////////////////////////
     //  Add here IP-related parameters  //
     //////////////////////////////////////
+    // AXI master parameters
     localparam LOCAL_AXI_DATA_WIDTH     = 512,
     localparam LOCAL_AXI_ADDR_WIDTH     = 32,
     localparam LOCAL_AXI_ID_WIDTH       = 4,
+    // AXI-lite slave parameters
     localparam LOCAL_AXILITE_DATA_WIDTH = 32,
     localparam LOCAL_AXILITE_ADDR_WIDTH = 32,
     localparam LOCAL_AXILITE_ID_WIDTH   = 4
+
 ) (
 
     ///////////////////////////////////
