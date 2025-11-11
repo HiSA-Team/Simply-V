@@ -13,7 +13,7 @@ class Clock_Domain():
 	
 	def is_in_domain(self, name: str, domain: str) -> bool:
 		for node in self.CLOCK_DOMAINS[domain]:
-			if(node.NAME == name):
+			if(node.BASE_NAME == name):
 				return True
 
 		return False

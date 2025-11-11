@@ -1,17 +1,16 @@
-from peripheral import Peripheral
+from peripherals.peripheral import Peripheral
+from peripherals_factory import Peripherals_Factory
 from node import Node
 from logger import Logger
 from utils import *
-
 from pprint import pprint
-
 from collections import defaultdict
 import re
 from abc import abstractmethod, ABC
 
 
 class Bus(Node, ABC):
-	def __init__(self, name: str, file_name: str, axi_addr_width: int, axi_data_width: int, \
+	def __init__(self, name: str, base_name: str, file_name: str, axi_addr_width: int, axi_data_width: int, \
 			  asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
 
 		self.ID_WIDTH			 : int = 4		# ID Data Width for MI and SI (a subset of it is used by the Interfaces Thread IDs)
@@ -22,8 +21,9 @@ class Bus(Node, ABC):
 		self.PROTOCOL: str
 		self.ADDR_WIDTH: int = axi_addr_width
 		self.DATA_WIDTH: int = axi_data_width
-		self.file_name: str = file_name
+		self.config_file_name: str = file_name
 		self.logger: Logger = Logger(file_name)		# Utils object used for logging
+		self.peripherals_factory = Peripherals_Factory(self.logger)
 
 		self.ADDR_RANGES : int = 1 
 		self.RANGE_BASE_ADDR : list[int]
@@ -33,39 +33,16 @@ class Bus(Node, ABC):
 
 				
 		# init Node object
-		super().__init__(name, asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
+		super().__init__(name, base_name, asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
 
 
-        # Must match a legal prefix exactly OR prefix + '_' + integer.
-        # If duplicates appear, they must be numbered (TIM_0, TIM_1, ...).
-	def check_peripherals(self, peripherals: list[str]):
+	def check_peripherals(self, legal_peripherals: list[str]):
 		simply_v_crash = self.logger.simply_v_crash
 
-		seen = defaultdict(set)  # prefix -> set of used suffixes
-		pattern = re.compile(r"^(?P<prefix>[A-Za-z0-9_]+?)(?:_(?P<idx>\d+))?$")
+		for p in self.children_peripherals:
+			if p.BASE_NAME not in legal_peripherals:
+				simply_v_crash(f"Unsupported peripheral {p.NAME} for this bus")
 
-		for p in self.RANGE_NAMES:
-			match = pattern.match(p)
-			if not match:
-				simply_v_crash(f"Unsupported peripheral {p} for this bus")
-				
-			prefix, idx = match.group("prefix"), match.group("idx")
-
-			# Check if prefix is allowed
-			if prefix not in peripherals:
-				simply_v_crash(f"Unsupported peripheral {p} for this bus")
-
-			# Handle duplicates: either plain prefix (idx=None) or numbered
-			if idx is None:
-				if "" in seen[prefix]:  # duplicate plain prefix not allowed
-					simply_v_crash(f"Duplicate peripherals without tailing \"_NUM\" {p}")
-				seen[prefix].add("")
-
-			else:
-				if int(idx) in seen[prefix]:  # duplicate index not allowed
-					simply_v_crash(f"Duplicate \"_NUM\" in peripheral {p}")
-				seen[prefix].add(int(idx))
-	
 
 	def is_enabled(self):
 		return not (self.PROTOCOL == "DISABLE")
@@ -211,8 +188,19 @@ class Bus(Node, ABC):
 	
 	#COMPOSITE INTERFACE
 	@abstractmethod
+	def check_clock_domains(self):
+		pass
+
+
+	@abstractmethod
+	def init_clock_domains(self):
+		pass
+
+
+	@abstractmethod
 	def generate_children(self):
 		pass
+
 
 	@abstractmethod
 	def get_busses(self) -> list["Bus"]:

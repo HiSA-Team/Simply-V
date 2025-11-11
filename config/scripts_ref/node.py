@@ -1,10 +1,11 @@
 from abc import ABC
 
 class Node(ABC):
-	def __init__(self, name: str, asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width:\
-			list, clock_domain: str):
+	def __init__(self, name: str, base_name: str, asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
 
 		self.NAME: str = name
+		#This is just "NAME" but without any suffixes ex. NAME="TIM_0" -> BASE_NAME="TIM"
+		self.BASE_NAME: str = base_name
 		self.ASGN_ADDR_RANGES : int = asgn_addr_ranges 
 		self.ASGN_RANGE_BASE_ADDR : list[int] = asgn_range_base_addr 
 		self.ASGN_RANGE_ADDR_WIDTH : list[int] = asgn_range_addr_width 
@@ -77,5 +78,3 @@ class Node(ABC):
 		if ((base_addr <= self.get_base_addr()) and (self.get_end_addr() <= end_addr)):
 			return True
 		return False
-
-

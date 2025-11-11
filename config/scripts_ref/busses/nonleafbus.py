@@ -1,12 +1,14 @@
+from abc import abstractmethod
 from pprint import pprint
 from typing import Optional
-from bus import Bus
+from busses.bus import Bus
 from clock_domain import Clock_Domain
-from peripheral import Peripheral
+from peripherals.peripheral import Peripheral
+from busses_factory import Busses_Factory
 
 class NonLeafBus(Bus):
-	def __init__(self, name:str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
-			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str,
+	def __init__(self, name: str, base_name: str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
+			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str, \
 			  father: Optional["NonLeafBus"] = None):
 
 		self.father = father 
@@ -14,16 +16,19 @@ class NonLeafBus(Bus):
 		self.clock_domains: Clock_Domain
 
 		# init Bus object
-		super().__init__(name, mbus_file_name, axi_addr_width, axi_data_width, \
+		super().__init__(name, base_name, mbus_file_name, axi_addr_width, axi_data_width, \
 				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
+
+		self.busses_factory = Busses_Factory(self.logger)
 	
 	
-	def init_clock_domains(self):
-		nodes = []
-		nodes.extend(self.children_peripherals)
-		nodes.extend(self.children_busses)
-		self.clock_domains = Clock_Domain(nodes)
-		return
+	
+	def check_busses(self, legal_busses: list[str]):
+		simply_v_crash = self.logger.simply_v_crash
+
+		for b in self.children_busses:
+			if b.BASE_NAME not in legal_busses:
+				simply_v_crash(f"Unsupported bus {b.NAME} for this bus")
 
 	def check_intra(self):
 		super().check_intra()
@@ -133,6 +138,35 @@ class NonLeafBus(Bus):
 			bus.print_vars()
 
 
+	
+	#COMPOSITE INTERFACE IMPLEMENTATION
+
+	def generate_children(self):
+		for i, node_name in enumerate(self.RANGE_NAMES):
+			if(node_name == "MBUS"):
+				continue
+			
+			#RANGE_NAME is a bus
+			if("BUS" in node_name):
+				bus = self.busses_factory.create_bus(node_name, self.ADDR_RANGES, \
+						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_CLOCK_DOMAINS[i], self.ADDR_WIDTH, self)
+				if(bus.is_enabled()):
+					self.children_busses.append(bus)
+
+			#RANGE_NAME is a peripheral
+			else:
+				peripheral = self.peripherals_factory.create_peripheral(node_name, self.ADDR_RANGES, \
+						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
+						self.RANGE_CLOCK_DOMAINS[i])
+				self.children_peripherals.append(peripheral)
+
+		#Recursively generate children
+		for bus in self.children_busses:
+			bus.generate_children()
+
 	#COMPOSITE INTERFACE IMPLEMENTATION
 
 	#generate_children is implemented in the classes that inherit from this one
@@ -142,3 +176,11 @@ class NonLeafBus(Bus):
 		for bus in self.children_busses:
 			busses.extend(bus.get_busses())
 		return busses
+
+	def init_clock_domains(self):
+		nodes = []
+		nodes.extend(self.children_peripherals)
+		nodes.extend(self.children_busses)
+		self.clock_domains = Clock_Domain(nodes)
+		return
+

@@ -1,11 +1,12 @@
-from nonleafbus import NonLeafBus
-from peripheral import Peripheral
+from sys import implementation
+from busses.nonleafbus import NonLeafBus
+from peripherals.peripheral import Peripheral
 from utils import *
 
 class HBus(NonLeafBus):
-	def __init__(self, name: str, hbus_data_dict: dict, hbus_file_name: str, asgn_addr_ranges: int, \
-			asgn_range_base_addr: list, asgn_range_addr_width: list, \
-			axi_addr_width: int ,father: NonLeafBus, clock_domain: str):
+	def __init__(self, name: str, base_name: str, hbus_data_dict: dict, hbus_file_name: str, asgn_addr_ranges: int, \
+			asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str,\
+			axi_addr_width: int, father: NonLeafBus):
 
 		self.LOOPBACK: int
 		self.LEGAL_PERIPHERALS: list[str] = ["DDR4CH", "MBUS"]
@@ -14,7 +15,7 @@ class HBus(NonLeafBus):
 		axi_data_width = 512
 		
 		# init NonleafBus object
-		super().__init__(name, hbus_file_name, axi_addr_width, axi_data_width, \
+		super().__init__(name, base_name, hbus_file_name, axi_addr_width, axi_data_width, \
 				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain, father)
 
 		try:
@@ -111,19 +112,6 @@ class HBus(NonLeafBus):
 					b.add_to_reachable(self.NAME)
 					b.add_list_to_reachable(self.REACHABLE_FROM)
 
-	def generate_children(self):
-		#add implementation when HBus will need to generate new busses
-		
-		#SKIP MBUS in case of loopback
-		for i, p in enumerate(self.RANGE_NAMES):
-			if (p == "MBUS"):
-				continue
 
-			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
-							self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
-							self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
-							self.RANGE_CLOCK_DOMAINS[i])
-
-			self.children_peripherals.append(node)
-
-		self.init_clock_domains()
+	def check_clock_domains(self):
+		return

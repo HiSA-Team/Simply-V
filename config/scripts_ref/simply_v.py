@@ -1,12 +1,14 @@
 import re
-from peripheral import Peripheral
+from busses.bus import Bus
+from peripherals.peripheral import Peripheral
 from utils import *
 import os
-from mbus import MBus
+from singleton import Singleton
+from busses.mbus import MBus
 from logger import Logger
 from pprint import pprint
 
-class SimplyV:
+class SimplyV(metaclass=Singleton):
 	def __init__(self, sys_config_file_name: str, mbus_file_name: str):
 		# defaults
 		self.SUPPORTED_CORES : list = ["CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", \
@@ -51,6 +53,34 @@ class SimplyV:
 								asgn_range_base_addr, asgn_range_addr_width, self.MAIN_CLOCK_DOMAIN)
 
 		self.mbus.init_configurations()
+
+		# need to check for redundant names
+		self.check_node_names()
+
+
+
+	def check_node_names(self):
+		peripherals_names = set()
+		busses_names = set()
+		peripherals = self.get_peripherals()
+		busses = self.get_busses()
+
+		# Check if there are any peripherals with the same name
+		for p in peripherals:
+			if (p.NAME in peripherals_names):
+				self.logger.simply_v_crash("There are some peripherals with the same name"
+							   f" in the configuration files (replicated name: {p.NAME})")
+			
+			peripherals_names.add(p.NAME)
+		
+		# Check if there are any busses with the same name
+
+		for b in busses:
+			if (b.NAME in busses_names):
+				self.logger.simply_v_crash("There are some busses with the same name"
+							   f" in the configuration files (replicated name: {b.NAME})")
+			
+			busses_names.add(b.NAME)
 
 	
 	def check_assign_params(self, data_dict: dict):
@@ -109,17 +139,10 @@ class SimplyV:
 
 	
 	def get_peripherals(self) -> list[Peripheral]:
-		peripherals_names = set()
-		peripherals = self.mbus.get_peripherals()
-		# Check redundant names
-		for p in peripherals:
-			if (p.NAME in peripherals_names):
-				self.logger.simply_v_crash("There are more peripherals with the same name"
-							   f" in the configuration files (replicated name: {p.NAME})")
-			
-			peripherals_names.add(p.NAME)
-		
-		return peripherals
+		return self.mbus.get_peripherals()
+
+	def get_busses(self) ->list[Bus]:
+		return self.mbus.get_busses()
 
 	
 	def create_linker_script(self, ld_file_name: str, nodes: list[Peripheral]):

@@ -1,8 +1,8 @@
-from bus import Bus
-from peripheral import Peripheral
+from busses.bus import Bus
+from peripherals.peripheral import Peripheral
 
 class PBus(Bus):
-	def __init__(self, name: str, pbus_data_dict: dict, pbus_file_name: str, asgn_addr_ranges: int, \
+	def __init__(self, name: str, base_name:str, pbus_data_dict: dict, pbus_file_name: str, asgn_addr_ranges: int, \
 			asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
 
 		self.LEGAL_PERIPHERALS: list[str] = ["UART", "GPIO_out", "GPIO_in", "TIM"]
@@ -11,7 +11,7 @@ class PBus(Bus):
 		axi_addr_width = 32
 		axi_data_width = 32
 		
-		super().__init__(name, pbus_file_name, axi_addr_width, axi_data_width, \
+		super().__init__(name, base_name, pbus_file_name, axi_addr_width, axi_data_width, \
 				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
 
 		self.check_assign_params(pbus_data_dict)
@@ -47,17 +47,31 @@ class PBus(Bus):
 
 	#COMPOSITE INTERFACE IMPLEMENTATION
 
+	def init_configurations(self):
+		# generate all the hierarchy
+		self.generate_children()
+		# put reachability values in the nodes based on the hierarchy created
+		self.add_reachability()
+
 	def generate_children(self):
 		for i in range(len(self.RANGE_NAMES)):
-			node = Peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
+			node = self.peripherals_factory.create_peripheral(self.RANGE_NAMES[i], self.ADDR_RANGES, \
 						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.CLOCK_DOMAIN)
+
 			self.children_peripherals.append(node)
+
 			# all the peripherals of PBUS are reachable from PBUS and everything that
 			# can reach PBUS
 		super().add_reachability()
 
-
 	def get_busses(self) -> list["Bus"]:
 		return [self]
+
+
+	def check_clock_domains(self):
+		return
+
+	def init_clock_domains(self):
+		return
