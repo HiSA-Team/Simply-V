@@ -23,7 +23,7 @@
 //                                                    |          |                   |__________________|       |
 //                                                    |          |                    ______________            |
 //                                                    |          |                   |              |-----------/
-//                                                    |          |------------------>|  HLS CONV2D  |
+//                                                    |          |------------------>|  HLS wrapper |
 //                                                    |          |                   |______________|-----------\
 //                                                    |          |                    ________________          |
 //                                                    |          |                   |                |         v
@@ -694,6 +694,126 @@ module uninasoc (
         .s_axi_rready   ( MBUS_to_PBUS_axi_rready   )
     );
 
+    ////////////
+    // HLS IP //
+    ////////////
+
+    // HLS CONV2D -> MBUS/HBUS
+    // TODO: HLS wrapper parameters require manual configuration
+    // TODO: OR if HLS on HBUS
+    // localparam HLS_MASTER_DATA_WIDTH = HBUS_DATA_WIDTH;
+    // localparam HLS_MASTER_ADDR_WIDTH = HBUS_ADDR_WIDTH;
+    // localparam HLS_MASTER_ID_WIDTH   = HBUS_ID_WIDTH;
+    // `DECLARE_AXI_BUS(HLS_MASTER, HLS_MASTER_DATA_WIDTH, HLS_MASTER_ADDR_WIDTH, HLS_MASTER_ID_WIDTH)
+    // `ASSIGN_AXI_BUS(s_acc_HBUS, HLS_MASTER)
+    // TODO: else if HLS on MBUS
+    localparam HLS_MASTER_DATA_WIDTH = MBUS_DATA_WIDTH;
+    localparam HLS_MASTER_ADDR_WIDTH = MBUS_ADDR_WIDTH;
+    localparam HLS_MASTER_ID_WIDTH   = MBUS_ID_WIDTH;
+    `DECLARE_AXI_BUS(HLS_MASTER, HLS_MASTER_DATA_WIDTH, HLS_MASTER_ADDR_WIDTH, HLS_MASTER_ID_WIDTH)
+    `ASSIGN_AXI_BUS(HLS_MASTER_to_MBUS, HLS_MASTER)
+
+    hls_wrapper # (
+        // MBUS parameters
+        .MBUS_ADDR_WIDTH ( MBUS_ADDR_WIDTH ),
+        .MBUS_DATA_WIDTH ( MBUS_DATA_WIDTH ),
+        .MBUS_ID_WIDTH   ( MBUS_ID_WIDTH   ),
+        // HLS MASTER parameters
+        .AXI_MASTER_DATA_WIDTH ( HLS_MASTER_DATA_WIDTH ),
+        .AXI_MASTER_ADDR_WIDTH ( HLS_MASTER_ADDR_WIDTH ),
+        .AXI_MASTER_ID_WIDTH   ( HLS_MASTER_ID_WIDTH   )
+    ) hls_wrapper_u (
+        // MBUS clock and reset
+        .main_clk_i                 ( main_clk  ),
+        .main_rstn_i                ( main_rstn ),
+        // HLS IP clock and reset
+        .HLS_CONTROL_clk_i          ( HLS_CONTROL_clk  ),
+        .HLS_CONTROL_rstn_i         ( HLS_CONTROL_rstn ),
+        // Slave for control
+        .s_HLS_CONTROL_axi_awid     ( MBUS_to_HLS_CONTROL_axi_awid     ),
+        .s_HLS_CONTROL_axi_awaddr   ( MBUS_to_HLS_CONTROL_axi_awaddr   ),
+        .s_HLS_CONTROL_axi_awlen    ( MBUS_to_HLS_CONTROL_axi_awlen    ),
+        .s_HLS_CONTROL_axi_awsize   ( MBUS_to_HLS_CONTROL_axi_awsize   ),
+        .s_HLS_CONTROL_axi_awburst  ( MBUS_to_HLS_CONTROL_axi_awburst  ),
+        .s_HLS_CONTROL_axi_awlock   ( MBUS_to_HLS_CONTROL_axi_awlock   ),
+        .s_HLS_CONTROL_axi_awcache  ( MBUS_to_HLS_CONTROL_axi_awcache  ),
+        .s_HLS_CONTROL_axi_awprot   ( MBUS_to_HLS_CONTROL_axi_awprot   ),
+        .s_HLS_CONTROL_axi_awregion ( MBUS_to_HLS_CONTROL_axi_awregion ),
+        .s_HLS_CONTROL_axi_awqos    ( MBUS_to_HLS_CONTROL_axi_awqos    ),
+        .s_HLS_CONTROL_axi_awvalid  ( MBUS_to_HLS_CONTROL_axi_awvalid  ),
+        .s_HLS_CONTROL_axi_awready  ( MBUS_to_HLS_CONTROL_axi_awready  ),
+        .s_HLS_CONTROL_axi_wdata    ( MBUS_to_HLS_CONTROL_axi_wdata    ),
+        .s_HLS_CONTROL_axi_wstrb    ( MBUS_to_HLS_CONTROL_axi_wstrb    ),
+        .s_HLS_CONTROL_axi_wlast    ( MBUS_to_HLS_CONTROL_axi_wlast    ),
+        .s_HLS_CONTROL_axi_wvalid   ( MBUS_to_HLS_CONTROL_axi_wvalid   ),
+        .s_HLS_CONTROL_axi_wready   ( MBUS_to_HLS_CONTROL_axi_wready   ),
+        .s_HLS_CONTROL_axi_bid      ( MBUS_to_HLS_CONTROL_axi_bid      ),
+        .s_HLS_CONTROL_axi_bresp    ( MBUS_to_HLS_CONTROL_axi_bresp    ),
+        .s_HLS_CONTROL_axi_bvalid   ( MBUS_to_HLS_CONTROL_axi_bvalid   ),
+        .s_HLS_CONTROL_axi_bready   ( MBUS_to_HLS_CONTROL_axi_bready   ),
+        .s_HLS_CONTROL_axi_arid     ( MBUS_to_HLS_CONTROL_axi_arid     ),
+        .s_HLS_CONTROL_axi_araddr   ( MBUS_to_HLS_CONTROL_axi_araddr   ),
+        .s_HLS_CONTROL_axi_arlen    ( MBUS_to_HLS_CONTROL_axi_arlen    ),
+        .s_HLS_CONTROL_axi_arsize   ( MBUS_to_HLS_CONTROL_axi_arsize   ),
+        .s_HLS_CONTROL_axi_arburst  ( MBUS_to_HLS_CONTROL_axi_arburst  ),
+        .s_HLS_CONTROL_axi_arlock   ( MBUS_to_HLS_CONTROL_axi_arlock   ),
+        .s_HLS_CONTROL_axi_arcache  ( MBUS_to_HLS_CONTROL_axi_arcache  ),
+        .s_HLS_CONTROL_axi_arprot   ( MBUS_to_HLS_CONTROL_axi_arprot   ),
+        .s_HLS_CONTROL_axi_arregion ( MBUS_to_HLS_CONTROL_axi_arregion ),
+        .s_HLS_CONTROL_axi_arqos    ( MBUS_to_HLS_CONTROL_axi_arqos    ),
+        .s_HLS_CONTROL_axi_arvalid  ( MBUS_to_HLS_CONTROL_axi_arvalid  ),
+        .s_HLS_CONTROL_axi_arready  ( MBUS_to_HLS_CONTROL_axi_arready  ),
+        .s_HLS_CONTROL_axi_rid      ( MBUS_to_HLS_CONTROL_axi_rid      ),
+        .s_HLS_CONTROL_axi_rdata    ( MBUS_to_HLS_CONTROL_axi_rdata    ),
+        .s_HLS_CONTROL_axi_rresp    ( MBUS_to_HLS_CONTROL_axi_rresp    ),
+        .s_HLS_CONTROL_axi_rlast    ( MBUS_to_HLS_CONTROL_axi_rlast    ),
+        .s_HLS_CONTROL_axi_rvalid   ( MBUS_to_HLS_CONTROL_axi_rvalid   ),
+        .s_HLS_CONTROL_axi_rready   ( MBUS_to_HLS_CONTROL_axi_rready   ),
+        // Master to MBUS / HBUS
+        .m_axi_awid      ( HLS_MASTER_axi_awid     ),
+        .m_axi_awaddr    ( HLS_MASTER_axi_awaddr   ),
+        .m_axi_awlen     ( HLS_MASTER_axi_awlen    ),
+        .m_axi_awsize    ( HLS_MASTER_axi_awsize   ),
+        .m_axi_awburst   ( HLS_MASTER_axi_awburst  ),
+        .m_axi_awlock    ( HLS_MASTER_axi_awlock   ),
+        .m_axi_awcache   ( HLS_MASTER_axi_awcache  ),
+        .m_axi_awprot    ( HLS_MASTER_axi_awprot   ),
+        .m_axi_awqos     ( HLS_MASTER_axi_awqos    ),
+        .m_axi_awvalid   ( HLS_MASTER_axi_awvalid  ),
+        .m_axi_awready   ( HLS_MASTER_axi_awready  ),
+        .m_axi_awregion  ( HLS_MASTER_axi_awregion ),
+        .m_axi_wdata     ( HLS_MASTER_axi_wdata    ),
+        .m_axi_wstrb     ( HLS_MASTER_axi_wstrb    ),
+        .m_axi_wlast     ( HLS_MASTER_axi_wlast    ),
+        .m_axi_wvalid    ( HLS_MASTER_axi_wvalid   ),
+        .m_axi_wready    ( HLS_MASTER_axi_wready   ),
+        .m_axi_bid       ( HLS_MASTER_axi_bid      ),
+        .m_axi_bresp     ( HLS_MASTER_axi_bresp    ),
+        .m_axi_bvalid    ( HLS_MASTER_axi_bvalid   ),
+        .m_axi_bready    ( HLS_MASTER_axi_bready   ),
+        .m_axi_arid      ( HLS_MASTER_axi_arid     ),
+        .m_axi_araddr    ( HLS_MASTER_axi_araddr   ),
+        .m_axi_arlen     ( HLS_MASTER_axi_arlen    ),
+        .m_axi_arsize    ( HLS_MASTER_axi_arsize   ),
+        .m_axi_arburst   ( HLS_MASTER_axi_arburst  ),
+        .m_axi_arlock    ( HLS_MASTER_axi_arlock   ),
+        .m_axi_arcache   ( HLS_MASTER_axi_arcache  ),
+        .m_axi_arprot    ( HLS_MASTER_axi_arprot   ),
+        .m_axi_arqos     ( HLS_MASTER_axi_arqos    ),
+        .m_axi_arvalid   ( HLS_MASTER_axi_arvalid  ),
+        .m_axi_arready   ( HLS_MASTER_axi_arready  ),
+        .m_axi_arregion  ( HLS_MASTER_axi_arregion ),
+        .m_axi_rid       ( HLS_MASTER_axi_rid      ),
+        .m_axi_rdata     ( HLS_MASTER_axi_rdata    ),
+        .m_axi_rresp     ( HLS_MASTER_axi_rresp    ),
+        .m_axi_rlast     ( HLS_MASTER_axi_rlast    ),
+        .m_axi_rvalid    ( HLS_MASTER_axi_rvalid   ),
+        .m_axi_rready    ( HLS_MASTER_axi_rready   ),
+        // Interrupt
+        .hls_interrupt_o ( hls_interrupt_to_plic   )
+    );
+
+
 // In HPC profile
 `ifdef HPC
 
@@ -796,117 +916,6 @@ module uninasoc (
         .s_axi_rlast          ( MBUS_to_DDR4CH1_axi_rlast    ),
         .s_axi_rvalid         ( MBUS_to_DDR4CH1_axi_rvalid   ),
         .s_axi_rready         ( MBUS_to_DDR4CH1_axi_rready   )
-    );
-
-    ///////////////////
-    // HLS CONV2D IP //
-    ///////////////////
-
-    // HLS CONV2D -> HBUS
-    `DECLARE_AXI_BUS(HLS_gmem0_d512, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
-    // TODO: Only one HBUS accelerator for now
-    `DECLARE_AXI_BUS(s_acc_HBUS, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
-    // Just pass through the interface
-    `ASSIGN_AXI_BUS(s_acc_HBUS, HLS_gmem0_d512)
-
-    hls_conv2d_wrapper # (
-        // MBUS parameters
-        .MBUS_ADDR_WIDTH ( MBUS_ADDR_WIDTH ),
-        .MBUS_DATA_WIDTH ( MBUS_DATA_WIDTH ),
-        .MBUS_ID_WIDTH   ( MBUS_ID_WIDTH   ),
-        // HBUS parameters
-        .HBUS_DATA_WIDTH ( HBUS_DATA_WIDTH ),
-        .HBUS_ADDR_WIDTH ( HBUS_ADDR_WIDTH ),
-        .HBUS_ID_WIDTH   ( HBUS_ID_WIDTH   )
-    ) hls_conv2d_wrapper_u (
-        // MBUS clock and reset
-        .main_clk_i                 ( main_clk  ),
-        .main_rstn_i                ( main_rstn ),
-        // HLS IP clock and reset (from HBUS)
-        .HLS_CONTROL_clk_i          ( HLS_CONTROL_clk  ),
-        .HLS_CONTROL_rstn_i         ( HLS_CONTROL_rstn ),
-        // Slave for control
-        .s_HLS_CONTROL_axi_awid     ( MBUS_to_HLS_CONTROL_axi_awid     ),
-        .s_HLS_CONTROL_axi_awaddr   ( MBUS_to_HLS_CONTROL_axi_awaddr   ),
-        .s_HLS_CONTROL_axi_awlen    ( MBUS_to_HLS_CONTROL_axi_awlen    ),
-        .s_HLS_CONTROL_axi_awsize   ( MBUS_to_HLS_CONTROL_axi_awsize   ),
-        .s_HLS_CONTROL_axi_awburst  ( MBUS_to_HLS_CONTROL_axi_awburst  ),
-        .s_HLS_CONTROL_axi_awlock   ( MBUS_to_HLS_CONTROL_axi_awlock   ),
-        .s_HLS_CONTROL_axi_awcache  ( MBUS_to_HLS_CONTROL_axi_awcache  ),
-        .s_HLS_CONTROL_axi_awprot   ( MBUS_to_HLS_CONTROL_axi_awprot   ),
-        .s_HLS_CONTROL_axi_awregion ( MBUS_to_HLS_CONTROL_axi_awregion ),
-        .s_HLS_CONTROL_axi_awqos    ( MBUS_to_HLS_CONTROL_axi_awqos    ),
-        .s_HLS_CONTROL_axi_awvalid  ( MBUS_to_HLS_CONTROL_axi_awvalid  ),
-        .s_HLS_CONTROL_axi_awready  ( MBUS_to_HLS_CONTROL_axi_awready  ),
-        .s_HLS_CONTROL_axi_wdata    ( MBUS_to_HLS_CONTROL_axi_wdata    ),
-        .s_HLS_CONTROL_axi_wstrb    ( MBUS_to_HLS_CONTROL_axi_wstrb    ),
-        .s_HLS_CONTROL_axi_wlast    ( MBUS_to_HLS_CONTROL_axi_wlast    ),
-        .s_HLS_CONTROL_axi_wvalid   ( MBUS_to_HLS_CONTROL_axi_wvalid   ),
-        .s_HLS_CONTROL_axi_wready   ( MBUS_to_HLS_CONTROL_axi_wready   ),
-        .s_HLS_CONTROL_axi_bid      ( MBUS_to_HLS_CONTROL_axi_bid      ),
-        .s_HLS_CONTROL_axi_bresp    ( MBUS_to_HLS_CONTROL_axi_bresp    ),
-        .s_HLS_CONTROL_axi_bvalid   ( MBUS_to_HLS_CONTROL_axi_bvalid   ),
-        .s_HLS_CONTROL_axi_bready   ( MBUS_to_HLS_CONTROL_axi_bready   ),
-        .s_HLS_CONTROL_axi_arid     ( MBUS_to_HLS_CONTROL_axi_arid     ),
-        .s_HLS_CONTROL_axi_araddr   ( MBUS_to_HLS_CONTROL_axi_araddr   ),
-        .s_HLS_CONTROL_axi_arlen    ( MBUS_to_HLS_CONTROL_axi_arlen    ),
-        .s_HLS_CONTROL_axi_arsize   ( MBUS_to_HLS_CONTROL_axi_arsize   ),
-        .s_HLS_CONTROL_axi_arburst  ( MBUS_to_HLS_CONTROL_axi_arburst  ),
-        .s_HLS_CONTROL_axi_arlock   ( MBUS_to_HLS_CONTROL_axi_arlock   ),
-        .s_HLS_CONTROL_axi_arcache  ( MBUS_to_HLS_CONTROL_axi_arcache  ),
-        .s_HLS_CONTROL_axi_arprot   ( MBUS_to_HLS_CONTROL_axi_arprot   ),
-        .s_HLS_CONTROL_axi_arregion ( MBUS_to_HLS_CONTROL_axi_arregion ),
-        .s_HLS_CONTROL_axi_arqos    ( MBUS_to_HLS_CONTROL_axi_arqos    ),
-        .s_HLS_CONTROL_axi_arvalid  ( MBUS_to_HLS_CONTROL_axi_arvalid  ),
-        .s_HLS_CONTROL_axi_arready  ( MBUS_to_HLS_CONTROL_axi_arready  ),
-        .s_HLS_CONTROL_axi_rid      ( MBUS_to_HLS_CONTROL_axi_rid      ),
-        .s_HLS_CONTROL_axi_rdata    ( MBUS_to_HLS_CONTROL_axi_rdata    ),
-        .s_HLS_CONTROL_axi_rresp    ( MBUS_to_HLS_CONTROL_axi_rresp    ),
-        .s_HLS_CONTROL_axi_rlast    ( MBUS_to_HLS_CONTROL_axi_rlast    ),
-        .s_HLS_CONTROL_axi_rvalid   ( MBUS_to_HLS_CONTROL_axi_rvalid   ),
-        .s_HLS_CONTROL_axi_rready   ( MBUS_to_HLS_CONTROL_axi_rready   ),
-        // Master to HBUS
-        .m_HLS_gmem0_d512_axi_awid      ( HLS_gmem0_d512_axi_awid     ),
-        .m_HLS_gmem0_d512_axi_awaddr    ( HLS_gmem0_d512_axi_awaddr   ),
-        .m_HLS_gmem0_d512_axi_awlen     ( HLS_gmem0_d512_axi_awlen    ),
-        .m_HLS_gmem0_d512_axi_awsize    ( HLS_gmem0_d512_axi_awsize   ),
-        .m_HLS_gmem0_d512_axi_awburst   ( HLS_gmem0_d512_axi_awburst  ),
-        .m_HLS_gmem0_d512_axi_awlock    ( HLS_gmem0_d512_axi_awlock   ),
-        .m_HLS_gmem0_d512_axi_awcache   ( HLS_gmem0_d512_axi_awcache  ),
-        .m_HLS_gmem0_d512_axi_awprot    ( HLS_gmem0_d512_axi_awprot   ),
-        .m_HLS_gmem0_d512_axi_awqos     ( HLS_gmem0_d512_axi_awqos    ),
-        .m_HLS_gmem0_d512_axi_awvalid   ( HLS_gmem0_d512_axi_awvalid  ),
-        .m_HLS_gmem0_d512_axi_awready   ( HLS_gmem0_d512_axi_awready  ),
-        .m_HLS_gmem0_d512_axi_awregion  ( HLS_gmem0_d512_axi_awregion ),
-        .m_HLS_gmem0_d512_axi_wdata     ( HLS_gmem0_d512_axi_wdata    ),
-        .m_HLS_gmem0_d512_axi_wstrb     ( HLS_gmem0_d512_axi_wstrb    ),
-        .m_HLS_gmem0_d512_axi_wlast     ( HLS_gmem0_d512_axi_wlast    ),
-        .m_HLS_gmem0_d512_axi_wvalid    ( HLS_gmem0_d512_axi_wvalid   ),
-        .m_HLS_gmem0_d512_axi_wready    ( HLS_gmem0_d512_axi_wready   ),
-        .m_HLS_gmem0_d512_axi_bid       ( HLS_gmem0_d512_axi_bid      ),
-        .m_HLS_gmem0_d512_axi_bresp     ( HLS_gmem0_d512_axi_bresp    ),
-        .m_HLS_gmem0_d512_axi_bvalid    ( HLS_gmem0_d512_axi_bvalid   ),
-        .m_HLS_gmem0_d512_axi_bready    ( HLS_gmem0_d512_axi_bready   ),
-        .m_HLS_gmem0_d512_axi_arid      ( HLS_gmem0_d512_axi_arid     ),
-        .m_HLS_gmem0_d512_axi_araddr    ( HLS_gmem0_d512_axi_araddr   ),
-        .m_HLS_gmem0_d512_axi_arlen     ( HLS_gmem0_d512_axi_arlen    ),
-        .m_HLS_gmem0_d512_axi_arsize    ( HLS_gmem0_d512_axi_arsize   ),
-        .m_HLS_gmem0_d512_axi_arburst   ( HLS_gmem0_d512_axi_arburst  ),
-        .m_HLS_gmem0_d512_axi_arlock    ( HLS_gmem0_d512_axi_arlock   ),
-        .m_HLS_gmem0_d512_axi_arcache   ( HLS_gmem0_d512_axi_arcache  ),
-        .m_HLS_gmem0_d512_axi_arprot    ( HLS_gmem0_d512_axi_arprot   ),
-        .m_HLS_gmem0_d512_axi_arqos     ( HLS_gmem0_d512_axi_arqos    ),
-        .m_HLS_gmem0_d512_axi_arvalid   ( HLS_gmem0_d512_axi_arvalid  ),
-        .m_HLS_gmem0_d512_axi_arready   ( HLS_gmem0_d512_axi_arready  ),
-        .m_HLS_gmem0_d512_axi_arregion  ( HLS_gmem0_d512_axi_arregion ),
-        .m_HLS_gmem0_d512_axi_rid       ( HLS_gmem0_d512_axi_rid      ),
-        .m_HLS_gmem0_d512_axi_rdata     ( HLS_gmem0_d512_axi_rdata    ),
-        .m_HLS_gmem0_d512_axi_rresp     ( HLS_gmem0_d512_axi_rresp    ),
-        .m_HLS_gmem0_d512_axi_rlast     ( HLS_gmem0_d512_axi_rlast    ),
-        .m_HLS_gmem0_d512_axi_rvalid    ( HLS_gmem0_d512_axi_rvalid   ),
-        .m_HLS_gmem0_d512_axi_rready    ( HLS_gmem0_d512_axi_rready   ),
-        // Interrupt
-        .hls_interrupt_o                ( hls_interrupt_to_plic       )
     );
 
     //////////

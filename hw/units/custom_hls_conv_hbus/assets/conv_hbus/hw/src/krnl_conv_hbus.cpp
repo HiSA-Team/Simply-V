@@ -17,19 +17,19 @@ void krnl_conv_hbus (
                     uint8_t K_input
                 ) {
 
-    #pragma HLS INTERFACE mode=m_axi depth=((SIZE_I/sizeof(m_axi_port_type_t))) bundle=gmem0 port=I \
+    #pragma HLS INTERFACE mode=m_axi depth=((SIZE_I/sizeof(m_axi_port_type_t))) bundle=master port=I \
         max_read_burst_length=16 \
-        max_widen_bitwidth=512 \
+        max_widen_bitwidth=M_AXI_DWIDTH \
         max_write_burst_length=16
 
-    #pragma HLS INTERFACE mode=m_axi depth=((SIZE_W/sizeof(m_axi_port_type_t))+1) bundle=gmem0 port=W \
+    #pragma HLS INTERFACE mode=m_axi depth=((SIZE_W/sizeof(m_axi_port_type_t))+1) bundle=master port=W \
         max_read_burst_length=16 \
-        max_widen_bitwidth=512 \
+        max_widen_bitwidth=M_AXI_DWIDTH \
         max_write_burst_length=16
 
-    #pragma HLS INTERFACE mode=m_axi depth=((SIZE_O/sizeof(m_axi_port_type_t))+1) bundle=gmem0 port=O \
+    #pragma HLS INTERFACE mode=m_axi depth=((SIZE_O/sizeof(m_axi_port_type_t))+1) bundle=master port=O \
         max_read_burst_length=16 \
-        max_widen_bitwidth=512 \
+        max_widen_bitwidth=M_AXI_DWIDTH \
         max_write_burst_length=16 \
         num_read_outstanding=16
 

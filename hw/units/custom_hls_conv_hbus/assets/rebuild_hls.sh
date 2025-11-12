@@ -47,7 +47,7 @@ cp ${HLS_DIR}/hw/${COMPONENT_NAME}/hls/syn/verilog/* ${RTL_DIR}/
 # mkdir -p ${TARGET_SW_DIR}/inc/
 # mkdir -p ${TARGET_SW_DIR}/src/
 # printf "\n${YELLOW}[FETCH_SOURCES] Packaging for C standalone driver files${NC}\n"
-# make package
+make package
 
 # Back to top
 cd ${TOP_DIR}

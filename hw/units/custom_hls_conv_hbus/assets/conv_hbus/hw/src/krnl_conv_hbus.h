@@ -39,11 +39,24 @@
 #define SIZE_W ( K  *  C  *  R  *  S )
 #define SIZE_O ( N  *  K  * Y1  * X1 )
 
+// AXI bundle name
+// Usa same bundle for all pointers
+#define M_AXI_NAME_I master
+#define M_AXI_NAME_W master
+#define M_AXI_NAME_O master
+// Usa a different bundle for each pointer
+// #define M_AXI_NAME_I master_I
+// #define M_AXI_NAME_W master_W
+// #define M_AXI_NAME_O master_O
+
+// AXI bundle width
+#define M_AXI_DWIDTH 32
+// #define M_AXI_DWIDTH 512
+
 typedef uint8_t target_type_t;
 #ifdef MOCK_AP_INT
     typedef uint8_t m_axi_port_type_t;
 #else
-    #define M_AXI_DWIDTH 512
     typedef ap_uint<M_AXI_DWIDTH> m_axi_port_type_t;
 #endif
 

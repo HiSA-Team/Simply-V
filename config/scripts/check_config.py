@@ -155,7 +155,7 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         for i in range(len(config.RANGE_CLOCK_DOMAINS)):
             # Check if the clock frequency is valid (DDR has its own clock domain)
             # TOD143: decide a prefix for HBUS-attached accelerators here, maybe ACC_* or HBUS_*
-            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS", "HLS_CONTROL"]
+            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS"]
             if ( config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG] ) and ( config.RANGE_NAMES[i] not in exclude_list):
                 print_error(f"The clock domain {config.RANGE_CLOCK_DOMAINS[i]}MHz is not supported")
                 return False
@@ -165,7 +165,7 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
                     print_error(f"The {config.RANGE_NAMES[i]} frequency {config.RANGE_CLOCK_DOMAINS[i]} must be the same as MAIN_CLOCK_DOMAIN {config.MAIN_CLOCK_DOMAIN}")
                     return False
             # Check if the DDR has the right frequency
-            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS", "HLS_CONTROL"]
+            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS"]
             if config.RANGE_NAMES[i] in exclude_list:
                 if config.RANGE_CLOCK_DOMAINS[i] != DDR_FREQUENCY:
                     # TODO143: for now, limit HBUS to DDR clock (this also impacts PR128)
