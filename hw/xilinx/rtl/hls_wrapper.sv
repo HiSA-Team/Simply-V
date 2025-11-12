@@ -33,7 +33,7 @@
 //                 |________|                  |______________|
 //
 
-module hls_conv2d_wrapper # (
+module hls_wrapper # (
     // MBUS parameters
     parameter MBUS_ADDR_WIDTH = 32,
     parameter MBUS_DATA_WIDTH = 32,
