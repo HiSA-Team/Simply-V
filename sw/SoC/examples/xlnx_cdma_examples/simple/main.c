@@ -1,90 +1,54 @@
 /*
-# Author: Michele Giugliano <michele.giugliano2@studenti.unina.it>
-# Description:
-#   Example demonstrating the use of the AXI CDMA in Simple Transfer mode.
-#   The program performs multiple consecutive transfer rounds, preparing
-#   the source/destination buffers, starting the CDMA transfer in polling
-#   mode, and verifying data integrity after each round.
-*/
-
-
-
+ * Author: Michele Giugliano <michele.giugliano2@studenti.unina.it>
+ * Description:
+ *   Example demonstrating the use of the AXI CDMA in Simple Transfer mode.
+ *   The program performs multiple consecutive transfer rounds, each using
+ *   a different transfer length. For every round it:
+ *     - prepares source and destination buffers,
+ *     - starts a CDMA simple transfer in polling mode,
+ *     - waits for completion,
+ *     - and verifies data integrity.
+ *
+ *   This example is useful to validate CDMA behavior across different
+ *   transfer sizes and to stress-test basic DMA functionality.
+ */
 
 #include "uninasoc.h"
-#include <stdint.h>
 #include "xaxicdma.h"
 #include "xaxicdma_hw.h"
-#include "tinyIO.h"
+#include <stdint.h>
 
-// --- Niente % nelle stringhe: usiamo c_printf solo con stringhe "plain"
-#define print_str(S)    c_printf(S)
 
-// --- Indirizzi dal linker
+/* ============================================================
+ *                 CDMA Base Address (from linker)
+ * ============================================================ */
 extern const volatile uint32_t _peripheral_AXI_CDMA_start;
 #define CDMA_BASEADDR   ((uintptr_t)&_peripheral_AXI_CDMA_start)
 
-// --- BRAM mappa semplice (adatta ai tuoi indirizzi)
+/* ============================================================
+ *                  Simple BRAM Address Map
+ * ============================================================ */
 #define MEM_BASEADDR    0x00000000u
 #define SRC_ADDR        (MEM_BASEADDR + 0x0000u)
 #define DST_ADDR        (MEM_BASEADDR + 0x1000u)
 
-// ---------------------------------------------------------------------
-// Parametri test multi-round
-// ---------------------------------------------------------------------
-#define ROUNDS          3u          // quante volte ripetere il test
+/* ============================================================
+ *                 Multi-Round Test Parameters
+ * ============================================================ */
+#define ROUNDS  3u
+
+/* Number of 32-bit words to transfer for each round */
 static const uint32_t WORDS_ROUND[ROUNDS] = {
-    8u,    // Round 0:  8 word  (32 byte)
-    16u,   // Round 1: 16 word  (64 byte)
-    32u    // Round 2: 32 word (128 byte)
+    8u,   /* Round 0:  8 words  ( 32 bytes) */
+    16u,  /* Round 1: 16 words  ( 64 bytes) */
+    32u   /* Round 2: 32 words (128 bytes) */
 };
 
-// ---------------------------------------------------------------------
-// Helpers di stampa (NO %):
-// ---------------------------------------------------------------------
-static void hex32_to_str(uint32_t v, char out[11]) {
-    static const char H[] = "0123456789ABCDEF";
-    out[0] = '0'; out[1] = 'x';
-    for (int i = 0; i < 8; ++i) {
-        int shift = (7 - i) * 4;
-        out[2 + i] = H[(v >> shift) & 0xF];
-    }
-    out[10] = '\0';
-}
-
-static void udec_to_str(uint32_t v, char out[12]) {
-    char tmp[12];
-    int n = 0;
-    if (v == 0) { out[0] = '0'; out[1] = '\0'; return; }
-    while (v && n < 11) { tmp[n++] = (char)('0' + (v % 10)); v /= 10; }
-    for (int i = 0; i < n; ++i) out[i] = tmp[n - 1 - i];
-    out[n] = '\0';
-}
-
-static void print_hex_line(const char* prefix, uint32_t val) {
-    char buf[11];
-    hex32_to_str(val, buf);
-    c_printf(prefix);
-    c_printf(buf);
-    c_printf("\r\n");
-}
-
-static void print_idx_hex_pair(uint32_t idx, uint32_t val_src, uint32_t val_dst) {
-    char ibuf[12], hs[11], hd[11];
-    udec_to_str(idx, ibuf);
-    hex32_to_str(val_src, hs);
-    hex32_to_str(val_dst, hd);
-
-    c_printf("SRC["); c_printf(ibuf); c_printf("] = ");
-    c_printf(hs);
-    c_printf(" | DST["); c_printf(ibuf); c_printf("] = ");
-    c_printf(hd);
-    c_printf("\r\n");
-}
-
-// ---------------------------------------------------------------------
-// CDMA setup
-// ---------------------------------------------------------------------
+/* ============================================================
+ *                   CDMA Driver Structures
+ * ============================================================ */
 static XAxiCdma Cdma;
+
 static XAxiCdma_Config CdmaCfg = {
     .DeviceId    = 0,
     .BaseAddress = CDMA_BASEADDR,
@@ -95,125 +59,137 @@ static XAxiCdma_Config CdmaCfg = {
     .AddrWidth   = 32
 };
 
-static void cdma_print_status(const char* tag) {
-    uint32_t s = XAxiCdma_ReadReg(CDMA_BASEADDR, XAXICDMA_SR_OFFSET);
-    c_printf(tag);
-    print_hex_line("", s);
+/* ============================================================
+ *                      Debug / Status Print
+ * ============================================================ */
+static void cdma_print_status(const char* tag)
+{
+    uint32_t sr = XAxiCdma_ReadReg(CDMA_BASEADDR, XAXICDMA_SR_OFFSET);
+    printf("%s SR=0x%08X\n", tag, sr);
 }
 
-// ---------------------------------------------------------------------
-// Esegue un round: prepara buffer, trasferisce, verifica e stampa
-// ---------------------------------------------------------------------
-static int do_one_round(uint32_t round_idx, uint32_t words) {
+/* ============================================================
+ *  Run a single transfer round:
+ *   - fills source and destination buffers
+ *   - runs a simple CDMA transfer
+ *   - checks the result
+ * ============================================================ */
+static int do_one_round(uint32_t round_idx, uint32_t words)
+{
     volatile uint32_t* src = (uint32_t*)SRC_ADDR;
     volatile uint32_t* dst = (uint32_t*)DST_ADDR;
     const uint32_t bytes = words * 4u;
 
-    // Banner round
-    c_printf("\r\n=== Round ");
-    char rbuf[12]; udec_to_str(round_idx, rbuf);
-    c_printf(rbuf);
-    c_printf(" — words ");
-    char wbuf[12]; udec_to_str(words, wbuf);
-    c_printf(wbuf);
-    c_printf(" ===\r\n");
+    /* Round banner */
+    printf("\n=== Round %u — words %u ===\n", round_idx, words);
 
-    // Riempie SORGENTE con pattern variabile dipendente dal round; DEST = 0xFFFFFFFF
-    // Pattern: src[i] = (round_idx << 28) ^ (i * 0x11111111) ^ 0xA5A5A5A5
-    for (uint32_t i = 0; i < words; ++i) {
+    /*
+     * Fill source with a round-dependent pattern and destination with 0xFFFFFFFF.
+     * Pattern:
+     *   src[i] = (round_idx << 28) ^ (i * 0x11111111) ^ 0xA5A5A5A5
+     */
+    for (uint32_t i = 0; i < words; i++) {
         src[i] = ((round_idx & 0xFu) << 28) ^ (i * 0x11111111u) ^ 0xA5A5A5A5u;
         dst[i] = 0xFFFFFFFFu;
     }
 
-    // Preview iniziale (prime 8 word)
-    c_printf("Before transfer:\r\n");
+    /* Show initial contents (limited preview) */
+    printf("Before transfer:\n");
     uint32_t preview = (words < 8u) ? words : 8u;
-    for (uint32_t i = 0; i < preview; ++i) {
-        print_idx_hex_pair(i, src[i], dst[i]);
+    for (uint32_t i = 0; i < preview; i++) {
+        printf("SRC[%u] = 0x%08X | DST[%u] = 0x%08X\n",
+               i, src[i], i, dst[i]);
     }
 
-    cdma_print_status("CDMA Status: ");
+    cdma_print_status("CDMA Status before transfer:");
 
-    // Avvio trasferimento semplice
-    c_printf("Starting CDMA transfer...\r\n");
+    /* Start simple transfer */
+    printf("Starting CDMA transfer (%u bytes)...\n", bytes);
     int st = XAxiCdma_SimpleTransfer(&Cdma, SRC_ADDR, DST_ADDR, (int)bytes, NULL, NULL);
     if (st != 0) {
-        c_printf("[CDMA] Transfer start failed\r\n");
-        cdma_print_status("CDMA Status: ");
+        printf("[CDMA] Transfer start failed (error=%d)\n", st);
+        cdma_print_status("CDMA Status after failure:");
         return -1;
     }
 
-    // Poll busy con guard
+    /* Poll for completion with a simple timeout guard */
     {
         uint32_t guard = 0;
         while (XAxiCdma_IsBusy(&Cdma)) {
             if (++guard > 10000000u) {
-                c_printf("[CDMA] Timeout while busy\r\n");
-                cdma_print_status("CDMA Status: ");
+                printf("[CDMA] Timeout while waiting for completion\n");
+                cdma_print_status("CDMA Status on timeout:");
                 return -2;
             }
         }
     }
-    c_printf("[CDMA] Transfer complete.\r\n");
-    cdma_print_status("CDMA Status: ");
 
-    // Verifica & stampa prime 8 word
-    c_printf("After transfer:\r\n");
+    printf("[CDMA] Transfer complete.\n");
+    cdma_print_status("CDMA Status after transfer:");
+
+    /* Verify data and print first few words */
+    printf("After transfer:\n");
     uint32_t errors = 0;
-    for (uint32_t i = 0; i < words; ++i) {
-        if (dst[i] != src[i]) { errors++; }
+
+    for (uint32_t i = 0; i < words; i++) {
+        if (dst[i] != src[i])
+            errors++;
+
         if (i < preview) {
-            print_idx_hex_pair(i, src[i], dst[i]);
+            printf("SRC[%u] = 0x%08X | DST[%u] = 0x%08X\n",
+                   i, src[i], i, dst[i]);
         }
     }
 
     if (errors == 0) {
-        c_printf("Round OK - All words copied\r\n");
+        printf("Round OK — all %u words copied correctly\n", words);
         return 0;
     } else {
-        char eb[12]; udec_to_str(errors, eb);
-        c_printf("Round ERROR - mismatches: ");
-        c_printf(eb); c_printf("\r\n");
+        printf("Round ERROR — mismatches: %u\n", errors);
         return (int)errors;
     }
 }
 
-int main(void) {
-    // UART init
+/* ============================================================
+ *                           MAIN
+ * ============================================================ */
+int main(void)
+{
+    /* Initialize UART / platform */
     uninasoc_init();
 
-    // Banner
-    print_str("\r\nCDMA multi-round transfer test start\r\n");
+    printf("\nCDMA multi-round transfer test start\n");
 
-    // Init CDMA
+    /* Initialize CDMA core */
     if (XAxiCdma_CfgInitialize(&Cdma, &CdmaCfg, CDMA_BASEADDR) != 0) {
-        print_str("[CDMA] Init failed\r\n");
+        printf("[CDMA] Initialization failed\n");
         while (1);
     }
 
-    // Reset sicuro
-    print_str("Resetting CDMA...\r\n");
+    /* Initial reset */
+    printf("Resetting CDMA...\n");
     XAxiCdma_Reset(&Cdma);
-    for (volatile uint32_t t = 0; t < 50000; ++t) { __asm__ __volatile__(""); }
-    print_str("[CDMA] Reset complete\r\n");
-    cdma_print_status("CDMA Status: ");
+    for (volatile uint32_t t = 0; t < 50000; t++) __asm__ __volatile__("");
+    printf("[CDMA] Reset complete\n");
+    cdma_print_status("CDMA Status after reset:");
 
-    // Esegui più trasferimenti consecutivi
-    for (uint32_t r = 0; r < ROUNDS; ++r) {
+    /* Execute multiple rounds with different sizes */
+    for (uint32_t r = 0; r < ROUNDS; r++) {
         int res = do_one_round(r, WORDS_ROUND[r]);
 
-	XAxiCdma_Reset(&Cdma);
-        for (volatile int i = 0; i < 50000; ++i) { __asm__ __volatile__(""); }
-        Cdma.SimpleNotDone = 0;
+        /* Reset CDMA between rounds to keep behavior consistent */
+        XAxiCdma_Reset(&Cdma);
+        for (volatile uint32_t i = 0; i < 50000; i++) __asm__ __volatile__("");
+        Cdma.SimpleNotDone = 0;  /* clear internal state used by driver */
+
         if (res != 0) {
-            c_printf("Stopping due to error in round ");
-            char rb[12]; udec_to_str(r, rb);
-            c_printf(rb); c_printf("\r\n");
+            printf("Stopping due to error in round %u\n", r);
             break;
         }
     }
 
-    c_printf("\r\nAll rounds done\r\n");
+    printf("\nAll rounds completed\n");
     while (1);
     return 0;
 }
+

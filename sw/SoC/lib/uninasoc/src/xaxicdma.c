@@ -3,7 +3,6 @@
  *
  * Authors:
  *   - Michele Giugliano <michele.giugliano2@studenti.unina.it>
- *   - Stefano Mercogliano <stefano.mercogliano@unina.it>
  *   - Original base: Xilinx / AMD Copyright © 2010–2023
  * SPDX-License-Identifier: MIT
  ******************************************************************************/
