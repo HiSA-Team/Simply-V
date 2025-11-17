@@ -1,52 +1,46 @@
+from addr_range import Addr_Range
 from peripherals.peripheral import Peripheral
-from peripherals_factory import Peripherals_Factory
-from node import Node
+from factories.peripherals_factory import Peripherals_Factory
 from logger import Logger
-from utils import *
 from pprint import pprint
-from collections import defaultdict
-import re
 from abc import abstractmethod, ABC
 
 
-class Bus(Node, ABC):
-	def __init__(self, name: str, base_name: str, file_name: str, axi_addr_width: int, axi_data_width: int, \
-			  asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
+class Bus(ABC):
+	peripherals_factory = Peripherals_Factory.get_instance()
+	logger = Logger.get_instance()
 
-		self.ID_WIDTH			 : int = 4		# ID Data Width for MI and SI (a subset of it is used by the Interfaces Thread IDs)
-		self.NUM_MI				 : int = 0			# Master Interface (MI) Number
-		self.NUM_SI				 : int = 0	 		# Slave Interface (SI) Number
-		self.MASTER_NAMES        : list[str]		    # List of names of masters connected to the bus
-		self.RANGE_NAMES         : list[str]		    # List of names of slaves connected to the bus
-		self.PROTOCOL: str
+	def __init__(self, data_dict: dict, asgn_addr_range: list[Addr_Range], axi_addr_width: int, axi_data_width: int):
+		#remove this
+		self.NAME = asgn_addr_range[0].RANGE_NAME
+
+        #General configuration parameters
+		self.ID_WIDTH			 : int = data_dict["ID_WIDTH"]
+		self.NUM_MI				 : int = data_dict["NUM_MI"]
+		self.NUM_SI				 : int = data_dict["NUM_SI"]
+		self.MASTER_NAMES        : list[str] = data_dict["MASTER_NAMES"]
+		self.PROTOCOL: str = data_dict["PROTOCOL"]
+		#Addr ranges assigned to this bus
+		self.asgn_addr_range = asgn_addr_range
+        #Axi widths
 		self.ADDR_WIDTH: int = axi_addr_width
 		self.DATA_WIDTH: int = axi_data_width
-		self.config_file_name: str = file_name
-		self.logger: Logger = Logger(file_name)		# Utils object used for logging
-		self.peripherals_factory = Peripherals_Factory(self.logger)
-
-		self.ADDR_RANGES : int = 1 
-		self.RANGE_BASE_ADDR : list[int]
-		self.RANGE_ADDR_WIDTH : list[int]
-		self.RANGE_END_ADDR : list[int]	= []	# computed from RANGE_BASE_ADDR and RANGE_ADDR_WIDTH
+        #Children Parameters
+		self.ADDR_RANGES: int = data_dict["ADDR_RANGES"]
+		self.RANGE_NAMES: list[str] = data_dict["RANGE_NAMES"]
+		self.RANGE_BASE_ADDR: list[int] = data_dict["RANGE_BASE_ADDR"]
+		self.RANGE_ADDR_WIDTH: list[int] = data_dict["RANGE_ADDR_WIDTH"]
 		self.children_peripherals : list[Peripheral] = []
 
 				
-		# init Node object
-		super().__init__(name, base_name, asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
 
-
-	def check_peripherals(self, legal_peripherals: list[str]):
+	def check_peripherals(self, legal_peripherals):
 		simply_v_crash = self.logger.simply_v_crash
 
 		for p in self.children_peripherals:
 			if p.BASE_NAME not in legal_peripherals:
 				simply_v_crash(f"Unsupported peripheral {p.NAME} for this bus")
 
-
-	def is_enabled(self):
-		return not (self.PROTOCOL == "DISABLE")
-	
 	
 	#Set all the peripherals as reachable from this bus
 	def add_reachability(self):
@@ -54,92 +48,12 @@ class Bus(Node, ABC):
 			peripheral.add_to_reachable(self.NAME)
 			peripheral.add_list_to_reachable(self.REACHABLE_FROM)
 
-	def check_assign_params(self, data_dict: dict):
-		simply_v_crash = self.logger.simply_v_crash
-
-		if("PROTOCOL" not in data_dict):
-			simply_v_crash("Protocol is mandatory")
-			
-		self.PROTOCOL = data_dict["PROTOCOL"]
-
-		# EARLY EXIT
-		if(self.PROTOCOL == "DISABLE"):
-			return
-		
-		if ("ID_WIDTH" in data_dict):
-			self.ID_WIDTH = int(data_dict["ID_WIDTH"])
-			if ((self.ID_WIDTH > 32) and (self.ID_WIDTH < 4) ):
-				simply_v_crash("ID_WIDTH not in [4,32] range")
-		
-		if ("NUM_MI" not in data_dict):
-			simply_v_crash("NUM_MI is mandatory")
-
-		self.NUM_MI = int(data_dict["NUM_MI"])
-
-		if ((self.NUM_MI <= 0) or (self.NUM_MI > 16)):
-			simply_v_crash("NUM_MI must be in range (0, 16]")
-
-		if ("NUM_SI" not in data_dict):
-			simply_v_crash("NUM_SI is mandatory")
-
-		self.NUM_SI = int(data_dict["NUM_SI"])
-
-		if ((self.NUM_SI <= 0) or (self.NUM_SI > 16)):
-			simply_v_crash("NUM_SI must be in range (0, 16]")
-
-		if ("MASTER_NAMES" not in data_dict):
-			simply_v_crash("MASTER_NAMES is mandatory")
-
-		self.MASTER_NAMES = list(data_dict["MASTER_NAMES"].split(" "))
-
-		if ("RANGE_NAMES" not in data_dict):
-			simply_v_crash("RANGE_NAMES is mandatory")
-
-		self.RANGE_NAMES = list(data_dict["RANGE_NAMES"].split(" "))
-
-		if ("RANGE_BASE_ADDR" not in data_dict):
-			simply_v_crash("RANGE_BASE_ADDR is mandatory")
-
-		self.RANGE_BASE_ADDR = [int(x, 16) for x in data_dict["RANGE_BASE_ADDR"].split()]
-
-		if ("RANGE_ADDR_WIDTH" not in data_dict):
-			simply_v_crash("RANGE_ADDR_WIDTH is mandatory")
-
-		self.RANGE_ADDR_WIDTH = [int(x) for x in data_dict["RANGE_ADDR_WIDTH"].split(" ")]
-
-		for range_addr in self.RANGE_ADDR_WIDTH:
-			if(range_addr > 64):
-				simply_v_crash(f"RANGE_ADDR_WIDTH {range_addr} greather than 64")
-
-		if ("ADDR_RANGES" in data_dict):
-			self.ADDR_RANGES = data_dict["ADDR_RANGES"]
-
 
 	def check_intra(self):
 		simply_v_crash = self.logger.simply_v_crash
-		MIN_AXI4_ADDR_WIDTH = 12
-		MIN_AXI4LITE_ADDR_WIDTH = 1
-
-		if (self.NUM_MI != len(self.RANGE_NAMES)):
-			simply_v_crash(f"The NUM_MI value {self.NUM_MI} does not match the number of RANGE_NAMES")
-
-		if ((self.NUM_MI * self.ADDR_RANGES) != len(self.RANGE_BASE_ADDR)):
-			simply_v_crash(f"The NUM_MI * ADDR_RANGES value {self.NUM_MI} does not match the number of RANGE_BASE_ADDR")
-
-		if ((self.NUM_MI * self.ADDR_RANGES) != len(self.RANGE_ADDR_WIDTH)):
-			simply_v_crash(f"The NUM_MI * ADDR_RANGES value {self.NUM_MI} does not match the number of RANGE_ADDR_WIDTH")
-
-		if (self.NUM_SI != len(self.MASTER_NAMES)):
-			simply_v_crash(f"The NUM_SI does not match MASTER_NAMES in {self.MASTER_NAMES}")
-
-		# Check the minimum widths (AXI4 12, AXI4LITE 1)
 		for addr_width in self.RANGE_ADDR_WIDTH:
 			if addr_width > self.ADDR_WIDTH:
 				simply_v_crash(f"RANGE_ADDR_WIDTH is greater than {self.ADDR_WIDTH}")
-			if self.PROTOCOL == "AXI4" and addr_width < MIN_AXI4_ADDR_WIDTH:
-				simply_v_crash(f"RANGE_ADDR_WIDTH is less than {MIN_AXI4_ADDR_WIDTH}")
-			if self.PROTOCOL == "AXI4LITE" and addr_width < MIN_AXI4LITE_ADDR_WIDTH:
-				simply_v_crash(f"RANGE_ADDR_WIDTH is less than {MIN_AXI4LITE_ADDR_WIDTH}")
 			
 		# compute end addresses after all the checks
 		self.RANGE_END_ADDR = self.compute_range_end_addresses(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)

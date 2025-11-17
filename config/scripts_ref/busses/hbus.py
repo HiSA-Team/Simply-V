@@ -1,30 +1,19 @@
 from sys import implementation
 from busses.nonleafbus import NonLeafBus
+from addr_range import Addr_Range
 from peripherals.peripheral import Peripheral
-from utils import *
+
 
 class HBus(NonLeafBus):
-	def __init__(self, name: str, base_name: str, hbus_data_dict: dict, hbus_file_name: str, asgn_addr_ranges: int, \
-			asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str,\
-			axi_addr_width: int, father: NonLeafBus):
+	VALID_PROTOCOLS = ("AXI4")
+	LEGAL_PERIPHERALS = ("DDR4")
+	LEGAL_BUSSES = ("MBUS")
 
-		self.LOOPBACK: int
-		self.LEGAL_PERIPHERALS: list[str] = ["DDR4CH", "MBUS"]
-		self.VALID_PROTOCOLS: list[str] = ["AXI4", "DISABLE"]
-
+	def __init__(self, data_dict: dict, asgn_addr_range: list[Addr_Range], axi_addr_width: int, father: NonLeafBus):
 		axi_data_width = 512
 		
 		# init NonleafBus object
-		super().__init__(name, base_name, hbus_file_name, axi_addr_width, axi_data_width, \
-				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain, father)
-
-		try:
-			self.check_assign_params(hbus_data_dict)
-		except ValueError as e:
-			self.logger.simply_v_crash(f"Invalid value type: {e}")
-
-		if(self.PROTOCOL == "DISABLE"):
-			return
+		super().__init__(data_dict, asgn_addr_range, axi_addr_width, axi_data_width)
 
 		self.check_intra()
 			
@@ -39,15 +28,6 @@ class HBus(NonLeafBus):
 			self.child_enable_loopback()
 			self.RANGE_CLOCK_DOMAINS.append(father.CLOCK_DOMAIN)
 
-
-	def check_assign_params(self, data_dict):
-		super().check_assign_params(data_dict)
-
-		if("LOOPBACK" not in data_dict):
-			self.LOOPBACK = 0
-		else:
-			self.LOOPBACK = int(data_dict["LOOPBACK"])
-
 	
 	def check_intra(self):
 		#check params interactions of BUS object
@@ -59,18 +39,6 @@ class HBus(NonLeafBus):
 			simply_v_crash(f"Unsupported protocol: {self.PROTOCOL}")
 
 		if (self.LOOPBACK == 1):
-			if (self.ADDR_RANGES != 1):
-				simply_v_crash(f"ADDR_RANGES must be 1 when activating LOOPBACK")
-
-			if (self.PROTOCOL == "AXI4"):
-				for width in self.RANGE_ADDR_WIDTH:
-					if width <= 12:
-						simply_v_crash(f"When enabling LOOPBACK all the RANGE_ADDR_WIDTH "
-										"should be at least 13 when using AXI4 "
-										"the HBUS uses internally this extra bit "
-										"to rearrange RANGES in order to accomodate "
-										"the loopback configuration")
-
 			min_base_addr = min(self.ASGN_RANGE_BASE_ADDR)
 
 			# Force base addr to power of 2

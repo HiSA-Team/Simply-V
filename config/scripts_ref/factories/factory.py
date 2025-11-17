@@ -1,9 +1,14 @@
 import re
+from typing import NoReturn
+from addr_range import Addr_Range
+from singleton import SingletonABCMeta
 from logger import Logger
 
-class Factory():
-	def __init__(self, logger: Logger):
-		self.logger = logger
+class Factory(metaclass=SingletonABCMeta):
+	logger = Logger.get_instance()
+
+	def __init__(self):
+		pass
 
 	#Each node (peripheral or bus) that should be created, 
 	#shouldn't have duplicates, so when refering to different instances of different nodes
@@ -18,7 +23,7 @@ class Factory():
 	#anywhere in the configuration, when they're clearly refering to different
 	#istances of the same "BASENAME".
 
-	def extract_base_name(self, name: str):
+	def _extract_base_name(self, name: str):
 		pattern = re.compile(r"^(?P<prefix>[A-Za-z0-9]+)")
 	
 		match = pattern.match(name)
@@ -27,3 +32,18 @@ class Factory():
 			return base_name.upper() #upper just in case, to have uniform names
 		else:
 			self.logger.simply_v_crash(f"There is something wrong with {name} format name\n")
+
+	def _extract_clock_frequency(self, clock_domain: str) -> int | NoReturn:
+		try:
+			return int(clock_domain.split("_")[-1])
+		except ValueError:
+			self.logger.simply_v_crash(f"There is something wrong with {clock_domain} format name\n")
+
+	def _create_addr_ranges(self, base_name: str, range_name: str, base_addr: list[int], addr_width: list[int], 
+							clock_domain: list[str]) -> list[Addr_Range]:
+
+		addr_ranges_list = []
+		for addr_range in range(len(base_addr)):
+			clock_frequency = self._extract_clock_frequency(clock_domain[addr_range])
+			addr_ranges_list.append(Addr_Range(base_name, range_name, base_addr[addr_range], addr_width[addr_range], clock_domain[addr_range], clock_frequency))
+		return addr_ranges_list

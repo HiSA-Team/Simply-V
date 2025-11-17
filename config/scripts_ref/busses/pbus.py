@@ -1,18 +1,17 @@
 from busses.bus import Bus
+from addr_range import Addr_Range
 from peripherals.peripheral import Peripheral
 
 class PBus(Bus):
-	def __init__(self, name: str, base_name:str, pbus_data_dict: dict, pbus_file_name: str, asgn_addr_ranges: int, \
-			asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
+	LEGAL_PERIPHERALS = ("UART", "GPIO_out", "GPIO_in", "TIM")
+	VALID_PROTOCOLS = ("AXI4LITE")
 
-		self.LEGAL_PERIPHERALS: list[str] = ["UART", "GPIO_out", "GPIO_in", "TIM"]
-		self.VALID_PROTOCOLS: list[str] = ["AXI4LITE", "DISABLE"]
+	def __init__(self, data_dict: dict, asgn_addr_range: list[Addr_Range]):
 
 		axi_addr_width = 32
 		axi_data_width = 32
 		
-		super().__init__(name, base_name, pbus_file_name, axi_addr_width, axi_data_width, \
-				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
+		super().__init__(data_dict, asgn_addr_range, axi_addr_width, axi_data_width)
 
 		self.check_assign_params(pbus_data_dict)
 

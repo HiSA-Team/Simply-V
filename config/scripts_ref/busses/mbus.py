@@ -1,50 +1,32 @@
+from addr_range import Addr_Range
 from env import *
 from busses.nonleafbus import NonLeafBus
-from utils import *
-from busses_factory import Busses_Factory
 from singleton import SingletonABCMeta
 
 #Only one MBUS should be created
 class MBus(NonLeafBus, metaclass=SingletonABCMeta):
+	env_global = Env.get_instance()
+	LEGAL_PERIPHERALS = ("BRAM", "DM", "PLIC")
+	LEGAL_PERIPHERALS_HPC = LEGAL_PERIPHERALS + ("DDR4", "HLS")
+	LEGAL_BUSSES = ("PBUS")
+	LEGAL_BUSSES_HPC = LEGAL_BUSSES + ("HBUS")
+	VALID_PROTOCOLS = ("AXI4")
 
-	def __init__(self, mbus_data_dict: dict, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
-			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str):
-
-		self.LEGAL_PERIPHERALS: list[str] = ["BRAM", "DM", "PLIC"]
-		self.LEGAL_PERIPHERALS_HPC: list[str] = self.LEGAL_PERIPHERALS + ["DDR4", "HLS"]
-		self.LEGAL_BUSSES: list[str] = ["PBUS"]
-		self.LEGAL_BUSSES_HPC: list[str] = self.LEGAL_BUSSES + ["HBUS"]
-
-		self.VALID_PROTOCOLS: list[str] = ["AXI4", "DISABLE"]
+	def __init__(self, data_dict: dict, asgn_addr_range: list[Addr_Range], axi_addr_width: int, axi_data_width: int):
 
 		# init NonLeafBus object
-		super().__init__("MBUS", "MBUS", mbus_file_name, axi_addr_width, axi_data_width, \
-				   asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
+		super().__init__(data_dict, asgn_addr_range, axi_addr_width, axi_data_width)
 
-
-		try:
-			self.check_assign_params(mbus_data_dict)
-		except ValueError as e:
-			self.logger.simply_v_crash(f"Invalid value type: {e}")
-
-		if(self.PROTOCOL == "DISABLE"):
-			return
 
 		self.check_intra()
 		self.check_inter()
 
-		env_global = Env.get_instance()
-
-		if(env_global.get_soc_profile()=="embedded"):
+		if(self.env_global.get_soc_profile()=="embedded"):
 			self.check_peripherals(self.LEGAL_PERIPHERALS)
 			self.check_busses(self.LEGAL_BUSSES)
-		elif(env_global.get_soc_profile()=="hpc"):
+		elif(self.env_global.get_soc_profile()=="hpc"):
 			self.check_peripherals(self.LEGAL_PERIPHERALS_HPC)
 			self.check_busses(self.LEGAL_BUSSES_HPC)
-
-
-	def check_assign_params(self, data_dict):
-		super().check_assign_params(data_dict)
 
 
 	def check_intra(self):

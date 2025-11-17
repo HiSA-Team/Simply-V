@@ -1,7 +1,7 @@
-from node import Node
+from addr_range import Addr_Range
 
 class Clock_Domain():
-	def __init__(self, Nodes: list[Node]):
+	def __init__(self, Nodes: list[Addr_Range]):
 		self.CLOCK_DOMAINS = {}
 
 		#Initialize clock domains as dictionary of CLOCK_DOMAIN -> [Nodes]

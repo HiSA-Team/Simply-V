@@ -3,51 +3,33 @@ from pprint import pprint
 from typing import Optional
 from busses.bus import Bus
 from clock_domain import Clock_Domain
+from addr_range import Addr_Range
 from peripherals.peripheral import Peripheral
-from busses_factory import Busses_Factory
+from factories.busses_factory import Busses_Factory
 
 class NonLeafBus(Bus):
-	def __init__(self, name: str, base_name: str, mbus_file_name: str, axi_addr_width: int, axi_data_width: int, \
-			asgn_addr_ranges: int, asgn_range_base_addr: list, asgn_range_addr_width: list, clock_domain: str, \
-			  father: Optional["NonLeafBus"] = None):
+	busses_factory = Busses_Factory.get_instance()
+
+	def __init__(self, data_dict: dict, asgn_addr_range: list[Addr_Range], axi_addr_width: int, axi_data_width: int, 
+					father: Optional["NonLeafBus"] = None):
 
 		self.father = father 
 		self.children_busses: list[Bus] = []
 		self.clock_domains: Clock_Domain
+		self.LOOPBACK = data_dict["LOOPBACK"]
 
 		# init Bus object
-		super().__init__(name, base_name, mbus_file_name, axi_addr_width, axi_data_width, \
-				asgn_addr_ranges, asgn_range_base_addr, asgn_range_addr_width, clock_domain)
+		super().__init__(data_dict, asgn_addr_range, axi_addr_width, axi_data_width)
 
-		self.busses_factory = Busses_Factory(self.logger)
 	
-	
-	
-	def check_busses(self, legal_busses: list[str]):
+	def check_busses(self, legal_busses):
 		simply_v_crash = self.logger.simply_v_crash
 
 		for b in self.children_busses:
 			if b.BASE_NAME not in legal_busses:
 				simply_v_crash(f"Unsupported bus {b.NAME} for this bus")
 
-	def check_intra(self):
-		super().check_intra()
 
-		simply_v_crash = self.logger.simply_v_crash
-
-		if self.NUM_MI != len(self.RANGE_CLOCK_DOMAINS):
-			simply_v_crash(f"The NUM_MI value {self.NUM_MI} does not match the number of RANGE_CLOCK_DOMAINS")
-	
-
-	def check_assign_params(self, data_dict: dict):
-		simply_v_crash = self.logger.simply_v_crash
-
-		super().check_assign_params(data_dict)
-		if("RANGE_CLOCK_DOMAINS" not in data_dict):
-			simply_v_crash("RANGE_CLOCK_DOMAINS is mandatory")
-			
-		self.RANGE_CLOCK_DOMAINS = data_dict["RANGE_CLOCK_DOMAINS"].split(" ")
-	
 	def child_enable_loopback(self):
 
 		## Need to set ADDR_RANGES to 2
@@ -152,7 +134,7 @@ class NonLeafBus(Bus):
 						self.RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)], \
 						self.RANGE_CLOCK_DOMAINS[i], self.ADDR_WIDTH, self)
-				if(bus.is_enabled()):
+				if(bus):
 					self.children_busses.append(bus)
 
 			#RANGE_NAME is a peripheral
