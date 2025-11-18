@@ -179,6 +179,48 @@ import uninasoc_pkg::*;
     assign {``bus_name7``_axi_rlast      , ``bus_name6``_axi_rlast      , ``bus_name5``_axi_rlast      , ``bus_name4``_axi_rlast      , ``bus_name3``_axi_rlast      , ``bus_name2``_axi_rlast     , ``bus_name1``_axi_rlast     , ``bus_name0``_axi_rlast    } = ``array_name``_axi_rlast   ; \
     assign {``bus_name7``_axi_rvalid     , ``bus_name6``_axi_rvalid     , ``bus_name5``_axi_rvalid     , ``bus_name4``_axi_rvalid     , ``bus_name3``_axi_rvalid     , ``bus_name2``_axi_rvalid    , ``bus_name1``_axi_rvalid    , ``bus_name0``_axi_rvalid   } = ``array_name``_axi_rvalid  ;
 
+// Concatenate 10 master buses
+`define CONCAT_AXI_MASTERS_ARRAY10(array_name, bus_name9, bus_name8, bus_name7, bus_name6, bus_name5, bus_name4, bus_name3, bus_name2, bus_name1, bus_name0) \
+    assign ``array_name``_axi_awid     = {``bus_name9``_axi_awid      , ``bus_name8``_axi_awid      , ``bus_name7``_axi_awid      , ``bus_name6``_axi_awid      , ``bus_name5``_axi_awid      , ``bus_name4``_axi_awid      , ``bus_name3``_axi_awid      , ``bus_name2``_axi_awid      , ``bus_name1``_axi_awid      , ``bus_name0``_axi_awid     }; \
+    assign ``array_name``_axi_awaddr   = {``bus_name9``_axi_awaddr    , ``bus_name8``_axi_awaddr    , ``bus_name7``_axi_awaddr    , ``bus_name6``_axi_awaddr    , ``bus_name5``_axi_awaddr    , ``bus_name4``_axi_awaddr    , ``bus_name3``_axi_awaddr    , ``bus_name2``_axi_awaddr    , ``bus_name1``_axi_awaddr    , ``bus_name0``_axi_awaddr   }; \
+    assign ``array_name``_axi_awlen    = {``bus_name9``_axi_awlen     , ``bus_name8``_axi_awlen     , ``bus_name7``_axi_awlen     , ``bus_name6``_axi_awlen     , ``bus_name5``_axi_awlen     , ``bus_name4``_axi_awlen     , ``bus_name3``_axi_awlen     , ``bus_name2``_axi_awlen     , ``bus_name1``_axi_awlen     , ``bus_name0``_axi_awlen    }; \
+    assign ``array_name``_axi_awsize   = {``bus_name9``_axi_awsize    , ``bus_name8``_axi_awsize    , ``bus_name7``_axi_awsize    , ``bus_name6``_axi_awsize    , ``bus_name5``_axi_awsize    , ``bus_name4``_axi_awsize    , ``bus_name3``_axi_awsize    , ``bus_name2``_axi_awsize    , ``bus_name1``_axi_awsize    , ``bus_name0``_axi_awsize   }; \
+    assign ``array_name``_axi_awburst  = {``bus_name9``_axi_awburst   , ``bus_name8``_axi_awburst   , ``bus_name7``_axi_awburst   , ``bus_name6``_axi_awburst   , ``bus_name5``_axi_awburst   , ``bus_name4``_axi_awburst   , ``bus_name3``_axi_awburst   , ``bus_name2``_axi_awburst   , ``bus_name1``_axi_awburst   , ``bus_name0``_axi_awburst  }; \
+    assign ``array_name``_axi_awlock   = {``bus_name9``_axi_awlock    , ``bus_name8``_axi_awlock    , ``bus_name7``_axi_awlock    , ``bus_name6``_axi_awlock    , ``bus_name5``_axi_awlock    , ``bus_name4``_axi_awlock    , ``bus_name3``_axi_awlock    , ``bus_name2``_axi_awlock    , ``bus_name1``_axi_awlock    , ``bus_name0``_axi_awlock   }; \
+    assign ``array_name``_axi_awcache  = {``bus_name9``_axi_awcache   , ``bus_name8``_axi_awcache   , ``bus_name7``_axi_awcache   , ``bus_name6``_axi_awcache   , ``bus_name5``_axi_awcache   , ``bus_name4``_axi_awcache   , ``bus_name3``_axi_awcache   , ``bus_name2``_axi_awcache   , ``bus_name1``_axi_awcache   , ``bus_name0``_axi_awcache  }; \
+    assign ``array_name``_axi_awprot   = {``bus_name9``_axi_awprot    , ``bus_name8``_axi_awprot    , ``bus_name7``_axi_awprot    , ``bus_name6``_axi_awprot    , ``bus_name5``_axi_awprot    , ``bus_name4``_axi_awprot    , ``bus_name3``_axi_awprot    , ``bus_name2``_axi_awprot    , ``bus_name1``_axi_awprot    , ``bus_name0``_axi_awprot   }; \
+    assign ``array_name``_axi_awqos    = {``bus_name9``_axi_awqos     , ``bus_name8``_axi_awqos     , ``bus_name7``_axi_awqos     , ``bus_name6``_axi_awqos     , ``bus_name5``_axi_awqos     , ``bus_name4``_axi_awqos     , ``bus_name3``_axi_awqos     , ``bus_name2``_axi_awqos     , ``bus_name1``_axi_awqos     , ``bus_name0``_axi_awqos    }; \
+    assign ``array_name``_axi_awvalid  = {``bus_name9``_axi_awvalid   , ``bus_name8``_axi_awvalid   , ``bus_name7``_axi_awvalid   , ``bus_name6``_axi_awvalid   , ``bus_name5``_axi_awvalid   , ``bus_name4``_axi_awvalid   , ``bus_name3``_axi_awvalid   , ``bus_name2``_axi_awvalid   , ``bus_name1``_axi_awvalid   , ``bus_name0``_axi_awvalid  }; \
+    assign ``array_name``_axi_awregion = {``bus_name9``_axi_awregion  , ``bus_name8``_axi_awregion  , ``bus_name7``_axi_awregion  , ``bus_name6``_axi_awregion  , ``bus_name5``_axi_awregion  , ``bus_name4``_axi_awregion  , ``bus_name3``_axi_awregion  , ``bus_name2``_axi_awregion  , ``bus_name1``_axi_awregion  , ``bus_name0``_axi_awregion }; \
+    assign ``array_name``_axi_wdata    = {``bus_name9``_axi_wdata     , ``bus_name8``_axi_wdata     , ``bus_name7``_axi_wdata     , ``bus_name6``_axi_wdata     , ``bus_name5``_axi_wdata     , ``bus_name4``_axi_wdata     , ``bus_name3``_axi_wdata     , ``bus_name2``_axi_wdata     , ``bus_name1``_axi_wdata     , ``bus_name0``_axi_wdata    }; \
+    assign ``array_name``_axi_wstrb    = {``bus_name9``_axi_wstrb     , ``bus_name8``_axi_wstrb     , ``bus_name7``_axi_wstrb     , ``bus_name6``_axi_wstrb     , ``bus_name5``_axi_wstrb     , ``bus_name4``_axi_wstrb     , ``bus_name3``_axi_wstrb     , ``bus_name2``_axi_wstrb     , ``bus_name1``_axi_wstrb     , ``bus_name0``_axi_wstrb    }; \
+    assign ``array_name``_axi_wlast    = {``bus_name9``_axi_wlast     , ``bus_name8``_axi_wlast     , ``bus_name7``_axi_wlast     , ``bus_name6``_axi_wlast     , ``bus_name5``_axi_wlast     , ``bus_name4``_axi_wlast     , ``bus_name3``_axi_wlast     , ``bus_name2``_axi_wlast     , ``bus_name1``_axi_wlast     , ``bus_name0``_axi_wlast    }; \
+    assign ``array_name``_axi_wvalid   = {``bus_name9``_axi_wvalid    , ``bus_name8``_axi_wvalid    , ``bus_name7``_axi_wvalid    , ``bus_name6``_axi_wvalid    , ``bus_name5``_axi_wvalid    , ``bus_name4``_axi_wvalid    , ``bus_name3``_axi_wvalid    , ``bus_name2``_axi_wvalid    , ``bus_name1``_axi_wvalid    , ``bus_name0``_axi_wvalid   }; \
+    assign ``array_name``_axi_bready   = {``bus_name9``_axi_bready    , ``bus_name8``_axi_bready    , ``bus_name7``_axi_bready    , ``bus_name6``_axi_bready    , ``bus_name5``_axi_bready    , ``bus_name4``_axi_bready    , ``bus_name3``_axi_bready    , ``bus_name2``_axi_bready    , ``bus_name1``_axi_bready    , ``bus_name0``_axi_bready   }; \
+    assign ``array_name``_axi_araddr   = {``bus_name9``_axi_araddr    , ``bus_name8``_axi_araddr    , ``bus_name7``_axi_araddr    , ``bus_name6``_axi_araddr    , ``bus_name5``_axi_araddr    , ``bus_name4``_axi_araddr    , ``bus_name3``_axi_araddr    , ``bus_name2``_axi_araddr    , ``bus_name1``_axi_araddr    , ``bus_name0``_axi_araddr   }; \
+    assign ``array_name``_axi_arlen    = {``bus_name9``_axi_arlen     , ``bus_name8``_axi_arlen     , ``bus_name7``_axi_arlen     , ``bus_name6``_axi_arlen     , ``bus_name5``_axi_arlen     , ``bus_name4``_axi_arlen     , ``bus_name3``_axi_arlen     , ``bus_name2``_axi_arlen     , ``bus_name1``_axi_arlen     , ``bus_name0``_axi_arlen    }; \
+    assign ``array_name``_axi_arsize   = {``bus_name9``_axi_arsize    , ``bus_name8``_axi_arsize    , ``bus_name7``_axi_arsize    , ``bus_name6``_axi_arsize    , ``bus_name5``_axi_arsize    , ``bus_name4``_axi_arsize    , ``bus_name3``_axi_arsize    , ``bus_name2``_axi_arsize    , ``bus_name1``_axi_arsize    , ``bus_name0``_axi_arsize   }; \
+    assign ``array_name``_axi_arburst  = {``bus_name9``_axi_arburst   , ``bus_name8``_axi_arburst   , ``bus_name7``_axi_arburst   , ``bus_name6``_axi_arburst   , ``bus_name5``_axi_arburst   , ``bus_name4``_axi_arburst   , ``bus_name3``_axi_arburst   , ``bus_name2``_axi_arburst   , ``bus_name1``_axi_arburst   , ``bus_name0``_axi_arburst  }; \
+    assign ``array_name``_axi_arlock   = {``bus_name9``_axi_arlock    , ``bus_name8``_axi_arlock    , ``bus_name7``_axi_arlock    , ``bus_name6``_axi_arlock    , ``bus_name5``_axi_arlock    , ``bus_name4``_axi_arlock    , ``bus_name3``_axi_arlock    , ``bus_name2``_axi_arlock    , ``bus_name1``_axi_arlock    , ``bus_name0``_axi_arlock   }; \
+    assign ``array_name``_axi_arcache  = {``bus_name9``_axi_arcache   , ``bus_name8``_axi_arcache   , ``bus_name7``_axi_arcache   , ``bus_name6``_axi_arcache   , ``bus_name5``_axi_arcache   , ``bus_name4``_axi_arcache   , ``bus_name3``_axi_arcache   , ``bus_name2``_axi_arcache   , ``bus_name1``_axi_arcache   , ``bus_name0``_axi_arcache  }; \
+    assign ``array_name``_axi_arprot   = {``bus_name9``_axi_arprot    , ``bus_name8``_axi_arprot    , ``bus_name7``_axi_arprot    , ``bus_name6``_axi_arprot    , ``bus_name5``_axi_arprot    , ``bus_name4``_axi_arprot    , ``bus_name3``_axi_arprot    , ``bus_name2``_axi_arprot    , ``bus_name1``_axi_arprot    , ``bus_name0``_axi_arprot   }; \
+    assign ``array_name``_axi_arqos    = {``bus_name9``_axi_arqos     , ``bus_name8``_axi_arqos     , ``bus_name7``_axi_arqos     , ``bus_name6``_axi_arqos     , ``bus_name5``_axi_arqos     , ``bus_name4``_axi_arqos     , ``bus_name3``_axi_arqos     , ``bus_name2``_axi_arqos     , ``bus_name1``_axi_arqos     , ``bus_name0``_axi_arqos    }; \
+    assign ``array_name``_axi_arvalid  = {``bus_name9``_axi_arvalid   , ``bus_name8``_axi_arvalid   , ``bus_name7``_axi_arvalid   , ``bus_name6``_axi_arvalid   , ``bus_name5``_axi_arvalid   , ``bus_name4``_axi_arvalid   , ``bus_name3``_axi_arvalid   , ``bus_name2``_axi_arvalid   , ``bus_name1``_axi_arvalid   , ``bus_name0``_axi_arvalid  }; \
+    assign ``array_name``_axi_arid     = {``bus_name9``_axi_arid      , ``bus_name8``_axi_arid      , ``bus_name7``_axi_arid      , ``bus_name6``_axi_arid      , ``bus_name5``_axi_arid      , ``bus_name4``_axi_arid      , ``bus_name3``_axi_arid      , ``bus_name2``_axi_arid      , ``bus_name1``_axi_arid      , ``bus_name0``_axi_arid     }; \
+    assign ``array_name``_axi_arregion = {``bus_name9``_axi_arregion  , ``bus_name8``_axi_arregion  , ``bus_name7``_axi_arregion  , ``bus_name6``_axi_arregion  , ``bus_name5``_axi_arregion  , ``bus_name4``_axi_arregion  , ``bus_name3``_axi_arregion  , ``bus_name2``_axi_arregion  , ``bus_name1``_axi_arregion  , ``bus_name0``_axi_arregion }; \
+    assign ``array_name``_axi_rready   = {``bus_name9``_axi_rready    , ``bus_name8``_axi_rready    , ``bus_name7``_axi_rready    , ``bus_name6``_axi_rready    , ``bus_name5``_axi_rready    , ``bus_name4``_axi_rready    , ``bus_name3``_axi_rready    , ``bus_name2``_axi_rready    , ``bus_name1``_axi_rready    , ``bus_name0``_axi_rready   }; \
+    assign {``bus_name9``_axi_awready    , ``bus_name8``_axi_awready    , ``bus_name7``_axi_awready    , ``bus_name6``_axi_awready    , ``bus_name5``_axi_awready   , ``bus_name4``_axi_awready   , ``bus_name3``_axi_awready   , ``bus_name2``_axi_awready   , ``bus_name1``_axi_awready   , ``bus_name0``_axi_awready  } = ``array_name``_axi_awready ; \
+    assign {``bus_name9``_axi_wready     , ``bus_name8``_axi_wready     , ``bus_name7``_axi_wready     , ``bus_name6``_axi_wready     , ``bus_name5``_axi_wready    , ``bus_name4``_axi_wready    , ``bus_name3``_axi_wready    , ``bus_name2``_axi_wready    , ``bus_name1``_axi_wready    , ``bus_name0``_axi_wready   } = ``array_name``_axi_wready  ; \
+    assign {``bus_name9``_axi_bid        , ``bus_name8``_axi_bid        , ``bus_name7``_axi_bid        , ``bus_name6``_axi_bid        , ``bus_name5``_axi_bid       , ``bus_name4``_axi_bid       , ``bus_name3``_axi_bid       , ``bus_name2``_axi_bid       , ``bus_name1``_axi_bid       , ``bus_name0``_axi_bid      } = ``array_name``_axi_bid     ; \
+    assign {``bus_name9``_axi_bresp      , ``bus_name8``_axi_bresp      , ``bus_name7``_axi_bresp      , ``bus_name6``_axi_bresp      , ``bus_name5``_axi_bresp     , ``bus_name4``_axi_bresp     , ``bus_name3``_axi_bresp     , ``bus_name2``_axi_bresp     , ``bus_name1``_axi_bresp     , ``bus_name0``_axi_bresp    } = ``array_name``_axi_bresp   ; \
+    assign {``bus_name9``_axi_bvalid     , ``bus_name8``_axi_bvalid     , ``bus_name7``_axi_bvalid     , ``bus_name6``_axi_bvalid     , ``bus_name5``_axi_bvalid    , ``bus_name4``_axi_bvalid    , ``bus_name3``_axi_bvalid    , ``bus_name2``_axi_bvalid    , ``bus_name1``_axi_bvalid    , ``bus_name0``_axi_bvalid   } = ``array_name``_axi_bvalid  ; \
+    assign {``bus_name9``_axi_arready    , ``bus_name8``_axi_arready    , ``bus_name7``_axi_arready    , ``bus_name6``_axi_arready    , ``bus_name5``_axi_arready   , ``bus_name4``_axi_arready   , ``bus_name3``_axi_arready   , ``bus_name2``_axi_arready   , ``bus_name1``_axi_arready   , ``bus_name0``_axi_arready  } = ``array_name``_axi_arready ; \
+    assign {``bus_name9``_axi_rid        , ``bus_name8``_axi_rid        , ``bus_name7``_axi_rid        , ``bus_name6``_axi_rid        , ``bus_name5``_axi_rid       , ``bus_name4``_axi_rid       , ``bus_name3``_axi_rid       , ``bus_name2``_axi_rid       , ``bus_name1``_axi_rid       , ``bus_name0``_axi_rid      } = ``array_name``_axi_rid     ; \
+    assign {``bus_name9``_axi_rdata      , ``bus_name8``_axi_rdata      , ``bus_name7``_axi_rdata      , ``bus_name6``_axi_rdata      , ``bus_name5``_axi_rdata     , ``bus_name4``_axi_rdata     , ``bus_name3``_axi_rdata     , ``bus_name2``_axi_rdata     , ``bus_name1``_axi_rdata     , ``bus_name0``_axi_rdata    } = ``array_name``_axi_rdata   ; \
+    assign {``bus_name9``_axi_rresp      , ``bus_name8``_axi_rresp      , ``bus_name7``_axi_rresp      , ``bus_name6``_axi_rresp      , ``bus_name5``_axi_rresp     , ``bus_name4``_axi_rresp     , ``bus_name3``_axi_rresp     , ``bus_name2``_axi_rresp     , ``bus_name1``_axi_rresp     , ``bus_name0``_axi_rresp    } = ``array_name``_axi_rresp   ; \
+    assign {``bus_name9``_axi_rlast      , ``bus_name8``_axi_rlast      , ``bus_name7``_axi_rlast      , ``bus_name6``_axi_rlast      , ``bus_name5``_axi_rlast     , ``bus_name4``_axi_rlast     , ``bus_name3``_axi_rlast     , ``bus_name2``_axi_rlast     , ``bus_name1``_axi_rlast     , ``bus_name0``_axi_rlast    } = ``array_name``_axi_rlast   ; \
+    assign {``bus_name9``_axi_rvalid     , ``bus_name8``_axi_rvalid     , ``bus_name7``_axi_rvalid     , ``bus_name6``_axi_rvalid     , ``bus_name5``_axi_rvalid    , ``bus_name4``_axi_rvalid    , ``bus_name3``_axi_rvalid    , ``bus_name2``_axi_rvalid    , ``bus_name1``_axi_rvalid    , ``bus_name0``_axi_rvalid   } = ``array_name``_axi_rvalid  ;
+
 // Concatenate 12 slave buses
 `define CONCAT_AXI_SLAVES_ARRAY12(array_name, bus_name11, bus_name10, bus_name9, bus_name8, bus_name7, bus_name6, bus_name5, bus_name4, bus_name3, bus_name2, bus_name1, bus_name0) \
     assign {``bus_name11``_axi_awid    , ``bus_name10``_axi_awid    , ``bus_name9``_axi_awid    , ``bus_name8``_axi_awid    , \
@@ -340,6 +382,47 @@ import uninasoc_pkg::*;
     assign {``bus_name11``_axi_rresp      , ``bus_name10``_axi_rresp      , ``bus_name9``_axi_rresp      , ``bus_name8``_axi_rresp      , ``bus_name7``_axi_rresp      , ``bus_name6``_axi_rresp     , ``bus_name5``_axi_rresp     , ``bus_name4``_axi_rresp     , ``bus_name3``_axi_rresp     , ``bus_name2``_axi_rresp     , ``bus_name1``_axi_rresp     , ``bus_name0``_axi_rresp    } = ``array_name``_axi_rresp   ; \
     assign {``bus_name11``_axi_rlast      , ``bus_name10``_axi_rlast      , ``bus_name9``_axi_rlast      , ``bus_name8``_axi_rlast      , ``bus_name7``_axi_rlast      , ``bus_name6``_axi_rlast     , ``bus_name5``_axi_rlast     , ``bus_name4``_axi_rlast     , ``bus_name3``_axi_rlast     , ``bus_name2``_axi_rlast     , ``bus_name1``_axi_rlast     , ``bus_name0``_axi_rlast    } = ``array_name``_axi_rlast   ; \
     assign {``bus_name11``_axi_rvalid     , ``bus_name10``_axi_rvalid     , ``bus_name9``_axi_rvalid     , ``bus_name8``_axi_rvalid     , ``bus_name7``_axi_rvalid     , ``bus_name6``_axi_rvalid    , ``bus_name5``_axi_rvalid    , ``bus_name4``_axi_rvalid    , ``bus_name3``_axi_rvalid    , ``bus_name2``_axi_rvalid    , ``bus_name1``_axi_rvalid    , ``bus_name0``_axi_rvalid   } = ``array_name``_axi_rvalid  ;
+
+`define CONCAT_AXI_MASTERS_ARRAY14(array_name, bus_name13, bus_name12, bus_name11, bus_name10, bus_name9, bus_name8, bus_name7, bus_name6, bus_name5, bus_name4, bus_name3, bus_name2, bus_name1, bus_name0) \
+        assign ``array_name``_axi_awid     = {``bus_name13``_axi_awid      , ``bus_name12``_axi_awid      , ``bus_name11``_axi_awid      , ``bus_name10``_axi_awid      , ``bus_name9``_axi_awid      , ``bus_name8``_axi_awid      , ``bus_name7``_axi_awid      , ``bus_name6``_axi_awid      , ``bus_name5``_axi_awid      , ``bus_name4``_axi_awid      , ``bus_name3``_axi_awid      , ``bus_name2``_axi_awid      , ``bus_name1``_axi_awid      , ``bus_name0``_axi_awid     }; \
+        assign ``array_name``_axi_awaddr   = {``bus_name13``_axi_awaddr    , ``bus_name12``_axi_awaddr    , ``bus_name11``_axi_awaddr    , ``bus_name10``_axi_awaddr    , ``bus_name9``_axi_awaddr    , ``bus_name8``_axi_awaddr    , ``bus_name7``_axi_awaddr    , ``bus_name6``_axi_awaddr    , ``bus_name5``_axi_awaddr    , ``bus_name4``_axi_awaddr    , ``bus_name3``_axi_awaddr    , ``bus_name2``_axi_awaddr    , ``bus_name1``_axi_awaddr    , ``bus_name0``_axi_awaddr   }; \
+        assign ``array_name``_axi_awlen    = {``bus_name13``_axi_awlen     , ``bus_name12``_axi_awlen     , ``bus_name11``_axi_awlen     , ``bus_name10``_axi_awlen     , ``bus_name9``_axi_awlen     , ``bus_name8``_axi_awlen     , ``bus_name7``_axi_awlen     , ``bus_name6``_axi_awlen     , ``bus_name5``_axi_awlen     , ``bus_name4``_axi_awlen     , ``bus_name3``_axi_awlen     , ``bus_name2``_axi_awlen     , ``bus_name1``_axi_awlen     , ``bus_name0``_axi_awlen    }; \
+        assign ``array_name``_axi_awsize   = {``bus_name13``_axi_awsize    , ``bus_name12``_axi_awsize    , ``bus_name11``_axi_awsize    , ``bus_name10``_axi_awsize    , ``bus_name9``_axi_awsize    , ``bus_name8``_axi_awsize    , ``bus_name7``_axi_awsize    , ``bus_name6``_axi_awsize    , ``bus_name5``_axi_awsize    , ``bus_name4``_axi_awsize    , ``bus_name3``_axi_awsize    , ``bus_name2``_axi_awsize    , ``bus_name1``_axi_awsize    , ``bus_name0``_axi_awsize   }; \
+        assign ``array_name``_axi_awburst  = {``bus_name13``_axi_awburst   , ``bus_name12``_axi_awburst   , ``bus_name11``_axi_awburst   , ``bus_name10``_axi_awburst   , ``bus_name9``_axi_awburst   , ``bus_name8``_axi_awburst   , ``bus_name7``_axi_awburst   , ``bus_name6``_axi_awburst   , ``bus_name5``_axi_awburst   , ``bus_name4``_axi_awburst   , ``bus_name3``_axi_awburst   , ``bus_name2``_axi_awburst   , ``bus_name1``_axi_awburst   , ``bus_name0``_axi_awburst  }; \
+        assign ``array_name``_axi_awlock   = {``bus_name13``_axi_awlock    , ``bus_name12``_axi_awlock    , ``bus_name11``_axi_awlock    , ``bus_name10``_axi_awlock    , ``bus_name9``_axi_awlock    , ``bus_name8``_axi_awlock    , ``bus_name7``_axi_awlock    , ``bus_name6``_axi_awlock    , ``bus_name5``_axi_awlock    , ``bus_name4``_axi_awlock    , ``bus_name3``_axi_awlock    , ``bus_name2``_axi_awlock    , ``bus_name1``_axi_awlock    , ``bus_name0``_axi_awlock   }; \
+        assign ``array_name``_axi_awcache  = {``bus_name13``_axi_awcache   , ``bus_name12``_axi_awcache   , ``bus_name11``_axi_awcache   , ``bus_name10``_axi_awcache   , ``bus_name9``_axi_awcache   , ``bus_name8``_axi_awcache   , ``bus_name7``_axi_awcache   , ``bus_name6``_axi_awcache   , ``bus_name5``_axi_awcache   , ``bus_name4``_axi_awcache   , ``bus_name3``_axi_awcache   , ``bus_name2``_axi_awcache   , ``bus_name1``_axi_awcache   , ``bus_name0``_axi_awcache  }; \
+        assign ``array_name``_axi_awprot   = {``bus_name13``_axi_awprot    , ``bus_name12``_axi_awprot    , ``bus_name11``_axi_awprot    , ``bus_name10``_axi_awprot    , ``bus_name9``_axi_awprot    , ``bus_name8``_axi_awprot    , ``bus_name7``_axi_awprot    , ``bus_name6``_axi_awprot    , ``bus_name5``_axi_awprot    , ``bus_name4``_axi_awprot    , ``bus_name3``_axi_awprot    , ``bus_name2``_axi_awprot    , ``bus_name1``_axi_awprot    , ``bus_name0``_axi_awprot   }; \
+        assign ``array_name``_axi_awqos    = {``bus_name13``_axi_awqos     , ``bus_name12``_axi_awqos     , ``bus_name11``_axi_awqos     , ``bus_name10``_axi_awqos     , ``bus_name9``_axi_awqos     , ``bus_name8``_axi_awqos     , ``bus_name7``_axi_awqos     , ``bus_name6``_axi_awqos     , ``bus_name5``_axi_awqos     , ``bus_name4``_axi_awqos     , ``bus_name3``_axi_awqos     , ``bus_name2``_axi_awqos     , ``bus_name1``_axi_awqos     , ``bus_name0``_axi_awqos    }; \
+        assign ``array_name``_axi_awvalid  = {``bus_name13``_axi_awvalid   , ``bus_name12``_axi_awvalid   , ``bus_name11``_axi_awvalid   , ``bus_name10``_axi_awvalid   , ``bus_name9``_axi_awvalid   , ``bus_name8``_axi_awvalid   , ``bus_name7``_axi_awvalid   , ``bus_name6``_axi_awvalid   , ``bus_name5``_axi_awvalid   , ``bus_name4``_axi_awvalid   , ``bus_name3``_axi_awvalid   , ``bus_name2``_axi_awvalid   , ``bus_name1``_axi_awvalid   , ``bus_name0``_axi_awvalid  }; \
+        assign ``array_name``_axi_awregion = {``bus_name13``_axi_awregion  , ``bus_name12``_axi_awregion  , ``bus_name11``_axi_awregion  , ``bus_name10``_axi_awregion  , ``bus_name9``_axi_awregion  , ``bus_name8``_axi_awregion  , ``bus_name7``_axi_awregion  , ``bus_name6``_axi_awregion  , ``bus_name5``_axi_awregion  , ``bus_name4``_axi_awregion  , ``bus_name3``_axi_awregion  , ``bus_name2``_axi_awregion  , ``bus_name1``_axi_awregion  , ``bus_name0``_axi_awregion }; \
+        assign ``array_name``_axi_wdata    = {``bus_name13``_axi_wdata     , ``bus_name12``_axi_wdata     , ``bus_name11``_axi_wdata     , ``bus_name10``_axi_wdata     , ``bus_name9``_axi_wdata     , ``bus_name8``_axi_wdata     , ``bus_name7``_axi_wdata     , ``bus_name6``_axi_wdata     , ``bus_name5``_axi_wdata     , ``bus_name4``_axi_wdata     , ``bus_name3``_axi_wdata     , ``bus_name2``_axi_wdata     , ``bus_name1``_axi_wdata     , ``bus_name0``_axi_wdata    }; \
+        assign ``array_name``_axi_wstrb    = {``bus_name13``_axi_wstrb     , ``bus_name12``_axi_wstrb     , ``bus_name11``_axi_wstrb     , ``bus_name10``_axi_wstrb     , ``bus_name9``_axi_wstrb     , ``bus_name8``_axi_wstrb     , ``bus_name7``_axi_wstrb     , ``bus_name6``_axi_wstrb     , ``bus_name5``_axi_wstrb     , ``bus_name4``_axi_wstrb     , ``bus_name3``_axi_wstrb     , ``bus_name2``_axi_wstrb     , ``bus_name1``_axi_wstrb     , ``bus_name0``_axi_wstrb    }; \
+        assign ``array_name``_axi_wlast    = {``bus_name13``_axi_wlast     , ``bus_name12``_axi_wlast     , ``bus_name11``_axi_wlast     , ``bus_name10``_axi_wlast     , ``bus_name9``_axi_wlast     , ``bus_name8``_axi_wlast     , ``bus_name7``_axi_wlast     , ``bus_name6``_axi_wlast     , ``bus_name5``_axi_wlast     , ``bus_name4``_axi_wlast     , ``bus_name3``_axi_wlast     , ``bus_name2``_axi_wlast     , ``bus_name1``_axi_wlast     , ``bus_name0``_axi_wlast    }; \
+        assign ``array_name``_axi_wvalid   = {``bus_name13``_axi_wvalid    , ``bus_name12``_axi_wvalid    , ``bus_name11``_axi_wvalid    , ``bus_name10``_axi_wvalid    , ``bus_name9``_axi_wvalid    , ``bus_name8``_axi_wvalid    , ``bus_name7``_axi_wvalid    , ``bus_name6``_axi_wvalid    , ``bus_name5``_axi_wvalid    , ``bus_name4``_axi_wvalid    , ``bus_name3``_axi_wvalid    , ``bus_name2``_axi_wvalid    , ``bus_name1``_axi_wvalid    , ``bus_name0``_axi_wvalid   }; \
+        assign ``array_name``_axi_bready   = {``bus_name13``_axi_bready    , ``bus_name12``_axi_bready    , ``bus_name11``_axi_bready    , ``bus_name10``_axi_bready    , ``bus_name9``_axi_bready    , ``bus_name8``_axi_bready    , ``bus_name7``_axi_bready    , ``bus_name6``_axi_bready    , ``bus_name5``_axi_bready    , ``bus_name4``_axi_bready    , ``bus_name3``_axi_bready    , ``bus_name2``_axi_bready    , ``bus_name1``_axi_bready    , ``bus_name0``_axi_bready   }; \
+        assign ``array_name``_axi_araddr   = {``bus_name13``_axi_araddr    , ``bus_name12``_axi_araddr    , ``bus_name11``_axi_araddr    , ``bus_name10``_axi_araddr    , ``bus_name9``_axi_araddr    , ``bus_name8``_axi_araddr    , ``bus_name7``_axi_araddr    , ``bus_name6``_axi_araddr    , ``bus_name5``_axi_araddr    , ``bus_name4``_axi_araddr    , ``bus_name3``_axi_araddr    , ``bus_name2``_axi_araddr    , ``bus_name1``_axi_araddr    , ``bus_name0``_axi_araddr   }; \
+        assign ``array_name``_axi_arlen    = {``bus_name13``_axi_arlen     , ``bus_name12``_axi_arlen     , ``bus_name11``_axi_arlen     , ``bus_name10``_axi_arlen     , ``bus_name9``_axi_arlen     , ``bus_name8``_axi_arlen     , ``bus_name7``_axi_arlen     , ``bus_name6``_axi_arlen     , ``bus_name5``_axi_arlen     , ``bus_name4``_axi_arlen     , ``bus_name3``_axi_arlen     , ``bus_name2``_axi_arlen     , ``bus_name1``_axi_arlen     , ``bus_name0``_axi_arlen    }; \
+        assign ``array_name``_axi_arsize   = {``bus_name13``_axi_arsize    , ``bus_name12``_axi_arsize    , ``bus_name11``_axi_arsize    , ``bus_name10``_axi_arsize    , ``bus_name9``_axi_arsize    , ``bus_name8``_axi_arsize    , ``bus_name7``_axi_arsize    , ``bus_name6``_axi_arsize    , ``bus_name5``_axi_arsize    , ``bus_name4``_axi_arsize    , ``bus_name3``_axi_arsize    , ``bus_name2``_axi_arsize    , ``bus_name1``_axi_arsize    , ``bus_name0``_axi_arsize   }; \
+        assign ``array_name``_axi_arburst  = {``bus_name13``_axi_arburst   , ``bus_name12``_axi_arburst   , ``bus_name11``_axi_arburst   , ``bus_name10``_axi_arburst   , ``bus_name9``_axi_arburst   , ``bus_name8``_axi_arburst   , ``bus_name7``_axi_arburst   , ``bus_name6``_axi_arburst   , ``bus_name5``_axi_arburst   , ``bus_name4``_axi_arburst   , ``bus_name3``_axi_arburst   , ``bus_name2``_axi_arburst   , ``bus_name1``_axi_arburst   , ``bus_name0``_axi_arburst  }; \
+        assign ``array_name``_axi_arlock   = {``bus_name13``_axi_arlock    , ``bus_name12``_axi_arlock    , ``bus_name11``_axi_arlock    , ``bus_name10``_axi_arlock    , ``bus_name9``_axi_arlock    , ``bus_name8``_axi_arlock    , ``bus_name7``_axi_arlock    , ``bus_name6``_axi_arlock    , ``bus_name5``_axi_arlock    , ``bus_name4``_axi_arlock    , ``bus_name3``_axi_arlock    , ``bus_name2``_axi_arlock    , ``bus_name1``_axi_arlock    , ``bus_name0``_axi_arlock   }; \
+        assign ``array_name``_axi_arcache  = {``bus_name13``_axi_arcache   , ``bus_name12``_axi_arcache   , ``bus_name11``_axi_arcache   , ``bus_name10``_axi_arcache   , ``bus_name9``_axi_arcache   , ``bus_name8``_axi_arcache   , ``bus_name7``_axi_arcache   , ``bus_name6``_axi_arcache   , ``bus_name5``_axi_arcache   , ``bus_name4``_axi_arcache   , ``bus_name3``_axi_arcache   , ``bus_name2``_axi_arcache   , ``bus_name1``_axi_arcache   , ``bus_name0``_axi_arcache  }; \
+        assign ``array_name``_axi_arprot   = {``bus_name13``_axi_arprot    , ``bus_name12``_axi_arprot    , ``bus_name11``_axi_arprot    , ``bus_name10``_axi_arprot    , ``bus_name9``_axi_arprot    , ``bus_name8``_axi_arprot    , ``bus_name7``_axi_arprot    , ``bus_name6``_axi_arprot    , ``bus_name5``_axi_arprot    , ``bus_name4``_axi_arprot    , ``bus_name3``_axi_arprot    , ``bus_name2``_axi_arprot    , ``bus_name1``_axi_arprot    , ``bus_name0``_axi_arprot   }; \
+        assign ``array_name``_axi_arqos    = {``bus_name13``_axi_arqos     , ``bus_name12``_axi_arqos     , ``bus_name11``_axi_arqos     , ``bus_name10``_axi_arqos     , ``bus_name9``_axi_arqos     , ``bus_name8``_axi_arqos     , ``bus_name7``_axi_arqos     , ``bus_name6``_axi_arqos     , ``bus_name5``_axi_arqos     , ``bus_name4``_axi_arqos     , ``bus_name3``_axi_arqos     , ``bus_name2``_axi_arqos     , ``bus_name1``_axi_arqos     , ``bus_name0``_axi_arqos    }; \
+        assign ``array_name``_axi_arvalid  = {``bus_name13``_axi_arvalid   , ``bus_name12``_axi_arvalid   , ``bus_name11``_axi_arvalid   , ``bus_name10``_axi_arvalid   , ``bus_name9``_axi_arvalid   , ``bus_name8``_axi_arvalid   , ``bus_name7``_axi_arvalid   , ``bus_name6``_axi_arvalid   , ``bus_name5``_axi_arvalid   , ``bus_name4``_axi_arvalid   , ``bus_name3``_axi_arvalid   , ``bus_name2``_axi_arvalid   , ``bus_name1``_axi_arvalid   , ``bus_name0``_axi_arvalid  }; \
+        assign ``array_name``_axi_arid     = {``bus_name13``_axi_arid      , ``bus_name12``_axi_arid      , ``bus_name11``_axi_arid      , ``bus_name10``_axi_arid      , ``bus_name9``_axi_arid      , ``bus_name8``_axi_arid      , ``bus_name7``_axi_arid      , ``bus_name6``_axi_arid      , ``bus_name5``_axi_arid      , ``bus_name4``_axi_arid      , ``bus_name3``_axi_arid      , ``bus_name2``_axi_arid      , ``bus_name1``_axi_arid      , ``bus_name0``_axi_arid     }; \
+        assign ``array_name``_axi_arregion = {``bus_name13``_axi_arregion  , ``bus_name12``_axi_arregion  , ``bus_name11``_axi_arregion  , ``bus_name10``_axi_arregion  , ``bus_name9``_axi_arregion  , ``bus_name8``_axi_arregion  , ``bus_name7``_axi_arregion  , ``bus_name6``_axi_arregion  , ``bus_name5``_axi_arregion  , ``bus_name4``_axi_arregion  , ``bus_name3``_axi_arregion  , ``bus_name2``_axi_arregion  , ``bus_name1``_axi_arregion  , ``bus_name0``_axi_arregion }; \
+        assign ``array_name``_axi_rready   = {``bus_name13``_axi_rready    , ``bus_name12``_axi_rready    , ``bus_name11``_axi_rready    , ``bus_name10``_axi_rready    , ``bus_name9``_axi_rready    , ``bus_name8``_axi_rready    , ``bus_name7``_axi_rready    , ``bus_name6``_axi_rready    , ``bus_name5``_axi_rready    , ``bus_name4``_axi_rready    , ``bus_name3``_axi_rready    , ``bus_name2``_axi_rready    , ``bus_name1``_axi_rready    , ``bus_name0``_axi_rready   }; \
+        assign {``bus_name13``_axi_awready    , ``bus_name12``_axi_awready    , ``bus_name11``_axi_awready    , ``bus_name10``_axi_awready    , ``bus_name9``_axi_awready    , ``bus_name8``_axi_awready   , ``bus_name7``_axi_awready   , ``bus_name6``_axi_awready   , ``bus_name5``_axi_awready   , ``bus_name4``_axi_awready   , ``bus_name3``_axi_awready   , ``bus_name2``_axi_awready   , ``bus_name1``_axi_awready   , ``bus_name0``_axi_awready  } = ``array_name``_axi_awready ; \
+        assign {``bus_name13``_axi_wready     , ``bus_name12``_axi_wready     , ``bus_name11``_axi_wready     , ``bus_name10``_axi_wready     , ``bus_name9``_axi_wready     , ``bus_name8``_axi_wready    , ``bus_name7``_axi_wready    , ``bus_name6``_axi_wready    , ``bus_name5``_axi_wready    , ``bus_name4``_axi_wready    , ``bus_name3``_axi_wready    , ``bus_name2``_axi_wready    , ``bus_name1``_axi_wready    , ``bus_name0``_axi_wready   } = ``array_name``_axi_wready  ; \
+        assign {``bus_name13``_axi_bid        , ``bus_name12``_axi_bid        , ``bus_name11``_axi_bid        , ``bus_name10``_axi_bid        , ``bus_name9``_axi_bid        , ``bus_name8``_axi_bid       , ``bus_name7``_axi_bid       , ``bus_name6``_axi_bid       , ``bus_name5``_axi_bid       , ``bus_name4``_axi_bid       , ``bus_name3``_axi_bid       , ``bus_name2``_axi_bid       , ``bus_name1``_axi_bid       , ``bus_name0``_axi_bid      } = ``array_name``_axi_bid     ; \
+        assign {``bus_name13``_axi_bresp      , ``bus_name12``_axi_bresp      , ``bus_name11``_axi_bresp      , ``bus_name10``_axi_bresp      , ``bus_name9``_axi_bresp      , ``bus_name8``_axi_bresp     , ``bus_name7``_axi_bresp     , ``bus_name6``_axi_bresp     , ``bus_name5``_axi_bresp     , ``bus_name4``_axi_bresp     , ``bus_name3``_axi_bresp     , ``bus_name2``_axi_bresp     , ``bus_name1``_axi_bresp     , ``bus_name0``_axi_bresp    } = ``array_name``_axi_bresp   ; \
+        assign {``bus_name13``_axi_bvalid     , ``bus_name12``_axi_bvalid     , ``bus_name11``_axi_bvalid     , ``bus_name10``_axi_bvalid     , ``bus_name9``_axi_bvalid     , ``bus_name8``_axi_bvalid    , ``bus_name7``_axi_bvalid    , ``bus_name6``_axi_bvalid    , ``bus_name5``_axi_bvalid    , ``bus_name4``_axi_bvalid    , ``bus_name3``_axi_bvalid    , ``bus_name2``_axi_bvalid    , ``bus_name1``_axi_bvalid    , ``bus_name0``_axi_bvalid   } = ``array_name``_axi_bvalid  ; \
+        assign {``bus_name13``_axi_arready    , ``bus_name12``_axi_arready    , ``bus_name11``_axi_arready    , ``bus_name10``_axi_arready    , ``bus_name9``_axi_arready    , ``bus_name8``_axi_arready   , ``bus_name7``_axi_arready   , ``bus_name6``_axi_arready   , ``bus_name5``_axi_arready   , ``bus_name4``_axi_arready   , ``bus_name3``_axi_arready   , ``bus_name2``_axi_arready   , ``bus_name1``_axi_arready   , ``bus_name0``_axi_arready  } = ``array_name``_axi_arready ; \
+        assign {``bus_name13``_axi_rid        , ``bus_name12``_axi_rid        , ``bus_name11``_axi_rid        , ``bus_name10``_axi_rid        , ``bus_name9``_axi_rid        , ``bus_name8``_axi_rid       , ``bus_name7``_axi_rid       , ``bus_name6``_axi_rid       , ``bus_name5``_axi_rid       , ``bus_name4``_axi_rid       , ``bus_name3``_axi_rid       , ``bus_name2``_axi_rid       , ``bus_name1``_axi_rid       , ``bus_name0``_axi_rid      } = ``array_name``_axi_rid     ; \
+        assign {``bus_name13``_axi_rdata      , ``bus_name12``_axi_rdata      , ``bus_name11``_axi_rdata      , ``bus_name10``_axi_rdata      , ``bus_name9``_axi_rdata      , ``bus_name8``_axi_rdata     , ``bus_name7``_axi_rdata     , ``bus_name6``_axi_rdata     , ``bus_name5``_axi_rdata     , ``bus_name4``_axi_rdata     , ``bus_name3``_axi_rdata     , ``bus_name2``_axi_rdata     , ``bus_name1``_axi_rdata     , ``bus_name0``_axi_rdata    } = ``array_name``_axi_rdata   ; \
+        assign {``bus_name13``_axi_rresp      , ``bus_name12``_axi_rresp      , ``bus_name11``_axi_rresp      , ``bus_name10``_axi_rresp      , ``bus_name9``_axi_rresp      , ``bus_name8``_axi_rresp     , ``bus_name7``_axi_rresp     , ``bus_name6``_axi_rresp     , ``bus_name5``_axi_rresp     , ``bus_name4``_axi_rresp     , ``bus_name3``_axi_rresp     , ``bus_name2``_axi_rresp     , ``bus_name1``_axi_rresp     , ``bus_name0``_axi_rresp    } = ``array_name``_axi_rresp   ; \
+        assign {``bus_name13``_axi_rlast      , ``bus_name12``_axi_rlast      , ``bus_name11``_axi_rlast      , ``bus_name10``_axi_rlast      , ``bus_name9``_axi_rlast      , ``bus_name8``_axi_rlast     , ``bus_name7``_axi_rlast     , ``bus_name6``_axi_rlast     , ``bus_name5``_axi_rlast     , ``bus_name4``_axi_rlast     , ``bus_name3``_axi_rlast     , ``bus_name2``_axi_rlast     , ``bus_name1``_axi_rlast     , ``bus_name0``_axi_rlast    } = ``array_name``_axi_rlast   ; \
+        assign {``bus_name13``_axi_rvalid     , ``bus_name12``_axi_rvalid     , ``bus_name11``_axi_rvalid     , ``bus_name10``_axi_rvalid     , ``bus_name9``_axi_rvalid     , ``bus_name8``_axi_rvalid    , ``bus_name7``_axi_rvalid    , ``bus_name6``_axi_rvalid    , ``bus_name5``_axi_rvalid    , ``bus_name4``_axi_rvalid    , ``bus_name3``_axi_rvalid    , ``bus_name2``_axi_rvalid    , ``bus_name1``_axi_rvalid    , ``bus_name0``_axi_rvalid   } = ``array_name``_axi_rvalid  ;
 
 `ifdef HPC
     `include "uninasoc_pcie.svh"
@@ -635,168 +718,13 @@ module uninasoc (
         .irq_i          ( rv_socket_interrupt_line ),
 
         // Instruction AXI Port
-        .rv_socket_instr_axi_awid      ( RV_SOCKET_INSTR_to_MBUS_axi_awid     ),
-        .rv_socket_instr_axi_awaddr    ( RV_SOCKET_INSTR_to_MBUS_axi_awaddr   ),
-        .rv_socket_instr_axi_awlen     ( RV_SOCKET_INSTR_to_MBUS_axi_awlen    ),
-        .rv_socket_instr_axi_awsize    ( RV_SOCKET_INSTR_to_MBUS_axi_awsize   ),
-        .rv_socket_instr_axi_awburst   ( RV_SOCKET_INSTR_to_MBUS_axi_awburst  ),
-        .rv_socket_instr_axi_awlock    ( RV_SOCKET_INSTR_to_MBUS_axi_awlock   ),
-        .rv_socket_instr_axi_awcache   ( RV_SOCKET_INSTR_to_MBUS_axi_awcache  ),
-        .rv_socket_instr_axi_awprot    ( RV_SOCKET_INSTR_to_MBUS_axi_awprot   ),
-        .rv_socket_instr_axi_awqos     ( RV_SOCKET_INSTR_to_MBUS_axi_awqos    ),
-        .rv_socket_instr_axi_awvalid   ( RV_SOCKET_INSTR_to_MBUS_axi_awvalid  ),
-        .rv_socket_instr_axi_awready   ( RV_SOCKET_INSTR_to_MBUS_axi_awready  ),
-        .rv_socket_instr_axi_awregion  ( RV_SOCKET_INSTR_to_MBUS_axi_awregion ),
-        .rv_socket_instr_axi_wdata     ( RV_SOCKET_INSTR_to_MBUS_axi_wdata    ),
-        .rv_socket_instr_axi_wstrb     ( RV_SOCKET_INSTR_to_MBUS_axi_wstrb    ),
-        .rv_socket_instr_axi_wlast     ( RV_SOCKET_INSTR_to_MBUS_axi_wlast    ),
-        .rv_socket_instr_axi_wvalid    ( RV_SOCKET_INSTR_to_MBUS_axi_wvalid   ),
-        .rv_socket_instr_axi_wready    ( RV_SOCKET_INSTR_to_MBUS_axi_wready   ),
-        .rv_socket_instr_axi_bid       ( RV_SOCKET_INSTR_to_MBUS_axi_bid      ),
-        .rv_socket_instr_axi_bresp     ( RV_SOCKET_INSTR_to_MBUS_axi_bresp    ),
-        .rv_socket_instr_axi_bvalid    ( RV_SOCKET_INSTR_to_MBUS_axi_bvalid   ),
-        .rv_socket_instr_axi_bready    ( RV_SOCKET_INSTR_to_MBUS_axi_bready   ),
-        .rv_socket_instr_axi_arid      ( RV_SOCKET_INSTR_to_MBUS_axi_arid     ),
-        .rv_socket_instr_axi_araddr    ( RV_SOCKET_INSTR_to_MBUS_axi_araddr   ),
-        .rv_socket_instr_axi_arlen     ( RV_SOCKET_INSTR_to_MBUS_axi_arlen    ),
-        .rv_socket_instr_axi_arsize    ( RV_SOCKET_INSTR_to_MBUS_axi_arsize   ),
-        .rv_socket_instr_axi_arburst   ( RV_SOCKET_INSTR_to_MBUS_axi_arburst  ),
-        .rv_socket_instr_axi_arlock    ( RV_SOCKET_INSTR_to_MBUS_axi_arlock   ),
-        .rv_socket_instr_axi_arcache   ( RV_SOCKET_INSTR_to_MBUS_axi_arcache  ),
-        .rv_socket_instr_axi_arprot    ( RV_SOCKET_INSTR_to_MBUS_axi_arprot   ),
-        .rv_socket_instr_axi_arqos     ( RV_SOCKET_INSTR_to_MBUS_axi_arqos    ),
-        .rv_socket_instr_axi_arvalid   ( RV_SOCKET_INSTR_to_MBUS_axi_arvalid  ),
-        .rv_socket_instr_axi_arready   ( RV_SOCKET_INSTR_to_MBUS_axi_arready  ),
-        .rv_socket_instr_axi_arregion  ( RV_SOCKET_INSTR_to_MBUS_axi_arregion ),
-        .rv_socket_instr_axi_rid       ( RV_SOCKET_INSTR_to_MBUS_axi_rid      ),
-        .rv_socket_instr_axi_rdata     ( RV_SOCKET_INSTR_to_MBUS_axi_rdata    ),
-        .rv_socket_instr_axi_rresp     ( RV_SOCKET_INSTR_to_MBUS_axi_rresp    ),
-        .rv_socket_instr_axi_rlast     ( RV_SOCKET_INSTR_to_MBUS_axi_rlast    ),
-        .rv_socket_instr_axi_rvalid    ( RV_SOCKET_INSTR_to_MBUS_axi_rvalid   ),
-        .rv_socket_instr_axi_rready    ( RV_SOCKET_INSTR_to_MBUS_axi_rready   ),
-
+        `ASSIGN_AXI_PORT(rv_socket_instr, RV_SOCKET_INSTR_to_MBUS),
         // Data AXI Port
-        .rv_socket_data_axi_awid      ( RV_SOCKET_DATA_to_MBUS_axi_awid     ),
-        .rv_socket_data_axi_awaddr    ( RV_SOCKET_DATA_to_MBUS_axi_awaddr   ),
-        .rv_socket_data_axi_awlen     ( RV_SOCKET_DATA_to_MBUS_axi_awlen    ),
-        .rv_socket_data_axi_awsize    ( RV_SOCKET_DATA_to_MBUS_axi_awsize   ),
-        .rv_socket_data_axi_awburst   ( RV_SOCKET_DATA_to_MBUS_axi_awburst  ),
-        .rv_socket_data_axi_awlock    ( RV_SOCKET_DATA_to_MBUS_axi_awlock   ),
-        .rv_socket_data_axi_awcache   ( RV_SOCKET_DATA_to_MBUS_axi_awcache  ),
-        .rv_socket_data_axi_awprot    ( RV_SOCKET_DATA_to_MBUS_axi_awprot   ),
-        .rv_socket_data_axi_awqos     ( RV_SOCKET_DATA_to_MBUS_axi_awqos    ),
-        .rv_socket_data_axi_awvalid   ( RV_SOCKET_DATA_to_MBUS_axi_awvalid  ),
-        .rv_socket_data_axi_awready   ( RV_SOCKET_DATA_to_MBUS_axi_awready  ),
-        .rv_socket_data_axi_awregion  ( RV_SOCKET_DATA_to_MBUS_axi_awregion ),
-        .rv_socket_data_axi_wdata     ( RV_SOCKET_DATA_to_MBUS_axi_wdata    ),
-        .rv_socket_data_axi_wstrb     ( RV_SOCKET_DATA_to_MBUS_axi_wstrb    ),
-        .rv_socket_data_axi_wlast     ( RV_SOCKET_DATA_to_MBUS_axi_wlast    ),
-        .rv_socket_data_axi_wvalid    ( RV_SOCKET_DATA_to_MBUS_axi_wvalid   ),
-        .rv_socket_data_axi_wready    ( RV_SOCKET_DATA_to_MBUS_axi_wready   ),
-        .rv_socket_data_axi_bid       ( RV_SOCKET_DATA_to_MBUS_axi_bid      ),
-        .rv_socket_data_axi_bresp     ( RV_SOCKET_DATA_to_MBUS_axi_bresp    ),
-        .rv_socket_data_axi_bvalid    ( RV_SOCKET_DATA_to_MBUS_axi_bvalid   ),
-        .rv_socket_data_axi_bready    ( RV_SOCKET_DATA_to_MBUS_axi_bready   ),
-        .rv_socket_data_axi_arid      ( RV_SOCKET_DATA_to_MBUS_axi_arid     ),
-        .rv_socket_data_axi_araddr    ( RV_SOCKET_DATA_to_MBUS_axi_araddr   ),
-        .rv_socket_data_axi_arlen     ( RV_SOCKET_DATA_to_MBUS_axi_arlen    ),
-        .rv_socket_data_axi_arsize    ( RV_SOCKET_DATA_to_MBUS_axi_arsize   ),
-        .rv_socket_data_axi_arburst   ( RV_SOCKET_DATA_to_MBUS_axi_arburst  ),
-        .rv_socket_data_axi_arlock    ( RV_SOCKET_DATA_to_MBUS_axi_arlock   ),
-        .rv_socket_data_axi_arcache   ( RV_SOCKET_DATA_to_MBUS_axi_arcache  ),
-        .rv_socket_data_axi_arprot    ( RV_SOCKET_DATA_to_MBUS_axi_arprot   ),
-        .rv_socket_data_axi_arqos     ( RV_SOCKET_DATA_to_MBUS_axi_arqos    ),
-        .rv_socket_data_axi_arvalid   ( RV_SOCKET_DATA_to_MBUS_axi_arvalid  ),
-        .rv_socket_data_axi_arready   ( RV_SOCKET_DATA_to_MBUS_axi_arready  ),
-        .rv_socket_data_axi_arregion  ( RV_SOCKET_DATA_to_MBUS_axi_arregion ),
-        .rv_socket_data_axi_rid       ( RV_SOCKET_DATA_to_MBUS_axi_rid      ),
-        .rv_socket_data_axi_rdata     ( RV_SOCKET_DATA_to_MBUS_axi_rdata    ),
-        .rv_socket_data_axi_rresp     ( RV_SOCKET_DATA_to_MBUS_axi_rresp    ),
-        .rv_socket_data_axi_rlast     ( RV_SOCKET_DATA_to_MBUS_axi_rlast    ),
-        .rv_socket_data_axi_rvalid    ( RV_SOCKET_DATA_to_MBUS_axi_rvalid   ),
-        .rv_socket_data_axi_rready    ( RV_SOCKET_DATA_to_MBUS_axi_rready   ),
-
+        `ASSIGN_AXI_PORT(rv_socket_data, RV_SOCKET_DATA_to_MBUS),
         // Debug AXI master
-        .rv_socket_dbg_master_axi_awid       ( DBG_MASTER_to_MBUS_axi_awid     ),
-        .rv_socket_dbg_master_axi_awaddr     ( DBG_MASTER_to_MBUS_axi_awaddr   ),
-        .rv_socket_dbg_master_axi_awlen      ( DBG_MASTER_to_MBUS_axi_awlen    ),
-        .rv_socket_dbg_master_axi_awsize     ( DBG_MASTER_to_MBUS_axi_awsize   ),
-        .rv_socket_dbg_master_axi_awburst    ( DBG_MASTER_to_MBUS_axi_awburst  ),
-        .rv_socket_dbg_master_axi_awlock     ( DBG_MASTER_to_MBUS_axi_awlock   ),
-        .rv_socket_dbg_master_axi_awcache    ( DBG_MASTER_to_MBUS_axi_awcache  ),
-        .rv_socket_dbg_master_axi_awprot     ( DBG_MASTER_to_MBUS_axi_awprot   ),
-        .rv_socket_dbg_master_axi_awqos      ( DBG_MASTER_to_MBUS_axi_awqos    ),
-        .rv_socket_dbg_master_axi_awvalid    ( DBG_MASTER_to_MBUS_axi_awvalid  ),
-        .rv_socket_dbg_master_axi_awready    ( DBG_MASTER_to_MBUS_axi_awready  ),
-        .rv_socket_dbg_master_axi_awregion   ( DBG_MASTER_to_MBUS_axi_awregion ),
-        .rv_socket_dbg_master_axi_wdata      ( DBG_MASTER_to_MBUS_axi_wdata    ),
-        .rv_socket_dbg_master_axi_wstrb      ( DBG_MASTER_to_MBUS_axi_wstrb    ),
-        .rv_socket_dbg_master_axi_wlast      ( DBG_MASTER_to_MBUS_axi_wlast    ),
-        .rv_socket_dbg_master_axi_wvalid     ( DBG_MASTER_to_MBUS_axi_wvalid   ),
-        .rv_socket_dbg_master_axi_wready     ( DBG_MASTER_to_MBUS_axi_wready   ),
-        .rv_socket_dbg_master_axi_bid        ( DBG_MASTER_to_MBUS_axi_bid      ),
-        .rv_socket_dbg_master_axi_bresp      ( DBG_MASTER_to_MBUS_axi_bresp    ),
-        .rv_socket_dbg_master_axi_bvalid     ( DBG_MASTER_to_MBUS_axi_bvalid   ),
-        .rv_socket_dbg_master_axi_bready     ( DBG_MASTER_to_MBUS_axi_bready   ),
-        .rv_socket_dbg_master_axi_arid       ( DBG_MASTER_to_MBUS_axi_arid     ),
-        .rv_socket_dbg_master_axi_araddr     ( DBG_MASTER_to_MBUS_axi_araddr   ),
-        .rv_socket_dbg_master_axi_arlen      ( DBG_MASTER_to_MBUS_axi_arlen    ),
-        .rv_socket_dbg_master_axi_arsize     ( DBG_MASTER_to_MBUS_axi_arsize   ),
-        .rv_socket_dbg_master_axi_arburst    ( DBG_MASTER_to_MBUS_axi_arburst  ),
-        .rv_socket_dbg_master_axi_arlock     ( DBG_MASTER_to_MBUS_axi_arlock   ),
-        .rv_socket_dbg_master_axi_arcache    ( DBG_MASTER_to_MBUS_axi_arcache  ),
-        .rv_socket_dbg_master_axi_arprot     ( DBG_MASTER_to_MBUS_axi_arprot   ),
-        .rv_socket_dbg_master_axi_arqos      ( DBG_MASTER_to_MBUS_axi_arqos    ),
-        .rv_socket_dbg_master_axi_arvalid    ( DBG_MASTER_to_MBUS_axi_arvalid  ),
-        .rv_socket_dbg_master_axi_arready    ( DBG_MASTER_to_MBUS_axi_arready  ),
-        .rv_socket_dbg_master_axi_arregion   ( DBG_MASTER_to_MBUS_axi_arregion ),
-        .rv_socket_dbg_master_axi_rid        ( DBG_MASTER_to_MBUS_axi_rid      ),
-        .rv_socket_dbg_master_axi_rdata      ( DBG_MASTER_to_MBUS_axi_rdata    ),
-        .rv_socket_dbg_master_axi_rresp      ( DBG_MASTER_to_MBUS_axi_rresp    ),
-        .rv_socket_dbg_master_axi_rlast      ( DBG_MASTER_to_MBUS_axi_rlast    ),
-        .rv_socket_dbg_master_axi_rvalid     ( DBG_MASTER_to_MBUS_axi_rvalid   ),
-        .rv_socket_dbg_master_axi_rready     ( DBG_MASTER_to_MBUS_axi_rready   ),
-
+        `ASSIGN_AXI_PORT(rv_socket_dbg_master, DBG_MASTER_to_MBUS),
         // Debug AXI slave
-        .rv_socket_dbg_slave_axi_awid        ( MBUS_to_DM_mem_axi_awid     ),
-        .rv_socket_dbg_slave_axi_awaddr      ( MBUS_to_DM_mem_axi_awaddr   ),
-        .rv_socket_dbg_slave_axi_awlen       ( MBUS_to_DM_mem_axi_awlen    ),
-        .rv_socket_dbg_slave_axi_awsize      ( MBUS_to_DM_mem_axi_awsize   ),
-        .rv_socket_dbg_slave_axi_awburst     ( MBUS_to_DM_mem_axi_awburst  ),
-        .rv_socket_dbg_slave_axi_awlock      ( MBUS_to_DM_mem_axi_awlock   ),
-        .rv_socket_dbg_slave_axi_awcache     ( MBUS_to_DM_mem_axi_awcache  ),
-        .rv_socket_dbg_slave_axi_awprot      ( MBUS_to_DM_mem_axi_awprot   ),
-        .rv_socket_dbg_slave_axi_awqos       ( MBUS_to_DM_mem_axi_awqos    ),
-        .rv_socket_dbg_slave_axi_awvalid     ( MBUS_to_DM_mem_axi_awvalid  ),
-        .rv_socket_dbg_slave_axi_awready     ( MBUS_to_DM_mem_axi_awready  ),
-        .rv_socket_dbg_slave_axi_awregion    ( MBUS_to_DM_mem_axi_awregion ),
-        .rv_socket_dbg_slave_axi_wdata       ( MBUS_to_DM_mem_axi_wdata    ),
-        .rv_socket_dbg_slave_axi_wstrb       ( MBUS_to_DM_mem_axi_wstrb    ),
-        .rv_socket_dbg_slave_axi_wlast       ( MBUS_to_DM_mem_axi_wlast    ),
-        .rv_socket_dbg_slave_axi_wvalid      ( MBUS_to_DM_mem_axi_wvalid   ),
-        .rv_socket_dbg_slave_axi_wready      ( MBUS_to_DM_mem_axi_wready   ),
-        .rv_socket_dbg_slave_axi_bid         ( MBUS_to_DM_mem_axi_bid      ),
-        .rv_socket_dbg_slave_axi_bresp       ( MBUS_to_DM_mem_axi_bresp    ),
-        .rv_socket_dbg_slave_axi_bvalid      ( MBUS_to_DM_mem_axi_bvalid   ),
-        .rv_socket_dbg_slave_axi_bready      ( MBUS_to_DM_mem_axi_bready   ),
-        .rv_socket_dbg_slave_axi_arid        ( MBUS_to_DM_mem_axi_arid     ),
-        .rv_socket_dbg_slave_axi_araddr      ( MBUS_to_DM_mem_axi_araddr   ),
-        .rv_socket_dbg_slave_axi_arlen       ( MBUS_to_DM_mem_axi_arlen    ),
-        .rv_socket_dbg_slave_axi_arsize      ( MBUS_to_DM_mem_axi_arsize   ),
-        .rv_socket_dbg_slave_axi_arburst     ( MBUS_to_DM_mem_axi_arburst  ),
-        .rv_socket_dbg_slave_axi_arlock      ( MBUS_to_DM_mem_axi_arlock   ),
-        .rv_socket_dbg_slave_axi_arcache     ( MBUS_to_DM_mem_axi_arcache  ),
-        .rv_socket_dbg_slave_axi_arprot      ( MBUS_to_DM_mem_axi_arprot   ),
-        .rv_socket_dbg_slave_axi_arqos       ( MBUS_to_DM_mem_axi_arqos    ),
-        .rv_socket_dbg_slave_axi_arvalid     ( MBUS_to_DM_mem_axi_arvalid  ),
-        .rv_socket_dbg_slave_axi_arready     ( MBUS_to_DM_mem_axi_arready  ),
-        .rv_socket_dbg_slave_axi_arregion    ( MBUS_to_DM_mem_axi_arregion ),
-        .rv_socket_dbg_slave_axi_rid         ( MBUS_to_DM_mem_axi_rid      ),
-        .rv_socket_dbg_slave_axi_rdata       ( MBUS_to_DM_mem_axi_rdata    ),
-        .rv_socket_dbg_slave_axi_rresp       ( MBUS_to_DM_mem_axi_rresp    ),
-        .rv_socket_dbg_slave_axi_rlast       ( MBUS_to_DM_mem_axi_rlast    ),
-        .rv_socket_dbg_slave_axi_rvalid      ( MBUS_to_DM_mem_axi_rvalid   ),
-        .rv_socket_dbg_slave_axi_rready      ( MBUS_to_DM_mem_axi_rready   )
+        `ASSIGN_AXI_PORT(rv_socket_dbg_slave, MBUS_to_DM_mem)
     );
 
     ////////////////
@@ -844,7 +772,7 @@ module uninasoc (
     logic [31:0] plic_int_line;
     logic plic_int_irq_o;
     // TODO154: generate by config
-    localparam NUM_HLS_CORES = 8;
+    localparam NUM_HLS_CORES = 2;
     logic [NUM_HLS_CORES -1 : 0 ] hls_interrupt_to_plic;
 
     always_comb begin : system_interrupts
@@ -863,9 +791,7 @@ module uninasoc (
         plic_int_line[PLIC_TIM1_INTERRUPT]      = pbus_int_line[PBUS_TIM1_INTERRUPT];
         plic_int_line[PLIC_UART_INTERRUPT]      = pbus_int_line[PBUS_UART_INTERRUPT];
         // HLS cores
-        for ( int unsigned i = 0; i < NUM_HLS_CORES; i++ ) begin
-            plic_int_line[PLIC_HLS_INTERRUPT + i] = hls_interrupt_to_plic[i];
-        end
+        plic_int_line[PLIC_HLS_INTERRUPT +: NUM_HLS_CORES] = hls_interrupt_to_plic;
 
         // Map system-interrupts pins to socket interrupts
         rv_socket_interrupt_line[CORE_EXT_INTERRUPT] = plic_int_irq_o;
@@ -994,16 +920,14 @@ module uninasoc (
     ///////////////////
 
     // HLS CONV2D -> MBUS/HBUS
-    // TODO: HLS wrapper parameters require manual configuration
-    // TODO: OR if HLS on HBUS
     // `define HLS_TARGET_BUS HBUS
     // localparam HLS_MASTER_DATA_WIDTH = HBUS_DATA_WIDTH;
     // localparam HLS_MASTER_ADDR_WIDTH = HBUS_ADDR_WIDTH;
     // localparam HLS_MASTER_ID_WIDTH   = HBUS_ID_WIDTH;
     // TODO: else if HLS on MBUS
-    `define HLS_TARGET_BUS MBUS
-    localparam HLS_MASTER_DATA_WIDTH = MBUS_DATA_WIDTH;
-    localparam HLS_MASTER_ADDR_WIDTH = MBUS_ADDR_WIDTH;
+    `define HLS_TARGET_BUS HBUS
+    localparam HLS_MASTER_DATA_WIDTH = HBUS_DATA_WIDTH;
+    localparam HLS_MASTER_ADDR_WIDTH = HBUS_ADDR_WIDTH;
     localparam HLS_MASTER_ID_WIDTH   = MBUS_ID_WIDTH;
 
     // Instance
@@ -1163,8 +1087,9 @@ module uninasoc (
         .MBUS_DATA_WIDTH  ( MBUS_DATA_WIDTH ),
         .MBUS_ADDR_WIDTH  ( MBUS_ADDR_WIDTH ),
         .MBUS_ID_WIDTH    ( MBUS_ID_WIDTH   ),
+        // Number of accelerator ports
+        .NUM_ACC_MASTERS  ( NUM_HLS_CORES   ),
         // TODO: these are fixed for now
-        .NUM_ACC_MASTERS  ( 1 ),
         .NUM_DDR_CHANNELS ( 1 ),
         .NUM_HBM_CHANNELS ( 0 )
     ) highperformance_bus_u (
@@ -1252,47 +1177,15 @@ module uninasoc (
         .m_MBUS_axi_rvalid   ( HBUS_to_MBUS_axi_rvalid   ),
         .m_MBUS_axi_rready   ( HBUS_to_MBUS_axi_rready   ),
         // From Accelerator(s)
-        // NOTE: just one for now
         // TODO: add a CONCAT to support multiple ports
-        .s_acc_axi_awid     ( s_acc_HBUS_axi_awid     ),
-        .s_acc_axi_awaddr   ( s_acc_HBUS_axi_awaddr   ),
-        .s_acc_axi_awlen    ( s_acc_HBUS_axi_awlen    ),
-        .s_acc_axi_awsize   ( s_acc_HBUS_axi_awsize   ),
-        .s_acc_axi_awburst  ( s_acc_HBUS_axi_awburst  ),
-        .s_acc_axi_awlock   ( s_acc_HBUS_axi_awlock   ),
-        .s_acc_axi_awcache  ( s_acc_HBUS_axi_awcache  ),
-        .s_acc_axi_awprot   ( s_acc_HBUS_axi_awprot   ),
-        .s_acc_axi_awregion ( s_acc_HBUS_axi_awregion ),
-        .s_acc_axi_awqos    ( s_acc_HBUS_axi_awqos    ),
-        .s_acc_axi_awvalid  ( s_acc_HBUS_axi_awvalid  ),
-        .s_acc_axi_awready  ( s_acc_HBUS_axi_awready  ),
-        .s_acc_axi_wdata    ( s_acc_HBUS_axi_wdata    ),
-        .s_acc_axi_wstrb    ( s_acc_HBUS_axi_wstrb    ),
-        .s_acc_axi_wlast    ( s_acc_HBUS_axi_wlast    ),
-        .s_acc_axi_wvalid   ( s_acc_HBUS_axi_wvalid   ),
-        .s_acc_axi_wready   ( s_acc_HBUS_axi_wready   ),
-        .s_acc_axi_bid      ( s_acc_HBUS_axi_bid      ),
-        .s_acc_axi_bresp    ( s_acc_HBUS_axi_bresp    ),
-        .s_acc_axi_bvalid   ( s_acc_HBUS_axi_bvalid   ),
-        .s_acc_axi_bready   ( s_acc_HBUS_axi_bready   ),
-        .s_acc_axi_arid     ( s_acc_HBUS_axi_arid     ),
-        .s_acc_axi_araddr   ( s_acc_HBUS_axi_araddr   ),
-        .s_acc_axi_arlen    ( s_acc_HBUS_axi_arlen    ),
-        .s_acc_axi_arsize   ( s_acc_HBUS_axi_arsize   ),
-        .s_acc_axi_arburst  ( s_acc_HBUS_axi_arburst  ),
-        .s_acc_axi_arlock   ( s_acc_HBUS_axi_arlock   ),
-        .s_acc_axi_arcache  ( s_acc_HBUS_axi_arcache  ),
-        .s_acc_axi_arprot   ( s_acc_HBUS_axi_arprot   ),
-        .s_acc_axi_arregion ( s_acc_HBUS_axi_arregion ),
-        .s_acc_axi_arqos    ( s_acc_HBUS_axi_arqos    ),
-        .s_acc_axi_arvalid  ( s_acc_HBUS_axi_arvalid  ),
-        .s_acc_axi_arready  ( s_acc_HBUS_axi_arready  ),
-        .s_acc_axi_rid      ( s_acc_HBUS_axi_rid      ),
-        .s_acc_axi_rdata    ( s_acc_HBUS_axi_rdata    ),
-        .s_acc_axi_rresp    ( s_acc_HBUS_axi_rresp    ),
-        .s_acc_axi_rlast    ( s_acc_HBUS_axi_rlast    ),
-        .s_acc_axi_rvalid   ( s_acc_HBUS_axi_rvalid   ),
-        .s_acc_axi_rready   ( s_acc_HBUS_axi_rready   ),
+        `ASSIGN_AXI_PORT(s_acc0, HLS_MASTER0_to_HBUS),
+        `ASSIGN_AXI_PORT(s_acc1, HLS_MASTER1_to_HBUS),
+        `ASSIGN_AXI_PORT(s_acc2, HLS_MASTER2_to_HBUS),
+        `ASSIGN_AXI_PORT(s_acc3, HLS_MASTER3_to_HBUS),
+        `ASSIGN_AXI_PORT(s_acc4, HLS_MASTER4_to_HBUS),
+        `ASSIGN_AXI_PORT(s_acc5, HLS_MASTER5_to_HBUS),
+        `ASSIGN_AXI_PORT(s_acc6, HLS_MASTER6_to_HBUS),
+        `ASSIGN_AXI_PORT(s_acc7, HLS_MASTER7_to_HBUS),
 
         // DDR channel 0 on MBUS
         // DDR4 differential clock
