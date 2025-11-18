@@ -7,24 +7,24 @@
 // Architecture: HLS IP integration (with CDC)
 //    ____________________________
 //   |                            |
-//   |   axi_clock_converter_u    |<-------------------- HLS_CONTROL (from MBUS)
+//   |   axi_clock_converter_u    |<-------------------- HLS_CTRL (from MBUS)
 //   |        (optional)          |
 //   |____________________________|
 //        |
-//        | sync_HLS_CONTROL (HLS IP clock domain)
+//        | sync_HLS_CTRL (HLS IP clock domain)
 //    ____V_________________
 //   |                      |
 //   |   axi_dwidth_conv_u  |
 //   |     (XLEN == 64)     |
 //   |______________________|
 //        |
-//        | d32_HLS_CONTROL (HLS IP clock domain)
+//        | d32_HLS_CTRL (HLS IP clock domain)
 //    ____v_______________________
 //   |                            |
 //   |   xlnx_axi4_to_axilite_u   |
 //   |____________________________|
 //        |
-//        | HLS_CONTROL_axilite
+//        | HLS_CTRL_axilite
 //        |         ________
 //        |        |        |  HLS_gmem0_d512
 //        \------->|        |------------------------------------> HLS_gmem0_d512
@@ -35,27 +35,25 @@
 //
 
 module hls_wrapper # (
-    // MBUS parameters, for HLS_CONTROL
+    // MBUS parameters, for HLS_CTRL
     parameter MBUS_ADDR_WIDTH = 32,
     parameter MBUS_DATA_WIDTH = 32,
     parameter MBUS_ID_WIDTH   = 4,
     // HBUS parameters
     parameter AXI_MASTER_DATA_WIDTH = 512,
     parameter AXI_MASTER_ADDR_WIDTH = 32,
-    parameter AXI_MASTER_ID_WIDTH   = 4,
-    // Number of instances
-    parameter NUM_IPS = 1
+    parameter AXI_MASTER_ID_WIDTH   = 4
 ) (
     // MBUS clock and reset
     input  logic main_clk_i,
     input  logic main_rstn_i,
 
-    // HLS IP clock and reset (from HBUS)
-    input  logic HLS_CONTROL_clk_i,
-    input  logic HLS_CONTROL_rstn_i,
+    // HLS IP clock and reset
+    input  logic HLS_CTRL_clk_i,
+    input  logic HLS_CTRL_rstn_i,
 
     // Slave for control
-    `DEFINE_AXI_SLAVE_PORTS(s_HLS_CONTROL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
+    `DEFINE_AXI_SLAVE_PORTS(s_HLS_CTRL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
 
     // Master to MBUS or HBUS
     `DEFINE_AXI_MASTER_PORTS(m, AXI_MASTER_DATA_WIDTH, AXI_MASTER_ADDR_WIDTH, AXI_MASTER_ID_WIDTH),
@@ -73,7 +71,7 @@ module hls_wrapper # (
     logic hls_interrupt_async;
 
     // axi_clock_converter_u -> axi_dwidth_conv_u
-    `DECLARE_AXI_BUS(sync_HLS_CONTROL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH);
+    `DECLARE_AXI_BUS(sync_HLS_CTRL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH);
 
     // axi_dwidth_conv_u -> xlnx_axi4_to_axilite_u
     localparam int unsigned HLS_DATA_WIDTH = 32;
@@ -83,15 +81,19 @@ module hls_wrapper # (
 
     // HLS_DOTPROD_CONTROL AXI-lite
     // xlnx_axi4_to_axilite_u -> custom_hls_conv_hbus_u
-    `DECLARE_AXILITE_BUS(HLS_CONTROL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH);
+    `DECLARE_AXILITE_BUS(HLS_CTRL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH);
 
     /////////////
     // Modules //
     /////////////
 
-    // Add clock bridges for HLS_CONTROL
-    `ifdef HLS_CONTROL_HAS_CLOCK_DOMAIN
-        // s_HLS_CONTROL -> sync_HLS_CONTROL
+    // Add clock bridges for HLS_CTRL
+    `ifdef HLS_CTRL_HAS_CLOCK_DOMAIN
+        // TODO: if AXI master on MBUS, add new clock bridge for master interface
+        //          for HBUS access, assume HBUS clock domain
+        // TODO: this should probably go in check_config
+
+        // s_HLS_CTRL -> sync_HLS_CTRL
         axi_clock_converter_wrapper # (
             .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
             .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
@@ -100,88 +102,88 @@ module hls_wrapper # (
             // AXI4 Slave from MBUS
             .s_axi_aclk     ( main_clk_i  ),
             .s_axi_aresetn  ( main_rstn_i ),
-            .s_axi_awid     ( s_HLS_CONTROL_axi_awid     ),
-            .s_axi_awaddr   ( s_HLS_CONTROL_axi_awaddr   ),
-            .s_axi_awlen    ( s_HLS_CONTROL_axi_awlen    ),
-            .s_axi_awsize   ( s_HLS_CONTROL_axi_awsize   ),
-            .s_axi_awburst  ( s_HLS_CONTROL_axi_awburst  ),
-            .s_axi_awlock   ( s_HLS_CONTROL_axi_awlock   ),
-            .s_axi_awcache  ( s_HLS_CONTROL_axi_awcache  ),
-            .s_axi_awprot   ( s_HLS_CONTROL_axi_awprot   ),
-            .s_axi_awqos    ( s_HLS_CONTROL_axi_awqos    ),
-            .s_axi_awvalid  ( s_HLS_CONTROL_axi_awvalid  ),
-            .s_axi_awready  ( s_HLS_CONTROL_axi_awready  ),
-            .s_axi_awregion ( s_HLS_CONTROL_axi_awregion ),
-            .s_axi_wdata    ( s_HLS_CONTROL_axi_wdata    ),
-            .s_axi_wstrb    ( s_HLS_CONTROL_axi_wstrb    ),
-            .s_axi_wlast    ( s_HLS_CONTROL_axi_wlast    ),
-            .s_axi_wvalid   ( s_HLS_CONTROL_axi_wvalid   ),
-            .s_axi_wready   ( s_HLS_CONTROL_axi_wready   ),
-            .s_axi_bid      ( s_HLS_CONTROL_axi_bid      ),
-            .s_axi_bresp    ( s_HLS_CONTROL_axi_bresp    ),
-            .s_axi_bvalid   ( s_HLS_CONTROL_axi_bvalid   ),
-            .s_axi_bready   ( s_HLS_CONTROL_axi_bready   ),
-            .s_axi_arid     ( s_HLS_CONTROL_axi_arid     ),
-            .s_axi_araddr   ( s_HLS_CONTROL_axi_araddr   ),
-            .s_axi_arlen    ( s_HLS_CONTROL_axi_arlen    ),
-            .s_axi_arsize   ( s_HLS_CONTROL_axi_arsize   ),
-            .s_axi_arburst  ( s_HLS_CONTROL_axi_arburst  ),
-            .s_axi_arlock   ( s_HLS_CONTROL_axi_arlock   ),
-            .s_axi_arregion ( s_HLS_CONTROL_axi_arregion ),
-            .s_axi_arcache  ( s_HLS_CONTROL_axi_arcache  ),
-            .s_axi_arprot   ( s_HLS_CONTROL_axi_arprot   ),
-            .s_axi_arqos    ( s_HLS_CONTROL_axi_arqos    ),
-            .s_axi_arvalid  ( s_HLS_CONTROL_axi_arvalid  ),
-            .s_axi_arready  ( s_HLS_CONTROL_axi_arready  ),
-            .s_axi_rid      ( s_HLS_CONTROL_axi_rid      ),
-            .s_axi_rdata    ( s_HLS_CONTROL_axi_rdata    ),
-            .s_axi_rresp    ( s_HLS_CONTROL_axi_rresp    ),
-            .s_axi_rlast    ( s_HLS_CONTROL_axi_rlast    ),
-            .s_axi_rvalid   ( s_HLS_CONTROL_axi_rvalid   ),
-            .s_axi_rready   ( s_HLS_CONTROL_axi_rready   ),
+            .s_axi_awid     ( s_HLS_CTRL_axi_awid     ),
+            .s_axi_awaddr   ( s_HLS_CTRL_axi_awaddr   ),
+            .s_axi_awlen    ( s_HLS_CTRL_axi_awlen    ),
+            .s_axi_awsize   ( s_HLS_CTRL_axi_awsize   ),
+            .s_axi_awburst  ( s_HLS_CTRL_axi_awburst  ),
+            .s_axi_awlock   ( s_HLS_CTRL_axi_awlock   ),
+            .s_axi_awcache  ( s_HLS_CTRL_axi_awcache  ),
+            .s_axi_awprot   ( s_HLS_CTRL_axi_awprot   ),
+            .s_axi_awqos    ( s_HLS_CTRL_axi_awqos    ),
+            .s_axi_awvalid  ( s_HLS_CTRL_axi_awvalid  ),
+            .s_axi_awready  ( s_HLS_CTRL_axi_awready  ),
+            .s_axi_awregion ( s_HLS_CTRL_axi_awregion ),
+            .s_axi_wdata    ( s_HLS_CTRL_axi_wdata    ),
+            .s_axi_wstrb    ( s_HLS_CTRL_axi_wstrb    ),
+            .s_axi_wlast    ( s_HLS_CTRL_axi_wlast    ),
+            .s_axi_wvalid   ( s_HLS_CTRL_axi_wvalid   ),
+            .s_axi_wready   ( s_HLS_CTRL_axi_wready   ),
+            .s_axi_bid      ( s_HLS_CTRL_axi_bid      ),
+            .s_axi_bresp    ( s_HLS_CTRL_axi_bresp    ),
+            .s_axi_bvalid   ( s_HLS_CTRL_axi_bvalid   ),
+            .s_axi_bready   ( s_HLS_CTRL_axi_bready   ),
+            .s_axi_arid     ( s_HLS_CTRL_axi_arid     ),
+            .s_axi_araddr   ( s_HLS_CTRL_axi_araddr   ),
+            .s_axi_arlen    ( s_HLS_CTRL_axi_arlen    ),
+            .s_axi_arsize   ( s_HLS_CTRL_axi_arsize   ),
+            .s_axi_arburst  ( s_HLS_CTRL_axi_arburst  ),
+            .s_axi_arlock   ( s_HLS_CTRL_axi_arlock   ),
+            .s_axi_arregion ( s_HLS_CTRL_axi_arregion ),
+            .s_axi_arcache  ( s_HLS_CTRL_axi_arcache  ),
+            .s_axi_arprot   ( s_HLS_CTRL_axi_arprot   ),
+            .s_axi_arqos    ( s_HLS_CTRL_axi_arqos    ),
+            .s_axi_arvalid  ( s_HLS_CTRL_axi_arvalid  ),
+            .s_axi_arready  ( s_HLS_CTRL_axi_arready  ),
+            .s_axi_rid      ( s_HLS_CTRL_axi_rid      ),
+            .s_axi_rdata    ( s_HLS_CTRL_axi_rdata    ),
+            .s_axi_rresp    ( s_HLS_CTRL_axi_rresp    ),
+            .s_axi_rlast    ( s_HLS_CTRL_axi_rlast    ),
+            .s_axi_rvalid   ( s_HLS_CTRL_axi_rvalid   ),
+            .s_axi_rready   ( s_HLS_CTRL_axi_rready   ),
 
             // ALI-lite master to HLS IP
-            .m_axi_aclk     ( HLS_CONTROL_clk_i  ),
-            .m_axi_aresetn  ( HLS_CONTROL_rstn_i ),
-            .m_axi_awid     ( sync_HLS_CONTROL_axi_awid      ),
-            .m_axi_awaddr   ( sync_HLS_CONTROL_axi_awaddr    ),
-            .m_axi_awlen    ( sync_HLS_CONTROL_axi_awlen     ),
-            .m_axi_awsize   ( sync_HLS_CONTROL_axi_awsize    ),
-            .m_axi_awburst  ( sync_HLS_CONTROL_axi_awburst   ),
-            .m_axi_awlock   ( sync_HLS_CONTROL_axi_awlock    ),
-            .m_axi_awcache  ( sync_HLS_CONTROL_axi_awcache   ),
-            .m_axi_awprot   ( sync_HLS_CONTROL_axi_awprot    ),
-            .m_axi_awregion ( sync_HLS_CONTROL_axi_awregion  ),
-            .m_axi_awqos    ( sync_HLS_CONTROL_axi_awqos     ),
-            .m_axi_awvalid  ( sync_HLS_CONTROL_axi_awvalid   ),
-            .m_axi_awready  ( sync_HLS_CONTROL_axi_awready   ),
-            .m_axi_wdata    ( sync_HLS_CONTROL_axi_wdata     ),
-            .m_axi_wstrb    ( sync_HLS_CONTROL_axi_wstrb     ),
-            .m_axi_wlast    ( sync_HLS_CONTROL_axi_wlast     ),
-            .m_axi_wvalid   ( sync_HLS_CONTROL_axi_wvalid    ),
-            .m_axi_wready   ( sync_HLS_CONTROL_axi_wready    ),
-            .m_axi_bid      ( sync_HLS_CONTROL_axi_bid       ),
-            .m_axi_bresp    ( sync_HLS_CONTROL_axi_bresp     ),
-            .m_axi_bvalid   ( sync_HLS_CONTROL_axi_bvalid    ),
-            .m_axi_bready   ( sync_HLS_CONTROL_axi_bready    ),
-            .m_axi_arid     ( sync_HLS_CONTROL_axi_arid      ),
-            .m_axi_araddr   ( sync_HLS_CONTROL_axi_araddr    ),
-            .m_axi_arlen    ( sync_HLS_CONTROL_axi_arlen     ),
-            .m_axi_arsize   ( sync_HLS_CONTROL_axi_arsize    ),
-            .m_axi_arburst  ( sync_HLS_CONTROL_axi_arburst   ),
-            .m_axi_arlock   ( sync_HLS_CONTROL_axi_arlock    ),
-            .m_axi_arcache  ( sync_HLS_CONTROL_axi_arcache   ),
-            .m_axi_arprot   ( sync_HLS_CONTROL_axi_arprot    ),
-            .m_axi_arregion ( sync_HLS_CONTROL_axi_arregion  ),
-            .m_axi_arqos    ( sync_HLS_CONTROL_axi_arqos     ),
-            .m_axi_arvalid  ( sync_HLS_CONTROL_axi_arvalid   ),
-            .m_axi_arready  ( sync_HLS_CONTROL_axi_arready   ),
-            .m_axi_rid      ( sync_HLS_CONTROL_axi_rid       ),
-            .m_axi_rdata    ( sync_HLS_CONTROL_axi_rdata     ),
-            .m_axi_rresp    ( sync_HLS_CONTROL_axi_rresp     ),
-            .m_axi_rlast    ( sync_HLS_CONTROL_axi_rlast     ),
-            .m_axi_rvalid   ( sync_HLS_CONTROL_axi_rvalid    ),
-            .m_axi_rready   ( sync_HLS_CONTROL_axi_rready    )
+            .m_axi_aclk     ( HLS_CTRL_clk_i  ),
+            .m_axi_aresetn  ( HLS_CTRL_rstn_i ),
+            .m_axi_awid     ( sync_HLS_CTRL_axi_awid      ),
+            .m_axi_awaddr   ( sync_HLS_CTRL_axi_awaddr    ),
+            .m_axi_awlen    ( sync_HLS_CTRL_axi_awlen     ),
+            .m_axi_awsize   ( sync_HLS_CTRL_axi_awsize    ),
+            .m_axi_awburst  ( sync_HLS_CTRL_axi_awburst   ),
+            .m_axi_awlock   ( sync_HLS_CTRL_axi_awlock    ),
+            .m_axi_awcache  ( sync_HLS_CTRL_axi_awcache   ),
+            .m_axi_awprot   ( sync_HLS_CTRL_axi_awprot    ),
+            .m_axi_awregion ( sync_HLS_CTRL_axi_awregion  ),
+            .m_axi_awqos    ( sync_HLS_CTRL_axi_awqos     ),
+            .m_axi_awvalid  ( sync_HLS_CTRL_axi_awvalid   ),
+            .m_axi_awready  ( sync_HLS_CTRL_axi_awready   ),
+            .m_axi_wdata    ( sync_HLS_CTRL_axi_wdata     ),
+            .m_axi_wstrb    ( sync_HLS_CTRL_axi_wstrb     ),
+            .m_axi_wlast    ( sync_HLS_CTRL_axi_wlast     ),
+            .m_axi_wvalid   ( sync_HLS_CTRL_axi_wvalid    ),
+            .m_axi_wready   ( sync_HLS_CTRL_axi_wready    ),
+            .m_axi_bid      ( sync_HLS_CTRL_axi_bid       ),
+            .m_axi_bresp    ( sync_HLS_CTRL_axi_bresp     ),
+            .m_axi_bvalid   ( sync_HLS_CTRL_axi_bvalid    ),
+            .m_axi_bready   ( sync_HLS_CTRL_axi_bready    ),
+            .m_axi_arid     ( sync_HLS_CTRL_axi_arid      ),
+            .m_axi_araddr   ( sync_HLS_CTRL_axi_araddr    ),
+            .m_axi_arlen    ( sync_HLS_CTRL_axi_arlen     ),
+            .m_axi_arsize   ( sync_HLS_CTRL_axi_arsize    ),
+            .m_axi_arburst  ( sync_HLS_CTRL_axi_arburst   ),
+            .m_axi_arlock   ( sync_HLS_CTRL_axi_arlock    ),
+            .m_axi_arcache  ( sync_HLS_CTRL_axi_arcache   ),
+            .m_axi_arprot   ( sync_HLS_CTRL_axi_arprot    ),
+            .m_axi_arregion ( sync_HLS_CTRL_axi_arregion  ),
+            .m_axi_arqos    ( sync_HLS_CTRL_axi_arqos     ),
+            .m_axi_arvalid  ( sync_HLS_CTRL_axi_arvalid   ),
+            .m_axi_arready  ( sync_HLS_CTRL_axi_arready   ),
+            .m_axi_rid      ( sync_HLS_CTRL_axi_rid       ),
+            .m_axi_rdata    ( sync_HLS_CTRL_axi_rdata     ),
+            .m_axi_rresp    ( sync_HLS_CTRL_axi_rresp     ),
+            .m_axi_rlast    ( sync_HLS_CTRL_axi_rlast     ),
+            .m_axi_rvalid   ( sync_HLS_CTRL_axi_rvalid    ),
+            .m_axi_rready   ( sync_HLS_CTRL_axi_rready    )
         );
 
         // Synchronize HLS interrupt line to MBUS
@@ -193,13 +195,13 @@ module hls_wrapper # (
         xpm_cdc_array_single_inst (
             .dest_out       ( hls_interrupt_o     ),
             .dest_clk       ( main_clk_i          ),
-            .src_clk        ( HLS_CONTROL_clk_i   ),
+            .src_clk        ( HLS_CTRL_clk_i   ),
             .src_in         ( hls_interrupt_async )
         );
 
-    `else // notdefined(HLS_CONTROL_HAS_CLOCK_DOMAIN)
+    `else // notdefined(HLS_CTRL_HAS_CLOCK_DOMAIN)
         // Just pass through AXI interface
-        `ASSIGN_AXI_BUS(sync_HLS_CONTROL, s_HLS_CONTROL)
+        `ASSIGN_AXI_BUS(sync_HLS_CTRL, s_HLS_CTRL)
         // Directly connect interrupt line
         assign hls_interrupt_o = hls_interrupt_async;
     `endif
@@ -209,49 +211,49 @@ module hls_wrapper # (
     if ( MBUS_DATA_WIDTH == 64 ) begin : gen_dwidth_conv
 
         xlnx_axi_dwidth_64_to_32_converter axi_dwidth_conv_u (
-            .s_axi_aclk     ( HLS_CONTROL_clk_i             ),
-            .s_axi_aresetn  ( HLS_CONTROL_rstn_i            ),
+            .s_axi_aclk     ( HLS_CTRL_clk_i             ),
+            .s_axi_aresetn  ( HLS_CTRL_rstn_i            ),
 
             // Slave from clock conv
-            .s_axi_awid     ( sync_HLS_CONTROL_axi_awid     ),
-            .s_axi_awaddr   ( sync_HLS_CONTROL_axi_awaddr   ),
-            .s_axi_awlen    ( sync_HLS_CONTROL_axi_awlen    ),
-            .s_axi_awsize   ( sync_HLS_CONTROL_axi_awsize   ),
-            .s_axi_awburst  ( sync_HLS_CONTROL_axi_awburst  ),
-            .s_axi_awvalid  ( sync_HLS_CONTROL_axi_awvalid  ),
-            .s_axi_awready  ( sync_HLS_CONTROL_axi_awready  ),
-            .s_axi_wdata    ( sync_HLS_CONTROL_axi_wdata    ),
-            .s_axi_wstrb    ( sync_HLS_CONTROL_axi_wstrb    ),
-            .s_axi_wlast    ( sync_HLS_CONTROL_axi_wlast    ),
-            .s_axi_wvalid   ( sync_HLS_CONTROL_axi_wvalid   ),
-            .s_axi_wready   ( sync_HLS_CONTROL_axi_wready   ),
-            .s_axi_bid      ( sync_HLS_CONTROL_axi_bid      ),
-            .s_axi_bresp    ( sync_HLS_CONTROL_axi_bresp    ),
-            .s_axi_bvalid   ( sync_HLS_CONTROL_axi_bvalid   ),
-            .s_axi_bready   ( sync_HLS_CONTROL_axi_bready   ),
-            .s_axi_arid     ( sync_HLS_CONTROL_axi_arid     ),
-            .s_axi_araddr   ( sync_HLS_CONTROL_axi_araddr   ),
-            .s_axi_arlen    ( sync_HLS_CONTROL_axi_arlen    ),
-            .s_axi_arsize   ( sync_HLS_CONTROL_axi_arsize   ),
-            .s_axi_arburst  ( sync_HLS_CONTROL_axi_arburst  ),
-            .s_axi_arvalid  ( sync_HLS_CONTROL_axi_arvalid  ),
-            .s_axi_arready  ( sync_HLS_CONTROL_axi_arready  ),
-            .s_axi_rid      ( sync_HLS_CONTROL_axi_rid      ),
-            .s_axi_rdata    ( sync_HLS_CONTROL_axi_rdata    ),
-            .s_axi_rresp    ( sync_HLS_CONTROL_axi_rresp    ),
-            .s_axi_rlast    ( sync_HLS_CONTROL_axi_rlast    ),
-            .s_axi_rvalid   ( sync_HLS_CONTROL_axi_rvalid   ),
-            .s_axi_rready   ( sync_HLS_CONTROL_axi_rready   ),
-            .s_axi_awlock   ( sync_HLS_CONTROL_axi_awlock   ),
-            .s_axi_awcache  ( sync_HLS_CONTROL_axi_awcache  ),
-            .s_axi_awprot   ( sync_HLS_CONTROL_axi_awprot   ),
-            .s_axi_awqos    ( sync_HLS_CONTROL_axi_awqos    ),
-            .s_axi_awregion ( sync_HLS_CONTROL_axi_awregion ),
-            .s_axi_arlock   ( sync_HLS_CONTROL_axi_arlock   ),
-            .s_axi_arcache  ( sync_HLS_CONTROL_axi_arcache  ),
-            .s_axi_arprot   ( sync_HLS_CONTROL_axi_arprot   ),
-            .s_axi_arqos    ( sync_HLS_CONTROL_arqos        ),
-            .s_axi_arregion ( sync_HLS_CONTROL_arregion     ),
+            .s_axi_awid     ( sync_HLS_CTRL_axi_awid     ),
+            .s_axi_awaddr   ( sync_HLS_CTRL_axi_awaddr   ),
+            .s_axi_awlen    ( sync_HLS_CTRL_axi_awlen    ),
+            .s_axi_awsize   ( sync_HLS_CTRL_axi_awsize   ),
+            .s_axi_awburst  ( sync_HLS_CTRL_axi_awburst  ),
+            .s_axi_awvalid  ( sync_HLS_CTRL_axi_awvalid  ),
+            .s_axi_awready  ( sync_HLS_CTRL_axi_awready  ),
+            .s_axi_wdata    ( sync_HLS_CTRL_axi_wdata    ),
+            .s_axi_wstrb    ( sync_HLS_CTRL_axi_wstrb    ),
+            .s_axi_wlast    ( sync_HLS_CTRL_axi_wlast    ),
+            .s_axi_wvalid   ( sync_HLS_CTRL_axi_wvalid   ),
+            .s_axi_wready   ( sync_HLS_CTRL_axi_wready   ),
+            .s_axi_bid      ( sync_HLS_CTRL_axi_bid      ),
+            .s_axi_bresp    ( sync_HLS_CTRL_axi_bresp    ),
+            .s_axi_bvalid   ( sync_HLS_CTRL_axi_bvalid   ),
+            .s_axi_bready   ( sync_HLS_CTRL_axi_bready   ),
+            .s_axi_arid     ( sync_HLS_CTRL_axi_arid     ),
+            .s_axi_araddr   ( sync_HLS_CTRL_axi_araddr   ),
+            .s_axi_arlen    ( sync_HLS_CTRL_axi_arlen    ),
+            .s_axi_arsize   ( sync_HLS_CTRL_axi_arsize   ),
+            .s_axi_arburst  ( sync_HLS_CTRL_axi_arburst  ),
+            .s_axi_arvalid  ( sync_HLS_CTRL_axi_arvalid  ),
+            .s_axi_arready  ( sync_HLS_CTRL_axi_arready  ),
+            .s_axi_rid      ( sync_HLS_CTRL_axi_rid      ),
+            .s_axi_rdata    ( sync_HLS_CTRL_axi_rdata    ),
+            .s_axi_rresp    ( sync_HLS_CTRL_axi_rresp    ),
+            .s_axi_rlast    ( sync_HLS_CTRL_axi_rlast    ),
+            .s_axi_rvalid   ( sync_HLS_CTRL_axi_rvalid   ),
+            .s_axi_rready   ( sync_HLS_CTRL_axi_rready   ),
+            .s_axi_awlock   ( sync_HLS_CTRL_axi_awlock   ),
+            .s_axi_awcache  ( sync_HLS_CTRL_axi_awcache  ),
+            .s_axi_awprot   ( sync_HLS_CTRL_axi_awprot   ),
+            .s_axi_awqos    ( sync_HLS_CTRL_axi_awqos    ),
+            .s_axi_awregion ( sync_HLS_CTRL_axi_awregion ),
+            .s_axi_arlock   ( sync_HLS_CTRL_axi_arlock   ),
+            .s_axi_arcache  ( sync_HLS_CTRL_axi_arcache  ),
+            .s_axi_arprot   ( sync_HLS_CTRL_axi_arprot   ),
+            .s_axi_arqos    ( sync_HLS_CTRL_arqos        ),
+            .s_axi_arregion ( sync_HLS_CTRL_arregion     ),
 
             // Master to Protocol Converter
             .m_axi_awaddr   ( to_prot_conv_axi_awaddr  ),
@@ -298,7 +300,7 @@ module hls_wrapper # (
     else begin : no_dwidth_conv
 
         // Pass through
-        `ASSIGN_AXI_BUS (to_prot_conv, sync_HLS_CONTROL)
+        `ASSIGN_AXI_BUS (to_prot_conv, sync_HLS_CTRL)
 
     end : no_dwidth_conv
     endgenerate
@@ -306,8 +308,8 @@ module hls_wrapper # (
     // AXI converter for HLS_DOTPROD_CONTROL
     xlnx_axi4_to_axilite_d32_converter xlnx_axi4_to_axilite_u (
         // Clock and reset
-        .aclk               ( HLS_CONTROL_clk_i         ), // input wire s_aclk
-        .aresetn            ( HLS_CONTROL_rstn_i        ), // input wire s_aresetn
+        .aclk               ( HLS_CTRL_clk_i         ), // input wire s_aclk
+        .aresetn            ( HLS_CTRL_rstn_i        ), // input wire s_aresetn
         // Slave interface
         .s_axi_awid         ( to_prot_conv_axi_awid      ), // input wire [1 : 0] s_axi_awid
         .s_axi_awaddr       ( to_prot_conv_axi_awaddr    ), // input wire [31 : 0] s_axi_awaddr
@@ -349,32 +351,32 @@ module hls_wrapper # (
         .s_axi_rvalid       ( to_prot_conv_axi_rvalid    ), // output wire s_axi_rvalid
         .s_axi_rready       ( to_prot_conv_axi_rready    ), // input wire s_axi_rready
         // Master interface
-        .m_axi_awaddr       ( HLS_CONTROL_axilite_awaddr        ), // output wire [31 : 0] m_axi_awaddr
-        .m_axi_awprot       ( HLS_CONTROL_axilite_awprot        ), // output wire [2 : 0] m_axi_awprot
-        .m_axi_awvalid      ( HLS_CONTROL_axilite_awvalid       ), // output wire m_axi_awvalid
-        .m_axi_awready      ( HLS_CONTROL_axilite_awready       ), // input wire m_axi_awready
-        .m_axi_wdata        ( HLS_CONTROL_axilite_wdata         ), // output wire [31 : 0] m_axi_wdata
-        .m_axi_wstrb        ( HLS_CONTROL_axilite_wstrb         ), // output wire [3 : 0] m_axi_wstrb
-        .m_axi_wvalid       ( HLS_CONTROL_axilite_wvalid        ), // output wire m_axi_wvalid
-        .m_axi_wready       ( HLS_CONTROL_axilite_wready        ), // input wire m_axi_wready
-        .m_axi_bresp        ( HLS_CONTROL_axilite_bresp         ), // input wire [1 : 0] m_axi_bresp
-        .m_axi_bvalid       ( HLS_CONTROL_axilite_bvalid        ), // input wire m_axi_bvalid
-        .m_axi_bready       ( HLS_CONTROL_axilite_bready        ), // output wire m_axi_bready
-        .m_axi_araddr       ( HLS_CONTROL_axilite_araddr        ), // output wire [31 : 0] m_axi_araddr
-        .m_axi_arprot       ( HLS_CONTROL_axilite_arprot        ), // output wire [2 : 0] m_axi_arprot
-        .m_axi_arvalid      ( HLS_CONTROL_axilite_arvalid       ), // output wire m_axi_arvalid
-        .m_axi_arready      ( HLS_CONTROL_axilite_arready       ), // input wire m_axi_arready
-        .m_axi_rdata        ( HLS_CONTROL_axilite_rdata         ), // input wire [31 : 0] m_axi_rdata
-        .m_axi_rresp        ( HLS_CONTROL_axilite_rresp         ), // input wire [1 : 0] m_axi_rresp
-        .m_axi_rvalid       ( HLS_CONTROL_axilite_rvalid        ), // input wire m_axi_rvalid
-        .m_axi_rready       ( HLS_CONTROL_axilite_rready        )  // output wire m_axi_rready
+        .m_axi_awaddr       ( HLS_CTRL_axilite_awaddr        ), // output wire [31 : 0] m_axi_awaddr
+        .m_axi_awprot       ( HLS_CTRL_axilite_awprot        ), // output wire [2 : 0] m_axi_awprot
+        .m_axi_awvalid      ( HLS_CTRL_axilite_awvalid       ), // output wire m_axi_awvalid
+        .m_axi_awready      ( HLS_CTRL_axilite_awready       ), // input wire m_axi_awready
+        .m_axi_wdata        ( HLS_CTRL_axilite_wdata         ), // output wire [31 : 0] m_axi_wdata
+        .m_axi_wstrb        ( HLS_CTRL_axilite_wstrb         ), // output wire [3 : 0] m_axi_wstrb
+        .m_axi_wvalid       ( HLS_CTRL_axilite_wvalid        ), // output wire m_axi_wvalid
+        .m_axi_wready       ( HLS_CTRL_axilite_wready        ), // input wire m_axi_wready
+        .m_axi_bresp        ( HLS_CTRL_axilite_bresp         ), // input wire [1 : 0] m_axi_bresp
+        .m_axi_bvalid       ( HLS_CTRL_axilite_bvalid        ), // input wire m_axi_bvalid
+        .m_axi_bready       ( HLS_CTRL_axilite_bready        ), // output wire m_axi_bready
+        .m_axi_araddr       ( HLS_CTRL_axilite_araddr        ), // output wire [31 : 0] m_axi_araddr
+        .m_axi_arprot       ( HLS_CTRL_axilite_arprot        ), // output wire [2 : 0] m_axi_arprot
+        .m_axi_arvalid      ( HLS_CTRL_axilite_arvalid       ), // output wire m_axi_arvalid
+        .m_axi_arready      ( HLS_CTRL_axilite_arready       ), // input wire m_axi_arready
+        .m_axi_rdata        ( HLS_CTRL_axilite_rdata         ), // input wire [31 : 0] m_axi_rdata
+        .m_axi_rresp        ( HLS_CTRL_axilite_rresp         ), // input wire [1 : 0] m_axi_rresp
+        .m_axi_rvalid       ( HLS_CTRL_axilite_rvalid        ), // input wire m_axi_rvalid
+        .m_axi_rready       ( HLS_CTRL_axilite_rready        )  // output wire m_axi_rready
     );
 
     // NOTE: AXI_DATA_WITDH=512 for this one, and should only be connected to HBUS
     // HLS core instance
     custom_hls_conv_hbus custom_hls_conv_hbus_u (
-        .clk_i                      ( HLS_CONTROL_clk_i            ), // input wire clk_i
-        .rst_ni                     ( HLS_CONTROL_rstn_i           ), // input wire rst_ni
+        .clk_i                      ( HLS_CTRL_clk_i            ), // input wire clk_i
+        .rst_ni                     ( HLS_CTRL_rstn_i           ), // input wire rst_ni
         .interrupt_o                ( hls_interrupt_async          ), // output wire interrupt_o
         // AXI4 Master
         .m_axi_awid                 ( m_axi_awid      ),
@@ -416,26 +418,26 @@ module hls_wrapper # (
         .m_axi_rlast                ( m_axi_rlast     ),
         .m_axi_rvalid               ( m_axi_rvalid    ),
         .m_axi_rready               ( m_axi_rready    ),
-        // HLS_CONTROL AXI-lite slave
-        .s_control_axilite_awaddr       ( HLS_CONTROL_axilite_awaddr   ), // input wire [31 : 0] control_axilite_awaddr
-        .s_control_axilite_awprot       ( HLS_CONTROL_axilite_awprot   ), // input wire [2 : 0] control_axilite_awprot
-        .s_control_axilite_awvalid      ( HLS_CONTROL_axilite_awvalid  ), // input wire control_axilite_awvalid
-        .s_control_axilite_awready      ( HLS_CONTROL_axilite_awready  ), // output wire control_axilite_awready
-        .s_control_axilite_wdata        ( HLS_CONTROL_axilite_wdata    ), // input wire [31 : 0] control_axilite_wdata
-        .s_control_axilite_wstrb        ( HLS_CONTROL_axilite_wstrb    ), // input wire [3 : 0] control_axilite_wstrb
-        .s_control_axilite_wvalid       ( HLS_CONTROL_axilite_wvalid   ), // input wire control_axilite_wvalid
-        .s_control_axilite_wready       ( HLS_CONTROL_axilite_wready   ), // output wire control_axilite_wready
-        .s_control_axilite_bresp        ( HLS_CONTROL_axilite_bresp    ), // output wire [1 : 0] control_axilite_bresp
-        .s_control_axilite_bvalid       ( HLS_CONTROL_axilite_bvalid   ), // output wire control_axilite_bvalid
-        .s_control_axilite_bready       ( HLS_CONTROL_axilite_bready   ), // input wire control_axilite_bready
-        .s_control_axilite_araddr       ( HLS_CONTROL_axilite_araddr   ), // input wire [31 : 0] control_axilite_araddr
-        .s_control_axilite_arprot       ( HLS_CONTROL_axilite_arprot   ), // input wire [2 : 0] control_axilite_arprot
-        .s_control_axilite_arvalid      ( HLS_CONTROL_axilite_arvalid  ), // input wire control_axilite_arvalid
-        .s_control_axilite_arready      ( HLS_CONTROL_axilite_arready  ), // output wire control_axilite_arready
-        .s_control_axilite_rdata        ( HLS_CONTROL_axilite_rdata    ), // output wire [31 : 0] control_axilite_rdata
-        .s_control_axilite_rresp        ( HLS_CONTROL_axilite_rresp    ), // output wire [1 : 0] control_axilite_rresp
-        .s_control_axilite_rvalid       ( HLS_CONTROL_axilite_rvalid   ), // output wire control_axilite_rvalid
-        .s_control_axilite_rready       ( HLS_CONTROL_axilite_rready   )  // input wire control_axilite_rready
+        // HLS_CTRL AXI-lite slave
+        .s_control_axilite_awaddr       ( HLS_CTRL_axilite_awaddr   ), // input wire [31 : 0] control_axilite_awaddr
+        .s_control_axilite_awprot       ( HLS_CTRL_axilite_awprot   ), // input wire [2 : 0] control_axilite_awprot
+        .s_control_axilite_awvalid      ( HLS_CTRL_axilite_awvalid  ), // input wire control_axilite_awvalid
+        .s_control_axilite_awready      ( HLS_CTRL_axilite_awready  ), // output wire control_axilite_awready
+        .s_control_axilite_wdata        ( HLS_CTRL_axilite_wdata    ), // input wire [31 : 0] control_axilite_wdata
+        .s_control_axilite_wstrb        ( HLS_CTRL_axilite_wstrb    ), // input wire [3 : 0] control_axilite_wstrb
+        .s_control_axilite_wvalid       ( HLS_CTRL_axilite_wvalid   ), // input wire control_axilite_wvalid
+        .s_control_axilite_wready       ( HLS_CTRL_axilite_wready   ), // output wire control_axilite_wready
+        .s_control_axilite_bresp        ( HLS_CTRL_axilite_bresp    ), // output wire [1 : 0] control_axilite_bresp
+        .s_control_axilite_bvalid       ( HLS_CTRL_axilite_bvalid   ), // output wire control_axilite_bvalid
+        .s_control_axilite_bready       ( HLS_CTRL_axilite_bready   ), // input wire control_axilite_bready
+        .s_control_axilite_araddr       ( HLS_CTRL_axilite_araddr   ), // input wire [31 : 0] control_axilite_araddr
+        .s_control_axilite_arprot       ( HLS_CTRL_axilite_arprot   ), // input wire [2 : 0] control_axilite_arprot
+        .s_control_axilite_arvalid      ( HLS_CTRL_axilite_arvalid  ), // input wire control_axilite_arvalid
+        .s_control_axilite_arready      ( HLS_CTRL_axilite_arready  ), // output wire control_axilite_arready
+        .s_control_axilite_rdata        ( HLS_CTRL_axilite_rdata    ), // output wire [31 : 0] control_axilite_rdata
+        .s_control_axilite_rresp        ( HLS_CTRL_axilite_rresp    ), // output wire [1 : 0] control_axilite_rresp
+        .s_control_axilite_rvalid       ( HLS_CTRL_axilite_rvalid   ), // output wire control_axilite_rvalid
+        .s_control_axilite_rready       ( HLS_CTRL_axilite_rready   )  // input wire control_axilite_rready
     );
 
 endmodule : hls_wrapper
