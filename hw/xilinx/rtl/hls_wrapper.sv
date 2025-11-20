@@ -39,6 +39,8 @@ module hls_wrapper # (
     parameter MBUS_ADDR_WIDTH = 32,
     parameter MBUS_DATA_WIDTH = 32,
     parameter MBUS_ID_WIDTH   = 4,
+    // Asynchronous HLS_CTRL
+    parameter IS_HLS_CTRL_ASYNC = 1,
     // HBUS parameters
     parameter AXI_MASTER_DATA_WIDTH = 512,
     parameter AXI_MASTER_ADDR_WIDTH = 32,
@@ -88,7 +90,8 @@ module hls_wrapper # (
     /////////////
 
     // Add clock bridges for HLS_CTRL
-    `ifdef HLS_CTRL_HAS_CLOCK_DOMAIN
+    generate
+    if ( IS_HLS_CTRL_ASYNC == 1 ) begin : gen_clock_conv
         // TODO: if AXI master on MBUS, add new clock bridge for master interface
         //          for HBUS access, assume HBUS clock domain
         // TODO: this should probably go in check_config
@@ -198,16 +201,18 @@ module hls_wrapper # (
             .src_clk        ( HLS_CTRL_clk_i   ),
             .src_in         ( hls_interrupt_async )
         );
-
-    `else // notdefined(HLS_CTRL_HAS_CLOCK_DOMAIN)
+    end : gen_clock_conv
+    // ( IS_HLS_CTRL_ASYNC != 1 )
+    else begin : no_clock_conv
         // Just pass through AXI interface
         `ASSIGN_AXI_BUS(sync_HLS_CTRL, s_HLS_CTRL)
         // Directly connect interrupt line
         assign hls_interrupt_o = hls_interrupt_async;
-    `endif
-
+    end : no_clock_conv
+    endgenerate
+    
     // Use a Dwidth converter if System XLEN is 64-bits wide.
-    generate
+    generate 
     if ( MBUS_DATA_WIDTH == 64 ) begin : gen_dwidth_conv
 
         xlnx_axi_dwidth_64_to_32_converter axi_dwidth_conv_u (

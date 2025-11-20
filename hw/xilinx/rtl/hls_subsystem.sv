@@ -102,6 +102,9 @@ module hls_subsystem # (
         .MBUS_ADDR_WIDTH ( MBUS_ADDR_WIDTH ),             \
         .MBUS_DATA_WIDTH ( MBUS_DATA_WIDTH ),             \
         .MBUS_ID_WIDTH   ( MBUS_ID_WIDTH   ),             \
+        // Always asynchronous here                       \
+        // TODO: this should depend on HLS_CTRL<N>_HAS_CLOCK_DOMAIN \
+        .IS_HLS_CTRL_ASYNC (1),                           \
         // HLS MASTER parameters                          \
         .AXI_MASTER_DATA_WIDTH ( AXI_MASTER_DATA_WIDTH ), \
         .AXI_MASTER_ADDR_WIDTH ( AXI_MASTER_ADDR_WIDTH ), \
@@ -113,8 +116,8 @@ module hls_subsystem # (
             .main_clk_i                 ( main_clk_i  ),               \
             .main_rstn_i                ( main_rstn_i ),               \
             // HLS IP clock and reset                                  \
-            .HLS_CTRL_clk_i          ( HLS_CTRL_clk_i  [``idx``] ), \
-            .HLS_CTRL_rstn_i         ( HLS_CTRL_rstn_i [``idx``] ), \
+            .HLS_CTRL_clk_i             ( HLS_CTRL_clk_i  [``idx``] ), \
+            .HLS_CTRL_rstn_i            ( HLS_CTRL_rstn_i [``idx``] ), \
             // Interrupt                                               \
             .hls_interrupt_o            ( hls_interrupt_o [``idx``] )
 
