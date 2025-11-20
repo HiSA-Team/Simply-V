@@ -16,17 +16,29 @@ module rv_socket # (
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32,
     parameter int unsigned    LOCAL_ADDR_WIDTH  = 32,
     parameter int unsigned    LOCAL_ID_WIDTH    = 2,
-    parameter int unsigned    NUM_IRQ           = 32
+    parameter int unsigned    NUM_IRQ           = 32,
+    parameter int unsigned    NUM_CPU           = 1 // in 1, 2, 4, 6
+
 ) (
     input  logic                            clk_i,
     input  logic                            rst_ni,        // System-wide reset (also resets core)
     input  logic                            core_resetn_i, // Core-only reset (does not reset DM and other modules)
-    input  logic [LOCAL_ADDR_WIDTH -1 : 0 ] bootaddr_i,
-    input  logic [NUM_IRQ          -1 : 0 ] irq_i,
+    input  logic [LOCAL_ADDR_WIDTH -1 : 0 ] bootaddr_i,    // TODO: this should be one for CPU
+    input  logic [NUM_IRQ          -1 : 0 ] irq_i,         // TODO: this should be one for CPU
 
-    // Core
-    `DEFINE_AXI_MASTER_PORTS(rv_socket_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
-    `DEFINE_AXI_MASTER_PORTS(rv_socket_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    // Core(s)
+    `DEFINE_AXI_MASTER_PORTS(rv_socket_instr0, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS( rv_socket_data0, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS(rv_socket_instr1, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS( rv_socket_data1, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS(rv_socket_instr2, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS( rv_socket_data2, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS(rv_socket_instr3, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS( rv_socket_data3, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS(rv_socket_instr4, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS( rv_socket_data4, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS(rv_socket_instr5, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS( rv_socket_data5, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
 
     // Debug module
     `DEFINE_AXI_MASTER_PORTS(rv_socket_dbg_master, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
@@ -70,7 +82,7 @@ module rv_socket # (
     `DECLARE_MEM_BUS(core_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
 
     // Debug request DM -> RV core
-    logic debug_req_core;
+    logic [NUM_CPU-1 : 0] debug_req_core;
 
     //////////////////////////////////////////////////////
     //     ___               ___          _             //
@@ -165,6 +177,179 @@ module rv_socket # (
             );
 
         end
+        else if (CORE_SELECTOR == CORE_MULTI_CV32E40P) begin: core_multi_cv32e40p
+
+            //////////////////////////
+            //      CV32E40P        //
+            //////////////////////////
+            `define CV32E40P_INSTANCE(idx) \
+                `DECLARE_MEM_BUS(core_instr``idx``, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH)    \
+                `DECLARE_MEM_BUS(core_data``idx``, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH)     \
+                custom_cv32e40p cv32e40p_core``idx`` (                                     \
+                    // Clock and Reset                                                     \
+                    .clk_i                  ( clk_i                     ),                 \
+                    .rst_ni                 ( core_resetn_internal      ),                 \
+                    .pulp_clock_en_i        ( '0                        ),                 \
+                    .scan_cg_en_i           ( '0                        ),                 \
+                    .boot_addr_i            ( bootaddr_i                ),                 \
+                    .hart_id_i              ( ``idx``                   ),                 \
+                    .mtvec_addr_i           ( '0                        ),                 \
+                    .dm_halt_addr_i         ( DEBUG_START + dm_HaltAddress[31:0]      ),   \
+                    .dm_exception_addr_i    ( DEBUG_START + dm_ExceptionAddress[31:0] ),   \
+                    // Instruction memory interface                                        \
+                    .instr_mem_req          ( core_instr``idx``_mem_req        ),          \
+                    .instr_mem_gnt          ( core_instr``idx``_mem_gnt        ),          \
+                    .instr_mem_valid        ( core_instr``idx``_mem_valid      ),          \
+                    .instr_mem_addr         ( core_instr``idx``_mem_addr       ),          \
+                    .instr_mem_be           ( core_instr``idx``_mem_be         ),          \
+                    .instr_mem_we           ( core_instr``idx``_mem_we         ),          \
+                    .instr_mem_wdata        ( core_instr``idx``_mem_wdata      ),          \
+                    .instr_mem_rdata        ( core_instr``idx``_mem_rdata      ),          \
+                    .instr_mem_error        ( core_instr``idx``_mem_error      ),          \
+                    // Data memory interface                                               \
+                    .data_mem_req           ( core_data``idx``_mem_req         ),          \
+                    .data_mem_valid         ( core_data``idx``_mem_valid       ),          \
+                    .data_mem_gnt           ( core_data``idx``_mem_gnt         ),          \
+                    .data_mem_we            ( core_data``idx``_mem_we          ),          \
+                    .data_mem_be            ( core_data``idx``_mem_be          ),          \
+                    .data_mem_addr          ( core_data``idx``_mem_addr        ),          \
+                    .data_mem_wdata         ( core_data``idx``_mem_wdata       ),          \
+                    .data_mem_rdata         ( core_data``idx``_mem_rdata       ),          \
+                    .data_mem_error         ( core_data``idx``_mem_error       ),          \
+                    .irq_i                  ( irq_i                     ),                 \
+                    .irq_ack_o              (                           ),                 \
+                    .irq_id_o               (                           ),                 \
+                    .debug_req_i            ( debug_req_core [``idx``]  ),                 \
+                    .fetch_enable_i         ( 1'b1                      )                  \
+                );                                                                         \
+                // Convert instructions socket (AXI) to core (MEM)                         \
+                custom_axi_from_mem axi_from_mem_instr``idx``_u (                          \
+                    // AXI side                                                            \
+                    .m_axi_awid     ( rv_socket_instr0``idx``_axi_awid       ),             \
+                    .m_axi_awaddr   ( rv_socket_instr0``idx``_axi_awaddr     ),             \
+                    .m_axi_awlen    ( rv_socket_instr0``idx``_axi_awlen      ),             \
+                    .m_axi_awsize   ( rv_socket_instr0``idx``_axi_awsize     ),             \
+                    .m_axi_awburst  ( rv_socket_instr0``idx``_axi_awburst    ),             \
+                    .m_axi_awlock   ( rv_socket_instr0``idx``_axi_awlock     ),             \
+                    .m_axi_awcache  ( rv_socket_instr0``idx``_axi_awcache    ),             \
+                    .m_axi_awprot   ( rv_socket_instr0``idx``_axi_awprot     ),             \
+                    .m_axi_awqos    ( rv_socket_instr0``idx``_axi_awqos      ),             \
+                    .m_axi_awregion ( rv_socket_instr0``idx``_axi_awregion   ),             \
+                    .m_axi_awvalid  ( rv_socket_instr0``idx``_axi_awvalid    ),             \
+                    .m_axi_awready  ( rv_socket_instr0``idx``_axi_awready    ),             \
+                    .m_axi_wdata    ( rv_socket_instr0``idx``_axi_wdata      ),             \
+                    .m_axi_wstrb    ( rv_socket_instr0``idx``_axi_wstrb      ),             \
+                    .m_axi_wlast    ( rv_socket_instr0``idx``_axi_wlast      ),             \
+                    .m_axi_wvalid   ( rv_socket_instr0``idx``_axi_wvalid     ),             \
+                    .m_axi_wready   ( rv_socket_instr0``idx``_axi_wready     ),             \
+                    .m_axi_bid      ( rv_socket_instr0``idx``_axi_bid        ),             \
+                    .m_axi_bresp    ( rv_socket_instr0``idx``_axi_bresp      ),             \
+                    .m_axi_bvalid   ( rv_socket_instr0``idx``_axi_bvalid     ),             \
+                    .m_axi_bready   ( rv_socket_instr0``idx``_axi_bready     ),             \
+                    .m_axi_araddr   ( rv_socket_instr0``idx``_axi_araddr     ),             \
+                    .m_axi_arlen    ( rv_socket_instr0``idx``_axi_arlen      ),             \
+                    .m_axi_arsize   ( rv_socket_instr0``idx``_axi_arsize     ),             \
+                    .m_axi_arburst  ( rv_socket_instr0``idx``_axi_arburst    ),             \
+                    .m_axi_arlock   ( rv_socket_instr0``idx``_axi_arlock     ),             \
+                    .m_axi_arcache  ( rv_socket_instr0``idx``_axi_arcache    ),             \
+                    .m_axi_arprot   ( rv_socket_instr0``idx``_axi_arprot     ),             \
+                    .m_axi_arqos    ( rv_socket_instr0``idx``_axi_arqos      ),             \
+                    .m_axi_arregion ( rv_socket_instr0``idx``_axi_arregion   ),             \
+                    .m_axi_arvalid  ( rv_socket_instr0``idx``_axi_arvalid    ),             \
+                    .m_axi_arready  ( rv_socket_instr0``idx``_axi_arready    ),             \
+                    .m_axi_arid     ( rv_socket_instr0``idx``_axi_arid       ),             \
+                    .m_axi_rid      ( rv_socket_instr0``idx``_axi_rid        ),             \
+                    .m_axi_rdata    ( rv_socket_instr0``idx``_axi_rdata      ),             \
+                    .m_axi_rresp    ( rv_socket_instr0``idx``_axi_rresp      ),             \
+                    .m_axi_rlast    ( rv_socket_instr0``idx``_axi_rlast      ),             \
+                    .m_axi_rvalid   ( rv_socket_instr0``idx``_axi_rvalid     ),             \
+                    .m_axi_rready   ( rv_socket_instr0``idx``_axi_rready     ),             \
+                    // MEM side                                                            \
+                    .clk_i          ( clk_i                       ),                       \
+                    .rst_ni         ( rst_ni                      ),                       \
+                    .s_mem_req      ( core_instr``idx``_mem_req    ),                       \
+                    .s_mem_addr     ( core_instr``idx``_mem_addr   ),                       \
+                    .s_mem_we       ( core_instr``idx``_mem_we     ),                       \
+                    .s_mem_wdata    ( core_instr``idx``_mem_wdata  ),                       \
+                    .s_mem_be       ( core_instr``idx``_mem_be     ),                       \
+                    .s_mem_gnt      ( core_instr``idx``_mem_gnt    ),                       \
+                    .s_mem_valid    ( core_instr``idx``_mem_valid  ),                       \
+                    .s_mem_rdata    ( core_instr``idx``_mem_rdata  ),                       \
+                    .s_mem_error    ( core_instr``idx``_mem_error  )                        \
+                );                                                                         \
+                // Convert instructions socket (AXI) to core (MEM)                         \
+                custom_axi_from_mem axi_from_mem_data``idx``_u (                           \
+                    // AXI side                                                            \
+                    .m_axi_awid     (  rv_socket_data0``idx``_axi_awid       ),             \
+                    .m_axi_awaddr   (  rv_socket_data0``idx``_axi_awaddr     ),             \
+                    .m_axi_awlen    (  rv_socket_data0``idx``_axi_awlen      ),             \
+                    .m_axi_awsize   (  rv_socket_data0``idx``_axi_awsize     ),             \
+                    .m_axi_awburst  (  rv_socket_data0``idx``_axi_awburst    ),             \
+                    .m_axi_awlock   (  rv_socket_data0``idx``_axi_awlock     ),             \
+                    .m_axi_awcache  (  rv_socket_data0``idx``_axi_awcache    ),             \
+                    .m_axi_awprot   (  rv_socket_data0``idx``_axi_awprot     ),             \
+                    .m_axi_awqos    (  rv_socket_data0``idx``_axi_awqos      ),             \
+                    .m_axi_awregion (  rv_socket_data0``idx``_axi_awregion   ),             \
+                    .m_axi_awvalid  (  rv_socket_data0``idx``_axi_awvalid    ),             \
+                    .m_axi_awready  (  rv_socket_data0``idx``_axi_awready    ),             \
+                    .m_axi_wdata    (  rv_socket_data0``idx``_axi_wdata      ),             \
+                    .m_axi_wstrb    (  rv_socket_data0``idx``_axi_wstrb      ),             \
+                    .m_axi_wlast    (  rv_socket_data0``idx``_axi_wlast      ),             \
+                    .m_axi_wvalid   (  rv_socket_data0``idx``_axi_wvalid     ),             \
+                    .m_axi_wready   (  rv_socket_data0``idx``_axi_wready     ),             \
+                    .m_axi_bid      (  rv_socket_data0``idx``_axi_bid        ),             \
+                    .m_axi_bresp    (  rv_socket_data0``idx``_axi_bresp      ),             \
+                    .m_axi_bvalid   (  rv_socket_data0``idx``_axi_bvalid     ),             \
+                    .m_axi_bready   (  rv_socket_data0``idx``_axi_bready     ),             \
+                    .m_axi_araddr   (  rv_socket_data0``idx``_axi_araddr     ),             \
+                    .m_axi_arlen    (  rv_socket_data0``idx``_axi_arlen      ),             \
+                    .m_axi_arsize   (  rv_socket_data0``idx``_axi_arsize     ),             \
+                    .m_axi_arburst  (  rv_socket_data0``idx``_axi_arburst    ),             \
+                    .m_axi_arlock   (  rv_socket_data0``idx``_axi_arlock     ),             \
+                    .m_axi_arcache  (  rv_socket_data0``idx``_axi_arcache    ),             \
+                    .m_axi_arprot   (  rv_socket_data0``idx``_axi_arprot     ),             \
+                    .m_axi_arqos    (  rv_socket_data0``idx``_axi_arqos      ),             \
+                    .m_axi_arregion (  rv_socket_data0``idx``_axi_arregion   ),             \
+                    .m_axi_arvalid  (  rv_socket_data0``idx``_axi_arvalid    ),             \
+                    .m_axi_arready  (  rv_socket_data0``idx``_axi_arready    ),             \
+                    .m_axi_arid     (  rv_socket_data0``idx``_axi_arid       ),             \
+                    .m_axi_rid      (  rv_socket_data0``idx``_axi_rid        ),             \
+                    .m_axi_rdata    (  rv_socket_data0``idx``_axi_rdata      ),             \
+                    .m_axi_rresp    (  rv_socket_data0``idx``_axi_rresp      ),             \
+                    .m_axi_rlast    (  rv_socket_data0``idx``_axi_rlast      ),             \
+                    .m_axi_rvalid   (  rv_socket_data0``idx``_axi_rvalid     ),             \
+                    .m_axi_rready   (  rv_socket_data0``idx``_axi_rready     ),             \
+                    // MEM side                                                            \
+                    .clk_i          ( clk_i                           ),                   \
+                    .rst_ni         ( rst_ni                          ),                   \
+                    .s_mem_req      ( core_data``idx``_mem_req         ),                   \
+                    .s_mem_addr     ( core_data``idx``_mem_addr        ),                   \
+                    .s_mem_we       ( core_data``idx``_mem_we          ),                   \
+                    .s_mem_wdata    ( core_data``idx``_mem_wdata       ),                   \
+                    .s_mem_be       ( core_data``idx``_mem_be          ),                   \
+                    .s_mem_gnt      ( core_data``idx``_mem_gnt         ),                   \
+                    .s_mem_valid    ( core_data``idx``_mem_valid       ),                   \
+                    .s_mem_rdata    ( core_data``idx``_mem_rdata       ),                   \
+                    .s_mem_error    ( core_data``idx``_mem_error       )                    \
+                );                                                                         \
+
+                // Instantiate CPUs
+                if ( NUM_CPU >= 1 ) begin : gen_cpu1
+                    `CV32E40P_INSTANCE(0)
+                end : gen_cpu1
+                if ( NUM_CPU >= 2 ) begin : gen_cpu2
+                    `CV32E40P_INSTANCE(1)
+                end : gen_cpu2
+                if ( NUM_CPU >= 4 ) begin : gen_cpu4
+                    `CV32E40P_INSTANCE(2)
+                    `CV32E40P_INSTANCE(3)
+                end : gen_cpu4
+                if ( NUM_CPU >= 6 ) begin : gen_cpu6
+                    `CV32E40P_INSTANCE(4)
+                    `CV32E40P_INSTANCE(5)
+                end : gen_cpu6
+
+        end : core_multi_cv32e40p
         else if (CORE_SELECTOR == CORE_CV32E40P) begin: core_cv32e40p
 
             //////////////////////////
@@ -214,7 +399,7 @@ module rv_socket # (
                 .irq_id_o               (                           ),  // TBD
 
                 // Debug Interface
-                .debug_req_i            ( debug_req_core            ),  // From Debug Module
+                .debug_req_i            ( debug_req_core  [0]       ),  // From Debug Module
                 .debug_havereset_o      ( debug_havereset_o         ),  // Open
                 .debug_running_o        ( debug_running_o           ),  // Open
                 .debug_halted_o         ( debug_halted_o            ),  // Open
@@ -267,7 +452,7 @@ module rv_socket # (
                 .irq_fast_i             ( '0 ),
                 .irq_nm_i               ( '0 ),
 
-                .debug_req_i            ( debug_req_core )
+                .debug_req_i            ( debug_req_core [0] )
 
             );
         end
@@ -398,8 +583,8 @@ module rv_socket # (
 
 
             // Attach to socket
-            `ASSIGN_AXI_BUS(rv_socket_data , microblaze_data);
-            `ASSIGN_AXI_BUS(rv_socket_instr , converter_instr);
+            `ASSIGN_AXI_BUS(rv_socket_data0 , microblaze_data);
+            `ASSIGN_AXI_BUS(rv_socket_instr0 , converter_instr);
 
             // Tie-off undriven ID signals
             // ID's are set to zero since they are not present in microblaze, while the crossbar have ID's of size 2.
@@ -836,8 +1021,8 @@ module rv_socket # (
             );
 
             // Attach to socket
-            `ASSIGN_AXI_BUS(rv_socket_data , dwidth_conv_to_d64_data);
-            `ASSIGN_AXI_BUS(rv_socket_instr , dwidth_conv_to_d64_instr);
+            `ASSIGN_AXI_BUS(rv_socket_data0 , dwidth_conv_to_d64_data);
+            `ASSIGN_AXI_BUS(rv_socket_instr0 , dwidth_conv_to_d64_instr);
 
             // Tie-off undriven ID signals
             // ID's are set to zero since they are not present in microblaze, while the crossbar have ID's of size 2.
@@ -868,7 +1053,7 @@ module rv_socket # (
                 .irq_i           ( {0,irq_i[CORE_EXT_INTERRUPT]}    ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
                 .ipi_i           ( irq_i[CORE_SW_INTERRUPT]         ), // Shoult be SW interrupt
                 .time_irq_i      ( irq_i[CORE_TIM_INTERRUPT]        ), // Should be TIM interrupt
-                .debug_req_i     ( debug_req_core                   ),
+                .debug_req_i     ( debug_req_core  [0]              ),
 
                 .m_axi_awaddr   ( cv64a6_axi_awaddr                 ), // output wire [31 : 0] m_axi_awaddr
                 .m_axi_awlen    ( cv64a6_axi_awlen                  ), // output wire [7 : 0] m_axi_awlen
@@ -913,8 +1098,8 @@ module rv_socket # (
             );
 
             // Attach to socket (we only use data port)
-            `ASSIGN_AXI_BUS( rv_socket_data , cv64a6 );
-            `SINK_AXI_MASTER_INTERFACE(rv_socket_instr);
+            `ASSIGN_AXI_BUS( rv_socket_data0 , cv64a6 );
+            `SINK_AXI_MASTER_INTERFACE(rv_socket_instr0);
 
         end
 
@@ -945,8 +1130,8 @@ module rv_socket # (
     if ( !( CORE_SELECTOR inside {CORE_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6} ) ) begin : mem_convert
 
         // Connect memory interfaces to socket output memory ports
-        `ASSIGN_AXI_BUS( rv_socket_instr, core_instr_to_socket_instr );
-        `ASSIGN_AXI_BUS( rv_socket_data, core_data_to_socket_data );
+        `ASSIGN_AXI_BUS( rv_socket_instr0, core_instr_to_socket_instr );
+        `ASSIGN_AXI_BUS( rv_socket_data0, core_data_to_socket_data );
 
         // Convert instructions socket (AXI) to core (MEM)
         custom_axi_from_mem axi_from_mem_instr_u (
@@ -1073,7 +1258,7 @@ module rv_socket # (
 
     // This is only for PULP cores, that share a common debug module
     // Other cores are required to instatiate their own DM
-    if ( CORE_SELECTOR inside {CORE_CV32E40P, CORE_IBEX} ) begin : dm_rv32_gen
+    if ( CORE_SELECTOR inside {CORE_CV32E40P, CORE_MULTI_CV32E40P, CORE_IBEX} ) begin : dm_rv32_gen
 
         ///////////////////////////
         // Debug Module Instance //
@@ -1166,7 +1351,7 @@ module rv_socket # (
             .dbg_master_axi_rvalid      ( rv_socket_dbg_master_axi_rvalid   ),
             .dbg_master_axi_rready      ( rv_socket_dbg_master_axi_rready   ),
             // To PULP core
-            .debug_req_o            ( debug_req_core           )
+            .debug_req_o                ( debug_req_core           )
         );
 
     end : dm_rv32_gen
