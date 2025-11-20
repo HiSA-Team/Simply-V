@@ -531,7 +531,7 @@ def parse_RANGE_BASE_ADDR (
 				break
 			# Must contain only chars in "[0-9][A-F][a-f]"
 			for j in range(len(values[i])-2):
-				if not ((ord(values[i][j+2]) in range(48, 58)) or (ord(values[i][j+2]) in range (97, 103))):
+				if not (str(values[i][j+2]) in "0123456789abcdefABCDEF"):
 					correct_format = False
 					break
 		#

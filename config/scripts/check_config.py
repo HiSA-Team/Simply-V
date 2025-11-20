@@ -149,15 +149,18 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
     # Check valid main clock domain
     if config.CONFIG_NAME == "MBUS":
         if config.MAIN_CLOCK_DOMAIN not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG]:
-            print_error(f"The clock domain {clok_domain}MHz is not supported")
+            print_error(f"The main clock domain {config.MAIN_CLOCK_DOMAIN}MHz is not supported")
             return False
         # Check valid clock domains
         for i in range(len(config.RANGE_CLOCK_DOMAINS)):
             # Check if the clock frequency is valid (DDR has its own clock domain)
             # TOD143: decide a prefix for HBUS-attached accelerators here, maybe ACC_* or HBUS_*
-            exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS"]
-            if ( config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG] ) and ( config.RANGE_NAMES[i] not in exclude_list):
-                print_error(f"The clock domain {config.RANGE_CLOCK_DOMAINS[i]}MHz is not supported")
+            # Use prefixes for DDR4CH and HLS_CTRL
+            is_ddr = config.RANGE_NAMES[i].startswith("DDR4CH")
+            is_hls = config.RANGE_NAMES[i].startswith("HLS_CTRL")
+            is_hbus = config.RANGE_NAMES[i] == "HBUS"
+            if (config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG]) and not (is_ddr or is_hls or is_hbus):
+                print_error(f"The clock domain {config.RANGE_CLOCK_DOMAINS[i]}MHz is not supported for {config.RANGE_NAMES[i]}")
                 return False
             # Check if all the main_clock_domain slaves have the same frequency as MAIN_CLOCK_DOMAIN
             if config.RANGE_NAMES[i] in MAIN_CLOCK_DOMAIN_SLAVES:
