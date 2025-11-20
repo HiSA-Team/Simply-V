@@ -19,6 +19,9 @@ set_property board_part $::env(XILINX_BOARD_PART) [current_project]
 #######################
 source $::env(XILINX_SYNTH_TCL_ROOT)/suppress_messages.tcl
 
+# Promote CRITICAL WARNING to ERROR "The top module "<name>" specified for this project can not be validated."
+set_msg_config -id {[filemgmt 20-742]} -new_severity error
+
 ###################
 # Verilog defines #
 ###################
