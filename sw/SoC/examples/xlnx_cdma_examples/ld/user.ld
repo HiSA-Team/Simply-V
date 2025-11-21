@@ -1,4 +1,4 @@
-/* 
+/*
     *** User-defined linker script ***
 
     If you want to extend the UninaSoC.ld script, place here your code.

@@ -25,6 +25,8 @@ XILINX_EMBEDDED_IP_LIST = $(shell basename --multiple ${XILINX_IPS_ROOT}/embedde
 CUSTOM_COMMON_IP_LIST   = $(shell if ls ${XILINX_IPS_ROOT}/common/custom_* 1>/dev/null 2>&1; then basename --multiple ${XILINX_IPS_ROOT}/common/custom_*; else echo ""; fi)
 CUSTOM_HPC_IP_LIST      = $(shell if ls ${XILINX_IPS_ROOT}/hpc/custom_* 1>/dev/null 2>&1; then basename --multiple ${XILINX_IPS_ROOT}/hpc/custom_*; else echo ""; fi)
 CUSTOM_EMBEDDED_IP_LIST = $(shell if ls ${XILINX_IPS_ROOT}/embedded/custom_* 1>/dev/null 2>&1; then basename --multiple ${XILINX_IPS_ROOT}/embedded/custom_*; else echo ""; fi)
+CUSTOM_EMBEDDED_IP_LIST := $(filter-out custom_hls_conv_hbus,${CUSTOM_EMBEDDED_IP_LIST})
+
 
 # Board-independent IP lists
 XILINX_IP_LIST = ${XILINX_COMMON_IP_LIST}

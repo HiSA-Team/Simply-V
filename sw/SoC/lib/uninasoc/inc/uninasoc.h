@@ -21,6 +21,12 @@
 #include "xlnx_tim.h"
 #endif
 
+#ifdef CDMA_IS_ENABLED
+#include "xaxicdma.h"
+#include "xaxicdma_hw.h"
+#endif
+
+
 #include "tinyIO.h"
 
 enum{
