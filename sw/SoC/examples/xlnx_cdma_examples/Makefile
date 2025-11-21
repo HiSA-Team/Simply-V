@@ -6,7 +6,6 @@
 # Usage:
 #       make CDMA_EXAMPLE=simple
 #       make CDMA_EXAMPLE=irq
-#       make CDMA_EXAMPLE=multisize
 
 ################
 # Program Name #
