@@ -21,14 +21,6 @@
 extern const volatile uint32_t _peripheral_AXI_CDMA_start;
 #define CDMA_BASEADDR   ((uintptr_t)&_peripheral_AXI_CDMA_start)
 
-// Utility macro
-#define cdma_print_status(prologue) \
-    { \
-        printf("%s", prologue); \
-        uint32_t ret_sr = XAxiCdma_ReadReg(CDMA_BASEADDR, XAXICDMA_SR_OFFSET); \
-        printf("SR=0x%08X\n\r", ret_sr); \
-    }
-
 // Multi-Round Test Parameters
 #define ROUNDS  3u
 #define BUFFER_SIZE 128u
@@ -62,13 +54,14 @@ uint32_t cdma_do_one_round (
     }
 
     // Show initial contents
-    printf("[CDMA SIMPLE] Buffers before transfer:\n\r", round_idx);
+    printf("[CDMA SIMPLE] Buffers before transfer:\n\r");
     for (uint32_t i = 0; i < num_words; i++) {
         printf("src[%u] = 0x%08X | dst[%u] = 0x%08X\n\r", i, src[i], i, dst[i]);
     }
 
     // Debug
-    cdma_print_status("CDMA Status before transfer:");
+    printf("CDMA Status before transfer:");
+    XAxiCdma_DumpRegisters(&Cdma);
 
     // Start simple transfer
     uint32_t bytes = sizeof(uint32_t) * num_words;
@@ -76,7 +69,8 @@ uint32_t cdma_do_one_round (
     int st = XAxiCdma_SimpleTransfer(Cdma, (uintptr_t)src, (uintptr_t)dst, bytes, NULL, NULL);
     if (st != 0) {
         printf("[CDMA SIMPLE] Transfer start failed (error=%d)\n\r", st);
-        cdma_print_status("CDMA Status after failure:");
+        printf("CDMA Status after failure:");
+        XAxiCdma_DumpRegisters(&Cdma);
         return -1;
     }
 
@@ -86,7 +80,8 @@ uint32_t cdma_do_one_round (
         while (XAxiCdma_IsBusy(Cdma)) {
             if (++guard > 10000000u) {
                 printf("[CDMA SIMPLE] Timeout while waiting for completion\n\r");
-                cdma_print_status("CDMA Status on timeout:");
+                printf("CDMA Status on timeout:");
+                XAxiCdma_DumpRegisters(&Cdma);
                 return -2;
             }
         }
@@ -94,7 +89,7 @@ uint32_t cdma_do_one_round (
 
     // Debug
     printf("[CDMA SIMPLE] Transfer complete.\n\r");
-    cdma_print_status("CDMA Status after transfer:");
+    XAxiCdma_DumpRegisters(&Cdma);
 
     // Verify data and print first few num_words
     printf("Buffers after transfer:\n\r");
@@ -104,17 +99,17 @@ uint32_t cdma_do_one_round (
             errors++;
         }
         if (i < BUFFER_SIZE) {
-            printf("SRC[%u] = 0x%08X | DST[%u] = 0x%08X\n\r", i, src[i], i, dst[i]);
+            printf("src[%u] = 0x%08X | dst[%u] = 0x%08X\n\r", i, src[i], i, dst[i]);
         }
     }
 
-    if (errors == 0) {
-        printf("Round OK - all %u num_words copied correctly\n\r", num_words);
-        return 0;
-    } else {
-        printf("Round ERROR - mismatches: %u\n\r", errors);
-        return errors;
-    }
+    // Print on errors
+    if (errors == 0)
+        printf("[CDMA SIMPLE] Round OK - all %u num_words copied correctly\n\r", num_words);
+    else
+        printf("[CDMA SIMPLE] Round ERROR - mismatches: %u\n\r", errors);
+
+    return errors;
 }
 
 int main(void) {
@@ -150,7 +145,7 @@ int main(void) {
     printf("[CDMA SIMPLE] Resetting CDMA...\n\r");
     XAxiCdma_Reset(&Cdma);
     printf("[CDMA SIMPLE] Reset complete\n\r");
-    cdma_print_status("[CDMA SIMPLE] CDMA Status after reset:");
+    XAxiCdma_DumpRegisters(&Cdma);
 
     // Execute multiple rounds with different sizes
     for (uint32_t r = 0; r < ROUNDS; r++) {

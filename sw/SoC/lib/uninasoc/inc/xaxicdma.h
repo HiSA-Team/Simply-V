@@ -94,6 +94,7 @@ typedef struct {
 
 /************************** Function Prototypes ******************************/
 
+void XAxiCdma_DumpRegisters(XAxiCdma *InstancePtr);
 XAxiCdma_Config *XAxiCdma_LookupConfig(uint32_t DeviceId);
 uint32_t XAxiCdma_CfgInitialize(XAxiCdma *InstancePtr, XAxiCdma_Config *CfgPtr, uintptr_t EffectiveAddr);
 void XAxiCdma_Reset(XAxiCdma *InstancePtr);
