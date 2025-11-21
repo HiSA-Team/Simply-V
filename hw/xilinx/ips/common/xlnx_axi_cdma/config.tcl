@@ -1,25 +1,16 @@
-# ============================================================
-# Xilinx AXI Central DMA (AXI CDMA) - config.tcl
-# Simple DMA Mode (C_INCLUDE_SG=0)
 # Author: Michele Giugliano <michele.giugliano2@studenti.unina.it>
-# ============================================================
+# Description: Simple DMA Mode (C_INCLUDE_SG=0) for AXI CDMA IP
 
-# ------------------------------------------------------------
 # Import the IP core
-# ------------------------------------------------------------
 create_ip -name axi_cdma -vendor xilinx.com -library ip -version 4.1 -module_name $::env(IP_NAME)
 
-# ============================================================
 # Main Parameters
-# ============================================================
 set CDMA_SG_MODE 0              ;# 0 = Simple DMA
 set CDMA_DATA_WIDTH 32          ;# 32-bit workaround (64-bit bug)
 set CDMA_ADDR_WIDTH 32
 set CDMA_CLK_FREQ 100000000
 
-# ============================================================
 # IP Core Configuration
-# ============================================================
 set_property -dict [list \
     CONFIG.C_INCLUDE_SG              $CDMA_SG_MODE \
     CONFIG.C_INCLUDE_DRE             {1} \
@@ -35,18 +26,3 @@ set_property -dict [list \
     CONFIG.M_AXI_ACLK.FREQ_HZ        $CDMA_CLK_FREQ \
     CONFIG.S_AXI_LITE_ACLK.FREQ_HZ   $CDMA_CLK_FREQ \
 ] [get_ips $::env(IP_NAME)]
-
-
-# ------------------------------------------------------------
-# Optional: Generate synthesis checkpoint (stabilizes builds)
-# ------------------------------------------------------------
-# set_property GENERATE_SYNTH_CHECKPOINT true [get_files $::env(IP_NAME).xci]
-
-
-
-
-
-# ============================================================
-# End IP Core Configuration
-# ============================================================
-
