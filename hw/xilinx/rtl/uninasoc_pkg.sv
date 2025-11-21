@@ -99,7 +99,6 @@ package uninasoc_pkg;
     localparam int unsigned PLIC_HLS_INTERRUPT = 5;         // HLS     (From HLS core) [HPC only]
     localparam int unsigned PLIC_CDMA_INTERRUPT = 6;        // CDMA (From DMA IP)
 
-
     ///////////////
     // Functions //
     ///////////////
