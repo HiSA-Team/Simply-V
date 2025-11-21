@@ -3,16 +3,15 @@
  *
  * Authors:
  *   - Michele Giugliano <michele.giugliano2@studenti.unina.it>
+ *   - Stefano Mercogliano <stefano.mercogliano@unina.it>
  *   - Original base: Xilinx / AMD Copyright © 2010–2023
  * SPDX-License-Identifier: MIT
  ******************************************************************************/
 
 #include "xaxicdma.h"
 #include "xaxicdma_hw.h"
-#include "io.h"
 #include <stdint.h>
-#include <stdio.h>
-#include "tinyIO.h" 
+#include "tinyIO.h"
 #define puts(str)   c_printf("%s\n", str)
 #define printf      c_printf
 /**************************** Helper macros ****************************/
@@ -181,3 +180,42 @@ void XAxiCdma_DumpRegisters(XAxiCdma *InstancePtr) {
     printf("==========================\r\n");
 }
 
+uint32_t XAxiCdma_IntrGetIrq(XAxiCdma *InstancePtr)
+{
+    /* Restituisce solo i bit di IRQ (IOC ed ERROR) presi dallo status */
+    uint32_t sr = XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_SR_OFFSET);
+    return sr & (XAXICDMA_XR_IRQ_IOC_MASK | XAXICDMA_XR_IRQ_ERROR_MASK);
+}
+
+void XAxiCdma_IntrAckIrq(XAxiCdma *InstancePtr, uint32_t Mask)
+{
+    /* Ack degli IRQ scrivendo i bit corrispondenti nello SR */
+    XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_SR_OFFSET, Mask);
+}
+
+
+/*****************************************************************************/
+/**
+ * Enable interrupts in the CDMA core.
+ *****************************************************************************/
+void XAxiCdma_IntrEnable(XAxiCdma *InstancePtr, uint32_t Mask)
+{
+    uint32_t RegValue;
+
+    RegValue = XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET);
+    RegValue |= (Mask & XAXICDMA_XR_IRQ_ALL_MASK);
+    XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET, RegValue);
+}
+
+/*****************************************************************************/
+/**
+ * Disable interrupts in the CDMA core.
+ *****************************************************************************/
+void XAxiCdma_IntrDisable(XAxiCdma *InstancePtr, uint32_t Mask)
+{
+    uint32_t RegValue;
+
+    RegValue = XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET);
+    RegValue &= ~(Mask & XAXICDMA_XR_IRQ_ALL_MASK);
+    XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET, RegValue);
+}

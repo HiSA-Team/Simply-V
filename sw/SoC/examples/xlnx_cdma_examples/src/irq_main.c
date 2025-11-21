@@ -17,7 +17,6 @@
 #include "xaxicdma_hw.h"
 #include "plic.h"
 #include <stdint.h>
-#include <stdio.h>
 
 /* ============================================================
  *                     CDMA Base Address
