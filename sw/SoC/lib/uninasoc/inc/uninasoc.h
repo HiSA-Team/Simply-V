@@ -8,7 +8,6 @@
 
 #include "irq_handlers.h"
 #include "plic.h"
-
 #ifdef GPIO_IN_IS_ENABLED
 #include "xlnx_gpio_in.h"
 #endif
@@ -21,12 +20,7 @@
 #include "xlnx_tim.h"
 #endif
 
-#ifdef CDMA_IS_ENABLED
-#include "xaxicdma.h"
-#include "xaxicdma_hw.h"
-#endif
-
-
+#include "xlnx_cdma.h"
 #include "tinyIO.h"
 
 enum{

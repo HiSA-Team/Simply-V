@@ -8,12 +8,10 @@
  * SPDX-License-Identifier: MIT
  ******************************************************************************/
 
-#include "xaxicdma.h"
-#include "xaxicdma_hw.h"
+#include "xlnx_cdma.h"
 #include <stdint.h>
 #include "tinyIO.h"
-#define puts(str)   c_printf("%s\n", str)
-#define printf      c_printf
+
 /**************************** Helper macros ****************************/
 #define XST_SUCCESS        0
 #define XST_FAILURE       -1
@@ -43,11 +41,15 @@ void XAxiCdma_Reset(XAxiCdma *InstancePtr) {
     XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET, XAXICDMA_CR_RESET_MASK);
 
     InstancePtr->SimpleNotDone = 0;
-    InstancePtr->SGWaiting = 0;
-    InstancePtr->SgHandlerHead = 0;
-    InstancePtr->SgHandlerTail = 0;
-    InstancePtr->SimpleCallBackFn = NULL;
-    InstancePtr->SimpleCallBackRef = NULL;
+    // InstancePtr->SGWaiting = 0;
+    // InstancePtr->SgHandlerHead = 0;
+    // InstancePtr->SgHandlerTail = 0;
+    // InstancePtr->SimpleCallBackFn = NULL;
+    // InstancePtr->SimpleCallBackRef = NULL;
+}
+
+void XAxiCdma_TransferDone(XAxiCdma *InstancePtr) {
+    InstancePtr->SimpleNotDone = 0;
 }
 
 /*****************************************************************************/
@@ -154,8 +156,8 @@ uint32_t XAxiCdma_SimpleTransfer(XAxiCdma *InstancePtr,
     }
 
     InstancePtr->SimpleNotDone = 1;
-    InstancePtr->SimpleCallBackFn = SimpleCallBack;
-    InstancePtr->SimpleCallBackRef = CallBackRef;
+    // InstancePtr->SimpleCallBackFn = SimpleCallBack;
+    // InstancePtr->SimpleCallBackRef = CallBackRef;
 
     XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_SRCADDR_OFFSET, LOWER_32_BITS(SrcAddr));
     XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_DSTADDR_OFFSET, LOWER_32_BITS(DstAddr));
