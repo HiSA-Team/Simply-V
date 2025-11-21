@@ -5,8 +5,8 @@
 //   The program performs multiple consecutive transfer rounds, each using
 //   a different transfer length. For every round it:
 //     - prepares source and destination buffers,
-//     - starts a CDMA simple transfer in polling mode,
-//     - waits for completion,
+//     - starts a CDMA simple transfer,
+//     - waits for completion in polling,
 //     - and verifies data integrity.
 //
 //   This example is useful to validate CDMA behavior across different
@@ -17,10 +17,9 @@
 #include "xaxicdma_hw.h" // TODO: remove me!
 #include <stdint.h>
 
-// CDMA Base Address (from linker)
+// CDMA Base Address (from linker script)
 extern const volatile uint32_t _peripheral_AXI_CDMA_start;
 #define CDMA_BASEADDR   ((uintptr_t)&_peripheral_AXI_CDMA_start)
-
 
 // Utility macro
 #define cdma_print_status(prologue) \
