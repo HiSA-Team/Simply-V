@@ -117,7 +117,7 @@ int main(void) {
     uint32_t dst [BUFFER_SIZE];
 
     // CDMA Struct and config
-    XAxiCdma Cdma;
+    XAxiCdma cdma_handle;
     XAxiCdma_Config CdmaCfg = {
         .DeviceId    = 0,
         .BaseAddress = CDMA_BASEADDR,
@@ -134,22 +134,22 @@ int main(void) {
     printf("\n[CDMA SIMPLE] CDMA multi-round transfer test start\n\r");
 
     // Initialize CDMA core
-    if (XAxiCdma_CfgInitialize(&Cdma, &CdmaCfg, CDMA_BASEADDR) != 0) {
+    if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CDMA_BASEADDR) != 0) {
         printf("[CDMA SIMPLE] Initialization failed\n\r");
         return -1;
     }
 
     // Initial reset
     printf("[CDMA SIMPLE] Resetting CDMA...\n\r");
-    XAxiCdma_Reset(&Cdma);
+    XAxiCdma_Reset(&cdma_handle);
     printf("[CDMA SIMPLE] Reset complete\n\r");
-    XAxiCdma_DumpRegisters(&Cdma);
+    XAxiCdma_DumpRegisters(&cdma_handle);
 
     // Execute multiple NUM_ROUNDS with different sizes
     for (uint32_t r = 0; r < NUM_ROUNDS; r++) {
         // Launch a single round
         uint32_t res = cdma_do_one_round(
-                    &Cdma,
+                    &cdma_handle,
                     r,
                     src,
                     dst,
@@ -157,7 +157,7 @@ int main(void) {
                 );
 
         // Reset CDMA between NUM_ROUNDS to keep behavior consistent
-        XAxiCdma_TransferDone(&Cdma);
+        XAxiCdma_TransferDone(&cdma_handle);
 
         if (res != 0) {
             printf("[CDMA SIMPLE] Stopping due to error in round %u\n\r", r);

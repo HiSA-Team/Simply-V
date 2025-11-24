@@ -29,7 +29,7 @@ extern const volatile uint32_t _peripheral_CDMA_start;
 // Global variable for ISR/main synchronization
 static volatile int cdma_done = 0;
 // Global CDMA Struct and config
-XAxiCdma Cdma;
+XAxiCdma cdma_handle;
 XAxiCdma_Config CdmaCfg = {
     .DeviceId    = 0,
     .BaseAddress = CDMA_BASEADDR,
@@ -50,7 +50,7 @@ void _ext_handler(void) {
     if (interrupt_id == CDMA_IRQ_ID) {
         printf("[CDMA IRQ][ISR] Handiling CDMA interrupt!\r\n");
         // Red status register
-        uint32_t sr = XAxiCdma_ReadReg(Cdma.BaseAddr, XAXICDMA_SR_OFFSET);
+        uint32_t sr = XAxiCdma_ReadReg(cdma_handle.BaseAddr, XAXICDMA_SR_OFFSET);
         // Check if it is IOC
         if (sr & XAXICDMA_XR_IRQ_IOC_MASK)
             cdma_done = 1;
@@ -60,10 +60,10 @@ void _ext_handler(void) {
             printf("[CDMA IRQ][ISR] CDMA ERROR SR=0x%08x\n\r", sr);
 
         // Acknowledge interrupt to CDMA
-        XAxiCdma_WriteReg(Cdma.BaseAddr, XAXICDMA_SR_OFFSET, XAXICDMA_XR_IRQ_ALL_MASK);
+        XAxiCdma_WriteReg(cdma_handle.BaseAddr, XAXICDMA_SR_OFFSET, XAXICDMA_XR_IRQ_ALL_MASK);
 
         // Mark transfer as done
-        XAxiCdma_TransferDone(&Cdma);
+        XAxiCdma_TransferDone(&cdma_handle);
     }
     else {
         // Unkown interrupt source
@@ -87,21 +87,21 @@ int main(void) {
     printf("\n\r[CDMA IRQ] CDMA Interrupt Test\n\r");
 
     // Init CDMA
-    if (XAxiCdma_CfgInitialize(&Cdma, &CdmaCfg, CDMA_BASEADDR) != 0) {
+    if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CDMA_BASEADDR) != 0) {
         printf("[CDMA IRQ] XAxiCdma_CfgInitialize failed\n");
         return -1;
     }
 
     // Reset DCMA
     printf("[CDMA IRQ] Reset CDMA...\n\r");
-    XAxiCdma_Reset(&Cdma);
+    XAxiCdma_Reset(&cdma_handle);
     // Wait for ResetIsDone
-    while (!XAxiCdma_ResetIsDone(&Cdma));
+    while (!XAxiCdma_ResetIsDone(&cdma_handle));
     printf("[CDMA IRQ] Reset complete\n\r");
 
     // Enable CDMA interrupts: IOC + ERROR
-    XAxiCdma_IntrEnable(&Cdma, XAXICDMA_XR_IRQ_IOC_MASK | XAXICDMA_XR_IRQ_ERROR_MASK);
-    XAxiCdma_DumpRegisters(&Cdma);
+    XAxiCdma_IntrEnable(&cdma_handle, XAXICDMA_XR_IRQ_IOC_MASK | XAXICDMA_XR_IRQ_ERROR_MASK);
+    XAxiCdma_DumpRegisters(&cdma_handle);
 
     // Init and configure PLIC
     printf("[CDMA IRQ] Configure PLIC...\n\r");
@@ -129,14 +129,14 @@ int main(void) {
 
         // Start CDMA transfer
         printf("[CDMA IRQ] Starting CDMA transfer...\n\r");
-        uint32_t ret = XAxiCdma_SimpleTransfer(&Cdma,
+        uint32_t ret = XAxiCdma_SimpleTransfer(&cdma_handle,
                                         (uintptr_t)(src[round]),
                                         (uintptr_t)(dst[round]),
                                         BUFFER_SIZE,
                                         NULL, NULL);
         if (ret != 0) {
-            uint32_t cr = XAxiCdma_ReadReg(Cdma.BaseAddr, XAXICDMA_CR_OFFSET);
-            uint32_t sr = XAxiCdma_ReadReg(Cdma.BaseAddr, XAXICDMA_SR_OFFSET);
+            uint32_t cr = XAxiCdma_ReadReg(cdma_handle.BaseAddr, XAXICDMA_CR_OFFSET);
+            uint32_t sr = XAxiCdma_ReadReg(cdma_handle.BaseAddr, XAXICDMA_SR_OFFSET);
             printf("[CDMA IRQ] SimpleTransfer failed (%d)  CR=0x%08x SR=0x%08x\n\r",
                 ret, cr, sr);
         }
