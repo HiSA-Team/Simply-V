@@ -769,19 +769,22 @@ module uninasoc (
     );
 
     // Tie-off unused signals
-    assign AXI_CDMA_to_MBUS_axi_awid   = '0;
-    assign AXI_CDMA_to_MBUS_axi_awlock = 1'b0;
-    assign AXI_CDMA_to_MBUS_axi_awqos  = 4'b0000;
-    assign AXI_CDMA_to_MBUS_axi_arid   = '0;
-    assign AXI_CDMA_to_MBUS_axi_arlock = 1'b0;
-    assign AXI_CDMA_to_MBUS_axi_arqos  = 4'b0000;
+    assign CDMA_to_MBUS_axi_awid   = '0;
+    assign CDMA_to_MBUS_axi_awlock = '0;
+    assign CDMA_to_MBUS_axi_awqos  = '0;
+    assign CDMA_to_MBUS_axi_arid   = '0;
+    assign CDMA_to_MBUS_axi_arlock = '0;
+    assign CDMA_to_MBUS_axi_arqos  = '0;
+    assign CDMA_to_MBUS_axi_awregion   = '0;
 
     // AXI CDMA
     xlnx_axi_cdma cdma_u (
         // Clocks & Reset
+        .s_axi_lite_aclk    ( CDMA_clk  ),
+        .s_axi_lite_aresetn ( CDMA_rstn ),
+        // Assume master on MBUS domain
+        // TODO: config for HBUS as well
         .m_axi_aclk         ( main_clk  ),
-        .s_axi_lite_aclk    ( main_clk  ),
-        .s_axi_lite_aresetn ( main_rstn ),
         // Interrupt
         .cdma_introut       ( irq_cdma_to_plic                    ),
         // AXI-Lite Control Interface (from converter)
@@ -791,6 +794,7 @@ module uninasoc (
         .s_axi_lite_wvalid  ( AXILITE_to_CDMA_axilite_wvalid      ),
         .s_axi_lite_wready  ( AXILITE_to_CDMA_axilite_wready      ),
         .s_axi_lite_wdata   ( AXILITE_to_CDMA_axilite_wdata[31:0] ),
+        // .s_axi_lite_wstrb   (  ), // not present
         .s_axi_lite_bvalid  ( AXILITE_to_CDMA_axilite_bvalid      ),
         .s_axi_lite_bready  ( AXILITE_to_CDMA_axilite_bready      ),
         .s_axi_lite_bresp   ( AXILITE_to_CDMA_axilite_bresp       ),

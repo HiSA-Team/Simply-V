@@ -16,8 +16,8 @@
 #include <stdint.h>
 
 // CDMA Base Address (from linker script)
-extern const volatile uint32_t _peripheral_AXI_CDMA_start;
-#define CDMA_BASEADDR   ((uintptr_t)&_peripheral_AXI_CDMA_start)
+extern const volatile uint32_t _peripheral_CDMA_start;
+#define CDMA_BASEADDR   ((uintptr_t)&_peripheral_CDMA_start)
 
 // Multi-Round Test Parameters
 #define NUM_ROUNDS  3u
