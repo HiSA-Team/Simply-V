@@ -769,12 +769,12 @@ module uninasoc (
     );
 
     // Tie-off unused signals
-    assign AXI_CDMA_to_MBUS_axi_awid   = '0;
-    assign AXI_CDMA_to_MBUS_axi_awlock = 1'b0;
-    assign AXI_CDMA_to_MBUS_axi_awqos  = 4'b0000;
-    assign AXI_CDMA_to_MBUS_axi_arid   = '0;
-    assign AXI_CDMA_to_MBUS_axi_arlock = 1'b0;
-    assign AXI_CDMA_to_MBUS_axi_arqos  = 4'b0000;
+    assign CDMA_to_MBUS_axi_awid   = '0;
+    assign CDMA_to_MBUS_axi_awlock = 1'b0;
+    assign CDMA_to_MBUS_axi_awqos  = 4'b0000;
+    assign CDMA_to_MBUS_axi_arid   = '0;
+    assign CDMA_to_MBUS_axi_arlock = 1'b0;
+    assign CDMA_to_MBUS_axi_arqos  = 4'b0000;
 
     // AXI CDMA
     xlnx_axi_cdma cdma_u (
