@@ -58,6 +58,7 @@ class Bus_Parser(Parser, metaclass=Singleton):
 	}
 
 	def _check_intra(self, data: dict):
+		super()._check_intra(data)
 		# protocol-dependent rule
 		min_width = self.protocol_min_width.get(data["PROTOCOL"])
 		if min_width is None:

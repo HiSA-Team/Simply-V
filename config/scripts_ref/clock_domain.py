@@ -1,3 +1,4 @@
+from pprint import pprint
 from addr_range import Addr_Range
 
 class Clock_Domain():

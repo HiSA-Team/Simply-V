@@ -39,11 +39,13 @@ class Factory(metaclass=SingletonABCMeta):
 		except ValueError:
 			self.logger.simply_v_crash(f"There is something wrong with {clock_domain} format name\n")
 
-	def _create_addr_ranges(self, base_name: str, range_name: str, base_addr: list[int], addr_width: list[int], 
-							clock_domain: list[str]) -> list[Addr_Range]:
+	def create_addr_ranges(self, base_name: str, range_name: str, base_addr: list[int], 
+							addr_width: list[int]) -> list[Addr_Range]:
 
 		addr_ranges_list = []
 		for addr_range in range(len(base_addr)):
-			clock_frequency = self._extract_clock_frequency(clock_domain[addr_range])
-			addr_ranges_list.append(Addr_Range(base_name, range_name, base_addr[addr_range], addr_width[addr_range], clock_domain[addr_range], clock_frequency))
+			# add a range identifier in the name when creating multiple address ranges
+			if(len(base_addr) != 1):
+				range_name += f"_RANGE_{addr_range}"
+			addr_ranges_list.append(Addr_Range(base_name, range_name, base_addr[addr_range], addr_width[addr_range]))
 		return addr_ranges_list

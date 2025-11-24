@@ -2,7 +2,7 @@ from peripherals.peripheral import Peripheral
 from addr_range import Addr_Range
 
 class DDR4(Peripheral):
-	def __init__(self, addr_ranges_list: list[Addr_Range]):
+	def __init__(self, range_name: str, addr_ranges_list: list[Addr_Range], clock_domain: str, clock_frequency: int):
 
-		super().__init__(addr_ranges_list)
+		super().__init__(range_name, addr_ranges_list, clock_domain, clock_frequency)
 		self.IS_A_MEMORY = True

@@ -7,7 +7,8 @@ class NonLeafBus_Parser(Bus_Parser):
 
 	optional_properties = Bus_Parser.optional_properties | {"LOOPBACK": 0 }
 	
-	type_parsers = Bus_Parser.type_parsers | {"RANGE_CLOCK_DOMAINS": lambda s: s.split(" ")}
+	type_parsers = Bus_Parser.type_parsers | {"RANGE_CLOCK_DOMAINS": lambda s: s.split(" "),
+											  "LOOPBACK": bool}
 
 	intra_rules = Bus_Parser.intra_rules + [
 			lambda d: (

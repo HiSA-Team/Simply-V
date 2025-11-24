@@ -1,3 +1,4 @@
+from os import PRIO_PGRP
 from pprint import pprint
 import pandas as pd
 from typing import Any, Callable, NoReturn
@@ -67,10 +68,10 @@ class Parser(metaclass=SingletonABCMeta):
 			return data
 
 		except FileNotFoundError:
-			self.logger.simply_v_crash(f"File {file_name} not found.")
+			self.logger.simply_v_crash(f"File error: {file_name} not found.")
 		except KeyError as e:
-			self.logger.simply_v_crash(f"Mandatory key {e.args[0]} missing in {file_name}.")
+			self.logger.simply_v_crash(f"Key error: {e.args[0]} in {file_name}.")
 		except ValueError as e:
-			self.logger.simply_v_crash(f"Value error {e.args} in {file_name}.")
+			self.logger.simply_v_crash(f"Value error: {e.args} in {file_name}.")
 		except Exception as e:
 			self.logger.simply_v_crash(f"Unexpected error parsing {file_name}: {e}")

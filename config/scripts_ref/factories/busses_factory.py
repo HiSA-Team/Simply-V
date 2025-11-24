@@ -15,14 +15,16 @@ class Busses_Factory(Factory):
 		pass
 
 
-	def create_bus(self, range_name: str, base_addr: list[int], addr_width: list[int], clock_domain: list[str], **kwargs) -> Bus | None:
+	def create_bus(self, range_name: str, base_addr: list[int], addr_width: list[int], clock_domain: str, **kwargs) -> Bus | None:
 		from busses.hbus import HBus
 		from busses.pbus import PBus
 		from busses.mbus import MBus
 
 		base_name = self._extract_base_name(range_name)
 
-		addr_ranges_list = self._create_addr_ranges(base_name, range_name, base_addr, addr_width, clock_domain)
+		clock_frequency = self._extract_clock_frequency(clock_domain)
+
+		addr_ranges_list = self.create_addr_ranges(base_name, range_name, base_addr, addr_width)
 
 		# Assuming the bus file name is for example "config_pbus_0.csv" if range_name is "PBUS_0"
 		file_name = os.path.join(self.env_global.get_conf_profile_path(), "config_" + range_name.lower() + ".csv")
@@ -33,16 +35,16 @@ class Busses_Factory(Factory):
 				data_dict = self.nonleafbus_parser.parse_csv(file_name)
 				if data_dict["PROTOCOL"] == "DISABLE":
 					return None
-				return MBus(data_dict, addr_ranges_list, **kwargs)
+				return MBus(range_name, data_dict, addr_ranges_list, clock_domain, clock_frequency, **kwargs)
 			case "PBUS":
 				data_dict = self.leafbus_parser.parse_csv(file_name)
 				if data_dict["PROTOCOL"] == "DISABLE":
 					return None
-				return PBus(data_dict, addr_ranges_list)
+				return PBus(range_name, data_dict, addr_ranges_list, clock_domain, clock_frequency)
 			case "HBUS":
 				data_dict = self.nonleafbus_parser.parse_csv(file_name)
 				if data_dict["PROTOCOL"] == "DISABLE":
 					return None
-				return HBus(data_dict, addr_ranges_list, **kwargs)
+				return HBus(range_name, data_dict, addr_ranges_list, clock_domain, clock_frequency, **kwargs)
 			case _:
 				self.logger.simply_v_crash(f"Unsupported Bus {range_name}\n")

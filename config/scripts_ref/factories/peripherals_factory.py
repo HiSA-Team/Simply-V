@@ -1,3 +1,4 @@
+from pprint import pprint
 from factories.factory import Factory
 from peripherals.peripheral import Peripheral
 from peripherals.tim import Timer
@@ -13,30 +14,32 @@ from peripherals.plic import PLIC
 class Peripherals_Factory(Factory):
 
 	def create_peripheral(self, range_name: str, base_addr: list[int], addr_width: list[int], 
-							clock_domain: list[str]) -> Peripheral:
+							clock_domain: str) -> Peripheral:
 
 		base_name = self._extract_base_name(range_name)
 
-		addr_ranges_list = self._create_addr_ranges(base_name, range_name, base_addr, addr_width, clock_domain)
+		clock_frequency = self._extract_clock_frequency(clock_domain)
+
+		addr_ranges_list = self.create_addr_ranges(base_name, range_name, base_addr, addr_width)
 
 		match base_name:
 			case "TIM":
-				return Timer(addr_ranges_list)
+				return Timer(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case "DDR4":
-				return DDR4(addr_ranges_list)
+				return DDR4(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case "GPIOOUT":
-				return GPIO_out(addr_ranges_list)
+				return GPIO_out(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case "GPIOIN":
-				return GPIO_in(addr_ranges_list)
+				return GPIO_in(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case "UART":
-				return Uart(addr_ranges_list)
+				return Uart(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case "BRAM":
-				return Bram(addr_ranges_list)
+				return Bram(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case "DM":
-				return Debug_Module(addr_ranges_list)
+				return Debug_Module(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case "PLIC":
-				return PLIC(addr_ranges_list)
+				return PLIC(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case "HLS":
-				return HLS(addr_ranges_list)
+				return HLS(range_name, addr_ranges_list, clock_domain, clock_frequency)
 			case _:
 				self.logger.simply_v_crash(f"Unsupported peripheral {range_name}")

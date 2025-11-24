@@ -27,7 +27,7 @@ class SimplyV(metaclass=Singleton):
 		# Create root node (MBUS)
 		asgn_base_addr = [0]
 		asgn_addr_width = [self.PHYSICAL_ADDR_WIDTH]
-		clock_domain = [self.MAIN_CLOCK_DOMAIN]
+		clock_domain = self.MAIN_CLOCK_DOMAIN
 
 		self.mbus = self.busses_factory.create_bus("MBUS", asgn_base_addr, asgn_addr_width, clock_domain,\
 												axi_addr_width=self.PHYSICAL_ADDR_WIDTH, axi_data_width=self.XLEN)
@@ -101,13 +101,11 @@ class SimplyV(metaclass=Singleton):
 		fd.write("{\n")
 
 		for block in memories:
-			base_addr = block.get_base_addr()
-			end_addr = block.get_end_addr()
-			#we're assuming that memories has a contiguous address space,
-			#so the lenght is effectively end_addr - base_addr
-			#this isn't guaranteed when using multiple address ranges that aren't contiguous
-			length = end_addr - base_addr
-			fd.write("\t" + block.NAME + " (xrw) : ORIGIN = 0x" + format(base_addr, "016x") + ",  LENGTH = " + hex(length) + "\n")
+			for range in block.asgn_addr_ranges:
+				base_addr = range.RANGE_BASE_ADDR
+				end_addr = range.RANGE_END_ADDR
+				length = end_addr - base_addr
+				fd.write("\t" + range.RANGE_NAME + " (xrw) : ORIGIN = 0x" + format(base_addr, "016x") + ",  LENGTH = " + hex(length) + "\n")
 
 		fd.write("}\n")
 
@@ -118,20 +116,12 @@ class SimplyV(metaclass=Singleton):
 		end_addr_string = ""
 
 		for peripheral in peripherals:
-			ranges = peripheral.ASGN_ADDR_RANGES
-			if (ranges == 1):
-				base_addr = peripheral.ASGN_RANGE_BASE_ADDR[0]
-				end_addr = peripheral.ASGN_RANGE_END_ADDR[0]
-				base_addr_string = "_peripheral_" + peripheral.NAME + "_start = 0x" + format(base_addr, "016x") + ";\n"
-				end_addr_string = "_peripheral_" + peripheral.NAME + "_end = 0x" + format(end_addr, "016x") + ";\n"
-			else:
-				# Place the a range identificator when a peripheral has more than one range
-				for i in range(0, ranges):
-					base_addr = peripheral.ASGN_RANGE_BASE_ADDR[i]
-					end_addr = peripheral.ASGN_RANGE_END_ADDR[i]
-					base_addr_string = "range_" + str(i) + "_peripheral_" + peripheral.NAME + "_start = 0x" + format(base_addr, "016x") + ";\n"
-					end_addr_string = "range_" + str(i)+ "_peripheral_" + peripheral.NAME + "_end = 0x" + format(peripheral.ASGN_RANGE_END_ADDR[i], "016x") + ";\n"
-
+			for range in peripheral.asgn_addr_ranges:
+				base_addr = range.RANGE_BASE_ADDR
+				end_addr = range.RANGE_END_ADDR
+				base_addr_string = "_peripheral_" + range.RANGE_NAME + "_start = 0x" + format(base_addr, "016x") + ";\n"
+				end_addr_string = "_peripheral_" + range.RANGE_NAME + "_end = 0x" + format(end_addr, "016x") + ";\n"
+			
 			fd.write(base_addr_string)
 			fd.write(end_addr_string)
 
@@ -149,12 +139,13 @@ class SimplyV(metaclass=Singleton):
 		found = False
 
 		for mem in memories:
-			if(mem.get_base_addr() == self.BOOT_MEMORY_BLOCK):
-				block_memory_base = mem.get_base_addr()
-				block_memory_name = mem.NAME
-				stack_start = mem.get_end_addr()
-				found = True
-				break
+			for range in mem.asgn_addr_ranges:
+				if(range.RANGE_BASE_ADDR == self.BOOT_MEMORY_BLOCK):
+					block_memory_base = range.RANGE_BASE_ADDR
+					block_memory_name = range.RANGE_NAME
+					stack_start = range.RANGE_END_ADDR
+					found = True
+					break
 
 		if(not found):
 			self.logger.simply_v_crash("Unable to find a BOOTABLE MEMORY"
@@ -218,8 +209,9 @@ class SimplyV(metaclass=Singleton):
 		#Avoid duplicates
 		busses = set()
 		for p in peripherals:
-			for bus in p.REACHABLE_FROM:
-				busses.add(bus)
+			for addr_range in p.asgn_addr_ranges:
+				for bus in addr_range.REACHABLE_FROM:
+					busses.add(bus)
 
 		#"busses_list" is the source of truth for the rest of the configuration
 		#in order to have coherent results about the same bus in different rows (peripherals)
@@ -234,10 +226,11 @@ class SimplyV(metaclass=Singleton):
 			list_of_reachables = ["N"] * len(busses_list)
 			str_of_reachables = ""
 
-			for bus in p.REACHABLE_FROM:
-				#index will never throw exception in this case
-				position = busses_list.index(bus)
-				list_of_reachables[position] = "Y"
+			for addr_range in p.asgn_addr_ranges:
+				for bus in addr_range.REACHABLE_FROM:
+					#index will never throw exception in this case
+					position = busses_list.index(bus)
+					list_of_reachables[position] = "Y"
 
 			str_of_reachables = ",".join(list_of_reachables)
 			#write row
