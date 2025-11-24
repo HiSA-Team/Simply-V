@@ -1,18 +1,14 @@
-/******************************************************************************
- * AXI Central DMA (AXI CDMA) - UninaSoC Adapted Driver
- *
- * Authors:
- *   - Michele Giugliano <michele.giugliano2@studenti.unina.it>
- *   - Stefano Mercogliano <stefano.mercogliano@unina.it>
- *   - Original base: Xilinx / AMD Copyright © 2010–2023
- * SPDX-License-Identifier: MIT
- ******************************************************************************/
+// Author: Michele Giugliano <michele.giugliano2@studenti.unina.it>
+// Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+// Description: AXI CDMA baremetal driver. Simplified & adapted for UninaSoC.
+//  Original Copyright (C) Xilinx, Inc. / AMD
+//  SPDX-License-Identifier: MIT
 
 #include "xlnx_cdma.h"
 #include <stdint.h>
 #include "tinyIO.h"
 
-/**************************** Helper macros ****************************/
+//  Helper macros
 #define XST_SUCCESS        0
 #define XST_FAILURE       -1
 #define XST_INVALID_PARAM -2
@@ -24,19 +20,13 @@
 #define LOWER_32_BITS(x) ((uint32_t)((x) & 0xFFFFFFFFU))
 #define UPPER_32_BITS(x) ((uint32_t)(((x) >> 32) & 0xFFFFFFFFU))
 
-/*****************************************************************************/
-/**
- * Get the error status bits from the status register.
- *****************************************************************************/
+// Get the error status bits from the status register.
 uint32_t XAxiCdma_GetError(XAxiCdma *InstancePtr) {
     return (XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_SR_OFFSET) &
             XAXICDMA_SR_ERR_ALL_MASK);
 }
 
-/*****************************************************************************/
-/**
- * Reset the DMA engine.
- *****************************************************************************/
+// Reset the DMA engine.
 void XAxiCdma_Reset(XAxiCdma *InstancePtr) {
     XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET, XAXICDMA_CR_RESET_MASK);
 
@@ -52,10 +42,7 @@ void XAxiCdma_TransferDone(XAxiCdma *InstancePtr) {
     InstancePtr->SimpleNotDone = 0;
 }
 
-/*****************************************************************************/
-/**
- * Check whether the hardware reset is done.
- *****************************************************************************/
+// Check whether the hardware reset is done.
 int XAxiCdma_ResetIsDone(XAxiCdma *InstancePtr) {
     return ((XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET) &
              XAXICDMA_CR_RESET_MASK)
@@ -63,10 +50,7 @@ int XAxiCdma_ResetIsDone(XAxiCdma *InstancePtr) {
                 : 1);
 }
 
-/*****************************************************************************/
-/**
- * Initialize the CDMA driver instance.
- *****************************************************************************/
+// Initialize the CDMA driver instance.
 uint32_t XAxiCdma_CfgInitialize(XAxiCdma *InstancePtr, XAxiCdma_Config *CfgPtr, uintptr_t EffectiveAddr) {
     uint32_t RegValue;
     int TimeOut;
@@ -112,10 +96,7 @@ uint32_t XAxiCdma_CfgInitialize(XAxiCdma *InstancePtr, XAxiCdma_Config *CfgPtr, 
     return XST_SUCCESS;
 }
 
-/*****************************************************************************/
-/**
- * Check if the DMA is busy.
- *****************************************************************************/
+// Check if the DMA is busy.
 int XAxiCdma_IsBusy(XAxiCdma *InstancePtr) {
     return ((XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_SR_OFFSET) &
              XAXICDMA_SR_IDLE_MASK)
@@ -123,10 +104,7 @@ int XAxiCdma_IsBusy(XAxiCdma *InstancePtr) {
                 : 1);
 }
 
-/*****************************************************************************/
-/**
- * Simple transfer operation (polling or interrupt mode).
- *****************************************************************************/
+// Simple transfer operation (polling or interrupt mode).
 uint32_t XAxiCdma_SimpleTransfer(XAxiCdma *InstancePtr,
                                  uintptr_t SrcAddr,
                                  uintptr_t DstAddr,
@@ -166,10 +144,7 @@ uint32_t XAxiCdma_SimpleTransfer(XAxiCdma *InstancePtr,
     return XST_SUCCESS;
 }
 
-/*****************************************************************************/
-/**
- * Print register contents (debug).
- *****************************************************************************/
+// Print register contents (debug).
 void XAxiCdma_DumpRegisters(XAxiCdma *InstancePtr) {
     uintptr_t base = InstancePtr->BaseAddr;
 
@@ -182,26 +157,21 @@ void XAxiCdma_DumpRegisters(XAxiCdma *InstancePtr) {
     printf("==========================\r\n");
 }
 
-uint32_t XAxiCdma_IntrGetIrq(XAxiCdma *InstancePtr)
-{
-    /* Restituisce solo i bit di IRQ (IOC ed ERROR) presi dallo status */
+// Get pending interrupts.
+uint32_t XAxiCdma_IntrGetIrq(XAxiCdma *InstancePtr) {
+    // Restituisce solo i bit di IRQ (IOC ed ERROR) presi dallo status
     uint32_t sr = XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_SR_OFFSET);
     return sr & (XAXICDMA_XR_IRQ_IOC_MASK | XAXICDMA_XR_IRQ_ERROR_MASK);
 }
 
-void XAxiCdma_IntrAckIrq(XAxiCdma *InstancePtr, uint32_t Mask)
-{
-    /* Ack degli IRQ scrivendo i bit corrispondenti nello SR */
+// Acknowledge interrupt handling.
+void XAxiCdma_IntrAckIrq(XAxiCdma *InstancePtr, uint32_t Mask) {
+    // Ack degli IRQ scrivendo i bit corrispondenti nello SR
     XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_SR_OFFSET, Mask);
 }
 
-
-/*****************************************************************************/
-/**
- * Enable interrupts in the CDMA core.
- *****************************************************************************/
-void XAxiCdma_IntrEnable(XAxiCdma *InstancePtr, uint32_t Mask)
-{
+// Enable interrupts in the CDMA core.
+void XAxiCdma_IntrEnable(XAxiCdma *InstancePtr, uint32_t Mask) {
     uint32_t RegValue;
 
     RegValue = XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET);
@@ -209,12 +179,8 @@ void XAxiCdma_IntrEnable(XAxiCdma *InstancePtr, uint32_t Mask)
     XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET, RegValue);
 }
 
-/*****************************************************************************/
-/**
- * Disable interrupts in the CDMA core.
- *****************************************************************************/
-void XAxiCdma_IntrDisable(XAxiCdma *InstancePtr, uint32_t Mask)
-{
+// Disable interrupts in the CDMA core.
+void XAxiCdma_IntrDisable(XAxiCdma *InstancePtr, uint32_t Mask) {
     uint32_t RegValue;
 
     RegValue = XAxiCdma_ReadReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET);
