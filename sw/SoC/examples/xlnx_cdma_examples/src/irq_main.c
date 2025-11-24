@@ -25,6 +25,7 @@ extern const volatile uint32_t _peripheral_CDMA_start;
 
 // TODO: import this from config
 #define CDMA_IRQ_ID  6
+#define CDMA_INT_PRIORITY 1
 
 // Global variable for ISR/main synchronization
 static volatile int cdma_done = 0;
@@ -106,7 +107,6 @@ int main(void) {
     // Init and configure PLIC
     printf("[CDMA IRQ] Configure PLIC...\n\r");
     plic_init();
-    #define CDMA_INT_PRIORITY 1
     plic_configure_set_one(CDMA_INT_PRIORITY, CDMA_IRQ_ID);
     plic_enable_all();
 
