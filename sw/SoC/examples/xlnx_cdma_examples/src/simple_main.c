@@ -165,7 +165,7 @@ int main(void) {
         }
     }
 
-    printf("[CDMA SIMPLE] All %u NUM_ROUNDS completed\n\r", NUM_ROUNDS);
+    printf("[CDMA SIMPLE] All %u rounds completed\n\r", NUM_ROUNDS);
 
     return 0;
 }

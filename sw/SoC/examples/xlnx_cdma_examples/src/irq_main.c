@@ -164,7 +164,7 @@ int main(void) {
         }
     }
 
-    printf("[CDMA IRQ] All %u NUM_ROUNDS completed\n\r", NUM_ROUNDS);
+    printf("[CDMA IRQ] All %u rounds completed\n\r", NUM_ROUNDS);
 
     return 0;
 }
