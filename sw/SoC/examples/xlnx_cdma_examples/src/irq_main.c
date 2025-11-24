@@ -93,7 +93,7 @@ int main(void) {
         return -1;
     }
 
-    // Reset DCMA
+    // Reset CDMA
     printf("[CDMA IRQ] Reset CDMA...\n\r");
     XAxiCdma_Reset(&cdma_handle);
     // Wait for ResetIsDone
