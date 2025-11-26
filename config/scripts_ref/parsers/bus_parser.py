@@ -1,3 +1,7 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: The class "Bus_Parser" inherits from the "Parser" class, extending the checked
+# properties with the ones common to all Busses
+
 from typing import Any, Callable
 from singleton import Singleton
 from parsers.parser import Parser
@@ -31,8 +35,6 @@ class Bus_Parser(Parser, metaclass=Singleton):
 						 "RANGE_ADDR_WIDTH":	lambda vls: all([Parser._check_range(v, 1, 64) for v in vls]),
 						}
 
-	# intra rules expressed as lambdas producing (bool, message)
-	# if "bool" is True then crash reporting "message"
 	intra_rules: list[Callable[[dict], tuple[bool, str]]] = Parser.intra_rules + [
 		lambda d: (
 			d["NUM_MI"] != len(d["RANGE_NAMES"]),
@@ -52,11 +54,13 @@ class Bus_Parser(Parser, metaclass=Singleton):
 		),
 	]
 
+	# Added attribute to check for minimum widths of supported protocols
 	protocol_min_width = {
 		"AXI4": 12,
 		"AXI4LITE": 1,
 	}
 
+	# Extend "Parser" "_check_intra" logic to also check protocol_min_width
 	def _check_intra(self, data: dict):
 		super()._check_intra(data)
 		# protocol-dependent rule

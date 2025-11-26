@@ -1,10 +1,10 @@
-from addr_range import Addr_Range
+from addr_range import Addr_Ranges
 from node import Node
 
 class Peripheral(Node):
-	def __init__(self, range_name: str, asgn_addr_ranges: list[Addr_Range], clock_domain: str, clock_frequency: int):
+	def __init__(self, base_name: str, asgn_addr_ranges: Addr_Ranges, clock_domain: str, clock_frequency: int):
 
 		self.IS_A_MEMORY: bool = False
-		super().__init__(range_name, asgn_addr_ranges, clock_domain, clock_frequency)
+		super().__init__(base_name, asgn_addr_ranges, clock_domain, clock_frequency)
 
 		# need to check for DDR clock

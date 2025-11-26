@@ -11,7 +11,7 @@ from typing import Optional, cast
 from node import Node
 from busses.bus import Bus
 from clock_domain import Clock_Domain
-from addr_range import Addr_Range
+from addr_range import Addr_Ranges
 from peripherals.peripheral import Peripheral
 from factories.busses_factory import Busses_Factory
 
@@ -23,30 +23,39 @@ class NonLeafBus(Bus):
 	#common functions that will use them (_check_legal_busses function)
 	LEGAL_BUSSES = ()
 
-	def __init__(self, range_name: str, data_dict: dict, asgn_addr_range: list[Addr_Range], axi_addr_width: int, 
+	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 				axi_data_width: int, clock_domain: str, clock_frequency: int, father: "NonLeafBus"):
 
 		self.father = father 
 		self.children_busses: list[Bus] = []
 		self.clock_domains: Clock_Domain
-		self.loopback_ranges: list[Addr_Range] = []
+		self.loopback_ranges: Addr_Ranges
 		self.LOOPBACK:bool = data_dict["LOOPBACK"]
 		self._RANGE_CLOCK_DOMAINS: list[int] = data_dict["RANGE_CLOCK_DOMAINS"].copy()
 
 		# init Bus object
-		super().__init__(range_name, data_dict, asgn_addr_range, axi_addr_width, axi_data_width, clock_domain, clock_frequency)
+		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
+							axi_data_width, clock_domain, clock_frequency)
 
 		# It's important to call these functions only AFTER constructing the "super" "Bus" object
 		# because they internally use children_busses and children_peripherals, initialized
 		# with "_generate_children" in the "Bus" constructor
 		self._activate_loopback()
 		self._init_clock_domains()
+
+		if (self.LOOPBACK == True):
+			base_addr = self.asgn_addr_ranges.get_base_addr()
+
+			# Force base addr to power of 2
+			if(not ((base_addr & (base_addr -1) == 0) and base_addr != 0)):
+				self.logger.simply_v_crash(f"Activated LOOPBACK in {self.FULL_NAME} with a BASE_ADDR"
+											" that isn't a power of 2.")
 	
 	def _activate_loopback(self):
 		#NonLeaf busses need to activate the loopback, we assume to call this function from a "child"
 		#and activate the loopback for both child an father
 		if (self.LOOPBACK):
-			self.father._father_enable_loopback(self.NAME)
+			self.father._father_enable_loopback(self.FULL_NAME)
 			self._child_enable_loopback()
 	
 	def _father_enable_loopback(self, child_name: str):
@@ -87,13 +96,11 @@ class NonLeafBus(Bus):
 		base_addresses = [father_0_base_addr, father_1_base_addr]
 		addresses_widths = [father_0_addr_width, father_1_addr_width]
 
-		ranges = self.busses_factory.create_addr_ranges(self.father.BASE_NAME, self.father.NAME, base_addresses, addresses_widths)
-
-		self.loopback_ranges.extend(ranges)
+		self.loopback_ranges = Addr_Ranges(self.father.FULL_NAME, base_addresses, addresses_widths)
 
 		self.logger.simply_v_warning(
-			f"The address range addressable from {self.NAME} in the loopback configuration"
-			f"is up until {ranges[1].RANGE_END_ADDR} (excluded)"
+			f"The address range addressable from {self.FULL_NAME} in the loopback configuration"
+			f"is up until {self.loopback_ranges.get_end_addr()} (excluded)"
 		)
 
 	
@@ -102,9 +109,8 @@ class NonLeafBus(Bus):
 
 		for b in self.children_busses:
 			if b.BASE_NAME not in self.LEGAL_BUSSES:
-				simply_v_crash(f"Unsupported bus {b.NAME} for this bus")
+				simply_v_crash(f"Unsupported bus {b.FULL_NAME} for this bus")
 
-	
 		
 	def _init_clock_domains(self):
 		nodes = []
@@ -139,7 +145,7 @@ class NonLeafBus(Bus):
 				peripherals_clock_domains.append(domains)
 		
 		# create all the peripherals
-		self.children_peripherals = self._generate_peripherals(self._ADDR_RANGES, peripherals_names, 
+		self.children_peripherals = self._generate_peripherals(self.ADDR_RANGES, peripherals_names, 
 														 peripherals_bases, peripherals_widths, 
 														 peripherals_clock_domains)
 

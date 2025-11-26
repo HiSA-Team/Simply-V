@@ -1,5 +1,5 @@
 import os
-from addr_range import Addr_Range
+from addr_range import Addr_Ranges
 from env import *
 from factories.factory import Factory
 from parsers.nonleafbus_parser import NonLeafBus_Parser
@@ -14,20 +14,20 @@ class Busses_Factory(Factory):
 	def __init__(self):
 		pass
 
-
-	def create_bus(self, range_name: str, base_addr: list[int], addr_width: list[int], clock_domain: str, **kwargs) -> Bus | None:
+	def create_bus(self, full_name: str, base_addr: list[int], addr_width: list[int], 
+						clock_domain: str, **kwargs) -> Bus | None:
 		from busses.hbus import HBus
 		from busses.pbus import PBus
 		from busses.mbus import MBus
 
-		base_name = self._extract_base_name(range_name)
+		base_name = self._extract_base_name(full_name)
 
 		clock_frequency = self._extract_clock_frequency(clock_domain)
 
-		addr_ranges_list = self.create_addr_ranges(base_name, range_name, base_addr, addr_width)
+		addr_ranges = Addr_Ranges(full_name, base_addr, addr_width)
 
 		# Assuming the bus file name is for example "config_pbus_0.csv" if range_name is "PBUS_0"
-		file_name = os.path.join(self.env_global.get_conf_profile_path(), "config_" + range_name.lower() + ".csv")
+		file_name = os.path.join(self.env_global.get_conf_profile_path(), "config_" + full_name.lower() + ".csv")
 
 		# need to add the base name to the constructed busses
 		match base_name:
@@ -35,16 +35,16 @@ class Busses_Factory(Factory):
 				data_dict = self.nonleafbus_parser.parse_csv(file_name)
 				if data_dict["PROTOCOL"] == "DISABLE":
 					return None
-				return MBus(range_name, data_dict, addr_ranges_list, clock_domain, clock_frequency, **kwargs)
+				return MBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
 			case "PBUS":
 				data_dict = self.leafbus_parser.parse_csv(file_name)
 				if data_dict["PROTOCOL"] == "DISABLE":
 					return None
-				return PBus(range_name, data_dict, addr_ranges_list, clock_domain, clock_frequency)
+				return PBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency)
 			case "HBUS":
 				data_dict = self.nonleafbus_parser.parse_csv(file_name)
 				if data_dict["PROTOCOL"] == "DISABLE":
 					return None
-				return HBus(range_name, data_dict, addr_ranges_list, clock_domain, clock_frequency, **kwargs)
+				return HBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
 			case _:
-				self.logger.simply_v_crash(f"Unsupported Bus {range_name}\n")
+				self.logger.simply_v_crash(f"Unsupported Bus {full_name}\n")

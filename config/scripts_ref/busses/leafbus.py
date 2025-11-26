@@ -6,17 +6,17 @@
 # with the Bus hierarchy modeled with the "Composite" design pattern.
 
 from node import Node
-from addr_range import Addr_Range
+from addr_range import Addr_Ranges
 from peripherals.peripheral import Peripheral
 from busses.bus import Bus
 from typing import cast
 
 class LeafBus(Bus):
-	def __init__(self, range_name: str, data_dict: dict, asgn_addr_ranges: list[Addr_Range], axi_addr_width: int, 
+	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 					axi_data_width: int, clock_domain: str, clock_frequency: int):
 
-		super().__init__(range_name, data_dict, asgn_addr_ranges, axi_addr_width, axi_data_width, clock_domain, clock_frequency)
-		return
+		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
+						axi_data_width, clock_domain, clock_frequency)
 
 
 	def _generate_children(self):

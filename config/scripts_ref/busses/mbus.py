@@ -1,4 +1,4 @@
-from addr_range import Addr_Range
+from addr_range import Addr_Ranges
 from busses.bus import Bus
 from env import *
 from busses.nonleafbus import NonLeafBus
@@ -17,11 +17,12 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		LEGAL_BUSSES = LEGAL_BUSSES + ("HBUS",)
 
 
-	def __init__(self, range_name:str, data_dict: dict, asgn_addr_range: list[Addr_Range], clock_domain: str, 
-				clock_frequency: int, axi_addr_width: int, axi_data_width: int,):
+	def __init__(self, base_name:str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, clock_domain: str, 
+				clock_frequency: int, axi_addr_width: int, axi_data_width: int):
 
 		# init NonLeafBus object
-		super().__init__(range_name, data_dict, asgn_addr_range, axi_addr_width, axi_data_width, clock_domain, clock_frequency)
+		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
+				axi_data_width, clock_domain, clock_frequency, None)
 
 	
 	def init_configurations(self):

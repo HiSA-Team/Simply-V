@@ -1,10 +1,14 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: The class "Sys_Parser" inherits from the "Parser" class, extending the checked
+# properties with the ones specific to system configurations
+
 from typing import Any, Callable
 from parsers.parser import Parser
 
 class Sys_Parser(Parser):
 	mandatory_properties = Parser.mandatory_properties + ("CORE_SELECTOR", "MAIN_CLOCK_DOMAIN")
 
-	optional_properties: dict[str, int] = Parser.optional_properties | {
+	optional_properties: dict[str, Any] = Parser.optional_properties | {
 											"VIO_RESETN_DEFAULT": 1,
 											"XLEN": 32
 											}

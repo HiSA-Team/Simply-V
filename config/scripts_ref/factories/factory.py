@@ -23,29 +23,18 @@ class Factory(metaclass=SingletonABCMeta):
 	#anywhere in the configuration, when they're clearly refering to different
 	#istances of the same "BASENAME".
 
-	def _extract_base_name(self, name: str):
+	def _extract_base_name(self, full_name: str):
 		pattern = re.compile(r"^(?P<prefix>[A-Za-z0-9]+)")
 	
-		match = pattern.match(name)
+		match = pattern.match(full_name)
 		if match:
 			base_name = match.group("prefix")
 			return base_name.upper() #upper just in case, to have uniform names
 		else:
-			self.logger.simply_v_crash(f"There is something wrong with {name} format name\n")
+			self.logger.simply_v_crash(f"There is something wrong with {full_name} format name\n")
 
 	def _extract_clock_frequency(self, clock_domain: str) -> int | NoReturn:
 		try:
 			return int(clock_domain.split("_")[-1])
 		except ValueError:
 			self.logger.simply_v_crash(f"There is something wrong with {clock_domain} format name\n")
-
-	def create_addr_ranges(self, base_name: str, range_name: str, base_addr: list[int], 
-							addr_width: list[int]) -> list[Addr_Range]:
-
-		addr_ranges_list = []
-		for addr_range in range(len(base_addr)):
-			# add a range identifier in the name when creating multiple address ranges
-			if(len(base_addr) != 1):
-				range_name += f"_RANGE_{addr_range}"
-			addr_ranges_list.append(Addr_Range(base_name, range_name, base_addr[addr_range], addr_width[addr_range]))
-		return addr_ranges_list

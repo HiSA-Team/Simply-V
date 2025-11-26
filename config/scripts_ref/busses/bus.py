@@ -7,7 +7,7 @@
 # it also defines internal function (the functions starting with "_") that expose
 # common logic and attributes used from both the "Composite" and "Leaf" classes
 
-from addr_range import Addr_Range
+from addr_range import Addr_Ranges
 from peripherals.peripheral import Peripheral
 from factories.peripherals_factory import Peripherals_Factory
 from logger import Logger
@@ -27,7 +27,7 @@ class Bus(Node):
 	LEGAL_PROTOCOLS = ()
 
 	# Bus Constructor
-	def __init__(self, range_name: str, data_dict: dict, asgn_addr_ranges: list[Addr_Range], axi_addr_width: int, 
+	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 					axi_data_width: int, clock_domain: str, clock_frequency: int):
 
         #General configuration parameters
@@ -50,14 +50,14 @@ class Bus(Node):
 
 		#check on addr_width
 		if any(addr_width > self.ADDR_WIDTH for addr_width in self._RANGE_ADDR_WIDTH):
-			self.logger.simply_v_crash(f"a RANGE_ADDR_WIDTH is greater than {self.ADDR_WIDTH} in {self.NAME}")
+			self.logger.simply_v_crash(f"a RANGE_ADDR_WIDTH is greater than {self.ADDR_WIDTH} in {self.FULL_NAME}")
 
 		#check protocol
 		if self.PROTOCOL not in self.LEGAL_PROTOCOLS:
-			self.logger.simply_v_crash(f"Unsupported protocol {self.PROTOCOL} in {self.NAME}")
+			self.logger.simply_v_crash(f"Unsupported protocol {self.PROTOCOL} in {self.FULL_NAME}")
 
 		#Create Node object
-		super().__init__(range_name, asgn_addr_ranges, clock_domain, clock_frequency)
+		super().__init__(base_name, asgn_addr_ranges, clock_domain, clock_frequency)
 
 		#create children nodes
 		self._generate_children()
@@ -82,12 +82,12 @@ class Bus(Node):
 			#check that nodes address ranges dont overlap
 			for node2 in nodes:
 				if (node1 != node2 and node1.overlaps(node2)):
-					self.logger.simply_v_crash(f"Address ranges of {node1.NAME} overlaps {node2.NAME} in {self.NAME}")
+					self.logger.simply_v_crash(f"Address ranges of {node1.FULL_NAME} overlaps {node2.FULL_NAME} in {self.NAME}")
 
 			#check that all nodes address ranges are contained
-			#(using "__contains__" defined in node.py)
-			if node1 not in self:
-				self.logger.simply_v_crash(f"Address ranges of {node1.NAME} not fully contained in {self.NAME} address ranges")
+			#(using "__contains__" defined in addr_range.py)
+			if node1.asgn_addr_ranges not in self.asgn_addr_ranges:
+				self.logger.simply_v_crash(f"Address ranges of {node1.FULL_NAME} not fully contained in {self.FULL_NAME} address ranges")
 
 
 	# Internal function used in "check_legals" implementation
@@ -96,7 +96,7 @@ class Bus(Node):
 
 		for p in self.children_peripherals:
 			if p.BASE_NAME not in self.LEGAL_PERIPHERALS:
-				simply_v_crash(f"Unsupported peripheral {p.NAME} for {self.NAME}")
+				simply_v_crash(f"Unsupported peripheral {p.FULL_NAME} for {self.FULL_NAME}")
 
 	
 	# Internal function used in "add_reachability" implementation
@@ -120,7 +120,7 @@ class Bus(Node):
 
 		return (
 			f"{self.__class__.__name__}("
-			f"NAME={self.NAME}, "
+			f"NAME={self.BASE_NAME}, "
 			f"ID_WIDTH={self.ID_WIDTH}, "
 			f"NUM_MI={self.NUM_MI}, "
 			f"NUM_SI={self.NUM_SI}, "

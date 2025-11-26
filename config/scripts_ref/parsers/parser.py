@@ -1,5 +1,15 @@
-from os import PRIO_PGRP
-from pprint import pprint
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: The class "Parser" is the base class from which all the concrete parsers inherit.
+# This class is designed in a declarative style to allow for future extensions of the checks
+# performed by the parsers implementations to be easily added without changing the functions implementations.
+# The "Parser" class implements the function "parse_csv" that is the only "public" function that should be called
+# on a parser object.
+# The "parse_csv" function calls all the internal functions used for the effective parsing and checking of the data
+# and crashes the execution if an error is encountered during parsing.
+# The "declarative" nature of the implementation lies in the fact that child classes must only define their
+# "properties" and "rules" according to the checks they need to fulfil extending the ones defined by the
+# "father" classes and the validation and checks functions will do the rest.
+
 import pandas as pd
 from typing import Any, Callable, NoReturn
 from logger import Logger
@@ -11,23 +21,30 @@ class Parser(metaclass=SingletonABCMeta):
 	# Children classes expand these and implicitly use them (in _validate_values)
 	# when parsing a file
 
+	# These are the properties that if missing in the .csv file will lead to a crash
 	mandatory_properties = ()
 
-	optional_properties: dict[str, int] = {}
+	# These are the properties that if missing in the .csv file will be initialized with a default value
+	optional_properties: dict[str, Any] = {}
 
+	# These are lambda functions that will cast the parsed values to the expected values
+	# substituting the parsed values with the casted ones in the dictionary that "parse_csv" returns
 	type_parsers: dict[str, Callable[[str], Any]]= {}
 	
-	# return false if the check fails, true otherwise
+	# These are lambda functions that will return false if the check fails, true otherwise
 	range_validators: dict[str, Callable[[Any], bool]] = {}
 
-	# intra rules expressed as lambdas producing (bool, message)
-	# if "bool" is True then crash reporting "message"
+	# These are lambda functions that will check interactions between the parameters
+	# they MUST return True in case of FAIL of the check
 	intra_rules: list[Callable[[dict], tuple[bool, str]]] = []
 
 	
+	# Defined as static to be used from child classes to check integer ranges values
 	@staticmethod
 	def _check_range(value: int, min_value: int, max_value: int) -> bool:
 		return min_value <= value <= max_value
+
+	# Internal functions
 
 	def _validate_mandatory(self, data: dict) -> None:
 		missing = [k for k in self.mandatory_properties if k not in data]
@@ -59,6 +76,7 @@ class Parser(metaclass=SingletonABCMeta):
 		self._cast_and_validate(data)
 		self._check_intra(data)
 
+	# public function to be used publicly
 
 	def parse_csv(self, file_name: str) -> dict | NoReturn:
 		try:
