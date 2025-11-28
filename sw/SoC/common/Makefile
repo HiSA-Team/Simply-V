@@ -10,8 +10,8 @@ LIB_DIR	= $(SOC_SW_ROOT_DIR)/lib
 # Misc #
 ########
 
-SRCS	 = $(wildcard src/*.c) $(wildcard lib/*.c)
-OBJS	 = $(addprefix $(OBJ_DIR)/, $(notdir $(SRCS:.c=.o)))
+SRCS	 ?= $(wildcard src/*.c) $(wildcard lib/*.c)
+OBJS	 ?= $(addprefix $(OBJ_DIR)/, $(notdir $(SRCS:.c=.o)))
 
 RM	  = rm -rf					 # Remove recursively command
 MKDIR   = @mkdir -p $(@D)			 # Creates folders if not present

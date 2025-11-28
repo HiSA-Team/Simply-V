@@ -108,7 +108,7 @@ int main()
     // Configure the PLIC
     uint32_t priorities[SOURCES_NUM] = { 1, 1, 1 };
     plic_init();
-    plic_configure(priorities, SOURCES_NUM);
+    plic_configure_set_array(priorities, SOURCES_NUM);
     plic_enable_all();
 
     #ifdef GPIO_IN_IS_ENABLED

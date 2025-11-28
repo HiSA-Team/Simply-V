@@ -67,6 +67,11 @@ for target in ${sys_target_values[*]}; do
     # Replace in target file
     sed -E -i "s/${target}.?\?=.+/${target} \?= ${target_value}/g" ${OUTPUT_MK_FILE};
 
+    # Save XLEN for later
+    if [[ "$target" == "XLEN" ]]; then
+        XLEN_bytes=$(( $target_value / 8 ))
+    fi
+
 done
 
 # Loop over bus targets
@@ -124,15 +129,62 @@ for slave in ${slaves[*]}; do
     # Assume each BRAM name starts with BRAM and they are ordered in the CSV
     if [[ ${slave:0:$prefix_len} == $bram_name ]]; then
         range_width=${range_addr_widths[$cnt]}
-        bram_size=$(( (1 << $range_width )/8 ))
+        bram_depth=$(( (1 << $range_width ) / $XLEN_bytes ))
 
         # Get the target file
         bram_config=${XILINX_IPS_ROOT}/common/xlnx_blk_mem_gen_${cnt}/config.tcl
 
         # Replace in the target file
         # NOTE: this will trigger the rebuild of the IP
-        sed -E -i "s#(set bram_depth)[[:space:]]*\{[^}]+\}#\1 {${bram_size}}#g" "${bram_config}"
-        echo "[CONFIG_XILINX] Updating BRAM_DEPTH = ${bram_size} for BRAM ${cnt}"
+        sed -E -i "s#(set bram_depth)[[:space:]]*\{[^}]+\}#\1 {${bram_depth}}#g" "${bram_config}"
+        echo "[CONFIG_XILINX] Updating BRAM_DEPTH = ${bram_depth} for BRAM ${cnt}"
+    fi
+
+    # Increment counter
+    ((cnt++))
+done
+
+#################
+# CACHE CONFIG #
+#################
+
+# Name of the DDR memory block
+ddr_prefix=DDR
+
+# Extract all slave names from the main CSV
+slaves=$(grep "RANGE_NAMES" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}')
+
+# Extract all corresponding range widths
+range_addr_widths=($(grep "RANGE_ADDR_WIDTH" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}'))
+
+# Extract all base addresses
+range_base_addrs=($(grep "RANGE_BASE_ADDR" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}'))
+
+# Counter for iterating over slaves
+cnt=0
+
+# Iterate over all slave names
+for slave in ${slaves[*]}; do
+    # Check if this slave is DDR
+    if [[ "$slave" == "$ddr_prefix"* ]]; then
+        # Remove possible 0x prefix from base address
+        ddr_base_hex=${range_base_addrs[$cnt]#0x}
+        ddr_base=$((0x$ddr_base_hex))  # Convert to number
+
+        # Calculate the high address: base + (2^range_width) - 1
+        range_width=${range_addr_widths[$cnt]}
+        ddr_high=$(( ddr_base + (1 << range_width) - 1 ))
+
+        # Path to the system cache TCL config
+        cache_config=${XILINX_IPS_ROOT}/hpc/xlnx_system_cache_0/config.tcl
+
+        # Update CACHE_BASEADDR in TCL
+        sed -E -i "s#(set CACHE_BASEADDR)[[:space:]]*\{[^}]+\}#\1 {0x$(printf '%x' $ddr_base)}#g" "${cache_config}"
+        echo "[CONFIG_XILINX] Updating CACHE_BASEADDR = 0x$(printf '%x' $ddr_base)"
+
+        # Update CACHE_HIGHADDR in TCL
+        sed -E -i "s#(set CACHE_HIGHADDR)[[:space:]]*\{[^}]+\}#\1 {0x$(printf '%x' $ddr_high)}#g" "${cache_config}"
+        echo "[CONFIG_XILINX] Updating CACHE_HIGHADDR = 0x$(printf '%x' $ddr_high)"
     fi
 
     # Increment counter

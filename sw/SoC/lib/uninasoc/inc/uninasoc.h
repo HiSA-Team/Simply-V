@@ -8,7 +8,6 @@
 
 #include "irq_handlers.h"
 #include "plic.h"
-
 #ifdef GPIO_IN_IS_ENABLED
 #include "xlnx_gpio_in.h"
 #endif
@@ -21,6 +20,7 @@
 #include "xlnx_tim.h"
 #endif
 
+#include "xlnx_cdma.h"
 #include "tinyIO.h"
 
 enum{
@@ -34,6 +34,9 @@ static inline void uninasoc_init()
     // TinyIO init
     uintptr_t uart_base_address = (uintptr_t)&_peripheral_UART_start;
     tinyIO_init(uart_base_address);
+
+    // PLIC init
+    plic_init();
 }
 
 #endif

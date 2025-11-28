@@ -37,7 +37,7 @@ load_binary_embedded: ${BIN_PATH}
 
 # Write the binary to BRAM/DDR through XDMA
 load_binary_hpc: ${BIN_PATH}
-	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/xdma_load_binary.sh
+	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/xdma_load_binary.sh \
 		${PCIE_BAR} ${BIN_PATH} ${BASE_ADDRESS} ${LOAD_BINARY_READBACK}"
 
 ######################

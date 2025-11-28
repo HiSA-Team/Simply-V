@@ -10,6 +10,7 @@ export ROOT_DIR=$( dirname $( realpath $BASH_SOURCE[0]} ) )
 if ! command -v vivado &> /dev/null; then
     echo "[Error] Can't find Vivado in PATH!" >&2 ;
 fi
+export XILINX_VIVADO_VERSION=$(vivado -version | grep -i Vivado | awk '{print $2}' | sed -E 's/v|\.[0-9]//g')
 
 #################
 # Configuration #

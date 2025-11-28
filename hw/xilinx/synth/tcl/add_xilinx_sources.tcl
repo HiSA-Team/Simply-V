@@ -22,7 +22,6 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/ddr4_channel_wrapper.sv          \
     $::env(XILINX_ROOT)/rtl/plic_wrapper.sv                  \
     $::env(XILINX_ROOT)/rtl/uninasoc.sv                      \
-    $::env(XILINX_ROOT)/rtl/plic_wrapper.sv                  \
 ]
 
 # Add files to project

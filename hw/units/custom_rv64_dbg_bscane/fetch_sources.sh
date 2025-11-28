@@ -52,8 +52,5 @@ for rtl_file in ${RTL_DIR}/* ; do
     sed -i "s|\`include \"axi\/|\`include \"|g" $rtl_file
 done
 
-# Delete the cloned repo and temporary flist
-printf "${YELLOW}[FETCH_SOURCES] Clean all artifacts${NC}\n"
-sudo rm -rf ${CLONE_DIR}
-rm rtl.flist bender
+# Info
 printf "${GREEN}[FETCH_SOURCES] Completed${NC}\n"

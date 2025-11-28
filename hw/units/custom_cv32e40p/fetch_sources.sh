@@ -56,8 +56,5 @@ for rtl_file in $(cat rtl.flist) ; do
     cp $rtl_file rtl
 done;
 
-# Delete the cloned repo and temporary flist
-printf "${YELLOW}[FETCH_SOURCES] Clean all artifacts${NC}\n"
-sudo rm -r ${CLONE_DIR}
-rm *.flist
+# Info
 printf "${GREEN}[FETCH_SOURCES] Completed${NC}\n"
