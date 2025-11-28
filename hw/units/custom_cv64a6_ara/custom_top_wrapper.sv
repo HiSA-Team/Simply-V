@@ -390,7 +390,7 @@
     assign ara_narrow_axi_wlast     = ara_narrow_req.w.last;
     assign ara_narrow_axi_wvalid    = ara_narrow_req.w_valid;
     assign ara_narrow_axi_bready    = ara_narrow_req.b_ready;
-    assign ara_narrow_axi_awaddr    = ara_narrow_req.ar.addr;
+    assign ara_narrow_axi_araddr    = ara_narrow_req.ar.addr;
     assign ara_narrow_axi_arlen     = ara_narrow_req.ar.len;
     assign ara_narrow_axi_arsize    = ara_narrow_req.ar.size;
     assign ara_narrow_axi_arburst   = ara_narrow_req.ar.burst;
