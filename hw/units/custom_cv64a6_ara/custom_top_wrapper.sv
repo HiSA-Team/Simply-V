@@ -347,7 +347,7 @@
     assign cva6_axi_wlast     = cva6_axi_req.w.last;
     assign cva6_axi_wvalid    = cva6_axi_req.w_valid;
     assign cva6_axi_bready    = cva6_axi_req.b_ready;
-    assign cva6_ara_axiddr    = cva6_axi_req.ar.addr;
+    assign cva6_axi_araddr    = cva6_axi_req.ar.addr;
     assign cva6_axi_arlen     = cva6_axi_req.ar.len;
     assign cva6_axi_arsize    = cva6_axi_req.ar.size;
     assign cva6_axi_arburst   = cva6_axi_req.ar.burst;
@@ -390,7 +390,7 @@
     assign ara_narrow_axi_wlast     = ara_narrow_req.w.last;
     assign ara_narrow_axi_wvalid    = ara_narrow_req.w_valid;
     assign ara_narrow_axi_bready    = ara_narrow_req.b_ready;
-    assign ara_narrow_ara_axiddr    = ara_narrow_req.ar.addr;
+    assign ara_narrow_axi_awaddr    = ara_narrow_req.ar.addr;
     assign ara_narrow_axi_arlen     = ara_narrow_req.ar.len;
     assign ara_narrow_axi_arsize    = ara_narrow_req.ar.size;
     assign ara_narrow_axi_arburst   = ara_narrow_req.ar.burst;
