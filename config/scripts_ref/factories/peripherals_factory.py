@@ -1,4 +1,4 @@
-from factories.factory import Factory
+from .factory import Factory
 from peripherals.peripheral import Peripheral
 from peripherals.tim import Timer
 from peripherals.uart import Uart
@@ -9,7 +9,7 @@ from peripherals.bram import Bram
 from peripherals.debug_module import Debug_Module
 from peripherals.hls import HLS
 from peripherals.plic import PLIC
-from addr_range import Addr_Ranges
+from general.addr_range import Addr_Ranges
 
 class Peripherals_Factory(Factory):
 

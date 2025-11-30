@@ -12,8 +12,8 @@
 
 import pandas as pd
 from typing import Any, Callable, NoReturn
-from logger import Logger
-from singleton import SingletonABCMeta
+from general.logger import Logger
+from general.singleton import SingletonABCMeta
 
 class Parser(metaclass=SingletonABCMeta):
 	logger = Logger.get_instance()

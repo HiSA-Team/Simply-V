@@ -3,7 +3,7 @@
 # properties with the ones specific to system configurations
 
 from typing import Any, Callable
-from parsers.parser import Parser
+from .parser import Parser
 
 class Sys_Parser(Parser):
 	mandatory_properties = Parser.mandatory_properties + ("CORE_SELECTOR", "MAIN_CLOCK_DOMAIN")

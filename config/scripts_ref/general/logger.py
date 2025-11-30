@@ -1,6 +1,6 @@
 import pandas as pd
 import logging
-from singleton import Singleton
+from .singleton import Singleton
 
 class Logger(metaclass=Singleton):
 	def simply_v_warning(self, message: str):

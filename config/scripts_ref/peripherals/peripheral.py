@@ -1,5 +1,5 @@
-from addr_range import Addr_Ranges
-from node import Node
+from general.addr_range import Addr_Ranges
+from general.node import Node
 
 class Peripheral(Node):
 	def __init__(self, base_name: str, asgn_addr_ranges: Addr_Ranges, clock_domain: str, clock_frequency: int):

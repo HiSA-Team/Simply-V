@@ -1,5 +1,5 @@
 import os
-from singleton import Singleton
+from .singleton import Singleton
 
 class Env(metaclass=Singleton):
 	# init Env

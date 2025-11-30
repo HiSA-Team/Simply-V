@@ -1,11 +1,8 @@
 #!/bin/python3.10
 
-from parsers.parser import Parser
 from parsers.sys_parser import Sys_Parser
-from simply_v import SimplyV
-import logging
-import os
-from env import Env
+from general.env import Env
+from general.simply_v import SimplyV
 
 
 if __name__ == "__main__":
@@ -24,7 +21,6 @@ if __name__ == "__main__":
 	system = SimplyV(sys_dict)
 
 	#General dumps
-	system.print_vars()
 
 	peripherals = system.get_peripherals()
 

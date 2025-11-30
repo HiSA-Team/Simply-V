@@ -1,5 +1,4 @@
-from pprint import pprint
-from addr_range import Addr_Range
+from .addr_range import Addr_Range
 
 class Clock_Domain():
 	def __init__(self, Nodes: list[Addr_Range]):

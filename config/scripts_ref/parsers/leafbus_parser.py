@@ -2,7 +2,7 @@
 # Description: The class "LeafBus_Parser" inherits from the "Bus_Parser" class, extending the checked
 # properties with the ones common to all LeafBusses
 
-from parsers.bus_parser import Bus_Parser
+from .bus_parser import Bus_Parser
 
 class LeafBus_Parser(Bus_Parser):
 	#extend the father defined data structs used for parsing/validation

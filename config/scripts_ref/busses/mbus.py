@@ -1,8 +1,8 @@
-from addr_range import Addr_Ranges
-from busses.bus import Bus
-from env import *
-from busses.nonleafbus import NonLeafBus
-from singleton import SingletonABCMeta
+from general.addr_range import Addr_Ranges
+from .bus import Bus
+from general.env import Env
+from .nonleafbus import NonLeafBus
+from general.singleton import SingletonABCMeta
 
 #Only one MBUS should be created
 class MBus(NonLeafBus, metaclass=SingletonABCMeta):
@@ -24,6 +24,7 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 				axi_data_width, clock_domain, clock_frequency, None)
 
+
 	
 	def init_configurations(self):
 		# sanitize all the addr_ranges
@@ -31,11 +32,11 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		# check legals busses/peripherals
 		self.check_legals()
 		# activate loopbacks
-		self.activate_loopback()
+		self._activate_loopback()
 		# put reachability values in the nodes based on the hierarchy created
 		self.add_reachability()
 		# init clock domains
-		self.init_clock_domains()
+		#self.init_clock_domains()
 		# check configuration of clock domains on this bus
 		self.check_clock_domains()
 

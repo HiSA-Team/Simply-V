@@ -7,12 +7,12 @@
 # it also defines internal function (the functions starting with "_") that expose
 # common logic and attributes used from both the "Composite" and "Leaf" classes
 
-from addr_range import Addr_Ranges
+from general.addr_range import Addr_Ranges
+from general.logger import Logger
+from general.node import Node
 from peripherals.peripheral import Peripheral
 from factories.peripherals_factory import Peripherals_Factory
-from logger import Logger
 from abc import abstractmethod
-from node import Node
 
 class Bus(Node):
 	#General class parameters common to all the "Bus" istances
@@ -39,9 +39,9 @@ class Bus(Node):
         #Axi widths
 		self.ADDR_WIDTH: int = axi_addr_width
 		self.DATA_WIDTH: int = axi_data_width
-		self.ADDR_RANGES: int = data_dict["ADDR_RANGES"].copy()
         #Children Parameters internally used only to generate the children objects
 		#should never use them directly
+		self._ADDR_RANGES: int = data_dict["ADDR_RANGES"]
 		self._RANGE_NAMES: list[str] = data_dict["RANGE_NAMES"].copy()
 		self._RANGE_BASE_ADDR: list[int] = data_dict["RANGE_BASE_ADDR"].copy()
 		self._RANGE_ADDR_WIDTH: list[int] = data_dict["RANGE_ADDR_WIDTH"].copy()
@@ -66,13 +66,15 @@ class Bus(Node):
 
 	# Internal function used in "generate_children" implementation
 	def _generate_peripherals(self, addr_ranges: int, range_names: list[str], base_addr: list[int], 
-								addr_width: list[int], clock_domain) -> list[Peripheral]:
+						   addr_width: list[int], clock_domain: list[str]) -> list[Peripheral]:
 		peripherals = []
 		for i in range(len(range_names)):
-			peripherals.append(self.peripherals_factory.create_peripheral(range_names[i], \
+			p = self.peripherals_factory.create_peripheral(range_names[i], \
 						base_addr[i:(i+addr_ranges)], \
 						addr_width[i:(i+addr_ranges)], \
-						clock_domain))
+						clock_domain[i])
+			peripherals.append(p)
+
 		return peripherals
 
 
@@ -81,13 +83,14 @@ class Bus(Node):
 		for node1 in nodes:
 			#check that nodes address ranges dont overlap
 			for node2 in nodes:
-				if (node1 != node2 and node1.overlaps(node2)):
-					self.logger.simply_v_crash(f"Address ranges of {node1.FULL_NAME} overlaps {node2.FULL_NAME} in {self.NAME}")
+				if (node1 != node2 and node1.asgn_addr_ranges.overlaps(node2.asgn_addr_ranges)):
+					self.logger.simply_v_crash(f"Address ranges of {node1.FULL_NAME} overlaps {node2.FULL_NAME} in {self.FULL_NAME}")
 
 			#check that all nodes address ranges are contained
 			#(using "__contains__" defined in addr_range.py)
-			if node1.asgn_addr_ranges not in self.asgn_addr_ranges:
-				self.logger.simply_v_crash(f"Address ranges of {node1.FULL_NAME} not fully contained in {self.FULL_NAME} address ranges")
+			for addr_range in node1.asgn_addr_ranges:
+				if addr_range not in self.asgn_addr_ranges:
+					self.logger.simply_v_crash(f"Address ranges of {node1.FULL_NAME} not fully contained in {self.FULL_NAME} address ranges")
 
 
 	# Internal function used in "check_legals" implementation
@@ -100,14 +103,19 @@ class Bus(Node):
 
 	
 	# Internal function used in "add_reachability" implementation
+	# iterate over each "children_peripheral" addr range, and
+	# if they are contained in at least 1 Bus addr range, then add
+	# reachability values to them
 	def _add_peripherals_reachability(self):
-		#get all the ranges composing this bus
-		ranges_names = self.get_ranges_names()
-		#get the name of all the ranges that can reach this bus
-		#(all the ranges that reach this node can also reach the ranges reachable from this node)
-		reachable_from = self.get_reachable_from()
 		for peripheral in self.children_peripherals:
-			peripheral.add_list_to_reachable(ranges_names + reachable_from)
+			for addr_range in peripheral.asgn_addr_ranges:
+				for self_range in self.asgn_addr_ranges:
+					if addr_range in self_range:
+						# add bus name
+						addr_range.add_to_reachable(self.FULL_NAME)
+						# add the nodes that can reach the bus
+						addr_range.add_list_to_reachable(self_range.get_reachable())
+						break
 
 		
 	# Internal function used in "get_peripherals" implementation

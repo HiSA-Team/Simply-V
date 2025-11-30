@@ -83,6 +83,10 @@ class Addr_Range():
 	def add_list_to_reachable(self, list_of_names: list[str]):
 		self.REACHABLE_FROM.update(list_of_names)
 
+	# Get a copy of the list of "FULL_NAMEs" that can reach this addr range
+	def get_reachable(self) -> list[str]:
+		return list(self.REACHABLE_FROM.copy())
+
 	# Check if this address space is contained in the address space passed
 	def is_contained(self, addr_range: "Addr_Range") -> bool:
 		return ((addr_range.RANGE_BASE_ADDR <= self.RANGE_BASE_ADDR) and 
@@ -100,7 +104,7 @@ class Addr_Ranges():
 	def __init__(self, full_name: str, range_base_addr: list[int], range_addr_width: list[int]):
 		self.FULL_NAME = full_name
 		self.addr_ranges: list[Addr_Range] = []
-		self.contiguous: bool
+		self.contiguous: bool = False
 
 		for i in range(len(range_base_addr)):
 			range_name = full_name
@@ -123,22 +127,18 @@ class Addr_Ranges():
 		lines = "\n".join(str(addr_range) for addr_range in self.addr_ranges)
 		return f"{self.FULL_NAME}:\n{lines}"
 
-	# Check if the passed "addr_ranges_chk" object is contained in "self"
-	# so that EVERY range inside "addr_ranges_chk" is contained in AT LEAST 1 addr range
+	# Used to create an iterator over the addr_ranges
+	def __iter__(self):
+		return iter(self.addr_ranges)
+
+	# Check if the passed "addr_range_chk" object is contained in "self"
+	# so that the range "addr_range_chk" is contained in AT LEAST 1 addr range
 	# of "self"
-	def __contains__(self, addr_ranges_chk: "Addr_Ranges") -> bool:
-		for addr_range in addr_ranges_chk.addr_ranges:
-			contained = False
-
-			for self_range in self.addr_ranges:
-				if (addr_range in self_range):
-					contained = True
-					break
-
-			if(not contained):
-				return False
-
-		return True
+	def __contains__(self, addr_range_chk: "Addr_Range") -> bool:
+		for addr_range in self.addr_ranges:
+			if addr_range_chk in addr_range:
+				return True
+		return False
 
 	# Internal function used to manipulate "RANGE_NAMES"
 	# if the name already contains a range suffix, like "*_range_0"
@@ -196,7 +196,7 @@ class Addr_Ranges():
 	# returns a dict with a single entry with:
 	# key = FULL_NAME
 	# value = copy of REACHABLE_FROM
-	def get_reachable_from(self, explicit: bool):
+	def get_reachable_from(self, explicit: bool) -> dict[str, list[str]]:
 		ret_dict = {}
 		equal = True
 		prev_reachables = set()
@@ -217,26 +217,27 @@ class Addr_Ranges():
 		# informations about every range
 
 		if(equal and not explicit):
-			ret_dict = {self.FULL_NAME: self.addr_ranges[0].REACHABLE_FROM.copy()}
+			ret_dict = {self.FULL_NAME: list(self.addr_ranges[0].REACHABLE_FROM.copy()) }
 		else:
-			ret_dict = {addr_range.RANGE_NAME: addr_range.REACHABLE_FROM.copy() for addr_range in self.addr_ranges}
+			ret_dict = {addr_range.RANGE_NAME: list(addr_range.REACHABLE_FROM.copy()) for addr_range in self.addr_ranges}
 
 		return ret_dict
 
 	# If explicit is set to "True"
 	# Returns a key, value dict, each entry represents an addr range with:
 	# key = RANGE_NAME
-	# value = RANGE_LENGTH
+	# value = (RANGE_BASE, RANGE_END, RANGE_LENGTH)
 	# if the ranges are contiguous and explicit is set to "False"
 	# returns a dict with a single entry with:
 	# key = FULL_NAME
-	# value = sum of RANGE_LENGTHs
-	def get_range_length(self, explicit: bool):
+	# value = (RANGE_BASE, RANGE_END, sum of RANGE_LENGTHs)
+	def get_range_dimensions(self, explicit: bool) -> dict[str, tuple[int,int,int]]:
 		if self.contiguous and not explicit:
 			total = sum(addr_range.RANGE_LENGTH for addr_range in self.addr_ranges)
-			return {self.FULL_NAME: total}
+			info = (self.get_base_addr(), self.get_end_addr(), total)
+			return {self.FULL_NAME: info}
 
-		return {addr_range.RANGE_NAME: addr_range.RANGE_LENGTH for addr_range in self.addr_ranges}
+		return {r.RANGE_NAME: (r.RANGE_BASE_ADDR, r.RANGE_END_ADDR, r.RANGE_LENGTH) for r in self.addr_ranges}
 
 	# Return the base address, that is the smallest base address between all the addr ranges contained
 	def get_base_addr(self) -> int:

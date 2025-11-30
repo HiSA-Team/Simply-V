@@ -1,5 +1,6 @@
-from peripherals.peripheral import Peripheral
-from addr_range import Addr_Ranges
+from general.addr_range import Addr_Ranges
+from .peripheral import Peripheral
+
 
 class Debug_Module(Peripheral):
 	def __init__(self, base_name: str, addr_ranges_list: Addr_Ranges, clock_domain: str, clock_frequency: int):

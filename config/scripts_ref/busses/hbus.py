@@ -1,6 +1,6 @@
-from busses.nonleafbus import NonLeafBus
-from busses.bus import Bus
-from addr_range import Addr_Ranges
+from .nonleafbus import NonLeafBus
+from .bus import Bus
+from general.addr_range import Addr_Ranges
 
 
 class HBus(NonLeafBus):
@@ -15,7 +15,7 @@ class HBus(NonLeafBus):
 		# init NonleafBus object
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, axi_data_width, clock_domain,
 						clock_frequency, father)
-
+		
 
 	def check_clock_domains(self):
 		return

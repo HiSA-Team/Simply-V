@@ -1,8 +1,7 @@
 import re
 from typing import NoReturn
-from addr_range import Addr_Range
-from singleton import SingletonABCMeta
-from logger import Logger
+from general.singleton import SingletonABCMeta
+from general.logger import Logger
 
 class Factory(metaclass=SingletonABCMeta):
 	logger = Logger.get_instance()
@@ -31,10 +30,10 @@ class Factory(metaclass=SingletonABCMeta):
 			base_name = match.group("prefix")
 			return base_name.upper() #upper just in case, to have uniform names
 		else:
-			self.logger.simply_v_crash(f"There is something wrong with {full_name} format name\n")
+			self.logger.simply_v_crash(f"There is something wrong with {full_name} format name")
 
 	def _extract_clock_frequency(self, clock_domain: str) -> int | NoReturn:
 		try:
 			return int(clock_domain.split("_")[-1])
 		except ValueError:
-			self.logger.simply_v_crash(f"There is something wrong with {clock_domain} format name\n")
+			self.logger.simply_v_crash(f"There is something wrong with {clock_domain} format name")

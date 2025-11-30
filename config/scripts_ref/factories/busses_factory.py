@@ -1,7 +1,7 @@
 import os
-from addr_range import Addr_Ranges
-from env import *
-from factories.factory import Factory
+from general.addr_range import Addr_Ranges
+from general.env import Env
+from .factory import Factory
 from parsers.nonleafbus_parser import NonLeafBus_Parser
 from parsers.leafbus_parser import LeafBus_Parser
 from busses.bus import Bus

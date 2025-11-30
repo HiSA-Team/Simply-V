@@ -3,8 +3,8 @@
 # properties with the ones common to all Busses
 
 from typing import Any, Callable
-from singleton import Singleton
-from parsers.parser import Parser
+from general.singleton import Singleton
+from .parser import Parser
 
 class Bus_Parser(Parser, metaclass=Singleton):
 

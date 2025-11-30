@@ -5,10 +5,10 @@
 # attached to them) to just inherit from this class in order to be compatible with
 # with the Bus hierarchy modeled with the "Composite" design pattern.
 
-from node import Node
-from addr_range import Addr_Ranges
+from general.node import Node
+from general.addr_range import Addr_Ranges
 from peripherals.peripheral import Peripheral
-from busses.bus import Bus
+from .bus import Bus
 from typing import cast
 
 class LeafBus(Bus):
@@ -21,9 +21,9 @@ class LeafBus(Bus):
 
 	def _generate_children(self):
 		#Leaf busses just creates Peripherals based on all the "RANGES" attributes
-		self.children_peripherals = self._generate_peripherals(self.ADDR_RANGES, self._RANGE_NAMES, 
+		self.children_peripherals = self._generate_peripherals(self._ADDR_RANGES, self._RANGE_NAMES, 
 														 self._RANGE_BASE_ADDR, self._RANGE_ADDR_WIDTH, 
-														 self.CLOCK_DOMAIN)
+														 [self.CLOCK_DOMAIN]*len(self._RANGE_NAMES))
 
 	#COMPONENT INTERFACE - LEAF IMPLEMENTATION
 	#Base cases of the recursion

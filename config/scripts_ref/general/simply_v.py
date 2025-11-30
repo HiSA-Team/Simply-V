@@ -1,12 +1,10 @@
-import re
 from busses.bus import Bus
 from factories.busses_factory import Busses_Factory
 from peripherals.peripheral import Peripheral
 import os
-from singleton import Singleton
+from .singleton import Singleton
 from busses.mbus import MBus
-from logger import Logger
-from pprint import pprint
+from .logger import Logger
 
 class SimplyV(metaclass=Singleton):
 	busses_factory = Busses_Factory.get_instance()
@@ -21,7 +19,7 @@ class SimplyV(metaclass=Singleton):
 		self.VIO_RESETN_DEFAULT: int = system_data["VIO_RESETN_DEFAULT"]
 		self.XLEN: int = system_data["XLEN"]
 		self.PHYSICAL_ADDR_WIDTH: int = system_data["PHYSICAL_ADDR_WIDTH"]
-		self.mbus: "MBus"
+		self.mbus: MBus
 
 
 		# Create root node (MBUS)
@@ -32,33 +30,34 @@ class SimplyV(metaclass=Singleton):
 		self.mbus = self.busses_factory.create_bus("MBUS", asgn_base_addr, asgn_addr_width, clock_domain,\
 												axi_addr_width=self.PHYSICAL_ADDR_WIDTH, axi_data_width=self.XLEN)
 
+
 		self.mbus.init_configurations()
 		# need to check for redundant names
 		self.check_node_names()
-
 
 	def check_node_names(self):
 		peripherals_names = set()
 		busses_names = set()
 		peripherals = self.get_peripherals()
 		busses = self.get_busses()
+		
 
 		# Check if there are any peripherals with the same name
 		for p in peripherals:
-			if (p.NAME in peripherals_names):
+			if (p.FULL_NAME in peripherals_names):
 				self.logger.simply_v_crash("There are some peripherals with the same name"
-							   f" in the configuration files (replicated name: {p.NAME})")
+							   f" in the configuration files (replicated name: {p.FULL_NAME})")
 			
-			peripherals_names.add(p.NAME)
+			peripherals_names.add(p.FULL_NAME)
 		
 		# Check if there are any busses with the same name
 
 		for b in busses:
-			if (b.NAME in busses_names):
+			if (b.FULL_NAME in busses_names):
 				self.logger.simply_v_crash("There are some busses with the same name"
-							   f" in the configuration files (replicated name: {b.NAME})")
+							   f" in the configuration files (replicated name: {b.FULL_NAME})")
 			
-			busses_names.add(b.NAME)
+			busses_names.add(b.FULL_NAME)
 
 	
 	def check_assign_params(self, data_dict: dict):
@@ -72,9 +71,8 @@ class SimplyV(metaclass=Singleton):
 	def get_peripherals(self) -> list[Peripheral]:
 		return self.mbus.get_peripherals()
 
-	def get_busses(self) ->list[Bus]:
+	def get_busses(self) ->list[Bus] | None:
 		return self.mbus.get_busses()
-
 	
 	def create_linker_script(self, ld_file_name: str, nodes: list[Peripheral]):
 		# Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
@@ -101,11 +99,9 @@ class SimplyV(metaclass=Singleton):
 		fd.write("{\n")
 
 		for block in memories:
-			for range in block.asgn_addr_ranges:
-				base_addr = range.RANGE_BASE_ADDR
-				end_addr = range.RANGE_END_ADDR
-				length = end_addr - base_addr
-				fd.write("\t" + range.RANGE_NAME + " (xrw) : ORIGIN = 0x" + format(base_addr, "016x") + ",  LENGTH = " + hex(length) + "\n")
+			dimension_dict = block.asgn_addr_ranges.get_range_dimensions(explicit=False)
+			for key, value in dimension_dict.items():
+				fd.write("\t" + key + " (xrw) : ORIGIN = 0x" + format(value[0], "016x") + ",  LENGTH = " + hex(value[2]) + "\n")
 
 		fd.write("}\n")
 
@@ -116,14 +112,12 @@ class SimplyV(metaclass=Singleton):
 		end_addr_string = ""
 
 		for peripheral in peripherals:
-			for range in peripheral.asgn_addr_ranges:
-				base_addr = range.RANGE_BASE_ADDR
-				end_addr = range.RANGE_END_ADDR
-				base_addr_string = "_peripheral_" + range.RANGE_NAME + "_start = 0x" + format(base_addr, "016x") + ";\n"
-				end_addr_string = "_peripheral_" + range.RANGE_NAME + "_end = 0x" + format(end_addr, "016x") + ";\n"
-			
-			fd.write(base_addr_string)
-			fd.write(end_addr_string)
+			dimension_dict = peripheral.asgn_addr_ranges.get_range_dimensions(explicit=False)
+			for key, value in dimension_dict.items():
+				base_addr_string = "_peripheral_" + key + "_start = 0x" + format(value[0], "016x") + ";\n"
+				end_addr_string = "_peripheral_" + key + "_end = 0x" + format(value[0], "016x") + ";\n"
+				fd.write(base_addr_string)
+				fd.write(end_addr_string)
 
 
 		# Generate global symbols
@@ -138,15 +132,15 @@ class SimplyV(metaclass=Singleton):
 		stack_start = 0
 		found = False
 
-		for mem in memories:
-			for range in mem.asgn_addr_ranges:
-				if(range.RANGE_BASE_ADDR == self.BOOT_MEMORY_BLOCK):
-					block_memory_base = range.RANGE_BASE_ADDR
-					block_memory_name = range.RANGE_NAME
-					stack_start = range.RANGE_END_ADDR
-					found = True
-					break
 
+		for mem in memories:
+			base_addr = mem.asgn_addr_ranges.get_base_addr()
+			if (base_addr == self.BOOT_MEMORY_BLOCK):
+				stack_start = mem.asgn_addr_ranges.get_end_addr()
+				block_memory_name = mem.FULL_NAME
+				found = True
+				break
+		
 		if(not found):
 			self.logger.simply_v_crash("Unable to find a BOOTABLE MEMORY"
 										f"(Boot starting address is {hex(self.BOOT_MEMORY_BLOCK)})")
@@ -209,9 +203,9 @@ class SimplyV(metaclass=Singleton):
 		#Avoid duplicates
 		busses = set()
 		for p in peripherals:
-			for addr_range in p.asgn_addr_ranges:
-				for bus in addr_range.REACHABLE_FROM:
-					busses.add(bus)
+			reach_dict = p.asgn_addr_ranges.get_reachable_from(explicit=True)
+			for value in reach_dict.values():
+				busses.update(value)
 
 		#"busses_list" is the source of truth for the rest of the configuration
 		#in order to have coherent results about the same bus in different rows (peripherals)
@@ -223,24 +217,16 @@ class SimplyV(metaclass=Singleton):
 
 		#BODY
 		for p in peripherals:
-			list_of_reachables = ["N"] * len(busses_list)
-			str_of_reachables = ""
+			reach_dict = p.asgn_addr_ranges.get_reachable_from(explicit=False)
+			dim_dict = p.asgn_addr_ranges.get_range_dimensions(explicit=False)
 
-			for addr_range in p.asgn_addr_ranges:
-				for bus in addr_range.REACHABLE_FROM:
-					#index will never throw exception in this case
-					position = busses_list.index(bus)
+			for key, value in reach_dict.items():
+				list_of_reachables = ["N"] * len(busses_list)
+				for full_name in value:
+					position = busses_list.index(full_name)
 					list_of_reachables[position] = "Y"
 
-			str_of_reachables = ",".join(list_of_reachables)
-			#write row
-			fd.write(f"{p.NAME},{hex(p.get_base_addr())},{hex(p.get_end_addr()-1)},{str_of_reachables}\n")
+				str_of_reachables = ",".join(list_of_reachables)
+				#write row
+				fd.write(f"{key},{hex(dim_dict[key][0])},{hex(dim_dict[key][1]-1)},{str_of_reachables}\n")
 
-	def print_vars(self):
-		print("Printing SIMPLY_V\n")
-		pprint(vars(self))
-		print("\n")
-		print("Printing MBUS\n")
-		pprint(vars(self.mbus))
-		print("\n")
-		self.mbus.print_vars()
