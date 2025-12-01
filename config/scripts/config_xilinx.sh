@@ -145,11 +145,7 @@ for slave in ${slaves[*]}; do
 done
 
 #################
-
-
-
-
-#
+# CACHE CONFIG #
 #################
 
 # Name of the DDR memory block

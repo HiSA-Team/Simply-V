@@ -30,6 +30,8 @@ ifeq ($(XLEN), 64)
 ABI := lp64
 else ifeq ($(XLEN), 32)
 ABI := ilp32
+else
+$(error Unsupported XLEN value: $(XLEN))
 endif
 
 # Assume at least estensions IM

@@ -10,6 +10,7 @@
 
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+// Description:
 //    This configuration file is a slightly modified version compare to the PULP/OpenHW ones.
 //    As reference, we started from cv64a6_imafdcv_sv39_config_pkg
 
