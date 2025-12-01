@@ -17,10 +17,13 @@ RTL_DIR=${THIS_DIR}/rtl
 # Fetch sources and depencencies #
 ##################################
 
-# Clone repo at main @ 03/10/2025
+# Clone repo at main
 GIT_URL=https://github.com/pulp-platform/ara.git
 GIT_BRANCH=main
-GIT_COMMIT=a6436df6ad4011c77b5b40e0432acdbf4668639f
+# 03/10/2025
+# GIT_COMMIT=a6436df6ad4011c77b5b40e0432acdbf4668639f
+# 28/11/2025
+GIT_COMMIT=e970f7736cde544eb2a44c6a44ad7eb0f8789f1a
 CLONE_DIR=${THIS_DIR}/ara
 printf "${YELLOW}[FETCH_SOURCES] Cloning source repository${NC}\n"
 git clone ${GIT_URL} -b ${GIT_BRANCH} ${CLONE_DIR}
