@@ -1,3 +1,11 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This is the class used to define the "MBus"
+# the MBus is a singleton and is the root of the tree hierarchy
+# "Simply_V" creates it and uses it as a way to interact with the whole
+# nodes hierarchy.
+# "Simply_V" calls the "init_configurations" functions to trigger
+# all the recursive checks and configuration of the whole hierarchy
+
 from general.addr_range import Addr_Ranges
 from .bus import Bus
 from general.env import Env
@@ -23,26 +31,18 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		# init NonLeafBus object
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 				axi_data_width, clock_domain, clock_frequency, None)
-
-
 	
 	def init_configurations(self):
 		# sanitize all the addr_ranges
 		self.sanitize_addr_ranges()
 		# check legals busses/peripherals
 		self.check_legals()
-		# activate loopbacks
-		self._activate_loopback()
 		# put reachability values in the nodes based on the hierarchy created
 		self.add_reachability()
-		# init clock domains
-		#self.init_clock_domains()
 		# check configuration of clock domains on this bus
-		self.check_clock_domains()
+		self.check_clock_domains(self.custom_clocks_checks)
 
-	#To be called after generating children of this node (init_clock_domains uses this node list of children)
-	def check_clock_domains(self):
-		simply_v_crash = self.logger.simply_v_crash
+	def custom_clocks_checks(self):
 		#Add MBus custom checks
 		failed_checks = []
 		peripherals_to_check = ["PLIC", "BRAM", "DM"]
@@ -52,4 +52,4 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 				failed_checks.append(p)
 
 		if (len(failed_checks) != 0):
-			simply_v_crash(f"-{', '.join(failed_checks)} need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
+			raise ValueError(f"-{', '.join(failed_checks)} need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")

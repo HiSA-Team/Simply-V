@@ -27,3 +27,4 @@ if __name__ == "__main__":
 	#Launch real SoC configurations
 	system.create_linker_script(linker_script_file, peripherals)
 	system.dump_reachability(peripherals_dump_file, peripherals)
+	system.generate_crossbars_configs()

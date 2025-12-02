@@ -5,9 +5,16 @@
 # busses that can reach that range (refer to node.py header for the definition of what a "FULL_NAME" is).
 # The class "Addr_Ranges" models a list of "Addr_Range", since each node (bus or peripheral)
 # can have multiple address ranges, objects of this class will be embedded in "Node" class
-# exposing an uniform set of functions that a Node could use to interact with its address ranges
+# exposing an uniform set of functions that a Node can use to interact with its address ranges
 # independently of the number of address ranges that belong to it.
 # The class "Addr_Range" should be only used internally by "Addr_Ranges" class.
+
+# a RANGE_NAME (contained in Addr_Range objects) identifies a range of addresses rather than a single node. 
+# (This enables correct handling of several edge cases, for example:
+# A NonLeafBus connected in loopback that, for some reason, can only address a certain 
+# address range of a peripheral connected to its parent node. 
+# It is incorrect to say that the NonLeafBus addresses the peripheral “FULL_NAME”; 
+# instead, it may address specific “RANGE_NAME(s)” of that peripheral. 
 
 import re
 

@@ -7,8 +7,8 @@
 # it also defines internal function (the functions starting with "_") that expose
 # common logic and attributes used from both the "Composite" and "Leaf" classes
 
+from typing import Callable
 from general.addr_range import Addr_Ranges
-from general.logger import Logger
 from general.node import Node
 from peripherals.peripheral import Peripheral
 from factories.peripherals_factory import Peripherals_Factory
@@ -17,7 +17,6 @@ from abc import abstractmethod
 class Bus(Node):
 	#General class parameters common to all the "Bus" istances
 	peripherals_factory = Peripherals_Factory.get_instance()
-	logger = Logger.get_instance()
 
 	#These params are empty because they are defined by children classes.
 	#Based on the bus type a children class must initialize them with the 
@@ -29,6 +28,8 @@ class Bus(Node):
 	# Bus Constructor
 	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 					axi_data_width: int, clock_domain: str, clock_frequency: int):
+		#Create Node object
+		super().__init__(base_name, asgn_addr_ranges, clock_domain, clock_frequency)
 
         #General configuration parameters
 		self.ID_WIDTH			 : int = data_dict["ID_WIDTH"]
@@ -39,25 +40,27 @@ class Bus(Node):
         #Axi widths
 		self.ADDR_WIDTH: int = axi_addr_width
 		self.DATA_WIDTH: int = axi_data_width
+		#The number of ranges associated to each children node
+		self.CHILDREN_NUM_RANGES: int = data_dict["ADDR_RANGES"]
         #Children Parameters internally used only to generate the children objects
 		#should never use them directly
-		self._ADDR_RANGES: int = data_dict["ADDR_RANGES"]
 		self._RANGE_NAMES: list[str] = data_dict["RANGE_NAMES"].copy()
 		self._RANGE_BASE_ADDR: list[int] = data_dict["RANGE_BASE_ADDR"].copy()
 		self._RANGE_ADDR_WIDTH: list[int] = data_dict["RANGE_ADDR_WIDTH"].copy()
-
+		#List of children peripherals generated in "generate_children"
 		self.children_peripherals : list[Peripheral] = []
 
 		#check on addr_width
 		if any(addr_width > self.ADDR_WIDTH for addr_width in self._RANGE_ADDR_WIDTH):
-			self.logger.simply_v_crash(f"a RANGE_ADDR_WIDTH is greater than {self.ADDR_WIDTH} in {self.FULL_NAME}")
+			raise ValueError(
+				f"Invalid RANGE_ADDR_WIDTH: exceeds ADDR_WIDTH={self.ADDR_WIDTH} in {self.FULL_NAME}"
+			)
 
 		#check protocol
 		if self.PROTOCOL not in self.LEGAL_PROTOCOLS:
-			self.logger.simply_v_crash(f"Unsupported protocol {self.PROTOCOL} in {self.FULL_NAME}")
-
-		#Create Node object
-		super().__init__(base_name, asgn_addr_ranges, clock_domain, clock_frequency)
+			raise ValueError(
+				f"Unsupported protocol '{self.PROTOCOL}' in {self.FULL_NAME}"
+			)
 
 		#create children nodes
 		self._generate_children()
@@ -79,34 +82,37 @@ class Bus(Node):
 
 
 	# Internal function used in "sanitize_addr_ranges" implementation
-	def _sanitize_addr_ranges(self, nodes: list[Node]):
+	def _sanitize_addr_ranges(self, nodes: list[Node]) -> None:
 		for node1 in nodes:
 			#check that nodes address ranges dont overlap
 			for node2 in nodes:
 				if (node1 != node2 and node1.asgn_addr_ranges.overlaps(node2.asgn_addr_ranges)):
-					self.logger.simply_v_crash(f"Address ranges of {node1.FULL_NAME} overlaps {node2.FULL_NAME} in {self.FULL_NAME}")
+					raise ValueError(
+						f"Address ranges of {node1.FULL_NAME} overlap with {node2.FULL_NAME} in {self.FULL_NAME}"
+					)
 
 			#check that all nodes address ranges are contained
 			#(using "__contains__" defined in addr_range.py)
 			for addr_range in node1.asgn_addr_ranges:
 				if addr_range not in self.asgn_addr_ranges:
-					self.logger.simply_v_crash(f"Address ranges of {node1.FULL_NAME} not fully contained in {self.FULL_NAME} address ranges")
+					raise ValueError(
+						f"Address ranges of {node1.FULL_NAME} are not fully contained in {self.FULL_NAME} address ranges"
+					)
 
 
 	# Internal function used in "check_legals" implementation
-	def _check_legal_peripherals(self):
-		simply_v_crash = self.logger.simply_v_crash
-
+	def _check_legal_peripherals(self) -> None:
 		for p in self.children_peripherals:
 			if p.BASE_NAME not in self.LEGAL_PERIPHERALS:
-				simply_v_crash(f"Unsupported peripheral {p.FULL_NAME} for {self.FULL_NAME}")
-
+				raise ValueError(
+						f"Unsupported peripheral {p.FULL_NAME} for {self.FULL_NAME}"
+				)
 	
 	# Internal function used in "add_reachability" implementation
 	# iterate over each "children_peripheral" addr range, and
 	# if they are contained in at least 1 Bus addr range, then add
 	# reachability values to them
-	def _add_peripherals_reachability(self):
+	def _add_peripherals_reachability(self) -> None:
 		for peripheral in self.children_peripherals:
 			for addr_range in peripheral.asgn_addr_ranges:
 				for self_range in self.asgn_addr_ranges:
@@ -122,8 +128,9 @@ class Bus(Node):
 	def _get_peripherals(self) -> list[Peripheral]:
 		return self.children_peripherals
 
+	
 	# Used when printing the object 
-	def __str__(self):
+	def __str__(self) -> str:
 		children_str = ", ".join(str(child) for child in self.children_peripherals)
 
 		return (
@@ -144,7 +151,7 @@ class Bus(Node):
 
 	# Function used by Busses to create childrens (both Peripherals and Busses)
 	@abstractmethod
-	def _generate_children(self):
+	def _generate_children(self) -> None:
 		pass
 	
 	#COMPONENT INTERFACE
@@ -152,19 +159,19 @@ class Bus(Node):
 	#LeafBus defines the base cases of recursion of the implementation
 
 	@abstractmethod
-	def sanitize_addr_ranges(self):
+	def sanitize_addr_ranges(self) -> None:
 		pass
 
 	@abstractmethod
-	def check_legals(self):
+	def check_legals(self) -> None:
 		pass
 	
 	@abstractmethod
-	def add_reachability(self):
+	def add_reachability(self) -> None:
 		pass
 
 	@abstractmethod
-	def check_clock_domains(self):
+	def check_clock_domains(self, custom_clocks_checks: Callable[[], None]) -> None:
 		pass
 	
 	@abstractmethod
@@ -172,5 +179,5 @@ class Bus(Node):
 		pass
 
 	@abstractmethod
-	def get_peripherals(self) ->list["Peripheral"]:
+	def get_peripherals(self) -> list["Peripheral"]:
 		pass

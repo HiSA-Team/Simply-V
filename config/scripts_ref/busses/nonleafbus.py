@@ -8,15 +8,17 @@
 # that are attached to the "father" bus
 
 
-from typing import cast
+from typing import Callable, cast
 from general.node import Node
 from general.clock_domain import  Clock_Domain
 from general.addr_range import Addr_Ranges
+from general.logger import Logger
 from .bus import Bus
 from peripherals.peripheral import Peripheral
 from factories.busses_factory import Busses_Factory
 
 class NonLeafBus(Bus):
+	logger = Logger.get_instance()
 	busses_factory = Busses_Factory.get_instance()
 	#These params are empty because they are defined by children classes.
 	#Based on the bus type a children class must initialize them with the 
@@ -76,7 +78,7 @@ class NonLeafBus(Bus):
 		#equal to 2, and add a slave interface, ADDR_RANGE is = 2 because 
 		#the slave interface for the loopback will address 2 ranges, the
 		#addresses BEFORE this bus and the addresses AFTER this bus
-		self.ADDR_RANGES = 2
+		self.CHILDREN_NUM_RANGES = 2
 		self.NUM_MI += 1
 
 		# split all the addr ranges to respect "ADDR_RANGES = 2" 
@@ -129,8 +131,8 @@ class NonLeafBus(Bus):
 		peripherals_clock_domains: list[str] = []
 
 		for i, node_name in enumerate(self._RANGE_NAMES):
-			bases: list[int] = self._RANGE_BASE_ADDR[i:(i+self._ADDR_RANGES)]
-			widths: list[int] = self._RANGE_ADDR_WIDTH[i:(i+self._ADDR_RANGES)]
+			bases: list[int] = self._RANGE_BASE_ADDR[i:(i+self.CHILDREN_NUM_RANGES)]
+			widths: list[int] = self._RANGE_ADDR_WIDTH[i:(i+self.CHILDREN_NUM_RANGES)]
 			domain: str = self._RANGE_CLOCK_DOMAINS[i]
 			# Create bus
 			if("BUS" in node_name):
@@ -147,7 +149,7 @@ class NonLeafBus(Bus):
 				peripherals_clock_domains.append(domain)
 		
 		# create all the peripherals
-		self.children_peripherals = self._generate_peripherals(self._ADDR_RANGES, peripherals_names, 
+		self.children_peripherals = self._generate_peripherals(self.CHILDREN_NUM_RANGES, peripherals_names, 
 														 peripherals_bases, peripherals_widths, 
 														 peripherals_clock_domains)
 
@@ -235,7 +237,7 @@ class NonLeafBus(Bus):
 		return children_busses
 
 
-	def get_peripherals(self) ->list["Peripheral"]:
+	def get_peripherals(self) -> list[Peripheral]:
 		#NonLeaf busses need to	retrieve the peripherals attached to them +
 		#all the peripherals attached to their children busses
 		peripherals = self.children_peripherals.copy()
@@ -246,3 +248,11 @@ class NonLeafBus(Bus):
 
 		
 		return peripherals
+
+	def check_clock_domains(self, custom_clock_check: Callable[[], None]) -> None:
+		#Run injected custom check function
+		custom_clock_check()
+		
+		#Recursive call
+		for bus in self.children_busses:
+			bus.check_clock_domains()

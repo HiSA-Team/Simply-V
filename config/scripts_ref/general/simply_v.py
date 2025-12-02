@@ -21,58 +21,32 @@ class SimplyV(metaclass=Singleton):
 		self.PHYSICAL_ADDR_WIDTH: int = system_data["PHYSICAL_ADDR_WIDTH"]
 		self.mbus: MBus
 
+		if (self.CORE_SELECTOR not in self.SUPPORTED_CORES):
+			raise ValueError("CORE_SELECTOR unsupported")
 
 		# Create root node (MBUS)
 		asgn_base_addr = [0]
 		asgn_addr_width = [self.PHYSICAL_ADDR_WIDTH]
 		clock_domain = self.MAIN_CLOCK_DOMAIN
 
+		self.logger.simply_v_info("Initializing MBUS")
+
 		self.mbus = self.busses_factory.create_bus("MBUS", asgn_base_addr, asgn_addr_width, clock_domain,\
 												axi_addr_width=self.PHYSICAL_ADDR_WIDTH, axi_data_width=self.XLEN)
 
 
 		self.mbus.init_configurations()
-		# need to check for redundant names
-		self.check_node_names()
 
-	def check_node_names(self):
-		peripherals_names = set()
-		busses_names = set()
-		peripherals = self.get_peripherals()
-		busses = self.get_busses()
-		
-
-		# Check if there are any peripherals with the same name
-		for p in peripherals:
-			if (p.FULL_NAME in peripherals_names):
-				self.logger.simply_v_crash("There are some peripherals with the same name"
-							   f" in the configuration files (replicated name: {p.FULL_NAME})")
-			
-			peripherals_names.add(p.FULL_NAME)
-		
-		# Check if there are any busses with the same name
-
-		for b in busses:
-			if (b.FULL_NAME in busses_names):
-				self.logger.simply_v_crash("There are some busses with the same name"
-							   f" in the configuration files (replicated name: {b.FULL_NAME})")
-			
-			busses_names.add(b.FULL_NAME)
-
-	
-	def check_assign_params(self, data_dict: dict):
-		simply_v_crash = self.logger.simply_v_crash
-		
-		if (self.CORE_SELECTOR not in self.SUPPORTED_CORES):
-			simply_v_crash("CORE_SELECTOR unsupported")
-
-	
 	
 	def get_peripherals(self) -> list[Peripheral]:
 		return self.mbus.get_peripherals()
 
 	def get_busses(self) ->list[Bus] | None:
 		return self.mbus.get_busses()
+
+	# simplyv
+	def generate_crossbars_configs(self):
+		return
 	
 	def create_linker_script(self, ld_file_name: str, nodes: list[Peripheral]):
 		# Currently only one copy of BRAM, DDR and HBM memory ranges are supported.

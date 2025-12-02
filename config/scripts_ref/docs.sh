@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# pyreverse need to see the root folder in PYTHONPATH to work correctly
+export PYTHONPATH="${PWD}"
+
 # Simple script: generate class diagrams for each package and a global one.
 # Uses pyreverse, discards everything except the desired class PNG files.
 
@@ -23,27 +26,18 @@ mapfile -t PACKAGES < <(
 
 # Generate class diagram for each package
 for pkg in "${PACKAGES[@]}"; do
-  pkg_name="$(basename "$pkg")"
-  echo "Generating class diagram for package: $pkg"
+  if [ "$pkg" = "." ]; then
+    pkg_name="simply_v"
+  else
+    pkg_name="$(basename "$pkg")"
+  fi
+
+  echo "Generating class diagram for package: $pkg_name"
 
   pyreverse -AS -o png -p "$pkg_name" "$pkg" >/dev/null 2>&1
 
   mv -f "classes_${pkg_name}.png" "$DOCS_DIR/${pkg_name}.png" 2>/dev/null || \
     echo "No class diagram produced for $pkg_name"
-  
+
   rm -f "packages_${pkg_name}.png"
 done
-
-# Global diagram
-GLOBAL="simply_v"
-echo "Generating global class diagram"
-
-pyreverse -AS -o png -p "$GLOBAL" . >/dev/null 2>&1
-
-mv -f "classes_${GLOBAL}.png" "$DOCS_DIR/${GLOBAL}_classes.png" 2>/dev/null || \
-  echo "No global class diagram produced"
-
-rm -f "packages_${GLOBAL}.png"
-
-echo "Done. Outputs in $DOCS_DIR"
-
