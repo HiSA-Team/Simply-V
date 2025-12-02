@@ -936,7 +936,6 @@ module rv_socket # (
             `ASSIGN_AXI_BUS( rv_socket_data  , ara_narrow );
 
             // CVA6 + Ara IP
-            (* keep_hierarchy = "TRUE" *)  // DEBUG
             custom_cv64a6_ara cv64a6_ara_core (
                 .clk_i             ( clk_i                         ),
                 .rst_ni            ( core_resetn_internal          ),

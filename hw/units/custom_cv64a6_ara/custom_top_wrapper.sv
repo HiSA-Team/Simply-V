@@ -13,8 +13,7 @@
 `include "intf_typedef.svh" // ara/intf_typedef.svh
 `include "rvfi_types.svh" // for RVFI probes
 
-// DEBUG
-(* keep_hierarchy = "yes" *) module custom_top_wrapper # (
+module custom_top_wrapper # (
 
     //////////////////////////////////////
     //  Add here IP-related parameters  //
