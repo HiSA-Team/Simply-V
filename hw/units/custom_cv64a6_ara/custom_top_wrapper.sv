@@ -48,21 +48,21 @@
     //  Add here IP-related signals  //
     ///////////////////////////////////
 
-    // Subsystem Clock - SUBSYSTEM
+    // Subsystem Clock
     input logic clk_i,
-    // Asynchronous reset active low - SUBSYSTEM
+    // Asynchronous reset active low
     input logic rst_ni,
-    // Reset boot address - SUBSYSTEM
-    input logic [64-1:0] boot_addr_i,
-    // Hard ID reflected as CSR - SUBSYSTEM
-    input logic [64-1:0] hart_id_i,
-    // Level sensitive (async) interrupts - SUBSYSTEM
+    // Reset boot address
+    input logic [LOCAL_AXI_ADDR_WIDTH-1:0] boot_addr_i,
+    // Hard ID reflected as CSR
+    input logic [LOCAL_AXI_DATA_WIDTH-1:0] hart_id_i,
+    // External interrupts
     input logic [1:0] irq_i,
-    // Inter-processor (async) interrupt - SUBSYSTEM
+    // Inter-processor interrupt
     input logic ipi_i,
-    // Timer (async) interrupt - SUBSYSTEM
+    // Timer interrupt
     input logic time_irq_i,
-    // Debug (async) request - SUBSYSTEM
+    // Debug request from DTM
     input logic debug_req_i,
 
     ////////////////////////////
@@ -85,13 +85,13 @@
     //      |                                  |
     //      |                                  |
     //      |                                  |
-    //      |                                  |
-    //      | acc_resp                         | acc_cons_en
-    //      | CVXIF                            | inval_addr/valid/ready
-    //      | (w/ MMU)                   ______v____________
-    //   ___v_____                      |                   |                       _____________
-    //  |         |    ara_axi_wide     | L1D$ Invalidation |  ara_axi_wide_inval  |             | ara_narrow
-    //  |   Ara   |-------------------->|       Filter      |--------------------->| dwidth_conv | ----------->
+    //      | acc_resp                         |
+    //      | CVXIF                            | acc_cons_en
+    //      | (w/ MMU)                         | inval_addr/valid/ready
+    //   ___v_____                       ______v____________                        _____________
+    //  |         |                     |                   |                      |             |
+    //  |   Ara   |    ara_axi_wide     | L1D$ Invalidation |  ara_axi_wide_inval  | dwidth_conv | ara_narrow
+    //  |         |-------------------->|       Filter      |--------------------->|             | ----------->
     //  |_________|    d(32*NrLanes)    |___________________|     d(32*NrLanes)    |_____________|   d64
     //
 
@@ -194,8 +194,7 @@
     //     rvfi_probes_csr_t csr;
     //     rvfi_probes_instr_t instr;
     // };
-    // // Mark debug
-    // (* mark_debug = "true" *) rvfi_probes_t rvfi_probes_cva6;
+    // rvfi_probes_t rvfi_probes_cva6;
 
     // CVA6
     cva6 #(
@@ -233,8 +232,7 @@
         .clic_kill_req_i  ( '0             ),
         .clic_kill_ack_o  (                ), // Open
         // RVFI probes
-        // .rvfi_probes_o    (                ), // Open
-        .rvfi_probes_o    ( rvfi_probes_cva6 ),
+        .rvfi_probes_o    ( rvfi_probes_cva6 ), // Unused
         // Accelerator interface
         .cvxif_req_o      ( acc_req        ),
         .cvxif_resp_i     ( acc_resp_pack  ),
@@ -270,7 +268,7 @@
         .rst_ni          ( rst_ni            ),
         .scan_enable_i   ( 1'b0              ),
         .scan_data_i     ( 1'b0              ),
-        .scan_data_o     ( /* Unused */      ),
+        .scan_data_o     (                   ), // Open
         .acc_req_i       ( acc_req           ),
         .acc_resp_o      ( acc_resp          ),
         .axi_req_o       ( ara_axi_wide_req  ),

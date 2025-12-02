@@ -21,8 +21,8 @@ package cva6_config_pkg;
   localparam CVA6ConfigVlen   = 64;
 
   // FPGA optimizations
-  // localparam CVA6ConfigFpgaEn = 1;
-  localparam CVA6ConfigFpgaEn = 0; // Under test
+  localparam CVA6ConfigFpgaEn = 1; // If no fpga-support-stubs.sv
+  // localparam CVA6ConfigFpgaEn = 0; // If fpga-support-stubs.sv
 
   // Debug memory
   localparam CVA6ConfigDmBaseAddress = 64'h10000;
@@ -60,6 +60,7 @@ package cva6_config_pkg;
 
   // L1 Caches
   localparam CachedAddrBeg = 64'h8000_0000; // TODO121: align this with config
+  // CVA6 default
   // localparam CVA6ConfigIcacheByteSize = 16384;
   // localparam CVA6ConfigIcacheSetAssoc = 4;
   // localparam CVA6ConfigIcacheLineWidth = 128;
@@ -67,7 +68,6 @@ package cva6_config_pkg;
   // localparam CVA6ConfigDcacheSetAssoc = 8;
   // localparam CVA6ConfigDcacheLineWidth = 128;
   // From cv64a6_imafdcv_sv39_config_pkg
-  // TODO: Under test
   localparam CVA6ConfigIcacheByteSize = 4096;
   localparam CVA6ConfigIcacheSetAssoc = 4;
   localparam CVA6ConfigIcacheLineWidth = 128;

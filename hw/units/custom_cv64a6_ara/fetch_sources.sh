@@ -56,7 +56,6 @@ BENDER_DEFINES=$(realpath ${BENDER_DEFINES})
 
 printf "${YELLOW}[FETCH_SOURCES] Patching Bender-generated file list${NC}\n"
 
-# Remove line containing "ara_system.sv" and "ara_soc.sv" in bender script
 # Remove include directives
 sed -i "/+incdir+/d" ${BENDER_RTL_LIST}
 # Remove unsupported AXI interface file
@@ -71,15 +70,16 @@ sed -i '/ara_soc\.sv/d' ${BENDER_RTL_LIST}
 # Remove unused apb modules
 sed -i -E '/.+apb.*\.sv/d' ${BENDER_RTL_LIST}
 
-# # Remove silly constraint on FPGA support by PULP
-# # Remove error-triggering file
-# sed -i "/fpga-support-stubs.sv/d" ${BENDER_RTL_LIST}
-# # Include FPGA-support files
-# FPGA_SUPPORT_RTL=${CLONE_DIR}/hardware/deps/cva6/vendor/pulp-platform/fpga-support/rtl/
-# fpga_files=($(ls ${FPGA_SUPPORT_RTL} ))
-# for fpga_file in "${fpga_files[@]}"; do
-#     echo ${FPGA_SUPPORT_RTL}/$fpga_file >> ${BENDER_RTL_LIST}
-# done
+# Remove silly constraint on FPGA support by PULP
+# This is necessary to use FpgaEn=1 in CVA6 configuration
+# Remove error-triggering file
+sed -i "/fpga-support-stubs.sv/d" ${BENDER_RTL_LIST}
+# Include FPGA-support files
+FPGA_SUPPORT_RTL=${CLONE_DIR}/hardware/deps/cva6/vendor/pulp-platform/fpga-support/rtl/
+fpga_files=($(ls ${FPGA_SUPPORT_RTL} ))
+for fpga_file in "${fpga_files[@]}"; do
+    echo ${FPGA_SUPPORT_RTL}/$fpga_file >> ${BENDER_RTL_LIST}
+done
 
 # Overwrite configuration file location in bender script
 escaped=$(echo "${ASSETS_DIR}" | sed 's/\//\\\//g')
