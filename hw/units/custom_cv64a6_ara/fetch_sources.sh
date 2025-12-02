@@ -20,8 +20,6 @@ RTL_DIR=${THIS_DIR}/rtl
 # Clone repo at main
 GIT_URL=https://github.com/pulp-platform/ara.git
 GIT_BRANCH=main
-# 03/10/2025
-# GIT_COMMIT=a6436df6ad4011c77b5b40e0432acdbf4668639f
 # 28/11/2025
 GIT_COMMIT=e970f7736cde544eb2a44c6a44ad7eb0f8789f1a
 CLONE_DIR=${THIS_DIR}/ara
