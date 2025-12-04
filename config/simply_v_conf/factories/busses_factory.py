@@ -4,7 +4,6 @@
 # and also manages the "PROTOCOL" = "DISABLE" used to deactivate
 # busses configuration, returning "None" in case of creation of a disabled bus
 
-import os
 from general.addr_range import Addr_Ranges
 from .factory import Factory
 from parsers.nonleafbus_parser import NonLeafBus_Parser
@@ -40,7 +39,7 @@ class Busses_Factory(Factory):
 		addr_ranges = Addr_Ranges(full_name, base_addr, addr_width)
 
 		# Assuming the bus file name is for example "config_pbus_0.csv" if full_name is "PBUS_0"
-		file_name = os.path.join(self.env.get_conf_profile_path(), "config_" + full_name.lower() + ".csv")
+		file_name = self.env.get_config_path(full_name)
 
 		# Create concrete bus
 		match base_name:

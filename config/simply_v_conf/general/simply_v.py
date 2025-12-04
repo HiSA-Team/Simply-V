@@ -1,4 +1,5 @@
-from busses.bus import Bus
+import re
+from pathlib import Path
 from factories.busses_factory import Busses_Factory
 from peripherals.peripheral import Peripheral
 import os
@@ -29,36 +30,28 @@ class SimplyV(metaclass=Singleton):
 		asgn_addr_width = [self.PHYSICAL_ADDR_WIDTH]
 		clock_domain = self.MAIN_CLOCK_DOMAIN
 
-		self.logger.simply_v_info("Initializing MBUS")
-
 		self.mbus = self.busses_factory.create_bus("MBUS", asgn_base_addr, asgn_addr_width, clock_domain,\
 												axi_addr_width=self.PHYSICAL_ADDR_WIDTH, axi_data_width=self.XLEN)
 
-
 		self.mbus.init_configurations()
-
-	
-	def get_peripherals(self) -> list[Peripheral]:
-		return self.mbus.get_peripherals()
-
-	def get_busses(self) ->list[Bus] | None:
-		return self.mbus.get_busses()
+		self.peripherals = self.mbus.get_peripherals()
+		self.busses = self.mbus.get_busses()
 
 	# simplyv
 	def generate_crossbars_configs(self):
 		return
 	
-	def create_linker_script(self, ld_file_name: str, nodes: list[Peripheral]):
+	def create_linker_script(self, ld_file_name: str):
 		# Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
 		memories: list[Peripheral]= []
 		peripherals: list[Peripheral] = []
 
-		# For each node
-		for n in nodes:
-			if(n.IS_A_MEMORY):
-				memories.append(n)
+		# For each peripheral
+		for p in self.peripherals:
+			if(p.IS_A_MEMORY):
+				memories.append(p)
 			else:
-				peripherals.append(n)
+				peripherals.append(p)
 
 		# Create the Linker Script File
 		fd = open(ld_file_name,  "w")
@@ -171,12 +164,12 @@ class SimplyV(metaclass=Singleton):
 		fd.write("\n")
 		fd.close()
 
-	def dump_reachability(self, dump_file_name: str, peripherals: list[Peripheral]):
+	def dump_reachability(self, dump_file_name: str):
 		fd = open(dump_file_name,  "w")
 
 		#Avoid duplicates
 		busses = set()
-		for p in peripherals:
+		for p in self.peripherals:
 			reach_dict = p.asgn_addr_ranges.get_reachable_from(explicit=True)
 			for value in reach_dict.values():
 				busses.update(value)
@@ -190,7 +183,7 @@ class SimplyV(metaclass=Singleton):
 		fd.write(f"NAME,BASE_ADDR,END_ADDR,{busses_list_hdr}\n")
 
 		#BODY
-		for p in peripherals:
+		for p in self.peripherals:
 			reach_dict = p.asgn_addr_ranges.get_reachable_from(explicit=False)
 			dim_dict = p.asgn_addr_ranges.get_range_dimensions(explicit=False)
 
@@ -203,4 +196,41 @@ class SimplyV(metaclass=Singleton):
 				str_of_reachables = ",".join(list_of_reachables)
 				#write row
 				fd.write(f"{key},{hex(dim_dict[key][0])},{hex(dim_dict[key][1]-1)},{str_of_reachables}\n")
+	
+	def create_hal_header(self, hal_hdr_file_name: str) -> None: 
+		return
 
+	def update_sw_makefile(self, sw_makefile: str) -> None:
+		# read mk file
+		sw_makefile_path = Path(sw_makefile)
+
+		if not sw_makefile_path.is_file():
+			raise FileNotFoundError(f"Missing file: {sw_makefile_path}")
+
+		text = sw_makefile_path.read_text()
+
+		# replace XLEN ?= <value>
+		new_text = re.sub(
+			r"XLEN\s*\?=.+",
+			f"XLEN ?= {self.XLEN}",
+			text
+		)
+
+		sw_makefile_path.write_text(new_text)
+
+
+	def config_bus(self, target_bus: str, crossbar_file: str, svinc_file: str) -> None:
+		if self.busses == None:
+			raise ValueError(f"{target_bus} can't be configured (crossbar and svinc gen.) because no BUS was found")
+
+		for bus in self.busses:
+			if bus.FULL_NAME == target_bus:
+				bus.generate_crossbar(crossbar_file)
+				bus.generate_svinc(svinc_file)
+				return
+
+		self.logger.error(f"{target_bus} wasn't configured (crossbar and svinc gen.) because it wasn't found")
+
+
+	def config_xilinx(self, xilinx_makefile: str) -> None:
+		return

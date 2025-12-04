@@ -1,57 +1,101 @@
-# Variables
-PYTHON ?= python3.10 # Requires >= 3.10
+###########################
+###  	INPUT FILES     ###
+###########################
 
-# Configurations
-CONFIG_MBUS_CSV ?= ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_main_bus.csv
-CONFIG_PBUS_CSV ?= ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_peripheral_bus.csv
-CONFIG_HBUS_CSV ?= ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_highperformance_bus.csv
-# csv for system-level configuration
-CONFIG_SYSTEM_CSV ?= ${CONFIG_ROOT}/configs/common/config_system.csv
-# CSVs list
-CONFIG_BUS_CSVS ?= ${CONFIG_MBUS_CSV} \
-			   ${CONFIG_PBUS_CSV} \
-			   ${CONFIG_HBUS_CSV}
+INPUT_MBUS_CSV  ?= $(CONFIG_ROOT)/configs/$(SOC_CONFIG)/config_mbus.csv
+INPUT_PBUS_CSV  ?= $(CONFIG_ROOT)/configs/$(SOC_CONFIG)/config_pbus.csv
+INPUT_HBUS_CSV  ?= $(CONFIG_ROOT)/configs/$(SOC_CONFIG)/config_hbus.csv
+INPUT_SYSTEM_CSV ?= $(CONFIG_ROOT)/configs/common/config_system.csv
 
-all: config_main_bus config_peripheral_bus config_highperformance_bus config_ld config_sw config_xilinx
+###########################
+###  	OUTPUT FILES    ###
+###########################
 
-config_main_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_main_crossbar/config.tcl
-config_peripheral_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_peripheral_crossbar/config.tcl
-config_highperformance_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/hpc/xlnx_highperformance_crossbar/config.tcl
-config_%_bus: CONFIG_BUS_CSV = ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_$*_bus.csv
-config_%_bus:
-config_%_bus: config_check
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_crossbar_config.py \
-		${CONFIG_SYSTEM_CSV} \
-		${CONFIG_BUS_CSV} \
-		${OUTPUT_TCL_FILE}
-	${PYTHON} ${CONFIG_ROOT}/scripts/declare_and_concat_buses_rtl.py ${CONFIG_BUS_CSV}
-	${PYTHON} ${CONFIG_ROOT}/scripts/declare_and_assign_clocks_rtl.py ${CONFIG_BUS_CSV}
+# Generated from "config_mbus"
+OUTPUT_MBUS_CROSSBAR := $(XILINX_ROOT)/ips/common/xlnx_mbus_crossbar/config.tcl
+OUTPUT_MBUS_SVINC    := $(XILINX_ROOT)/rtl/mbus_buses.svinc
 
+# Generated from "config_pbus"
+OUTPUT_PBUS_CROSSBAR := $(XILINX_ROOT)/ips/common/xlnx_pbus_crossbar/config.tcl
+OUTPUT_PBUS_SVINC    := $(XILINX_ROOT)/rtl/pbus_buses.svinc
 
-OUTPUT_LD_FILE ?= ${SW_ROOT}/SoC/common/UninaSoC.ld
-# Generate HAL configuration file
-OUTPUT_HAL_CONF_FILE ?= ${SW_ROOT}/SoC/lib/uninasoc/inc/uninasoc_conf.h
+# Generated from "config_hbus"
+OUTPUT_HBUS_CROSSBAR := $(XILINX_ROOT)/ips/hpc/xlnx_hbus_crossbar/config.tcl
+OUTPUT_HBUS_SVINC    := $(XILINX_ROOT)/rtl/hbus_buses.svinc
 
-config_ld: config_check
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_linker_script.py \
-		${CONFIG_SYSTEM_CSV} \
-		${CONFIG_MBUS_CSV} \
-		${CONFIG_HBUS_CSV} \
-		${OUTPUT_LD_FILE}
-	@echo "[CONFIG] Output file is at ${OUTPUT_LD_FILE}"
+# Generated from "config_sw"
+OUTPUT_HAL_CONF := $(SW_ROOT)/SoC/lib/uninasoc/inc/uninasoc_conf.h
+OUTPUT_SW_MK    := $(SW_ROOT)/SoC/common/config.mk
+OUTPUT_LD       := $(SW_ROOT)/SoC/common/UninaSoC.ld
+
+# Generated from "config_xilinx"
+OUTPUT_XILINX_MK := $(XILINX_ROOT)/make/config.mk
+
+# Generated from "config_dump"
+OUTPUT_DUMP := $(CONFIG_ROOT)/dump.csv
+
+################ NEED TO FIND APPROPRIATE FLOW FOR THIS#####################
+OUTPUT_CLK_ASSIGNMENTS := $(XILINX_ROOT)/rtl/uninasoc_clk_assignments.svinc
 
 
+###########################
+###  	CMD PARAMS      ###
+###########################
+
+PYTHON ?= python3.10
+
+CMD_ARGS = \
+	--system $(INPUT_SYSTEM_CSV) \
+	--mbus   $(INPUT_MBUS_CSV)  \
+	--pbus   $(INPUT_PBUS_CSV)  \
+	--hbus   $(INPUT_HBUS_CSV)
+
+###########################
+###  	 TARGETS        ###
+###########################
+
+all: config_mbus config_pbus config_hbus config_sw config_xilinx config_dump
+
+# This target can be used to validate configuration without generating
+# any output files, isn't needed as "prerequisite" for any other target
+# because validation of configuration is implicit in the generation of files
 config_check:
-	${PYTHON} ${CONFIG_ROOT}/scripts/check_config.py ${CONFIG_SYSTEM_CSV} ${CONFIG_BUS_CSVS}
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
 
-# Update config Makefiles
-OUTPUT_XILINX_MK_FILE ?= ${XILINX_ROOT}/make/config.mk
-OUTPUT_SW_MK_FILE ?= $(SW_ROOT)/SoC/common/config.mk
+
+############################################################
+###     		 BUS TARGETS (mbus, pbus, hbus)			 ###
+############################################################
+
+config_mbus: OUTPUT_FILES := $(OUTPUT_MBUS_CROSSBAR) $(OUTPUT_MBUS_SVINC)
+config_pbus: OUTPUT_FILES := $(OUTPUT_PBUS_CROSSBAR) $(OUTPUT_PBUS_SVINC)
+config_hbus: OUTPUT_FILES := $(OUTPUT_HBUS_CROSSBAR) $(OUTPUT_HBUS_SVINC)
+
+config_%bus:
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
+
+############################################################
+###					 SOFTWARE TARGETS					 ###
+############################################################
+
+config_sw: OUTPUT_FILES := $(OUTPUT_HAL_CONF) $(OUTPUT_SW_MK) $(OUTPUT_LD)
+config_sw:
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
+
+
+############################################################
+###					 XILINX TARGET					 	 ###
+############################################################
+
+config_xilinx: OUTPUT_FILES := $(OUTPUT_XILINX_MK)
 config_xilinx:
-	${CONFIG_ROOT}/scripts/config_xilinx.sh ${CONFIG_SYSTEM_CSV} ${CONFIG_BUS_CSVS} ${OUTPUT_XILINX_MK_FILE}
-
-config_sw: config_check
-	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_uninasoc_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
 
 
+############################################################
+###					  DUMP TARGET						 ###
+############################################################
+
+config_dump: OUTPUT_FILES := $(OUTPUT_DUMP)
+config_dump:
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)

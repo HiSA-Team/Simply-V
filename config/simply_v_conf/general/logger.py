@@ -11,6 +11,9 @@ class Logger(metaclass=Singleton):
 			handler = logging.StreamHandler()
 			handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
 			self.logger.addHandler(handler)
+	
+	def simply_v_error(self, message: str):
+		self.logger.error(message)
 
 	def simply_v_warning(self, message: str):
 		self.logger.warning(message)
