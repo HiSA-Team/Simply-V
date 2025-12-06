@@ -11,7 +11,7 @@ class HBus(NonLeafBus):
 	# Redefyning legals according to HBUS needs
 	# they're checked the NonLeafBus "check_legals" function 
 	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("DDR4",)
-	LEGAL_BUSSES = NonLeafBus.LEGAL_BUSSES +  ("MBUS",)
+	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("MBUS",)
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 	LEGAL_CLOCK_FREQUENCY = 300
 

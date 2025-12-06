@@ -3,7 +3,7 @@ from .bus import Bus
 from general.addr_range import Addr_Ranges
 
 class PBus(LeafBus):
-	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("UART", "GPIO_out", "GPIO_in", "TIM")
+	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("UART", "GPIOOUT", "GPIOIN", "TIM")
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4LITE",)
 
 	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, clock_domain: str, 

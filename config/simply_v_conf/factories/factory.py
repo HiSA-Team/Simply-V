@@ -1,6 +1,6 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This is the base abstract class "Factory" from which other specific
-# factories (peripherals_factory and busses_factory) derives
+# factories (peripherals_factory and buses_factory) derives
 # it is intended to be more as a central point of creation of objects to enforce
 # all the naming conventions and general checks based on "Node(s)" names
 # rather than an "idiomatic" factory method design pattern, in which there is
@@ -8,7 +8,7 @@
 # the creation logic right now is still simple.
 # Keep in mind that all the factories as defined are singletons, so they share
 # the same state, this is used to enforce "global" checks like
-# ensuring that there aren't some peripherals/busses with the same "FULL_NAME"
+# ensuring that there aren't some peripherals/buses with the same "FULL_NAME"
 # somewhere in the configuration because all the factories keep track of each object
 # created in the "ALREADY_CREATED" variable and are able to spot duplicated names
 # in the configuration

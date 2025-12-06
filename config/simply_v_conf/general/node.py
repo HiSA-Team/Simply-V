@@ -1,8 +1,8 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This class represents the basic element of the
-# busses and peripherals tree.
+# buses and peripherals tree.
 
-# it's the base class common to both peripherals and busses
+# it's the base class common to both peripherals and buses
 # and is a wrapper of the address ranges assigned to the particular node
 # (asgn_addr_ranges).
 # Node contains all the main "NAMEs" used to identify a peripheral or a bus in a particular context
@@ -22,7 +22,7 @@
 # RANGE_NAME(s) are contained inside the "Addr_Range" objects wrapped in the "asgn_addr_ranges" of a node.
 
 # These names convention are enforced by the "Factory" hierarchy that is the centralized point
-# of construction of peripherals and busses
+# of construction of peripherals and buses
 
 
 from abc import ABC
@@ -41,6 +41,7 @@ class Node(ABC):
                 f"CLOCK_DOMAIN='{self.CLOCK_DOMAIN}', CLOCK_FREQUENCY={self.CLOCK_FREQUENCY}, "
                 f"asgn_addr_ranges={self.asgn_addr_ranges})")
 
+
 	def get_base_addr(self):
 		return self.asgn_addr_ranges.get_base_addr()
 
@@ -49,3 +50,4 @@ class Node(ABC):
 
 	def split_addr_ranges(self):
 		return self.asgn_addr_ranges.split_addr_ranges()
+	

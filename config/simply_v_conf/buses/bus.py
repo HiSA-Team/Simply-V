@@ -48,7 +48,7 @@ class Bus(Node):
 		self._RANGE_BASE_ADDR: list[int] = data_dict["RANGE_BASE_ADDR"].copy()
 		self._RANGE_ADDR_WIDTH: list[int] = data_dict["RANGE_ADDR_WIDTH"].copy()
 		#List of children peripherals generated in "generate_children"
-		self.children_peripherals : list[Peripheral] = []
+		self._children_peripherals : list[Peripheral] = []
 
 		#check on addr_width
 		if any(addr_width > self.ADDR_WIDTH for addr_width in self._RANGE_ADDR_WIDTH):
@@ -102,7 +102,7 @@ class Bus(Node):
 
 	# Internal function used in "check_legals" implementation
 	def _check_legal_peripherals(self) -> None:
-		for p in self.children_peripherals:
+		for p in self._children_peripherals:
 			if p.BASE_NAME not in self.LEGAL_PERIPHERALS:
 				raise ValueError(
 						f"Unsupported peripheral {p.FULL_NAME} for {self.FULL_NAME}"
@@ -113,7 +113,7 @@ class Bus(Node):
 	# if they are contained in at least 1 Bus addr range, then add
 	# reachability values to them
 	def _add_peripherals_reachability(self) -> None:
-		for peripheral in self.children_peripherals:
+		for peripheral in self._children_peripherals:
 			for addr_range in peripheral.asgn_addr_ranges:
 				for self_range in self.asgn_addr_ranges:
 					if addr_range in self_range:
@@ -126,12 +126,21 @@ class Bus(Node):
 		
 	# Internal function used in "get_peripherals" implementation
 	def _get_peripherals(self) -> list[Peripheral]:
-		return self.children_peripherals
+		return self._children_peripherals
 
-	
+	# Function used to return children address ranges (of peripherals/buses) keeping an invariant
+	# of "order by base address" in this way configuration functions assume the same ordering
+	# of ranges for each "children" of a particular bus
+	def get_ordered_children_ranges(self) -> list[Addr_Ranges]:
+		# Implicitly using "__lt__" function of "Addr_Ranges"
+		ranges: list[Addr_Ranges] = []
+		for p in self._children_peripherals:
+			ranges.append(p.asgn_addr_ranges)
+		return sorted(ranges)
+
 	# Used when printing the object 
 	def __str__(self) -> str:
-		children_str = ", ".join(str(child) for child in self.children_peripherals)
+		children_str = ", ".join(str(child) for child in self._children_peripherals)
 
 		return (
 			f"{self.__class__.__name__}("
@@ -149,7 +158,7 @@ class Bus(Node):
 			f")"
 		)
 
-	# Function used by Busses to create childrens (both Peripherals and Busses)
+	# Function used by Buses to create childrens (both Peripherals and Buses)
 	@abstractmethod
 	def _generate_children(self) -> None:
 		pass
@@ -175,7 +184,7 @@ class Bus(Node):
 		pass
 	
 	@abstractmethod
-	def get_busses(self) -> list["Bus"] | None:
+	def get_buses(self) -> list["Bus"]:
 		pass
 
 	@abstractmethod

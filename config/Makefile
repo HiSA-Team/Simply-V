@@ -72,7 +72,7 @@ config_pbus: OUTPUT_FILES := $(OUTPUT_PBUS_CROSSBAR) $(OUTPUT_PBUS_SVINC)
 config_hbus: OUTPUT_FILES := $(OUTPUT_HBUS_CROSSBAR) $(OUTPUT_HBUS_SVINC)
 
 config_%bus:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ --target_bus $*bus $(CMD_ARGS) $(OUTPUT_FILES)
 
 ############################################################
 ###					 SOFTWARE TARGETS					 ###

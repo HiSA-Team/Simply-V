@@ -1,6 +1,6 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This is the Factory specialization class used to create peripherals, 
-# in addition to enforcing naming convention like the busses factory it also
+# in addition to enforcing naming convention like the buses factory it also
 # checks for DDR channels and HBM support based on the particular board used in
 # the configuration
 
@@ -16,6 +16,7 @@ from peripherals.bram import Bram
 from peripherals.debug_module import Debug_Module
 from peripherals.hls import HLS
 from peripherals.plic import PLIC
+from peripherals.cdma import CDMA
 from general.addr_range import Addr_Ranges
 
 class Peripherals_Factory(Factory):
@@ -71,6 +72,8 @@ class Peripherals_Factory(Factory):
 				return PLIC(base_name, addr_ranges, clock_domain, clock_frequency)
 			case "HLS":
 				return HLS(base_name, addr_ranges, clock_domain, clock_frequency)
+			case "CDMA":
+				return CDMA(base_name, addr_ranges, clock_domain, clock_frequency)
 			case "HBM":
 				if not self.HBM_SUPPORTED:
 					raise ValueError("Unsupported HBM for the current board configuration")

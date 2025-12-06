@@ -1,34 +1,34 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
-# Description: This is the Factory specialization class used to create busses, 
-# it uses the parsers objects to extract the busses data 
+# Description: This is the Factory specialization class used to create buses, 
+# it uses the parsers objects to extract the buses data 
 # and also manages the "PROTOCOL" = "DISABLE" used to deactivate
-# busses configuration, returning "None" in case of creation of a disabled bus
+# buses configuration, returning "None" in case of creation of a disabled bus
 
 from general.addr_range import Addr_Ranges
 from .factory import Factory
 from parsers.nonleafbus_parser import NonLeafBus_Parser
 from parsers.leafbus_parser import LeafBus_Parser
-from busses.bus import Bus
+from buses.bus import Bus
 
-class Busses_Factory(Factory):
+class Buses_Factory(Factory):
 	nonleafbus_parser = NonLeafBus_Parser.get_instance()
 	leafbus_parser = LeafBus_Parser.get_instance()
 
-	# Busses Factory constructor
+	# Buses Factory constructor
 	def __init__(self):
 		super().__init__()
 
-	# Function used for the creation of busses, checks for duplicated busses, extracts base name from full name and
+	# Function used for the creation of buses, checks for duplicated buses, extracts base name from full name and
 	# clock frequency from clock domain
 	def create_bus(self, full_name: str, base_addr: list[int], addr_width: list[int], 
 						clock_domain: str, **kwargs) -> Bus | None:
 
 		# this can be avoided implementing the "full" factory method design
-		# decoupling "Busses_Factory" from the actual concrete busses
+		# decoupling "Buses_Factory" from the actual concrete buses
 		# but for now we keep it simpler
-		from busses.hbus import HBus
-		from busses.pbus import PBus
-		from busses.mbus import MBus
+		from buses.hbus import HBus
+		from buses.pbus import PBus
+		from buses.mbus import MBus
 
 		# register creation to check for duplicates
 		self._register_creation(full_name)

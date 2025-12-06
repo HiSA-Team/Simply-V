@@ -2,7 +2,7 @@
 # Description: The class "Addr_Range" models a range of addresses
 # implementing all the basic functions to check ranges overlappings and containments,
 # it also has the "REACHABLE_FROM" attribute that contains all the "FULL_NAME" of the
-# busses that can reach that range (refer to node.py header for the definition of what a "FULL_NAME" is).
+# buses that can reach that range (refer to node.py header for the definition of what a "FULL_NAME" is).
 # The class "Addr_Ranges" models a list of "Addr_Range", since each node (bus or peripheral)
 # can have multiple address ranges, objects of this class will be embedded in "Node" class
 # exposing an uniform set of functions that a Node can use to interact with its address ranges
@@ -39,7 +39,7 @@ class Addr_Range():
 		self.RANGE_END_ADDR = self._compute_end_addr(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)
 		self.RANGE_LENGTH: int = self.RANGE_END_ADDR - self.RANGE_BASE_ADDR
 
-		# list of busses "FULL_NAMEs" that can reach this range
+		# list of buses "FULL_NAMEs" that can reach this range
 		self.REACHABLE_FROM: set = set()
 
 	# Used when printing the object 
@@ -82,11 +82,11 @@ class Addr_Range():
 		second_range.add_list_to_reachable(list(self.REACHABLE_FROM))
 		return second_range
 		
-	# Add bus "FULL_NAME" to the list of busses that can reach this range
+	# Add bus "FULL_NAME" to the list of buses that can reach this range
 	def add_to_reachable(self, bus_name: str):
 		self.REACHABLE_FROM.add(bus_name)
 	
-	# Add list of busses "FULL_NAMEs" to the list of busses that can reach this range
+	# Add list of buses "FULL_NAMEs" to the list of buses that can reach this range
 	def add_list_to_reachable(self, list_of_names: list[str]):
 		self.REACHABLE_FROM.update(list_of_names)
 
@@ -146,6 +146,11 @@ class Addr_Ranges():
 			if addr_range_chk in addr_range:
 				return True
 		return False
+
+	# Used to order address ranges based on the base address
+	def __lt__(self, other: "Addr_Ranges") -> bool:
+		# sorting based on the "addr ranges" ordering
+		return self.get_base_addr() < other.get_base_addr()
 
 	# Internal function used to manipulate "RANGE_NAMES"
 	# if the name already contains a range suffix, like "*_range_0"
@@ -217,7 +222,7 @@ class Addr_Ranges():
 		
         # if all ranges share the same REACHABLE_FROM, return just a single entry
 		# using "FULL_NAME" as a value (it's used to give a more compact information,
-		# if all addr ranges of a Node are addressable from the same Busses, instead
+		# if all addr ranges of a Node are addressable from the same Buses, instead
 		# of returning information for each addr range, just consider all the addr ranges as a single
 		# "FULL_NAME" node)
 		# but if only a single range have different REACHABLE_FROM from the other just return

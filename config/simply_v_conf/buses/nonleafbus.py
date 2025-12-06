@@ -2,11 +2,10 @@
 # Description: This is the Composite class of the "Composite" design pattern
 # this implements all the functions of the "Component" (Bus) class interface.
 # This class lets all future "NonLeaf" bus types (the ones that can have Peripherals and other
-# busses attached to them) to just inherit from this class in order to be compatible with
+# buses attached to them) to just inherit from this class in order to be compatible with
 # with the Bus hierarchy modeled with the "Composite" design pattern.
 # This class implements the "LOOPBACK" functionality that a bus can use to address ranges
 # that are attached to the "father" bus
-
 
 from typing import Callable, cast
 from general.node import Node
@@ -15,22 +14,22 @@ from general.addr_range import Addr_Ranges
 from general.logger import Logger
 from .bus import Bus
 from peripherals.peripheral import Peripheral
-from factories.busses_factory import Busses_Factory
+from factories.buses_factory import Buses_Factory
 
 class NonLeafBus(Bus):
 	logger = Logger.get_instance()
-	busses_factory = Busses_Factory.get_instance()
+	buses_factory = Buses_Factory.get_instance()
 	#These params are empty because they are defined by children classes.
 	#Based on the bus type a children class must initialize them with the 
 	#adequate values, they're specified here so that "NonLeafBus" class can expose
-	#common functions that will use them (_check_legal_busses function)
-	LEGAL_BUSSES = ()
+	#common functions that will use them (_check_legal_buses function)
+	LEGAL_BUSES = ()
 
 	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 				axi_data_width: int, clock_domain: str, clock_frequency: int, father: "NonLeafBus"):
 
 		self.father = father 
-		self.children_busses: list[Bus] = []
+		self._children_buses: list[Bus] = []
 		self.clock_domains: Clock_Domain
 		self.loopback_ranges: Addr_Ranges
 		self.LOOPBACK:bool = data_dict["LOOPBACK"]
@@ -41,7 +40,7 @@ class NonLeafBus(Bus):
 							axi_data_width, clock_domain, clock_frequency)
 
 		# It's important to call these functions only AFTER constructing the "super" "Bus" object
-		# because they internally use children_busses and children_peripherals, initialized
+		# because they internally use children_buses and children_peripherals, initialized
 		# with "_generate_children" in the "Bus" constructor
 		self._activate_loopback()
 		self._init_clock_domains()
@@ -56,20 +55,20 @@ class NonLeafBus(Bus):
 
 	
 	def _activate_loopback(self):
-		#NonLeaf busses need to activate the loopback, we assume to call this function from a "child"
+		#NonLeaf buses need to activate the loopback, we assume to call this function from a "child"
 		#and activate the loopback for both child an father
 		if (self.LOOPBACK):
 			self.father._father_enable_loopback(self.FULL_NAME)
 			self._child_enable_loopback()
 	
 	def _father_enable_loopback(self, child_name: str):
-		#NonLeaf busses that have "LOOPBACK" activated will call this function
+		#NonLeaf buses that have "LOOPBACK" activated will call this function
 		#to modify the "father" bus informations to support the LOOPBACK
 		self.MASTER_NAMES.append(child_name)
 		self.NUM_SI += 1
 
 	def _child_enable_loopback(self):
-		#NonLeaf busses that have "LOOPBACK" activated will call this function
+		#NonLeaf buses that have "LOOPBACK" activated will call this function
 		#to modify themselves to support the LOOPBACK
 		#the function assumes ADDR_RANGES == 1, this invariant is kept by the
 		#"NonLeafBus_Parser" class while parsing the .csv to initialize this bus
@@ -82,10 +81,10 @@ class NonLeafBus(Bus):
 		self.NUM_MI += 1
 
 		# split all the addr ranges to respect "ADDR_RANGES = 2" 
-		for peripheral in self.children_peripherals:
+		for peripheral in self._children_peripherals:
 			peripheral.split_addr_ranges()
 
-		for bus in self.children_busses:
+		for bus in self._children_buses:
 			bus.split_addr_ranges()
 
 		# this is the range of all the addresses BEFORE the range of children nonleaf bus
@@ -108,23 +107,23 @@ class NonLeafBus(Bus):
 		)
 
 	
-	def _check_legal_busses(self):
+	def _check_legal_buses(self):
 		simply_v_crash = self.logger.simply_v_crash
 
-		for b in self.children_busses:
-			if b.BASE_NAME not in self.LEGAL_BUSSES:
+		for b in self._children_buses:
+			if b.BASE_NAME not in self.LEGAL_BUSES:
 				simply_v_crash(f"Unsupported bus {b.FULL_NAME} for this bus")
 
 		
 	def _init_clock_domains(self):
 		nodes = []
-		nodes.extend(self.children_peripherals)
-		nodes.extend(self.children_busses)
+		nodes.extend(self._children_peripherals)
+		nodes.extend(self._children_buses)
 		self.clock_domains = Clock_Domain(nodes)
 		return
 
 	def _generate_children(self):
-		#NonLeaf busses need to create children peripherals and busses
+		#NonLeaf buses need to create children peripherals and buses
 		peripherals_names: list[str] = []
 		peripherals_bases: list[int] = []
 		peripherals_widths: list[int] = []
@@ -136,11 +135,11 @@ class NonLeafBus(Bus):
 			domain: str = self._RANGE_CLOCK_DOMAINS[i]
 			# Create bus
 			if("BUS" in node_name):
-				bus = self.busses_factory.create_bus(node_name, bases, widths, domain, \
+				bus = self.buses_factory.create_bus(node_name, bases, widths, domain, \
 						axi_addr_width=self.ADDR_WIDTH, father = self)
 				# "create_bus" can return "None" if the bus is deactivated
 				if(bus):
-					self.children_busses.append(bus)
+					self._children_buses.append(bus)
 			# if the name doesn't contain "BUS" treat this addr_range as a peripheral
 			else:
 				peripherals_names.append(node_name)
@@ -149,60 +148,73 @@ class NonLeafBus(Bus):
 				peripherals_clock_domains.append(domain)
 		
 		# create all the peripherals
-		self.children_peripherals = self._generate_peripherals(self.CHILDREN_NUM_RANGES, peripherals_names, 
+		self._children_peripherals = self._generate_peripherals(self.CHILDREN_NUM_RANGES, peripherals_names, 
 														 peripherals_bases, peripherals_widths, 
 														 peripherals_clock_domains)
+	
+	# Function used to return children address ranges (of peripherals/buses) keeping an invariant
+	# of "order by base address" this function extends "Bus" 's one with loopback and busses ranges
+	def get_ordered_children_ranges(self) -> list[Addr_Ranges]:
+		# Implicitly using "__lt__" function of "Addr_Ranges"
+		ranges: list[Addr_Ranges] = super().get_ordered_children_ranges()
+		for bus in self._children_buses:
+			ranges.append(bus.asgn_addr_ranges)
+
+		if(self.LOOPBACK):
+			ranges.append(self.loopback_ranges)
+
+		return sorted(ranges)
 
 
 	#COMPONENT INTERFACE - COMPOSITE IMPLEMENTATION
 	#Recursive part of the recursion
 
 	def sanitize_addr_ranges(self):
-		#NonLeaf busses need to sanitize addresses of both children peripherals and busses
-		nodes: list[Node] = cast(list[Node], self.children_peripherals + self.children_busses)
+		#NonLeaf buses need to sanitize addresses of both children peripherals and buses
+		nodes: list[Node] = cast(list[Node], self._children_peripherals + self._children_buses)
 		super()._sanitize_addr_ranges(nodes)
 
-		#Recursive call on all the busses
-		for bus in self.children_busses:
+		#Recursive call on all the buses
+		for bus in self._children_buses:
 			bus.sanitize_addr_ranges()
 
 	def check_legals(self):
-		#NonLeaf busses need to control that both children peripherals and busses are legal
+		#NonLeaf buses need to control that both children peripherals and buses are legal
 		self._check_legal_peripherals()
-		self._check_legal_busses()
+		self._check_legal_buses()
 
-		#Recursive call on all the busses
-		for bus in self.children_busses:
+		#Recursive call on all the buses
+		for bus in self._children_buses:
 			bus.check_legals()
 
 	def add_reachability(self):
-		#NonLeaf busses need to modify the reachability params of their children peripherals and
-		#children busses, they also need to modify the reachability of all the addr_ranges
+		#NonLeaf buses need to modify the reachability params of their children peripherals and
+		#children buses, they also need to modify the reachability of all the addr_ranges
 		#reachable with the "LOOPBACK" configuration
 
 		#add reachability of peripherals
 		super()._add_peripherals_reachability()
 		
-		#add reachability of busses
-		for bus in self.children_busses:
+		#add reachability of buses
+		for bus in self._children_buses:
 			for addr_range in bus.asgn_addr_ranges:
 				for self_range in self.asgn_addr_ranges:
 					addr_range.add_list_to_reachable(self_range.get_reachable())
 					addr_range.add_to_reachable(self.FULL_NAME)
 
 		if(self.LOOPBACK):
-			#get all the peripherals and busses from the "father" bus
+			#get all the peripherals and buses from the "father" bus
 			#and check if this Nonleafbus can reach them
 
 			nodes: list[Node] = []
 			peripherals = self.father.get_peripherals()
 			nodes += cast(list[Node], peripherals)
 
-			busses = self.father.get_busses()
-			if(busses):
-				nodes += cast(list[Node], busses)
+			buses = self.father.get_buses()
+			if(buses):
+				nodes += cast(list[Node], buses)
 
-			#Check all the "asgn_addr_ranges" of the children nodes (Peripherals/Busses)
+			#Check all the "asgn_addr_ranges" of the children nodes (Peripherals/Buses)
 			#if an addr_range is included in 1 of the ranges reachable from the loopback
 			#adjust their reachability
 			for n in nodes:
@@ -213,37 +225,32 @@ class NonLeafBus(Bus):
 							addr_range.add_list_to_reachable(self_range.get_reachable())
 			
 
-		#Recursive call on all the busses
-		for bus in self.children_busses:
+		#Recursive call on all the buses
+		for bus in self._children_buses:
 			bus.add_reachability()
 
 	# @abstractmethod
 	# def check_clock_domains(self):
 	# 	pass
 	
-	def get_busses(self) -> list["Bus"] | None:
-		#NonLeaf busses need to	retrieve the busses attached to them +
-		#all the busses attached to their children busses if any
+	def get_buses(self) -> list[Bus]:
 
-		children_busses = self.children_busses.copy()
+		children_buses: list[Bus] = [self]
 
-		#Recursive call on all the busses
-		for bus in self.children_busses:
-			recursion_busses = bus.get_busses()
-			# check if they are != from "None" (Busses of type LeafBus will return None)
-			if(recursion_busses):
-				children_busses.extend(recursion_busses)
+		#Recursive call on all the buses
+		for bus in self._children_buses:
+			children_buses.extend(bus.get_buses())
 		
-		return children_busses
+		return children_buses
 
 
 	def get_peripherals(self) -> list[Peripheral]:
-		#NonLeaf busses need to	retrieve the peripherals attached to them +
-		#all the peripherals attached to their children busses
-		peripherals = self.children_peripherals.copy()
+		#NonLeaf buses need to	retrieve the peripherals attached to them +
+		#all the peripherals attached to their children buses
+		peripherals = self._children_peripherals.copy()
 
-		#Recursive call on all the busses
-		for bus in self.children_busses:
+		#Recursive call on all the buses
+		for bus in self._children_buses:
 			peripherals.extend(bus.get_peripherals())
 
 		
@@ -254,5 +261,5 @@ class NonLeafBus(Bus):
 		custom_clock_check()
 		
 		#Recursive call
-		for bus in self.children_busses:
+		for bus in self._children_buses:
 			bus.check_clock_domains()

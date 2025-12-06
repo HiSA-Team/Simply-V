@@ -1,6 +1,6 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: The class "Bus_Parser" inherits from the "Parser" class, extending the checked
-# properties with the ones common to all Busses
+# properties with the ones common to all Buses
 
 from typing import Any, Callable
 from general.singleton import Singleton

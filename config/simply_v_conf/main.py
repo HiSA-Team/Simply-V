@@ -20,7 +20,7 @@ def parse_args():
 	parser.add_argument("--mbus", required=True)
 	parser.add_argument("--pbus", required=True)
 	parser.add_argument("--hbus", required=True)
-	# Used only when configuring busses
+	# Used only when configuring buses
 	parser.add_argument("--target_bus", required=False)
 
 	# everything after known args is treated as OUTPUT_FILES in the Makefile invocation
