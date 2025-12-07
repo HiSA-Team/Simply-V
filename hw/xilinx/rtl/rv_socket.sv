@@ -693,8 +693,9 @@ module rv_socket # (
             );
 
             // Microblaze Debug Module V
-            xlnx_microblaze_debug_module_v mdmv_u (
+            xlnx_dual_microblaze_debug_module_v mdmv_u (
                 .Debug_SYS_Rst  ( dbg_sys_rst   ), // output wire Debug_SYS_Rst
+                // Port CORE 0
                 .Dbg_Clk_0      ( Dbg_Clk       ), // output wire Dbg_Clk_0
                 .Dbg_TDI_0      ( Dbg_TDI       ), // output wire Dbg_TDI_0
                 .Dbg_TDO_0      ( Dbg_TDO       ), // input wire Dbg_TDO_0
@@ -704,8 +705,7 @@ module rv_socket # (
                 .Dbg_Update_0   ( Dbg_Update    ), // output wire Dbg_Update_0
                 .Dbg_Rst_0      ( Dbg_Rst       ), // output wire Dbg_Rst_0
                 .Dbg_Disable_0  ( Dbg_Disable   ), // output wire Dbg_Disable_0
-
-                // Porta 1: CORE 1
+                // Port CORE 1
                 .Dbg_Clk_1      ( Dbg1_Clk      ),
                 .Dbg_TDI_1      ( Dbg1_TDI      ),
                 .Dbg_TDO_1      ( Dbg1_TDO      ),
