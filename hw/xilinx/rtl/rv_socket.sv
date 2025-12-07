@@ -493,8 +493,8 @@ module rv_socket # (
             //////////////////////////
             // DUAL MICROBLAZE RV32 //
             //////////////////////////
-            // TODO: export this
-            parameter int unsigned NUM_CORES = 2;
+            // TODO: export this eventually
+            localparam int unsigned NUM_CORES = 2;
 
             // Debug interface connections definition
             logic [NUM_CORES-1 : 0]      dbg_sys_rst;
