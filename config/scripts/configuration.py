@@ -11,7 +11,7 @@ import logging
 class Configuration:
 	def __init__(self):
 		self.CONFIG_NAME         : str = "" # The name of the bus, used in check sanity
-		self.SUPPORTED_CORES	 : list = ["CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32",
+		self.SUPPORTED_CORES	 : list = ["CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", "CORE_DUAL_MICROBLAZEV_RV32",
                                   "CORE_MICROBLAZEV_RV64", "CORE_CV64A6"]
 		self.CORE_SELECTOR		 : str = ""		# (Mandatory) No default core
 		self.VIO_RESETN_DEFAULT	 : int = 1      # Reset using Xilinx VIO
