@@ -173,13 +173,8 @@ fd.write("PROVIDE(_vector_table_end = 0x" + format(vector_table_start + 32*4, "0
 # and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
 # 32KB for now, based on the current setting in `config.tcl`.
 
-<<<<<<< HEAD
 stack_start = device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x10
 fd.write("_stack_start = 0x" + format(stack_start, "016x") + ";\n")
-=======
-stack_start = device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x8
-fd.write("PROVIDE(_stack_start = 0x" + format(stack_start, "016x") + ");\n")
->>>>>>> 4ac49e1 ([refactor][sw] Restructure sw example)
 
 # Generate sections
 # vector table and text sections are here defined.
