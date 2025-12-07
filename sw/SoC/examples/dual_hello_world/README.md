@@ -1,19 +1,17 @@
-# Dual MicroBlaze-V Integration on Simply-V SoC**
+# Dual MicroBlaze-V Integration on Simply-V SoC
 
-## **Overview**
+## Overview
 
-This project extends *Simply-V* by integrating **two MicroBlaze-V RV32 cores** inside a **single rv_socket**, sharing the same UART and memory map while maintaining independent code and execution via `xsdb`/JTAG.
+This project extends Simply-V by integrating two MicroBlaze-V RV32 cores inside a single rv_socket, sharing the same UART and memory map while maintaining independent code and execution via `xsdb`/JTAG.
 
 The document explains:
 
-* how the hardware was modified
-* how to configure the main bus
+* how to configure Simply-V to use two cores
 * how to generate the bitstream
 * how to create software for the two cores
 * how to load and execute the programs on the FPGA
-* how to monitor UART output from both cores
 
-# **Configuring the Main Bus**
+# Configuring the Main Bus
 
 Modify `config/configs/common/config_system.csv`, setting `CORE_SELECTOR`:
 
@@ -37,13 +35,23 @@ make config
 make hw
 ```
 
-# **Software for Core0 and Core1**
+# Software for Core0 and Core1
+
+##  Functional Summary
+
+| Component       | Notes                                       |
+| --------------- | ------------------------------------------- |
+| UART            | Shared only one peripheral for whole SoC    |
+| Memory          | BRAM partitioned manually via linker script |
+| Debug interface | Two separate debug ports inside MDM-V       |
+| Execution       | Via `xsdb`, no synchronization required     |
+
 
 Two copies of the example program were created:
 
 ```
-sw/SoC/examples/dual_hello_wolrd/hello_core0
-sw/SoC/examples/dual_hello_wolrd/hello_core1
+sw/SoC/examples/dual_hello_wolrd/hello_core0.elf
+sw/SoC/examples/dual_hello_wolrd/hello_core1.elf
 ```
 
 Main programs differ only in a print statement:
@@ -58,9 +66,7 @@ and
 printf("Hello from CORE 1!\n");
 ```
 
-# Software Example `dual_hello_wolrd`
-
-## **Linker Script Split (Partitioning BRAM)**
+## Linker Script Split (Partitioning BRAM)
 
 The on-chip BRAM is split into two 32 KB regions:
 
@@ -74,18 +80,18 @@ sw/SoC/common/dual_hello_wolrd/hello_core0/user.ld
 sw/SoC/common/dual_hello_wolrd/hello_core1/user.ld
 ```
 
-## **Building**
+## Building
 
 ```
 make sw
 ```
 
-## **Running the Programs on the FPGA (`xsdb`)**
+## Running the Programs on the FPGA (`xsdb`)
 
 In a new terminal start `xsdb`:
 
 ```bash
-`xsdb`
+xsdb
 ```
 
 Connect to hw_server:
@@ -95,14 +101,14 @@ connect -url tcp:localhost:3121
 targets
 ```
 
-You should see:
+Among other targets, you should see:
 
 ```
 6  Hart #0 (Running)
 7  Hart #1 (Running)
 ```
 
-### **Run program on Core 0**
+### Run program on Core 0
 
 ```tcl
 targets -set -filter {name =~ "Hart #0*"}
@@ -111,7 +117,7 @@ dow /path/to/hello_core0.elf
 con
 ```
 
-### **Run program on Core 1**
+### Run program on Core 1
 
 ```tcl
 targets -set -filter {name =~ "Hart #1*"}
@@ -127,16 +133,6 @@ Hello from CORE 0!
 Hello from CORE 1!
 ```
 
-Both via **the same UART**, displayed in one Minicom window.
-
-# ** Functional Summary**
-
-| Component       | Notes                                       |
-| --------------- | ------------------------------------------- |
-| UART            | Shared only one peripheral for whole SoC    |
-| Memory          | BRAM partitioned manually via linker script |
-| Debug interface | Two separate debug ports inside MDM-V       |
-| Execution       | Via `xsdb`, no synchronization required     |
-
+Both via the same UART, displayed in one TTY window.
 
 
