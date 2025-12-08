@@ -106,6 +106,11 @@ int main() {
     // Dump before vector configuration
     vcsr_dump();
 
+    // Check MAXVL at LMUL=8 and SEW=8, also VLEN
+    csr_value = 0;
+    asm volatile("vsetvli   %0, zero, e8, m8, ta, ma" : "=r"(csr_value));
+    printf("[RVV] MAXVL: %lu\n\r", csr_value);
+
     // Vector configuration
     csr_value = 0;
     asm volatile("li        t0 ,  %0" :: "i"(AVL));
