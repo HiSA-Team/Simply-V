@@ -1,4 +1,5 @@
 import re
+from templates.crossbar_template import Crossbar_Template
 from templates.svinc_template import SVinc_Template 
 from pathlib import Path
 from factories.buses_factory import Buses_Factory
@@ -249,9 +250,10 @@ class SimplyV(metaclass=Singleton):
 	def config_bus(self, target_bus: str, crossbar_file: str, svinc_file: str) -> None:
 		for bus in self.buses:
 			if bus.FULL_NAME == target_bus.upper():
-				template = SVinc_Template(bus)
-				template.write_to_file(svinc_file)
-				#bus.generate_crossbar(crossbar_file)
+				svinc_template = SVinc_Template(bus)
+				crossbar_template = Crossbar_Template(bus)
+				svinc_template.write_to_file(svinc_file)
+				crossbar_template.write_to_file(crossbar_file)
 				return
 
 		self.logger.simply_v_error(f"{target_bus} wasn't configured (crossbar and svinc gen.) because it wasn't found")
