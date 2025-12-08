@@ -173,7 +173,7 @@ fd.write("_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + 
 # and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
 # 32KB for now, based on the current setting in `config.tcl`.
 
-stack_start = device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x8
+stack_start = device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x10
 fd.write("_stack_start = 0x" + format(stack_start, "016x") + ";\n")
 
 # Generate sections

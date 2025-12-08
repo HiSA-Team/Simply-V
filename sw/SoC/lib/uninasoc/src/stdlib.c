@@ -16,3 +16,13 @@ void* memset(void* dest, register int val, register size_t len)
         *ptr++ = val;
     return dest;
 }
+
+// Calculates the len of a '\0' terminated string similar to C stdlib
+size_t strlen(const char *s) {
+    if (!s) return 0;
+    const char *p = s;
+
+    while (*p != '\0') p++;
+
+    return (size_t) (p - s);
+}
