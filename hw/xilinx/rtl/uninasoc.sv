@@ -467,8 +467,8 @@ module uninasoc (
         .rv_socket_data_axi_rlast     ( RV_SOCKET_DATA_to_MBUS_axi_rlast    ),
         .rv_socket_data_axi_rvalid    ( RV_SOCKET_DATA_to_MBUS_axi_rvalid   ),
         .rv_socket_data_axi_rready    ( RV_SOCKET_DATA_to_MBUS_axi_rready   ),
-        
-                // Data AXI Port - CORE 1
+
+        // Data AXI Port - CORE 1
         .rv_socket_data1_axi_awid      ( RV_SOCKET_DATA1_to_MBUS_axi_awid     ),
         .rv_socket_data1_axi_awaddr    ( RV_SOCKET_DATA1_to_MBUS_axi_awaddr   ),
         .rv_socket_data1_axi_awlen     ( RV_SOCKET_DATA1_to_MBUS_axi_awlen    ),
