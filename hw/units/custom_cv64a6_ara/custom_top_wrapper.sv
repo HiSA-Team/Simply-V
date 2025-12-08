@@ -1,8 +1,10 @@
 // Author:  Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Description:
 //  Top wrapper integrating CVA6, Ara, AXI invalidation filter and AXI data width converter for Ara.
-//  The IP features two 64-bit AXI master interfaces, one for CVA6, one for Ara.
-
+//  Top level parameter ARA_NR_LANES supports values {2, 4, 8}.
+//  In all cases, this IP features two 64-bit AXI master interfaces, one for CVA6, one for Ara, regardless of ARA_NR_LANES.
+// NOTE:
+//  - Implementation-wise, Ara is a challenging design. On US+ technology, we validated a maximum 50 MHz frequency to close timing.
 
 // Import UninaSoC headers
 `include "uninasoc_axi.svh"
@@ -38,7 +40,8 @@ module custom_top_wrapper # (
     parameter LOCAL_AXI_RESP_WIDTH    = 2,
     parameter LOCAL_AXI_USER_WIDTH    = 64,
 
-    // Ara
+    // Ara number of lanes, supported values = {2, 4, 8}
+    // - 8 requires HIGH_PERF_BUILD=1
     parameter ARA_NR_LANES = 2
 
 ) (
