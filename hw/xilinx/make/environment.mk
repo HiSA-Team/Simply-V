@@ -60,7 +60,7 @@ endif
 # Remove Microblaze-V and Microblaze Debug Module V when building with Vivado < 2024
 # TODO55: quick workaround for PR 146, extend this for all selectable IPs
 ifeq ($(shell [ $(XILINX_VIVADO_VERSION) -lt 2024 ] && echo true),true)
-    FILTER_IP                 := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
+    FILTER_IP                 := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v xlnx_dual_microblaze_debug_module_v
     FILTER_IP_XCI             := $(foreach ip,${FILTER_IP},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
     TMP_XILINX_IP_LIST        := ${XILINX_IP_LIST}
     TMP_XILINX_IP_LIST_XCI    := ${XILINX_IP_LIST_XCI}
