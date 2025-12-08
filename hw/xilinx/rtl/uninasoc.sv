@@ -386,7 +386,7 @@ module uninasoc (
         .rv_socket_instr_axi_rvalid    ( RV_SOCKET_INSTR_to_MBUS_axi_rvalid   ),
         .rv_socket_instr_axi_rready    ( RV_SOCKET_INSTR_to_MBUS_axi_rready   ),
 
-	 // Instruction AXI Port - CORE 1
+        // Instruction AXI Port - CORE 1
         .rv_socket_instr1_axi_awid      ( RV_SOCKET_INSTR1_to_MBUS_axi_awid     ),
         .rv_socket_instr1_axi_awaddr    ( RV_SOCKET_INSTR1_to_MBUS_axi_awaddr   ),
         .rv_socket_instr1_axi_awlen     ( RV_SOCKET_INSTR1_to_MBUS_axi_awlen    ),
