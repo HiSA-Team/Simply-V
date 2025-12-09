@@ -20,8 +20,6 @@ XILINX_HW_SERVER ?= hw_server
 
 # List of IP basenames to build and import in the design
 # $(1): The directory path in which to search for subdirectories
-# $(2): The name pattern to match subdirectory names against
-# $(shell find $(1) -maxdepth 1 -type d -name "$(2)" -exec basename {} \;)
 define find_ip_dirs
 $(shell find $(1) -maxdepth 1 -type d -regextype posix-extended -regex ".*/(xlnx_.*|custom_.*)" -exec basename {} \;)
 endef
