@@ -98,7 +98,8 @@ set_property STRATEGY                                           $::env(SYNTH_STR
 if { $::env(HIGH_PERF_BUILD) == 1 } {
     # Enable retiming in synthesis
     set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING               true                     [get_runs synth_1]
-} else { # Regular development build
+} else {
+    # Regular development build
     # Preserve the net names and hierarchy for debug
     set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY          none                     [get_runs synth_1]
     set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS  true                     [get_runs synth_1]
@@ -131,11 +132,10 @@ set_property STRATEGY                                       $::env(IMPL_STRATEGY
 # High-performance build, for deployment
 if { $::env(HIGH_PERF_BUILD) == 1 } {
     # Enable physical optimizations (longer runtime)
-    set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED               true                     [get_runs impl_1]
-    set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED    true                     [get_runs impl_1]
+    set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED               true                      [get_runs impl_1]
+    set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED    true                      [get_runs impl_1]
     # Enable moere aggressive routing (longer runtime)
-    set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE $::env{ROUTING_DIRECTIVE} [get_runs impl_1]
-
+    set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE              $::env{ROUTING_DIRECTIVE} [get_runs impl_1]
 }
 # Runtime optimized build
 # set_property "steps.place_design.args.directive"            "RuntimeOptimized"       [get_runs impl_1]
