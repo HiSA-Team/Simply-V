@@ -80,9 +80,16 @@ def main(logger):
 		return
 
 	if mode == "config_xilinx":
-		if len(outputs) != 1:
-			raise ValueError(f"{mode} expects 1 output file, got {len(outputs)}")
-		system.config_xilinx(outputs[0])
+		if len(outputs) != 3:
+			raise ValueError(f"{mode} expects 3 output file, got {len(outputs)}")
+		# first output is xilinx makefile
+		system.config_xilinx_makefile(outputs[0])
+		system.config_clock_domains(outputs[0])
+		# second output is ddr4_ch_0 cache (only ch 0 for now, need to extend it in future)
+		system.config_ddr4_caches(outputs[1])
+		# third output is bram_0 config file
+		system.config_brams(outputs[2])
+		
 		logger.simply_v_info("[CONFIG] Generated xilinx configs.")
 		return
 

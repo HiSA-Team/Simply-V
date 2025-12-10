@@ -31,6 +31,12 @@ OUTPUT_LD       := $(SW_ROOT)/SoC/common/UninaSoC.ld
 # Generated from "config_xilinx"
 OUTPUT_XILINX_MK := $(XILINX_ROOT)/make/config.mk
 
+# For now the cache functionality is only supported for ddr4 channel 0
+# and the bram functionality is only supported for BRAM_0
+# need to find a easily extensible way to manage configs files for multiple channels and brams
+OUTPUT_DDR4_CH_0_CACHE := $(XILINX_IPS_ROOT)/hpc/xlnx_system_cache_0/config.tcl
+OUTPUT_BRAM_0 := $(XILINX_IPS_ROOT)/common/xlnx_bram_0/config.tcl
+
 # Generated from "config_dump"
 OUTPUT_DUMP := $(CONFIG_ROOT)/dump.csv
 
@@ -87,7 +93,7 @@ config_sw:
 ###					 XILINX TARGET					 	 ###
 ############################################################
 
-config_xilinx: OUTPUT_FILES := $(OUTPUT_XILINX_MK)
+config_xilinx: OUTPUT_FILES := $(OUTPUT_XILINX_MK) $(OUTPUT_DDR4_CH_0_CACHE) $(OUTPUT_BRAM_0)
 config_xilinx:
 	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
 

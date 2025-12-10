@@ -22,8 +22,8 @@ create_ip -name system_cache -vendor xilinx.com -library ip -version 5.0 -module
 
 # Set the cache BASEADDR and HIGHADDR
 # WARNING: Do not change the following line, it is modified by config-based script
-set CACHE_BASEADDR {0x50000}
-set CACHE_HIGHADDR {0x5ffff}
+set CACHE_BASEADDR {0x80000}
+set CACHE_HIGHADDR {0x8ffff}
 
 set_property -dict [list \
   CONFIG.C_CACHE_LINE_LENGTH {32} \
