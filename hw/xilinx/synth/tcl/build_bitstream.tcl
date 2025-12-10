@@ -94,11 +94,15 @@ synth_design -rtl -name rtl_1
 #############
 # Set strategy
 set_property STRATEGY                                           $::env(SYNTH_STRATEGY)   [get_runs synth_1]
-# Preserve the net names and hierarchy for debug
-set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY          none                     [get_runs synth_1]
-set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS  true                     [get_runs synth_1]
-# # Enable retiming in synthesis
-# set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING                   true                     [get_runs synth_1]
+# High-performance build, for deployment
+if { $::env(HIGH_PERF_BUILD) == 1 } {
+    # Enable retiming in synthesis
+    set_property STEPS.SYNTH_DESIGN.ARGS.RETIMING               true                     [get_runs synth_1]
+} else { # Regular development build
+    # Preserve the net names and hierarchy for debug
+    set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY          none                     [get_runs synth_1]
+    set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS  true                     [get_runs synth_1]
+}
 
 # Run
 launch_runs synth_1
@@ -112,6 +116,8 @@ report_utilization -hierarchical -hierarchical_percentage   -file $report_dir/$:
 ############
 # Add ILAs #
 ############
+# NOTE: if not using FLATTEN_HIERARCHY and KEEP_EQUIVALENT_REGISTERS in synthesis,
+#       marking nets for MARK_DEBUG in the post-synthesis netlist might be difficult.
 if { $::env(XILINX_ILA) == 1 } {
     source $::env(XILINX_SYNTH_TCL_ROOT)/mark_debug_nets.tcl
     source $::env(XILINX_SYNTH_TCL_ROOT)/add_ila.tcl
@@ -120,14 +126,20 @@ if { $::env(XILINX_ILA) == 1 } {
 ##################
 # Implementation #
 ##################
+# Set strategy
+set_property STRATEGY                                       $::env(IMPL_STRATEGY)    [get_runs impl_1]
+# High-performance build, for deployment
+if { $::env(HIGH_PERF_BUILD) == 1 } {
+    # Enable physical optimizations (longer runtime)
+    set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED               true                     [get_runs impl_1]
+    set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED    true                     [get_runs impl_1]
+    # Enable moere aggressive routing (longer runtime)
+    set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE $::env{ROUTING_DIRECTIVE} [get_runs impl_1]
+
+}
 # Runtime optimized build
 # set_property "steps.place_design.args.directive"            "RuntimeOptimized"       [get_runs impl_1]
 # set_property "steps.route_design.args.directive"            "RuntimeOptimized"       [get_runs impl_1]
-# # Set strategy
-set_property STRATEGY                                       $::env(IMPL_STRATEGY)    [get_runs impl_1]
-# # Enable physical optimizations (longer runtime)
-# set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED                 true                     [get_runs impl_1]
-# set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED    true                     [get_runs impl_1]
 
 # Run
 launch_runs impl_1 -to_step write_bitstream

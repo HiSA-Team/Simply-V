@@ -89,6 +89,11 @@ IMPL_STRATEGY      ?= "Performance_ExtraTimingOpt"
 XILINX_BITSTREAM ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl_1/${XILINX_PROJECT_NAME}.bit
 XILINX_PROBE_LTX ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl_1/${XILINX_PROJECT_NAME}.ltx
 
+# Wheter to build for development or deployment (0|1)
+# NOTE: Not reccomended to use with XILINX_ILA = 1
+HIGH_PERF_BUILD ?= 0
+# Routing directive, only used with HIGH_PERF_BUILD = 1
+ROUTING_DIRECTIVE ?= NoTimingRelaxation
 # Whether to use ILA probes (0|1)
 XILINX_ILA ?= 0
 # Clock net for ILA probes: use main clock by default
@@ -110,6 +115,8 @@ XILINX_VIVADO_ENV ?=                                \
     HBUS_NUM_MI=${HBUS_NUM_MI}                      \
     HBUS_NUM_SI=${HBUS_NUM_SI}                      \
     HBUS_ID_WIDTH=${HBUS_ID_WIDTH}                  \
+    HIGH_PERF_BUILD=${HIGH_PERF_BUILD}              \
+    ROUTING_DIRECTIVE=${ROUTING_DIRECTIVE}          \
     XILINX_ILA=${XILINX_ILA}                        \
     XILINX_ILA_CLOCK=${XILINX_ILA_CLOCK}            \
     SYNTH_STRATEGY=${SYNTH_STRATEGY}                \
