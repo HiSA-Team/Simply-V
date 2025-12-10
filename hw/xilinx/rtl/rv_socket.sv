@@ -681,15 +681,15 @@ module rv_socket # (
                 .Dbg_Rst_0      ( Dbg_Rst     [0]  ), // output wire Dbg_Rst_0
                 .Dbg_Disable_0  ( Dbg_Disable [0]  ), // output wire Dbg_Disable_0
                 // Port CORE 1
-                .Dbg_Clk_1      ( Dbg_Clk     [1] ),
-                .Dbg_TDI_1      ( Dbg_TDI     [1] ),
-                .Dbg_TDO_1      ( Dbg_TDO     [1] ),
-                .Dbg_Reg_En_1   ( Dbg_Reg_En  [1] ),
-                .Dbg_Capture_1  ( Dbg_Capture [1] ),
-                .Dbg_Shift_1    ( Dbg_Shift   [1] ),
-                .Dbg_Update_1   ( Dbg_Update  [1] ),
-                .Dbg_Rst_1      ( Dbg_Rst     [1] ),
-                .Dbg_Disable_1  ( Dbg_Disable [1] )
+                .Dbg_Clk_1      ( Dbg_Clk     [1] ), // output wire Dbg_Clk_1
+                .Dbg_TDI_1      ( Dbg_TDI     [1] ), // output wire Dbg_TDI_1
+                .Dbg_TDO_1      ( Dbg_TDO     [1] ), // input wire Dbg_TDO_1
+                .Dbg_Reg_En_1   ( Dbg_Reg_En  [1] ), // output wire [0 : 7] Dbg_Reg_En_
+                .Dbg_Capture_1  ( Dbg_Capture [1] ), // output wire Dbg_Capture_1
+                .Dbg_Shift_1    ( Dbg_Shift   [1] ), // output wire Dbg_Shift_1
+                .Dbg_Update_1   ( Dbg_Update  [1] ), // output wire Dbg_Update_1
+                .Dbg_Rst_1      ( Dbg_Rst     [1] ), // output wire Dbg_Rst_1
+                .Dbg_Disable_1  ( Dbg_Disable [1] )  // output wire Dbg_Disable_1
             );
 
 
