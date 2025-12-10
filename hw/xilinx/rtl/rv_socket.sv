@@ -527,7 +527,7 @@ module rv_socket # (
                 .Interrupt          ( irq_i[CORE_EXT_INTERRUPT] ), // input wire Interrupt
                 .Interrupt_Address  ('0                         ), // input wire [0 : 31] Interrupt_Address
                 .Interrupt_Ack      (                           ), // output wire [0 : 1] Interrupt_Ack
-                // Debug port to MDMV
+                // Debug port to MDM-V (core 0)
                 .Dbg_Clk            ( Dbg_Clk     [0] ), // input wire Dbg_Clk
                 .Dbg_TDI            ( Dbg_TDI     [0] ), // input wire Dbg_TDI
                 .Dbg_TDO            ( Dbg_TDO     [0] ), // output wire Dbg_TDO
@@ -601,7 +601,7 @@ module rv_socket # (
                 .Interrupt          ( irq_i[CORE_EXT_INTERRUPT] ), // input wire Interrupt
                 .Interrupt_Address  ('0                         ), // input wire [0 : 31] Interrupt_Address
                 .Interrupt_Ack      (                           ), // output wire [0 : 1] Interrupt_Ack
-                // Debug port to MDMV (porta 1)
+                // Debug port to MDM-V (core 1)
                 .Dbg_Clk            ( Dbg_Clk     [1] ), // input wire Dbg_Clk
                 .Dbg_TDI            ( Dbg_TDI     [1] ), // input wire Dbg_TDI
                 .Dbg_TDO            ( Dbg_TDO     [1] ), // output wire Dbg_TDO
