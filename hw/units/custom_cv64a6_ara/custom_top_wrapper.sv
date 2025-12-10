@@ -5,6 +5,29 @@
 //  In all cases, this IP features two 64-bit AXI master interfaces, one for CVA6, one for Ara, regardless of ARA_NR_LANES.
 // NOTE:
 //  - Implementation-wise, Ara is a challenging design. On US+ technology, we validated a maximum 50 MHz frequency to close timing.
+//  - ARA_NR_LANES=8 requires HIGH_PERF_BUILD=1
+//
+// Architecture:
+//   ______________
+//  |              |                                cva6_axi
+//  |     CVA6     |------------------------------------------->
+//  |______________|                                  d64
+//      ^
+//      | acc_resp_pack
+//      |\---------------------------------\
+//      |                                  |
+//      |                                  |
+//      |                                  |
+//      | acc_resp                         |
+//      | CVXIF                            | acc_cons_en
+//      | (w/ MMU)                         | inval_addr/valid/ready
+//   ___v_____                       ______v____________                        _____________
+//  |         |                     |                   |                      |             |
+//  |   Ara   |    ara_axi_wide     | L1D$ Invalidation |  ara_axi_wide_inval  | dwidth_conv | ara_narrow
+//  |         |-------------------->|       Filter      |--------------------->|             | ----------->
+//  |_________|    d(32*NrLanes)    |___________________|     d(32*NrLanes)    |_____________|   d64
+//
+
 
 // Import UninaSoC headers
 `include "uninasoc_axi.svh"
@@ -41,7 +64,6 @@ module custom_top_wrapper # (
     parameter LOCAL_AXI_USER_WIDTH    = 64,
 
     // Ara number of lanes, supported values = {2, 4, 8}
-    // - 8 requires HIGH_PERF_BUILD=1
     parameter ARA_NR_LANES = 2
 
 ) (
@@ -75,27 +97,6 @@ module custom_top_wrapper # (
     `DEFINE_AXI_MASTER_PORTS(cva6, LOCAL_AXI_DATA_WIDTH, LOCAL_AXI_ADDR_WIDTH, LOCAL_AXI_ID_WIDTH),
     `DEFINE_AXI_MASTER_PORTS(ara_narrow, LOCAL_AXI_DATA_WIDTH, LOCAL_AXI_ADDR_WIDTH, LOCAL_AXI_ID_WIDTH)
 );
-
-    // Architecture:
-    //   ______________
-    //  |              |                                cva6_axi
-    //  |     CVA6     |------------------------------------------->
-    //  |______________|                                  d64
-    //      ^
-    //      | acc_resp_pack
-    //      |\---------------------------------\
-    //      |                                  |
-    //      |                                  |
-    //      |                                  |
-    //      | acc_resp                         |
-    //      | CVXIF                            | acc_cons_en
-    //      | (w/ MMU)                         | inval_addr/valid/ready
-    //   ___v_____                       ______v____________                        _____________
-    //  |         |                     |                   |                      |             |
-    //  |   Ara   |    ara_axi_wide     | L1D$ Invalidation |  ara_axi_wide_inval  | dwidth_conv | ara_narrow
-    //  |         |-------------------->|       Filter      |--------------------->|             | ----------->
-    //  |_________|    d(32*NrLanes)    |___________________|     d(32*NrLanes)    |_____________|   d64
-    //
 
     ///////////////
     // Constants //
