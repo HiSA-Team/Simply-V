@@ -14,63 +14,45 @@ XILINX_PROJECT_REPORTS_DIR ?= ${XILINX_PROJECT_BUILD_DIR}/reports
 # Hardware server
 XILINX_HW_SERVER ?= hw_server
 
-# List of the Xilinx IPs to build and import in the design
-# Parsing from directory ips/
-XILINX_COMMON_IP_LIST   = $(shell basename --multiple ${XILINX_IPS_ROOT}/common/xlnx_*)
-XILINX_HPC_IP_LIST      = $(shell basename --multiple ${XILINX_IPS_ROOT}/hpc/xlnx_*)
-XILINX_EMBEDDED_IP_LIST = $(shell basename --multiple ${XILINX_IPS_ROOT}/embedded/xlnx_*)
+##############
+# Vivado IPs #
+##############
 
-# List of the Custom IPs to build and import in the design
-# Parsing from directory ips/
-CUSTOM_COMMON_IP_LIST   = $(shell if ls ${XILINX_IPS_ROOT}/common/custom_* 1>/dev/null 2>&1; then basename --multiple ${XILINX_IPS_ROOT}/common/custom_*; else echo ""; fi)
-CUSTOM_HPC_IP_LIST      = $(shell if ls ${XILINX_IPS_ROOT}/hpc/custom_* 1>/dev/null 2>&1; then basename --multiple ${XILINX_IPS_ROOT}/hpc/custom_*; else echo ""; fi)
-CUSTOM_EMBEDDED_IP_LIST = $(shell if ls ${XILINX_IPS_ROOT}/embedded/custom_* 1>/dev/null 2>&1; then basename --multiple ${XILINX_IPS_ROOT}/embedded/custom_*; else echo ""; fi)
+# List of IP basenames to build and import in the design
+# $(1): The directory path in which to search for subdirectories
+define find_ip_dirs
+$(shell find $(1) -maxdepth 1 -type d -regextype posix-extended -regex ".*/(xlnx_.*|custom_.*)" -exec basename {} \;)
+endef
+# Parsing from directory ips/ matching paths (common|hpc|embedded) and prefix (xlnx_*|custom_*)
+# List of the Xilinx IPs
+COMMON_IP_LIST   = $(call find_ip_dirs, ${XILINX_IPS_ROOT}/common  )
+HPC_IP_LIST      = $(call find_ip_dirs, ${XILINX_IPS_ROOT}/hpc     )
+EMBEDDED_IP_LIST = $(call find_ip_dirs, ${XILINX_IPS_ROOT}/embedded)
 
-# Board-independent IP lists
-XILINX_IP_LIST = ${XILINX_COMMON_IP_LIST}
-CUSTOM_IP_LIST = ${CUSTOM_COMMON_IP_LIST}
-
-# List of IPs' xci files
-XILINX_COMMON_IP_LIST_XCI   := $(foreach ip,${XILINX_COMMON_IP_LIST},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-XILINX_HPC_IP_LIST_XCI      := $(foreach ip,${XILINX_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-XILINX_EMBEDDED_IP_LIST_XCI := $(foreach ip,${XILINX_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_COMMON_IP_LIST_XCI   := $(foreach ip,${CUSTOM_COMMON_IP_LIST},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_HPC_IP_LIST_XCI      := $(foreach ip,${CUSTOM_HPC_IP_LIST},${XILINX_IPS_ROOT}/hpc/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-CUSTOM_EMBEDDED_IP_LIST_XCI := $(foreach ip,${CUSTOM_EMBEDDED_IP_LIST},${XILINX_IPS_ROOT}/embedded/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-
-# Board-independent XCI lists
-XILINX_IP_LIST_XCI := ${XILINX_COMMON_IP_LIST_XCI}
-CUSTOM_IP_LIST_XCI := ${CUSTOM_COMMON_IP_LIST_XCI}
-
-# Selecting flow: HPC or EMBEDDED
+# Concatenate/create the full IP lists
+# Profile-independent IP lists
+IP_LIST     = ${COMMON_IP_LIST}
+# Selecting profile: HPC or EMBEDDED
 ifeq (${SOC_CONFIG}, hpc)
-    XILINX_IP_LIST         += ${XILINX_HPC_IP_LIST}
-    XILINX_IP_LIST_XCI     += ${XILINX_HPC_IP_LIST_XCI}
-    CUSTOM_IP_LIST         += ${CUSTOM_HPC_IP_LIST}
-    CUSTOM_IP_LIST_XCI     += ${CUSTOM_HPC_IP_LIST_XCI}
+#   Append HPC IPs
+    IP_LIST += ${HPC_IP_LIST}
 else ifeq (${SOC_CONFIG}, embedded)
-    XILINX_IP_LIST         += ${XILINX_EMBEDDED_IP_LIST}
-    XILINX_IP_LIST_XCI     += ${XILINX_EMBEDDED_IP_LIST_XCI}
-    CUSTOM_IP_LIST         += ${CUSTOM_EMBEDDED_IP_LIST}
-    CUSTOM_IP_LIST_XCI     += ${CUSTOM_EMBEDDED_IP_LIST_XCI}
+#   Append embedded IPs
+    IP_LIST += ${EMBEDDED_IP_LIST}
 else
 $(error "Unsupported config ${SOC_CONFIG}")
 endif
 
 # Remove Microblaze-V and Microblaze Debug Module V when building with Vivado < 2024
 # TODO55: quick workaround for PR 146, extend this for all selectable IPs
-ifeq ($(shell [ $(XILINX_VIVADO_VERSION) -lt 2024 ] && echo true),true)
-    FILTER_IP                 := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
-    FILTER_IP_XCI             := $(foreach ip,${FILTER_IP},${XILINX_IPS_ROOT}/common/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci)
-    TMP_XILINX_IP_LIST        := ${XILINX_IP_LIST}
-    TMP_XILINX_IP_LIST_XCI    := ${XILINX_IP_LIST_XCI}
-    XILINX_IP_LIST            := $(filter-out $(FILTER_IP),$(TMP_XILINX_IP_LIST))
-    XILINX_IP_LIST_XCI        := $(filter-out $(FILTER_IP_XCI),$(TMP_XILINX_IP_LIST_XCI))
+ifeq ($(shell [ ${XILINX_VIVADO_VERSION} -lt 2024 ] && echo true),true)
+    FILTER_IP    := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
+    TMP_IP_LIST  := ${IP_LIST}
+    IP_LIST      := $(filter-out ${FILTER_IP},${TMP_IP_LIST})
 endif
 
-# Concatenate/create the final IP lists
-IP_LIST     = ${XILINX_IP_LIST} ${CUSTOM_IP_LIST}
-IP_LIST_XCI = ${XILINX_IP_LIST_XCI} ${CUSTOM_IP_LIST_XCI}
+# List of IPs' xci files to import in main Vivado project
+IP_LIST_XCI := $(foreach ip,${IP_LIST},$(shell find ${XILINX_IPS_ROOT} -type f -path "*/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci"))
 
 #########################
 # Vivado run strategies #
