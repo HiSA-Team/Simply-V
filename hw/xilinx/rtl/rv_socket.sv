@@ -25,11 +25,11 @@ module rv_socket # (
     input  logic [LOCAL_ADDR_WIDTH -1 : 0 ] bootaddr_i,
     input  logic [NUM_IRQ          -1 : 0 ] irq_i,
 
-    // Core
+    // Core 0
     `DEFINE_AXI_MASTER_PORTS(rv_socket_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
     `DEFINE_AXI_MASTER_PORTS(rv_socket_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
 
-    // Core 1 (secondo Microblaze)
+    // Core 1
     `DEFINE_AXI_MASTER_PORTS(rv_socket_instr1, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
     `DEFINE_AXI_MASTER_PORTS(rv_socket_data1,  LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
 
