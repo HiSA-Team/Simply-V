@@ -50,49 +50,53 @@ class Configuration:
 		self.MAIN_CLOCK_DOMAIN   : int = 100    # Core + mbus clock domain (the main clock domain)
 		self.RANGE_CLOCK_DOMAINS       : list = []    # MBUS slaves clock domains
 
-	###########
-	# Setters #
-	###########
-	# When XLEN parameter is parsed, ADDR_WIDTH and DATA_WIDTH are assigned accordingly
+    ###########
+    # Setters #
+    ###########
+    # When XLEN parameter is parsed, ADDR_WIDTH and DATA_WIDTH are assigned accordingly
 
 	def set_ADDR_WIDTH (self, value: int):
-		# Reads the Address Widdth applied to all Interfaces
-		# [AXI4 ; AXI3] => the range of possible values is (12..64)
-		# AXI4LITE => the range of possible values is (1..64)
-		# 32 is the default value in every scenario
-		# If the value is missing or is incorrect in the csv file,  default value is used
-		if ((self.PROTOCOL == "AXI4LITE") and (value in range(1, 65))):
-			self.ADDR_WIDTH = value
-		elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (value in range(12, 65))):
-			self.ADDR_WIDTH = value
-		elif self.PROTOCOL == "DISABLE":
-			# Skip mock buses
-			return
-		else:
-			# TODO127: Defaulting breaks multiple things in the current flow. It MUST be refactored.
-			# For now, we just raise the warning, and leave the user with the selected value.
-			self.ADDR_WIDTH = value
-			logging.warning("Address Width value isn't compatible with AXI PROTOCOL Used. Using the user value, beware of this.")
+
+		# TODO127: fix PHYSICAL_ADDR_WIDTH parsing
+		self.ADDR_WIDTH = value
+		logging.warning("ADDR_WIDTH value (" + str(value) + ") is not sanitized.")
+
+		# # Reads the Address Widdth applied to all Interfaces
+		# # [AXI4 ; AXI3] => the range of possible values is (12..64)
+		# # AXI4LITE => the range of possible values is (1..64)
+		# # 32 is the default value in every scenario
+		# # If the value is missing or is incorrect in the csv file,  default value is used
+		# if ((self.PROTOCOL == "AXI4LITE") and (value in range(1, 65))):
+		# 	self.ADDR_WIDTH = value
+		# elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (value in range(12, 65))):
+		# 	self.ADDR_WIDTH = value
+		# elif self.PROTOCOL == "DISABLE":
+		# 	# Skip mock buses
+		# 	return
+		# else:
+		# 	logging.warning("Address Width value isn't compatible with AXI PROTOCOL Used. Using default value.")
 
 	def set_DATA_WIDTH (self, value: int):
-		# Reads the Address Widdth applied to all Interfaces
-		# [AXI4 ; AXI3] => the range of possible values is {32 ,  64 ,  128 ,  256 ,  512 ,  1024}
-		# AXI4LITE => the range of possible values is {32 ,  64}
-		# 32 is the default value in every scenario
-		# If the value is missing or is incorrect in the csv file,  default value is used
-		DATA_WIDTH_Found = False
-		Base_Data = 32
-		while ((DATA_WIDTH_Found == False) and (Base_Data <= 1024)):
-			if (value == Base_Data):
-				DATA_WIDTH_Found = True
-			Base_Data = Base_Data * 2
-		if ((self.PROTOCOL == "AXI4LITE") and ((value == 32) or (value == 64))):
-			self.DATA_WIDTH = value
-		elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (DATA_WIDTH_Found == True)):
-			self.DATA_WIDTH = value
-		else:
-			# TODO127: Defaulting breaks multiple things in the current flow. It MUST be refactored.
-			# For now, we just raise the warning, and leave the user with the selected value.
-			logging.warning("Address Width value isn't compatible with AXI PROTOCOL Used. Using the user value, beware of this.")
 
 
+		# TODO127: fix XLEN parsing
+		self.DATA_WIDTH = value
+		logging.warning("DATA_WIDTH value (" + str(value) + ") is not sanitized.")
+
+		# # Reads the Address Widdth applied to all Interfaces
+		# # [AXI4 ; AXI3] => the range of possible values is {32 ,  64 ,  128 ,  256 ,  512 ,  1024}
+		# # AXI4LITE => the range of possible values is {32 ,  64}
+		# # 32 is the default value in every scenario
+		# # If the value is missing or is incorrect in the csv file,  default value is used
+		# DATA_WIDTH_Found = False
+		# Base_Data = 32
+		# while ((DATA_WIDTH_Found == False) and (Base_Data <= 1024)):
+		# 	if (value == Base_Data):
+		# 		DATA_WIDTH_Found = True
+		# 	Base_Data = Base_Data * 2
+		# if ((self.PROTOCOL == "AXI4LITE") and ((value == 32) or (value == 64))):
+		# 	self.DATA_WIDTH = value
+		# elif (((self.PROTOCOL == "AXI4") or (self.PROTOCOL == "AXI3")) and (DATA_WIDTH_Found == True)):
+		# 	self.DATA_WIDTH = value
+		# else:
+		# 	logging.warning("Data Width value isn't compatible with AXI PROTOCOL Used. Using default value.")

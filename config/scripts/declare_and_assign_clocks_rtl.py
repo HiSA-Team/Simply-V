@@ -38,14 +38,19 @@ def declare_and_assign_clocks(config : configuration.Configuration) -> None:
     file.write(f"logic rstn_300MHz;\n")
     for i in range(len(config.RANGE_CLOCK_DOMAINS)):
         # Exclude the DDR from this since it has its own clock
-        if config.RANGE_NAMES[i] != "DDR":
-            file.write(f"logic {config.RANGE_NAMES[i]}_clk;\n")
-            file.write(f"assign {config.RANGE_NAMES[i]}_clk = clk_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
-            file.write(f"logic {config.RANGE_NAMES[i]}_rstn;\n")
-            file.write(f"assign {config.RANGE_NAMES[i]}_rstn = rstn_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
+        if not config.RANGE_NAMES[i].startswith("DDR4CH"):
+            # Special case for HBUS, it comes with its own clock, to feed accelerators on the MBUS
+            if config.RANGE_NAMES[i] in {"HBUS"}:
+                file.write(f"logic HBUS_clk;\n")
+            else:
+                file.write(f"logic {config.RANGE_NAMES[i]}_clk;\n")
+                file.write(f"assign {config.RANGE_NAMES[i]}_clk = clk_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
+                file.write(f"logic {config.RANGE_NAMES[i]}_rstn;\n")
+                file.write(f"assign {config.RANGE_NAMES[i]}_rstn = rstn_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
 
     file.close()
 
+    print_info("Output file is at " + RTL_FILES["UNINASOC"])
 
 ########
 # MAIN #

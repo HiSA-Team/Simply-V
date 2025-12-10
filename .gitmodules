@@ -1,3 +1,6 @@
 [submodule "sw/SoC/lib/tinyio"]
 	path = sw/SoC/lib/tinyio
 	url = https://github.com/Granp4sso/TinyIO-library-for-printf-and-scanf-.git
+[submodule "sw/SoC/projects/freertos/FreeRTOS-Kernel"]
+	path = sw/SoC/projects/freertos/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel

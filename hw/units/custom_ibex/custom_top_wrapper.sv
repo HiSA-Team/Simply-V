@@ -1,8 +1,7 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description:
+// Description: Top level wrapper for Ibex CPU.
 //      Ibex CPU is fully functional in 3 configurations: LIGHTWEIGHT, PERFORMANCE and OPENTITAN
 //      By Default, PERFORMANCE configuration is slected. Uncomment the appropriate define to select.
-//      Currently OPENTITAN configuration works, but without the debugger
 
 
 // Import headers

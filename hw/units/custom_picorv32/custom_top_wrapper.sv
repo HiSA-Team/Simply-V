@@ -1,8 +1,5 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description:
-// This module is intended as a top-level wrapper for the code in ./rtl
-// IT might support either MEM protocol or AXI protocol, using the
-// uninasoc_axi and uninasoc_mem svh files in hw/xilinx/rtl
+// Description: Top level module for PICORV32 core with MEM-adapted memory interfaces.
 
 
 // Import headers

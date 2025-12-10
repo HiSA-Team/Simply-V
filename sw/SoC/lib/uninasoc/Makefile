@@ -20,8 +20,11 @@ all: $(UNINASOC_LIB)
 $(UNINASOC_LIB): $(UNINASOC_OBJS)
 	@echo "\n[OBJ] Creating libuninasoc.a library"
 	@mkdir -p lib
-	ar rcs $(UNINASOC_LIB) $(UNINASOC_OBJS)
+	$(AR) rcs $(UNINASOC_LIB) $(UNINASOC_OBJS)
 	@rm -f $(UNINASOC_OBJS)
 
+dump: $(UNINASOC_LIB)
+	$(OBJDUMP) -d $^ > lib/libuninasoc.dump
+
 clean:
-	@rm $(UNINASOC_LIB)
+	@rm -f $(UNINASOC_LIB)

@@ -18,11 +18,14 @@ extern const volatile uint32_t _peripheral_PLIC_start;
 #define PLIC_BASEADDR ((uintptr_t)&_peripheral_PLIC_start)
 
 // Registers
-#define PLIC_INT_ENABLE_CTX0    (PLIC_BASEADDR +   0x2000)
+#define PLIC_INT_ENABLE_CTX0    (PLIC_BASEADDR +  0x2000)
+#define PLIC_PENDING_BASE       (PLIC_BASEADDR + 0x1000u)
+#define PLIC_THRESHOLD_CTX0     (PLIC_BASEADDR + 0x200000)
 #define PLIC_CLAIM_CTX0         (PLIC_BASEADDR + 0x200004)
 #define PLIC_COMPLETE_CTX0      (PLIC_BASEADDR + 0x200004)
 
 // Functions
+#define PLIC_PRIO_SRC(n)      (PLIC_BASEADDR + 4u * (n))
 
 // Initialize PLIC peripheral
 int plic_init();
@@ -30,7 +33,9 @@ int plic_init();
 // This function configures the priorities associated to each peripheral
 // "priorities" is an array of size "source_num" containing
 // the priority values to assign to each peripherals in order
-void plic_configure(uint32_t* priorities, size_t source_num);
+void plic_configure_set_array(uint32_t* priorities, size_t source_num);
+// Configure a single line
+void plic_configure_set_one(uint32_t priority, size_t source);
 
 // This function enables the interrupts of each external peripheral
 void plic_enable_all();

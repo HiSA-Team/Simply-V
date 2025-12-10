@@ -79,8 +79,8 @@ done;
 
 # Loop through all files in the rtl directory
 echo -e "${YELLOW}[PATCH_SOURCES] Patching include paths for flat includes and specific substitutions${NC}"
-for rtl_file in ${RTL_DIR}/*; do    
-    if [[ -f $rtl_file ]]; then        
+for rtl_file in ${RTL_DIR}/*; do
+    if [[ -f $rtl_file ]]; then
         # Substitute AXI includes
         sed -i "s|\`include \"axi/typedef.svh\"|\`include \"axi_typedef.svh\"|g" $rtl_file
         sed -i "s|\`include \"axi/assign.svh\"|\`include \"axi_assign.svh\"|g" $rtl_file
@@ -94,10 +94,6 @@ done
 sed -i '/<=/ s/rs1_forwarding_i/rs1_forwarding_i[0]/g' ${RTL_DIR}/ex_stage.sv
 sed -i '/<=/ s/rs2_forwarding_i/rs2_forwarding_i[0]/g' ${RTL_DIR}/ex_stage.sv
 
-####################
-# Remove Artifacts #
-####################
-
 # The unread.sv file used in the openhw repo is not VIVADO compatible.
 # Therefore we save the PULP one in the assets and copy it on demand
 cp ${ASSETS_DIR}/unread.sv ${RTL_DIR}
@@ -105,10 +101,5 @@ cp ${ASSETS_DIR}/unread.sv ${RTL_DIR}
 # Symbolic link configuration file. Check in assets for further info
 ln -s ${ASSETS_DIR}/cv64a6_config_pkg.sv ${RTL_DIR}
 
-####################
-# Remove Artifacts #
-####################
-
-rm -rf ${CLONE_DIR}
-
+# Info
 echo -e "${GREEN}[FETCH_SOURCES] Completed${NC}"
