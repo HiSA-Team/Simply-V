@@ -46,13 +46,13 @@ endif
 # Remove Microblaze-V and Microblaze Debug Module V when building with Vivado < 2024
 # TODO55: quick workaround for PR 146, extend this for all selectable IPs
 ifeq ($(shell [ ${XILINX_VIVADO_VERSION} -lt 2024 ] && echo true),true)
-    FILTER_IP    := xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
-    TMP_IP_LIST  := ${IP_LIST}
-    IP_LIST      := $(filter-out ${FILTER_IP},${TMP_IP_LIST})
+    FILTER_IP    = xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
+    TMP_IP_LIST  = ${IP_LIST}
+    IP_LIST      = $(filter-out ${FILTER_IP},${TMP_IP_LIST})
 endif
 
 # List of IPs' xci files to import in main Vivado project
-IP_LIST_XCI := $(foreach ip,${IP_LIST},$(shell find ${XILINX_IPS_ROOT} -type f -path "*/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci"))
+IP_LIST_XCI = $(foreach ip,${IP_LIST},$(shell find ${XILINX_IPS_ROOT} -type f -path "*/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci"))
 
 #########################
 # Vivado run strategies #
@@ -77,7 +77,7 @@ XILINX_ILA ?= 0
 XILINX_ILA_CLOCK ?= main_clk
 
 # Full environment variables list for Vivado
-XILINX_VIVADO_ENV ?=                                \
+XILINX_VIVADO_ENV =                                 \
     MBUS_DATA_WIDTH=${MBUS_DATA_WIDTH}              \
     MBUS_ADDR_WIDTH=${MBUS_ADDR_WIDTH}              \
     CORE_SELECTOR=${CORE_SELECTOR}                  \
@@ -112,8 +112,8 @@ XILINX_VIVADO_ENV ?=                                \
     XILINX_SIMLIB_PATH=${XILINX_SIMLIB_PATH}
 
 # Package Vivado command in a single variable
-XILINX_VIVADO := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode ${XILINX_VIVADO_MODE}
-XILINX_VIVADO_BATCH := ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode batch
+XILINX_VIVADO = ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode ${XILINX_VIVADO_MODE}
+XILINX_VIVADO_BATCH = ${XILINX_VIVADO_ENV} ${XILINX_VIVADO_CMD} -mode batch
 
 # PCIe device and address
 PCIE_BDF ?= 01:00.0 # TODO: remove this and find the PCIE_BDF automatically
