@@ -15,7 +15,7 @@
 // NOTE: The HBM IP can be imported only with boards supporting it (au280, au50)
 // NOTE: For now, we use only one AXI port connected to all the HBM space.
 
-// TODO: update description
+// TODO: update description adding the AXILITE interfaces for the two HBM stacks
 
 `include "uninasoc_apb.svh"
 
