@@ -41,10 +41,7 @@ class SimplyV(metaclass=Singleton):
 		self.peripherals = self.mbus.get_peripherals()
 		self.buses = self.mbus.get_buses()
 
-	# simplyv
-	def generate_crossbars_configs(self):
-		return
-	
+
 	def create_linker_script(self, ld_file_name: str):
 		# Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
 		memories: list[Peripheral]= []
@@ -102,7 +99,6 @@ class SimplyV(metaclass=Singleton):
 		block_memory_range = 0
 		stack_start = 0
 		found = False
-
 
 		for mem in memories:
 			base_addr = mem.asgn_addr_ranges.get_base_addr()
@@ -227,7 +223,6 @@ class SimplyV(metaclass=Singleton):
 		# Write to file (overwriting if it exists)
 		with open(hal_hdr_file_name, 'w') as f:
 			f.write("\n".join(lines))
-
 		return
 
 	def update_sw_makefile(self, sw_makefile: str) -> None:
