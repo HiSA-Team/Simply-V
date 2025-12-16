@@ -11,10 +11,10 @@ For both flows, the default application loaded is `sw/SoC/examples/blinky`
 ## Load an ELF file
 
 To load a .elf file, a backend that supports the target platform and CPU is required. Currently, we support two backends:
-[OpenOCD](../../../sw/doc/OPENOCD_INSTALLATION.md) and XSDB (coming with Vivado). Both connect to port 3004, which is used for RISC-V 32-bit (64-bit support is not yet available).
+[OpenOCD](../../../sw/doc/OPENOCD_INSTALLATION.md) and XSDB (coming with Vivado). Both connect to port 3004 for all cores, except for `CORE_MICROBLAZEV_RV64`, which requires port 3005.
 For loading, we primarily use the GDB debugger, though XSDB is also a viable option.
 
-If `CORE_SELECTOR` is set to `CORE_MICROBLAZEV_RV32` or `CORE_MICROBLAZEV_RV64`, the .elf file can be loaded into memory and executed using:
+If `CORE_SELECTOR` is set to `CORE_MICROBLAZEV_RV32`, `CORE_DUAL_MICROBLAZEV_RV32`,  `CORE_MICROBLAZEV_RV64`, the .elf file can be loaded into memory and executed using:
 ``` bash
 make xsdb_run
 ```

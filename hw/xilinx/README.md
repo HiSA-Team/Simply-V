@@ -16,7 +16,7 @@ Check [hw/units/README.md](../units/README.md) for more info.
 
 To build Xilinx and custom IPs:
 ``` bash
-make ips
+make ips -j <jobs>
 make ips/<IP name>.xci # For a single IP
 ```
 
@@ -24,12 +24,26 @@ To build the bitstream just run:
 ``` bash
 make bistream
 ```
+Bitstream build parameters:
+
+| Parameter           | Description                                   | Default                    | Supported values          |
+|---------------------|-----------------------------------------------|----------------------------|---------------------------|
+| SYNTH_STRATEGY      | Vivado synthesis strategy                     | Flow_PerfOptimized_high    | Vivado-version compatible |
+| IMPL_STRATEGY       | Vivado implementation strategy                | Performance_ExtraTimingOpt | Vivado-version compatible |
+| XILINX_ILA          | Enable ILA for marked nets  (see below)       | 0                          | 0,1                       |
+| XILINX_ILA_CLOCK    | Clock for ILA probes                          | main_clk                   | Legal clock in the design |
 
 Once the build is completed, program target device running:
 ``` bash
-make start_hw_server # Only once after host boot and for older versions of Vivado
 make program_bitstream
 ```
+Program bitstream parameters:
+| Parameter                | Description               | Default         | Supported values |
+|--------------------------|---------------------------|-----------------|------------------|
+| XILINX_VIVADO_MODE       | Vivado `-mode` flag value | batch           | batch, tcl, gui  |
+| XILINX_PROJECT_BUILD_DIR | Target build directory    | hw/xilinx/build | Legal directory  |
+| XILINX_BITSTREAM         | Target bitstream file     | `${XILINX_PROJECT_BUILD_DIR}`/uninasoc.runs/impl_1/uninasoc.bit | Legal file path  |
+| XILINX_PROBE_LTX         | Target probe file         | `${XILINX_PROJECT_BUILD_DIR}`/uninasoc.runs/impl_1/uninasoc.ltx | Legal file path  |
 
 ## Directory Structure
 This tree is structured as follows:
