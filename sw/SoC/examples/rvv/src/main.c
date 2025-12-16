@@ -11,8 +11,8 @@
 #include <stdint.h>
 
 // Application Vector Length
-// NOTE: Maxium vector length for VLEN = 1024 and 64-bit elements
-//       MAXVL = VLEN * LMUL / SEW = 1024 * 8 / 8 = 1024
+// NOTE: Maxium vector length for VLEN = 2048 and 64-bit elements
+//       MAXVL = VLEN * LMUL / SEW = 2048 * 8 / 64 = 256
 #define AVL (256)
 
 // CSR utility macros
