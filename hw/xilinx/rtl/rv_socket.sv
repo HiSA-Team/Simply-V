@@ -1425,11 +1425,7 @@ module rv_socket # (
     // - CVA6 already has an AXI interface
     // - CVA6+Ara already has two AXI interfaces
     // - TODO: Rocket
-<<<<<<< HEAD
-    if ( !( CORE_SELECTOR inside {CORE_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA} ) ) begin : mem_convert
-=======
     if ( !( CORE_SELECTOR inside {CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA} ) ) begin : mem_convert
->>>>>>> main
 
         // Connect memory interfaces to socket output memory ports
         `ASSIGN_AXI_BUS( rv_socket_instr, core_instr_to_socket_instr );
