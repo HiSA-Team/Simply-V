@@ -136,7 +136,7 @@ if { $::env(HIGH_PERF_BUILD) == 1 } {
     set_property STEPS.PHYS_OPT_DESIGN.IS_ENABLED               true                      [get_runs impl_1]
     set_property STEPS.POST_ROUTE_PHYS_OPT_DESIGN.IS_ENABLED    true                      [get_runs impl_1]
     # Enable moere aggressive routing (longer runtime)
-    set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE              $::env(ROUTING_DIRECTIVE) [get_runs impl_1]
+    set_property STEPS.ROUTE_DESIGN.ARGS.DIRECTIVE              $::env(HIGH_PERF_ROUTING) [get_runs impl_1]
 }
 # Runtime optimized build
 # set_property "steps.place_design.args.directive"            "RuntimeOptimized"       [get_runs impl_1]
