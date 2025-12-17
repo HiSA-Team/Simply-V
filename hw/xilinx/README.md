@@ -28,10 +28,10 @@ Bitstream build parameters:
 
 | Parameter           | Description                                   | Default                    | Supported values          |
 |---------------------|-----------------------------------------------|----------------------------|---------------------------|
-| SYNTH_STRATEGY      | Vivado synthesis strategy                     | Flow_PerfOptimized_high    | Vivado-version compatible |
-| IMPL_STRATEGY       | Vivado implementation strategy                | Performance_ExtraTimingOpt | Vivado-version compatible |
+| SYNTH_STRATEGY      | Vivado synthesis strategy                     | Flow_PerfOptimized_high    | Vivado version compatible |
+| IMPL_STRATEGY       | Vivado implementation strategy                | Performance_ExtraTimingOpt | Vivado version compatible |
 | HIGH_PERF_BUILD     | Select high-performance of development build  | 0                          | 0,1                       |
-| HIGH_PERF_ROUTING   | Routing directiv for `HIGH_PERF_BUILD=1`      | HigherDelayCost            | Vivado-version compatible |
+| HIGH_PERF_ROUTING   | Routing directiv for `HIGH_PERF_BUILD=1`      | HigherDelayCost            | Vivado version compatible |
 | XILINX_ILA          | Enable ILA for marked nets  (see below)       | 0                          | 0,1                       |
 | XILINX_ILA_CLOCK    | Clock for ILA probes                          | main_clk                   | Legal clock in the design |
 
