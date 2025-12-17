@@ -118,7 +118,7 @@ int main() {
     printf("[RVV] AVL        : %lu\n\r", AVL);
     printf("[RVV] Returned VL: %lu\n\r", csr_value);
 
-    // Dump before vector configuration
+    // Dump after vector configuration
     vcsr_dump();
 
     // Allocate array in memory
