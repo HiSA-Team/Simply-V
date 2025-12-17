@@ -162,9 +162,13 @@ puts "    \[REPORT\] prj         [current_project]
     \[REPORT\] elapsed     [get_property stats.elapsed  [get_runs]]
     \[REPORT\] wns         [get_property stats.wns      [get_runs impl_1]]
     \[REPORT\] whs         [get_property stats.whs      [get_runs impl_1]]
-    \[PARAMETERS\] VIO_RESETN_DEFAULT = $::env(VIO_RESETN_DEFAULT)
-    \[PARAMETERS\] HIGH_PERF_BUILD    = $::env(HIGH_PERF_BUILD)
-    \[PARAMETERS\] HIGH_PERF_ROUTING  = $::env(HIGH_PERF_ROUTING)
-    \[PARAMETERS\] XILINX_ILA         = $::env(XILINX_ILA)
-    \[PARAMETERS\] XILINX_ILA_CLOCK   = $::env(XILINX_ILA_CLOCK)
+    \[PARAMETERS\] SOC_CONFIG          = $::env(SOC_CONFIG)
+    \[PARAMETERS\] XILINX_BOARD_PART   = $::env(XILINX_BOARD_PART)
+    \[PARAMETERS\] VIO_RESETN_DEFAULT  = $::env(VIO_RESETN_DEFAULT)
+    \[PARAMETERS\] CORE_SELECTOR       = $::env(CORE_SELECTOR)
+    \[PARAMETERS\] MAIN_CLOCK_FREQ_MHZ = $::env(MAIN_CLOCK_FREQ_MHZ)
+    \[PARAMETERS\] HIGH_PERF_BUILD     = $::env(HIGH_PERF_BUILD)
+    \[PARAMETERS\] HIGH_PERF_ROUTING   = $::env(HIGH_PERF_ROUTING)
+    \[PARAMETERS\] XILINX_ILA          = $::env(XILINX_ILA)
+    \[PARAMETERS\] XILINX_ILA_CLOCK    = $::env(XILINX_ILA_CLOCK)
 "
