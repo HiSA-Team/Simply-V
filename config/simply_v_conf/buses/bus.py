@@ -184,9 +184,9 @@ class Bus(Node):
 		pass
 	
 	@abstractmethod
-	def get_buses(self) -> list["Bus"]:
+	def get_buses(self, recursive: bool) -> list["Bus"] | None:
 		pass
 
 	@abstractmethod
-	def get_peripherals(self) -> list["Peripheral"]:
+	def get_peripherals(self, recursive: bool) -> list["Peripheral"]:
 		pass

@@ -1,16 +1,20 @@
 from buses.bus import Bus
+import textwrap
 import os
 
 class Crossbar_Template:
-	str_template: str = \
-	f"# This file is auto-generated with {os.path.basename(__file__)}\n\n" \
-	"# Import IP\n" \
-	"create_ip -name axi_crossbar -vendor xilinx.com -library ip -version 2.1 -module_name $::env(IP_NAME)\n" \
-	"# Configure IP\n" \
-	"set_property -dict [list " \
-	"{bus_configs}" \
-	" \\\n                         " \
-	"] [get_ips $::env(IP_NAME)]"
+
+	# using "dedent" to ignore leading spaces
+	str_template: str = textwrap.dedent("""\
+	// This file is auto-generated with {this_file}
+	# Import IP
+	create_ip -name axi_crossbar -vendor xilinx.com -library ip -version 2.1 -module_name $::env(IP_NAME)
+	# Configure IP
+	set_property -dict [list
+	{bus_configs}
+	 \\\n                         
+	] [get_ips $::env(IP_NAME)]
+	""")
 
 	def _compose_index (self, index_int: int):
 		index_string = ""
@@ -56,6 +60,10 @@ class Crossbar_Template:
 
 
 	def write_to_file(self, file_name: str) -> None:
-		formatted = self.str_template.format(bus_configs = self.bus_configs_str)
+		formatted = self.str_template.format(
+											this_file = os.path.basename(__file__),
+											bus_configs = self.bus_configs_str
+											)
+
 		with open(file_name, "w", encoding="utf-8") as f:
 			f.write(formatted)

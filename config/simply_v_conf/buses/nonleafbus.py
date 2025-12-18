@@ -39,6 +39,8 @@ class NonLeafBus(Bus):
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 							axi_data_width, clock_domain, clock_frequency)
 
+		# NonLeafBusses can expose clock to their parent (this is used to generate the svinc clock configuration)
+		self.CAN_GENERATE_CLOCK: bool = True
 		# It's important to call these functions only AFTER constructing the "super" "Bus" object
 		# because they internally use children_buses and children_peripherals, initialized
 		# with "_generate_children" in the "Bus" constructor
@@ -207,12 +209,16 @@ class NonLeafBus(Bus):
 			#and check if this Nonleafbus can reach them
 
 			nodes: list[Node] = []
-			peripherals = self.father.get_peripherals()
+			peripherals = self.father.get_peripherals(recursive=True)
 			nodes += cast(list[Node], peripherals)
 
-			buses = self.father.get_buses()
-			if(buses):
-				nodes += cast(list[Node], buses)
+			buses: list[Bus] = [self.father]
+			father_buses = self.father.get_buses(recursive=True)
+
+			if(father_buses):
+				buses.extend(father_buses)
+
+			nodes += cast(list[Node], buses)
 
 			#Check all the "asgn_addr_ranges" of the children nodes (Peripherals/Buses)
 			#if an addr_range is included in 1 of the ranges reachable from the loopback
@@ -233,26 +239,29 @@ class NonLeafBus(Bus):
 	# def check_clock_domains(self):
 	# 	pass
 	
-	def get_buses(self) -> list[Bus]:
+	def get_buses(self, recursive: bool) -> list[Bus] | None:
 
-		children_buses: list[Bus] = [self]
+		children_buses: list[Bus] = self._children_buses.copy() 
 
-		#Recursive call on all the buses
-		for bus in self._children_buses:
-			children_buses.extend(bus.get_buses())
-		
+		if(recursive):
+			#Recursive call on all the buses
+			for bus in self._children_buses:
+				recursive_children = bus.get_buses(recursive)
+				if(recursive_children):
+					children_buses.extend(recursive_children)
+			
 		return children_buses
 
 
-	def get_peripherals(self) -> list[Peripheral]:
+	def get_peripherals(self, recursive: bool) -> list[Peripheral]:
 		#NonLeaf buses need to	retrieve the peripherals attached to them +
 		#all the peripherals attached to their children buses
 		peripherals = self._children_peripherals.copy()
 
-		#Recursive call on all the buses
-		for bus in self._children_buses:
-			peripherals.extend(bus.get_peripherals())
-
+		if(recursive):
+			#Recursive call on all the buses
+			for bus in self._children_buses:
+				peripherals.extend(bus.get_peripherals(recursive))
 		
 		return peripherals
 

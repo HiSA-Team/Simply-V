@@ -1,5 +1,8 @@
 import re
+from templates.halheader_template import HALheader_Template
 from templates.crossbar_template import Crossbar_Template
+from templates.clocks_template import Clocks_Template
+from templates.ld_template import Ld_Template
 from peripherals.ddr4 import DDR4
 from peripherals.bram import Bram
 from templates.svinc_template import SVinc_Template 
@@ -38,131 +41,26 @@ class SimplyV(metaclass=Singleton):
 												axi_addr_width=self.PHYSICAL_ADDR_WIDTH, axi_data_width=self.XLEN)
 
 		self.mbus.init_configurations()
-		self.peripherals = self.mbus.get_peripherals()
-		self.buses = self.mbus.get_buses()
+		# get ALL the peripherals and buses on the configuration
+		self.peripherals = self.mbus.get_peripherals(recursive=True)
+		self.buses = [self.mbus]
+		tree_buses = self.mbus.get_buses(recursive=True)
+		if(tree_buses):
+			self.buses.extend(tree_buses)
 
+		self.devices: list[Peripheral] = []
+		self.memories: list[Peripheral] = []
 
-	def create_linker_script(self, ld_file_name: str):
-		# Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
-		memories: list[Peripheral]= []
-		peripherals: list[Peripheral] = []
-
-		# For each peripheral
 		for p in self.peripherals:
 			if(p.IS_A_MEMORY):
-				memories.append(p)
+				self.memories.append(p)
 			else:
-				peripherals.append(p)
-
-		# Create the Linker Script File
-		fd = open(ld_file_name,  "w")
-
-		# Write header
-		fd.write("/* This file is auto-generated with " + os.path.basename(__file__) + " */\n")
-
-		# Generate the memory blocks layout
-		fd.write("\n")
-		fd.write("/* Memory blocks */\n")
-		fd.write("MEMORY\n")
-		fd.write("{\n")
-
-		for block in memories:
-			dimension_dict = block.asgn_addr_ranges.get_range_dimensions(explicit=False)
-			for key, value in dimension_dict.items():
-				fd.write("\t" + key + " (xrw) : ORIGIN = 0x" + format(value[0], "016x") + ",  LENGTH = " + hex(value[2]) + "\n")
-
-		fd.write("}\n")
-
-		# Generate symbols from peripherals
-		fd.write("\n")
-		fd.write("/* Peripherals symbols */\n")
-		base_addr_string = ""
-		end_addr_string = ""
-
-		for peripheral in peripherals:
-			dimension_dict = peripheral.asgn_addr_ranges.get_range_dimensions(explicit=False)
-			for key, value in dimension_dict.items():
-				base_addr_string = "_peripheral_" + key + "_start = 0x" + format(value[0], "016x") + ";\n"
-				end_addr_string = "_peripheral_" + key + "_end = 0x" + format(value[0], "016x") + ";\n"
-				fd.write(base_addr_string)
-				fd.write(end_addr_string)
-
-
-		# Generate global symbols
-		fd.write("\n")
-		fd.write("/* Global symbols */\n")
-		# Vector table is placed at the beggining of the boot memory block.
-		# It is aligned to 256 bytes and is 32 words deep. (as described in risc-v spec)
-		# We need to find the memory that has as a base address the boot address
-		block_memory_base = 0
-		block_memory_name = ""
-		block_memory_range = 0
-		stack_start = 0
-		found = False
-
-		for mem in memories:
-			base_addr = mem.asgn_addr_ranges.get_base_addr()
-			if (base_addr == self.BOOT_MEMORY_BLOCK):
-				stack_start = mem.asgn_addr_ranges.get_end_addr()
-				block_memory_name = mem.FULL_NAME
-				found = True
-				break
+				self.devices.append(p)
 		
-		if(not found):
-			self.logger.simply_v_crash("Unable to find a BOOTABLE MEMORY"
-										f"(Boot starting address is {hex(self.BOOT_MEMORY_BLOCK)})")
-
-
-		vector_table_start = block_memory_base 
-		fd.write("_vector_table_start = 0x" + format(vector_table_start, "016x") + ";\n")
-		fd.write("_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + ";\n")
-
-		# The stack is allocated at the end of first memory block
-		# _stack_end can be user-defined for the application, as bss and rodata
-		# _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
-
-		# Note: The memory size specified in the config.csv file may differ from the
-		# physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
-		# Currently, the configuration process does not ensure alignment between config.csv
-		# and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
-		# 32KB for now, based on the current setting in `config.tcl`.
-
-
-		fd.write("_stack_start = 0x" + format(stack_start, "016x") + ";\n")
-
-		# Generate sections
-		# vector table and text sections are here defined.
-		# data, bss and rodata can be explicitly defined by the user application if required.
-		fd.write("\n")
-		fd.write("/* Sections */\n")
-		fd.write("SECTIONS\n")
-		fd.write("{\n")
-
-		# Vector Table section
-		fd.write("\t.vector_table _vector_table_start :\n")
-		fd.write("\t{\n")
-		fd.write("\t\tKEEP(*(.vector_table))\n")
-		fd.write("\t}> " + block_memory_name + "\n")
-
-		# Text section
-		fd.write("\n")
-		fd.write("\t.text :\n")
-		fd.write("\t{\n")
-		fd.write("\t\t. = ALIGN(32);\n")
-		fd.write("\t\t_text_start = .;\n")
-		fd.write("\t\t*(.text.handlers)\n")
-		fd.write("\t\t*(.text.start)\n")
-		fd.write("\t\t*(.text)\n")
-		fd.write("\t\t*(.text*)\n")
-		fd.write("\t\t. = ALIGN(32);\n")
-		fd.write("\t\t_text_end = .;\n")
-		fd.write("\t}> " + block_memory_name + "\n")
-
-		fd.write("}\n")
-
-		# Files closing
-		fd.write("\n")
-		fd.close()
+	def create_linker_script(self, ld_file_name: str):
+		# Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
+		template = Ld_Template(self.memories, self.BOOT_MEMORY_BLOCK)
+		template.write_to_file(ld_file_name)
 
 	def dump_reachability(self, dump_file_name: str):
 		fd = open(dump_file_name,  "w")
@@ -196,35 +94,12 @@ class SimplyV(metaclass=Singleton):
 				str_of_reachables = ",".join(list_of_reachables)
 				#write row
 				fd.write(f"{key},{hex(dim_dict[key][0])},{hex(dim_dict[key][1]-1)},{str_of_reachables}\n")
+
 	
-	def create_hal_header(self, hal_hdr_file_name: str) -> None: 
-		# Extract base name and make it a valid macro name for the include guard
-		base_filename = os.path.basename(hal_hdr_file_name).replace('.', '_').upper()
-		include_guard = f"__{base_filename}__"
-
-		# Prepare the lines to write
-		lines = [
-			"// THIS FILE IS AUTOGENERATED, DON'T TOUCH!",
-			f"#ifndef {include_guard}",
-			f"#define {include_guard}",
-			"",
-		]
-
-		# For each peripheral allocated in the configuration
-		# check if the peripheral supports an HAL driver
-		for p in self.peripherals:
-			if(p.HAL_DRIVER):
-				macro_name = f"{p.BASE_NAME}_IS_ENABLED"
-				lines.append(f"#define {macro_name} 1")
-
-		lines.append("")
-		lines.append(f"#endif // {include_guard}")
-
-		# Write to file (overwriting if it exists)
-		with open(hal_hdr_file_name, 'w') as f:
-			f.write("\n".join(lines))
-		return
-
+	def create_hal_header(self, hal_hdr_file_name: str) -> None:
+		template = HALheader_Template(self.peripherals, self.devices)
+		template.write_to_file(hal_hdr_file_name)
+		
 	def update_sw_makefile(self, sw_makefile: str) -> None:
 		# read mk file
 		sw_makefile_path = Path(sw_makefile)
@@ -244,16 +119,22 @@ class SimplyV(metaclass=Singleton):
 		sw_makefile_path.write_text(new_text)
 
 
-	def config_bus(self, target_bus: str, crossbar_file: str, svinc_file: str) -> None:
+	def config_bus(self, target_bus: str, outputs: list[str]) -> None:
 		for bus in self.buses:
 			if bus.FULL_NAME == target_bus.upper():
-				svinc_template = SVinc_Template(bus)
 				crossbar_template = Crossbar_Template(bus)
-				svinc_template.write_to_file(svinc_file)
-				crossbar_template.write_to_file(crossbar_file)
+				crossbar_template.write_to_file(outputs[0])
+				svinc_template = SVinc_Template(bus)
+				svinc_template.write_to_file(outputs[1])
+				# only NonLeafBus need to configure the clock svinc file
+				# MBUS need to generate the clocks template even if it doesn't generate clocks
+				# for a "father" bus
+				if bus.CAN_GENERATE_CLOCK or bus.FULL_NAME == "MBUS":
+					clock_template = Clocks_Template(bus)
+					clock_template.write_to_file(outputs[2])
 				return
 
-		self.logger.simply_v_error(f"{target_bus} wasn't configured (crossbar and svinc gen.) because it wasn't found")
+		raise ValueError(f"{target_bus} wasn't configured (crossbar and svinc gen.) because it wasn't found")
 
 
 	def config_xilinx_makefile(self, xilinx_makefile: str) -> None:

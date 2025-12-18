@@ -7,15 +7,17 @@
 #ifndef XLNX_GPIO_OUT_H
 #define XLNX_GPIO_OUT_H
 
+
 #include <stdint.h>
 #include "uninasoc_conf.h"
 
 // https://docs.amd.com/v/u/en-US/pg144-axi-gpio
 
+
 // GPIO is configured to use just one channel (so all the "2" registers like GPIO2_DATA are unused)
 
 // Base address
-#define GPIO_OUT_BASEADDR ((uintptr_t)_peripheral_GPIO_out_start)
+#define GPIO_OUT_BASEADDR ((uintptr_t)_peripheral_GPIOOUT_start)
 
 // The GPIO OUT peripheral has 16 output pins
 // every bit in the "DATA" register controls the output of each pins

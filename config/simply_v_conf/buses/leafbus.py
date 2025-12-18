@@ -18,6 +18,8 @@ class LeafBus(Bus):
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 						axi_data_width, clock_domain, clock_frequency)
 
+		self.CAN_GENERATE_CLOCK: bool = False
+
 
 	#Leaf buses just creates Peripherals based on all the "RANGES" attributes
 	def _generate_children(self):
@@ -46,10 +48,10 @@ class LeafBus(Bus):
 		return
 	
 	#Leaf bus don't support childre_buses so just return
-	def get_buses(self) -> list[Bus]:
-		return [self]
+	def get_buses(self, recursive: bool) -> list[Bus] | None:
+		return None
 
 	#Leaf bus just need to return their peripherals
-	def get_peripherals(self) -> list["Peripheral"]:
-		return self._children_peripherals
+	def get_peripherals(self, recursive: bool) -> list["Peripheral"]:
+		return self._children_peripherals.copy()
 

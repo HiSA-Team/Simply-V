@@ -40,9 +40,9 @@ package uninasoc_pkg;
     // AXI Lite peripheral bus //
     /////////////////////////////
 
-    // Always assume 1 master
     // Peripheral bus slaves
     localparam int unsigned PBUS_NUM_MI = `PBUS_NUM_MI;
+    localparam int unsigned PBUS_NUM_SI = `PBUS_NUM_SI;
 
     //////////////////////////
     // High-performance bus //

@@ -12,3 +12,4 @@ class DDR4(Peripheral):
 		super().__init__(base_name, addr_ranges_list, clock_domain, clock_frequency)
 		self.IS_A_MEMORY = True
 		self.CHANNEL = channel
+		self.CAN_GENERATE_CLOCK = True

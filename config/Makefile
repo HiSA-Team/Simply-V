@@ -14,6 +14,7 @@ INPUT_SYSTEM_CSV ?= $(CONFIG_ROOT)/configs/common/config_system.csv
 # Generated from "config_mbus"
 OUTPUT_MBUS_CROSSBAR := $(XILINX_ROOT)/ips/common/xlnx_mbus_crossbar/config.tcl
 OUTPUT_MBUS_SVINC    := $(XILINX_ROOT)/rtl/mbus_buses.svinc
+OUTPUT_MBUS_CLK_ASSIGNMENTS := $(XILINX_ROOT)/rtl/uninasoc_clk_assignments.svinc
 
 # Generated from "config_pbus"
 OUTPUT_PBUS_CROSSBAR := $(XILINX_ROOT)/ips/common/xlnx_pbus_crossbar/config.tcl
@@ -22,6 +23,7 @@ OUTPUT_PBUS_SVINC    := $(XILINX_ROOT)/rtl/pbus_buses.svinc
 # Generated from "config_hbus"
 OUTPUT_HBUS_CROSSBAR := $(XILINX_ROOT)/ips/hpc/xlnx_hbus_crossbar/config.tcl
 OUTPUT_HBUS_SVINC    := $(XILINX_ROOT)/rtl/hbus_buses.svinc
+OUTPUT_HBUS_CLK_ASSIGNMENTS := $(XILINX_ROOT)/rtl/hbus_clk_assignments.svinc
 
 # Generated from "config_sw"
 OUTPUT_HAL_CONF := $(SW_ROOT)/SoC/lib/uninasoc/inc/uninasoc_conf.h
@@ -39,9 +41,6 @@ OUTPUT_BRAM_0 := $(XILINX_IPS_ROOT)/common/xlnx_bram_0/config.tcl
 
 # Generated from "config_dump"
 OUTPUT_DUMP := $(CONFIG_ROOT)/dump.csv
-
-################ NEED TO FIND APPROPRIATE FLOW FOR THIS#####################
-OUTPUT_CLK_ASSIGNMENTS := $(XILINX_ROOT)/rtl/uninasoc_clk_assignments.svinc
 
 
 ###########################
@@ -73,9 +72,9 @@ config_check:
 ###     		 BUS TARGETS (mbus, pbus, hbus)			 ###
 ############################################################
 
-config_mbus: OUTPUT_FILES := $(OUTPUT_MBUS_CROSSBAR) $(OUTPUT_MBUS_SVINC)
+config_mbus: OUTPUT_FILES := $(OUTPUT_MBUS_CROSSBAR) $(OUTPUT_MBUS_SVINC) $(OUTPUT_MBUS_CLK_ASSIGNMENTS)
 config_pbus: OUTPUT_FILES := $(OUTPUT_PBUS_CROSSBAR) $(OUTPUT_PBUS_SVINC)
-config_hbus: OUTPUT_FILES := $(OUTPUT_HBUS_CROSSBAR) $(OUTPUT_HBUS_SVINC)
+config_hbus: OUTPUT_FILES := $(OUTPUT_HBUS_CROSSBAR) $(OUTPUT_HBUS_SVINC) $(OUTPUT_HBUS_CLK_ASSIGNMENTS)
 
 config_%bus:
 	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ --target_bus $*bus $(CMD_ARGS) $(OUTPUT_FILES)

@@ -11,6 +11,7 @@
 #include "uninasoc_conf.h"
 
 // https://docs.amd.com/v/u/en-US/pg079-axi-timer
+
 // Base address
 #define TIM0_BASEADDR ((uintptr_t)_peripheral_TIM0_start)
 #define TIM1_BASEADDR ((uintptr_t)_peripheral_TIM1_start)

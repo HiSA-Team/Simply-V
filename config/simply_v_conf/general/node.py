@@ -35,6 +35,7 @@ class Node(ABC):
 		self.FULL_NAME = asgn_addr_ranges.FULL_NAME
 		self.CLOCK_DOMAIN: str = clock_domain
 		self.CLOCK_FREQUENCY: int = clock_frequency
+		self.CAN_GENERATE_CLOCK: bool = False
 
 	def __str__(self):
 		return (f"Node(BASE_NAME='{self.BASE_NAME}', FULL_NAME='{self.FULL_NAME}', "

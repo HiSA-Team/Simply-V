@@ -31,6 +31,10 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		# init NonLeafBus object
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 				axi_data_width, clock_domain, clock_frequency, None)
+
+		# MBUS is special, is a NonLeafBus but doesn't generate
+		# any clock for a "father" bus
+		self.CAN_GENERATE_CLOCK = False
 	
 	def init_configurations(self):
 		# sanitize all the addr_ranges

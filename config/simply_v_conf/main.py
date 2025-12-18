@@ -56,12 +56,13 @@ def main(logger):
 		return
 
 	if mode in ("config_mbus", "config_pbus", "config_hbus"):
-		if len(outputs) != 2:
-			raise ValueError(f"{mode} expects 2 output files, got {len(outputs)}")
+		if (len(outputs) != 2) and (len(outputs) != 3):
+			raise ValueError(f"{mode} expects 2 or 3 output files, got {len(outputs)}")
 
 		# first output is BUS crossbar
 		# second output is BUS SVINC
-		system.config_bus(args.target_bus, outputs[0], outputs[1])
+		# third output (optional) is BUS CLOCK SVINC
+		system.config_bus(args.target_bus, outputs)
 		logger.simply_v_info(f"[CONFIG] Generated {args.target_bus} configs.")
 		return
 

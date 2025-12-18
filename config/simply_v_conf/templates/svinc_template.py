@@ -1,32 +1,36 @@
-import os
 from buses.bus import Bus
+import os
+import textwrap
 
 class SVinc_Template:
-	str_template: str = \
-	f"// This file is auto-generated with {os.path.basename(__file__)}\n\n" \
-	"/////////////////////////////////////////\n" \
-	"// Buses declaration and concatenation //\n" \
-	"/////////////////////////////////////////\n" \
-	"\n" \
-	"/////////////////\n" \
-	"// AXI Masters //\n" \
-	"/////////////////\n" \
-	"{masters_str}" \
-	"\n" \
-	"/////////////////\n" \
-	"// AXI Slaves  //\n" \
-	"/////////////////\n" \
-	"{slaves_str}" \
-	"\n" \
-	"//////////////////////////////////\n" \
-	"// Concatenate AXI master buses //\n" \
-	"//////////////////////////////////\n" \
-	"{concatenated_masters}" \
-	"\n" \
-	"/////////////////////////////////\n" \
-	"// Concatenate AXI slave buses //\n" \
-	"/////////////////////////////////\n" \
-	"{concatenated_slaves}"
+	# using "dedent" to ignore leading spaces
+	str_template: str = textwrap.dedent("""\
+	// This file is auto-generated with {this_file}
+
+	/////////////////////////////////////////
+	// Buses declaration and concatenation //
+	/////////////////////////////////////////
+
+	/////////////////
+	// AXI Masters //
+	/////////////////
+	{masters_str}
+
+	/////////////////
+	// AXI Slaves  //
+	/////////////////
+	{slaves_str}
+
+	//////////////////////////////////
+	// Concatenate AXI master buses //
+	//////////////////////////////////
+	{concatenated_masters}
+
+	/////////////////////////////////
+	// Concatenate AXI slave buses //
+	/////////////////////////////////
+	{concatenated_slaves}
+	""")
 
 	# Get the correct bus suffix depending on bus name
 	def _get_width_params(self, bus: Bus) -> str:
@@ -121,9 +125,11 @@ class SVinc_Template:
 
 	
 	def write_to_file(self, file_name: str) -> None:
-		formatted = self.str_template.format(masters_str = self.declare_masters_str, \
-											slaves_str = self.declare_slaves_str, \
-											concatenated_masters = self.concat_masters_str, \
+		formatted = self.str_template.format(
+											this_file = os.path.basename(__file__),
+											masters_str = self.declare_masters_str,
+											slaves_str = self.declare_slaves_str,
+											concatenated_masters = self.concat_masters_str,
 											concatenated_slaves = self.concat_slaves_str
 											)
 		with open(file_name, "w", encoding="utf-8") as f:

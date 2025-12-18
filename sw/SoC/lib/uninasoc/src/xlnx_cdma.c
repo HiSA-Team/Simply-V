@@ -4,6 +4,11 @@
 //  Original Copyright (C) Xilinx, Inc. / AMD
 //  SPDX-License-Identifier: MIT
 
+
+
+#include "uninasoc.h"
+
+#ifdef CDMA_IS_ENABLED
 #include "xlnx_cdma.h"
 #include <stdint.h>
 #include "tinyIO.h"
@@ -187,3 +192,5 @@ void XAxiCdma_IntrDisable(XAxiCdma *InstancePtr, uint32_t Mask) {
     RegValue &= ~(Mask & XAXICDMA_XR_IRQ_ALL_MASK);
     XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET, RegValue);
 }
+
+#endif
