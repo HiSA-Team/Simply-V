@@ -1,4 +1,5 @@
 import re
+from buses.nonleafbus import NonLeafBus
 from templates.halheader_template import HALheader_Template
 from templates.crossbar_template import Crossbar_Template
 from templates.clocks_template import Clocks_Template
@@ -9,7 +10,7 @@ from templates.svinc_template import SVinc_Template
 from pathlib import Path
 from factories.buses_factory import Buses_Factory
 from peripherals.peripheral import Peripheral
-import os
+from peripherals.uart import Uart
 from .singleton import Singleton
 from buses.mbus import MBus
 from .logger import Logger
@@ -127,9 +128,7 @@ class SimplyV(metaclass=Singleton):
 				svinc_template = SVinc_Template(bus)
 				svinc_template.write_to_file(outputs[1])
 				# only NonLeafBus need to configure the clock svinc file
-				# MBUS need to generate the clocks template even if it doesn't generate clocks
-				# for a "father" bus
-				if bus.CAN_GENERATE_CLOCK or bus.FULL_NAME == "MBUS":
+				if isinstance(bus, NonLeafBus):
 					clock_template = Clocks_Template(bus)
 					clock_template.write_to_file(outputs[2])
 				return
@@ -170,53 +169,42 @@ class SimplyV(metaclass=Singleton):
 					content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
 
 		makefile_path.write_text(content)
-	
-	def config_clock_domains(self, xilinx_makefile: str) -> None:
-		return
-		
-	# need to generalize this to all the channels
-	def config_ddr4_caches(self, ddr4_ch_0_cache: str) -> None:
+
+
+	def config_xilinx_clock_domains(self, file_name: str) -> None:
+		children_nodes = self.mbus.get_nodes()
+		prefix = "_HAS_CLOCK_DOMAIN"
+		makefile_variable = ["MAIN_CLOCK_DOMAIN"]
+
+		# construct clock domain list
+		for n in children_nodes:
+			if n.CLOCK_DOMAIN != self.mbus.CLOCK_DOMAIN:
+				makefile_variable.append(n.FULL_NAME + prefix)
+
+		makefile_variable_str = " ".join(makefile_variable)
+
+		output_mk_file = Path(file_name)
+		content = output_mk_file.read_text()
+
+		# Replace RANGE_CLOCK_DOMAINS
+		pattern_range = rf"^RANGE_CLOCK_DOMAINS\s*\?=\s*.*$"
+		replacement_range = f"RANGE_CLOCK_DOMAINS ?= {makefile_variable_str}"
+		content = re.sub(pattern_range, replacement_range, content, flags=re.MULTILINE)
+
+		# Replace MAIN_CLOCK_FREQ_MHZ
+		pattern_freq = rf"^MAIN_CLOCK_FREQ_MHZ\s*\?=\s*.*$"
+		replacement_freq = f"MAIN_CLOCK_FREQ_MHZ ?= {self.mbus.CLOCK_FREQUENCY}"
+		content = re.sub(pattern_freq, replacement_freq, content, flags=re.MULTILINE)
+
+		output_mk_file.write_text(content)
+
+	def config_peripherals_ips(self, files: list[str]) -> None:
 		for p in self.peripherals:
 			if isinstance(p, DDR4):
-				if (p.CHANNEL == 0):
-					cache_path = Path(ddr4_ch_0_cache)
-					text = cache_path.read_text()
-
-					base_hex = f"0x{p.get_base_addr():x}"
-					# minus 1 because get_end_addr returns the first address OUTSIDE the range
-					high_hex = f"0x{p.get_end_addr()-1:x}"
-
-					text = re.sub(
-						r"(set CACHE_BASEADDR)\s*\{[^}]+\}",
-						rf"\1 {{{base_hex}}}",
-						text
-					)
-
-					text = re.sub(
-						r"(set CACHE_HIGHADDR)\s*\{[^}]+\}",
-						rf"\1 {{{high_hex}}}",
-						text
-					)
-
-					cache_path.write_text(text)
-
-	# need to generalize this to different brams not only bram 0
-	def config_brams(self, bram_0_file: str) -> None:
-		bram_0_path = Path(bram_0_file)
-
-		for p in self.peripherals:
+				p.config_ip(files[0])
 			if isinstance(p, Bram):
-				length = 0
-				if (p.FULL_NAME == "BRAM_0"):
-					# generalize to many ranges to compute the bram space address length
-					dimensions = p.asgn_addr_ranges.get_range_dimensions(explicit=True)
-					for values in dimensions.values():
-						length += values[2]
-					# divide for XLEN_bytes
-					bram_depth = int(length / (self.XLEN / 8))
-					content = bram_0_path.read_text()
-					pattern = r"(set\s+bram_depth)\s*\{[^}]+\}"
-					replacement = rf"\1 {{{bram_depth}}}"
-
-					updated = re.sub(pattern, replacement, content)
-					bram_0_path.write_text(updated)
+				# divide for XLEN_bytes
+				xlen_bytes = int(self.XLEN / 8)
+				p.config_ip(files[1], xlen_bytes=xlen_bytes)
+			if isinstance(p, Uart):
+			 	p.config_ip(files[2])

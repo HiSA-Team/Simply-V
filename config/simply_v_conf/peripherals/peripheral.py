@@ -11,3 +11,6 @@ class Peripheral(Node):
 		super().__init__(base_name, asgn_addr_ranges, clock_domain, clock_frequency)
 
 		# need to check for DDR clock
+	
+	def config_ip(self, root_path: str, **kwargs) -> None:
+		return

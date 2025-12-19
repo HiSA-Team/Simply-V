@@ -7,7 +7,7 @@
 # it also defines internal function (the functions starting with "_") that expose
 # common logic and attributes used from both the "Composite" and "Leaf" classes
 
-from typing import Callable
+from typing import Callable, cast
 from general.addr_range import Addr_Ranges
 from general.node import Node
 from peripherals.peripheral import Peripheral
@@ -157,6 +157,13 @@ class Bus(Node):
 			f"children={children_str}"
 			f")"
 		)
+	
+	# Returns all nodes attached to a bus
+	def get_nodes(self) -> list[Node]:
+		children_nodes = cast(list[Node], self.get_buses(recursive=False))
+		children_nodes += cast(list[Node], self.get_peripherals(recursive=False))
+		return children_nodes
+
 
 	# Function used by Buses to create childrens (both Peripherals and Buses)
 	@abstractmethod

@@ -1,4 +1,4 @@
-// This file is auto-generated with declare_and_concat_buses_rtl.py
+// This file is auto-generated with svinc_template.py
 
 /////////////////////////////////////////
 // Buses declaration and concatenation //
@@ -7,19 +7,27 @@
 /////////////////
 // AXI Masters //
 /////////////////
+`DECLARE_AXI_BUS(s_acc_to_HBUS, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
+`DECLARE_AXI_BUS(MBUS_to_HBUS, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
+
 
 /////////////////
 // AXI Slaves  //
 /////////////////
+`DECLARE_AXI_BUS(HBUS_to_DDR4CH_0, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
+`DECLARE_AXI_BUS(HBUS_to_MBUS, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
+
 
 //////////////////////////////////
 // Concatenate AXI master buses //
 //////////////////////////////////
 `DECLARE_AXI_BUS_ARRAY(HBUS_masters, HBUS_NUM_SI, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
-`CONCAT_AXI_MASTERS_ARRAY0(HBUS_masters)
+`CONCAT_AXI_MASTERS_ARRAY2(HBUS_masters, s_acc_to_HBUS, MBUS_to_HBUS)
+
 
 /////////////////////////////////
 // Concatenate AXI slave buses //
 /////////////////////////////////
 `DECLARE_AXI_BUS_ARRAY(HBUS_slaves, HBUS_NUM_MI, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH)
-`CONCAT_AXI_SLAVES_ARRAY0(HBUS_slaves)
+`CONCAT_AXI_SLAVES_ARRAY2(HBUS_slaves, HBUS_to_DDR4CH_0, HBUS_to_MBUS)
+

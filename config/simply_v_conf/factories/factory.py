@@ -40,17 +40,25 @@ class Factory(metaclass=SingletonABCMeta):
 
 		self.ALREADY_CREATED.add(full_name)
 
-	# Function used to extract the BASE_NAME from a FULL_NAME enforcing the same naming convention
+	# Function used to extract the BASENAME from a FULLNAME enforcing the same naming convention
 	# for each node
 	def _extract_base_name(self, full_name: str) -> str:
-		pattern = re.compile(r"^(?P<prefix>[A-Za-z0-9]+)")
+		return full_name.split("_")[0].upper()
 	
-		match = pattern.match(full_name)
-		if match:
-			base_name = match.group("prefix")
-			return base_name.upper() #upper just in case, to have uniform names
-		else:
-			raise ValueError(f"There is something wrong with {full_name} format name")
+
+	def _extract_id(self, full_name: str) -> int | None:
+		tmp_name = full_name.split("_")
+		id = None
+		try:
+			if (len(tmp_name) == 2):
+				id = int(tmp_name[1])
+			# Erroneous use of "_" in the BASENAME part of the name
+			if (len(tmp_name) > 2):
+				raise Exception
+		except:
+			raise ValueError(f"There is something wrong with {full_name} format name (BASENAME_id format enforced)")
+		
+		return id
 
 	# Function used to extract the clock frequency value from a clock domain name enforcing the same naming convention
 	# for each clock domain

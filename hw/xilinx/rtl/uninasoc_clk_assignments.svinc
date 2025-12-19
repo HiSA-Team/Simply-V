@@ -1,33 +1,35 @@
-// This file is auto-generated with declare_and_assign_clocks_rtl.py
+// This file is auto-generated with clocks_template.py
 
 /////////////////////////////////////////
 // Clocks declaration and assignments  //
 /////////////////////////////////////////
 
-assign main_clk = clk_20MHz;
-assign main_rstn = rstn_20MHz;
-logic clk_300MHz;
-logic rstn_300MHz;
 
-logic BRAM_clk;
-assign BRAM_clk = clk_20MHz;
-logic BRAM_rstn;
-assign BRAM_rstn = rstn_20MHz;
-logic DM_mem_clk;
-assign DM_mem_clk = clk_20MHz;
-logic DM_mem_rstn;
-assign DM_mem_rstn = rstn_20MHz;
+
+assign MBUS_clk = clk_MBUS_100MHz;
+assign MBUS_rstn = rstn_MBUS_100MHz;
+
 logic PBUS_clk;
-assign PBUS_clk = clk_10MHz;
+assign PBUS_clk = clk_MBUS_250MHz;
 logic PBUS_rstn;
-assign PBUS_rstn = rstn_10MHz;
+assign PBUS_rstn = rstn_MBUS_250MHz;
+logic BRAM_0_clk;
+assign BRAM_0_clk = clk_MBUS_100MHz;
+logic BRAM_0_rstn;
+assign BRAM_0_rstn = rstn_MBUS_100MHz;
+logic DMmem_clk;
+assign DMmem_clk = clk_MBUS_100MHz;
+logic DMmem_rstn;
+assign DMmem_rstn = rstn_MBUS_100MHz;
 logic CDMA_clk;
-assign CDMA_clk = clk_20MHz;
+assign CDMA_clk = clk_MBUS_100MHz;
 logic CDMA_rstn;
-assign CDMA_rstn = rstn_20MHz;
+assign CDMA_rstn = rstn_MBUS_100MHz;
+logic HlsControl_clk;
+assign HlsControl_clk = clk_DDR4CH0_300MHz;
+logic HlsControl_rstn;
+assign HlsControl_rstn = rstn_DDR4CH0_300MHz;
 logic PLIC_clk;
-assign PLIC_clk = clk_20MHz;
+assign PLIC_clk = clk_MBUS_100MHz;
 logic PLIC_rstn;
-assign PLIC_rstn = rstn_20MHz;
-
-logic HBUS_clk;
+assign PLIC_rstn = rstn_MBUS_100MHz;

@@ -5,13 +5,13 @@ Each Node (peripheral or bus) exposes three distinct name categories.
 ### 1. BASE_NAME
 
 - Identifies the type or family of the node.
-- Case insensitive
-- Composed ONLY of alphanumeric characters.
+- Enforced as UPPERCASE from the configuration in order to implement robust checks.
+- Composed of every character except "_".
 
 Examples:
 
 - `TIM` for a timer peripheral
-- `DDR4` for a ddr memory interface
+- `DR4CH` for a ddr memory interface
 
 Used to group multiple instances of the same kind and to create the correct objects inside "factories".
 Think of it like the "type" of a particular node.
@@ -21,28 +21,28 @@ Think of it like the "type" of a particular node.
 - Specified in the `RANGE_NAMES` in the `.csv` files to refer to a particular istance of peripheral or bus 
 - Unique name of the node within the global system.
 - Duplicate FULL_NAMEs are forbidden.
-- Uses the format
+- Case insensitive. 
+- Uses the format:
 
-        {BASE_NAME}{s*}
+        {BASE_NAME}_{id}
 
-Where `s` is a "separator" character (basically every non alphanumeric character) for example `_`
-and `*` is a wildcard string, so anything that can be used to differentiate two nodes of the
-same type, ex. `TIM_0` and `TIM_1` or `TIM_A` and `TIM_B`.
-`s` can be omitted if there is a single node of type `BASE_NAME` in the full configuration, for example
-since MBUS node is always a single istance its FULL_NAME is also `MBUS`.
-`*` can optionally be empty, for example `TIM` and `TIM_` are effectively 2 different FULL_NAMEs.
-The only exceptions are `DDR4` nodes.
-For a DDR node the format expected is
+Where `id` is a numeric identifier (used as channel number for DDR4, ex. DDR4CH_0).
+`id` can be omitted if there aren't multiple istances of the same "FULL_NAME" in the configuration.
 
-    {BASE_NAME}{s*}_{id}
-
-where `id` MUST be a number and is the "channel" identifier.
-examples: `DDR4_CH_0` or `DDR4_CH_1`.
-
-FULL_NAMEs are assumed to be used in the generation of every file in the configuration, so keep in mind
+Since the "BASE_NAME" part extracted from a "FULL_NAME" is internally enforced as an UPPERCASE string from the
+configuration flow, the "FULL_NAME" specified in the .csv config files of buses is case insensitive but since
+FULL_NAMEs are assumed to be used in the generation of every file in the configuration, keep in mind
 that when specifying a particular node with a FULL_NAME, that name will be used to refer to that particular node in the context of the various configuration files (as it is, or as a prefix/suffix based on the particular configuration file).
 So every "sw" or "hw" file that depends on generated files, will be influenced by the particular FULL_NAME given
 to a node in the configuration flow.
+
+for example:
+    specifying "HlsControl" as a FULL_NAME leads to these kind of definitions in the HAL header
+    (keep in mind that this potentially apply to all configuration files generated)
+
+    #define _peripheral_HlsControl_start  0x0000000000040000
+    #define _peripheral_HlsControl_end    0x0000000000050000
+
 
 ### 3. RANGE_NAME
 

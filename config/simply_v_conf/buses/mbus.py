@@ -16,12 +16,12 @@ from general.singleton import SingletonABCMeta
 class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 	env_global = Env.get_instance()
 
-	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("BRAM", "DM", "PLIC")
+	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("BRAM", "DMMEM", "PLIC")
 	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("PBUS",)
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
 	if env_global.get_soc_profile()=="hpc":
-		LEGAL_PERIPHERALS = LEGAL_PERIPHERALS + ("DDR4", "HLS", "CDMA")
+		LEGAL_PERIPHERALS = LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL", "CDMA")
 		LEGAL_BUSES = LEGAL_BUSES + ("HBUS",)
 
 
@@ -32,9 +32,6 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 				axi_data_width, clock_domain, clock_frequency, None)
 
-		# MBUS is special, is a NonLeafBus but doesn't generate
-		# any clock for a "father" bus
-		self.CAN_GENERATE_CLOCK = False
 	
 	def init_configurations(self):
 		# sanitize all the addr_ranges
@@ -49,7 +46,7 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 	def custom_clocks_checks(self):
 		#Add MBus custom checks
 		failed_checks = []
-		peripherals_to_check = ["PLIC", "BRAM", "DM"]
+		peripherals_to_check = ["PLIC", "BRAM", "DMMEM"]
 		for p in peripherals_to_check:
 			ret = self.clock_domains.is_in_domain(p, self.CLOCK_DOMAIN)
 			if(not ret):

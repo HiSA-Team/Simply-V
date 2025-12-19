@@ -42,19 +42,19 @@ class Peripherals_Factory(Factory):
 		# register creation to check for duplicates
 		self._register_creation(full_name)
 
-
 		# extract informations and create "Addr_Ranges" to inject in the peripheral object
-		base_name = self._extract_base_name(full_name)
 		clock_frequency = self._extract_clock_frequency(clock_domain)
+		base_name = self._extract_base_name(full_name)
+		id = self._extract_id(full_name)
 		addr_ranges = Addr_Ranges(full_name, base_addr, addr_width)
-
 
 		# Create concrete peripheral
 		match base_name:
 			case "TIM":
 				return Timer(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "DDR4":
-				channel = self._extract_ddr4_channel(full_name)
+			case "DDR4CH":
+				# for ddr the id is the channel number
+				channel = id
 				if channel not in self.DDR_CHANNELS:
 					raise ValueError("Unsupported DDR4 channel for the current board configuration")
 				return DDR4(base_name, addr_ranges, clock_domain, clock_frequency, channel)
@@ -66,11 +66,11 @@ class Peripherals_Factory(Factory):
 				return Uart(base_name, addr_ranges, clock_domain, clock_frequency)
 			case "BRAM":
 				return Bram(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "DM":
+			case "DMMEM":
 				return Debug_Module(base_name, addr_ranges, clock_domain, clock_frequency)
 			case "PLIC":
 				return PLIC(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "HLS":
+			case "HLSCONTROL":
 				return HLS(base_name, addr_ranges, clock_domain, clock_frequency)
 			case "CDMA":
 				return CDMA(base_name, addr_ranges, clock_domain, clock_frequency)

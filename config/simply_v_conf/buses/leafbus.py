@@ -18,7 +18,7 @@ class LeafBus(Bus):
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 						axi_data_width, clock_domain, clock_frequency)
 
-		self.CAN_GENERATE_CLOCK: bool = False
+		self.IS_CLOCK_GENERATOR: bool = False
 
 
 	#Leaf buses just creates Peripherals based on all the "RANGES" attributes

@@ -7,7 +7,7 @@
 # This class implements the "LOOPBACK" functionality that a bus can use to address ranges
 # that are attached to the "father" bus
 
-from typing import Callable, cast
+from typing import Callable, Optional, cast
 from general.node import Node
 from general.clock_domain import  Clock_Domain
 from general.addr_range import Addr_Ranges
@@ -26,21 +26,28 @@ class NonLeafBus(Bus):
 	LEGAL_BUSES = ()
 
 	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
-				axi_data_width: int, clock_domain: str, clock_frequency: int, father: "NonLeafBus"):
+				axi_data_width: int, clock_domain: str, clock_frequency: int, father: Optional["NonLeafBus"]):
 
 		self.father = father 
 		self._children_buses: list[Bus] = []
 		self.clock_domains: Clock_Domain
 		self.loopback_ranges: Addr_Ranges
-		self.LOOPBACK:bool = data_dict["LOOPBACK"]
+		self.LOOPBACK: bool = data_dict["LOOPBACK"]
 		self._RANGE_CLOCK_DOMAINS: list[str] = data_dict["RANGE_CLOCK_DOMAINS"].copy()
 
 		# init Bus object
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 							axi_data_width, clock_domain, clock_frequency)
 
-		# NonLeafBusses can expose clock to their parent (this is used to generate the svinc clock configuration)
-		self.CAN_GENERATE_CLOCK: bool = True
+		# NonLeafBuses can expose clock to their parent (this is used to generate the svinc clock configuration)
+		# if the clock domain used in the configuration contains the name of the father bus
+		# then this bus isn't generating a clock but it's taking a clock directly from the father
+
+		# MBUS has "IS_CLOCK_GENERATOR" always to true
+		self.IS_CLOCK_GENERATOR: bool = True
+		if(father):
+			self.IS_CLOCK_GENERATOR: bool = not father.FULL_NAME in clock_domain
+		
 		# It's important to call these functions only AFTER constructing the "super" "Bus" object
 		# because they internally use children_buses and children_peripherals, initialized
 		# with "_generate_children" in the "Bus" constructor
@@ -54,12 +61,15 @@ class NonLeafBus(Bus):
 			if(not ((base_addr & (base_addr -1) == 0) and base_addr != 0)):
 				self.logger.simply_v_crash(f"Activated LOOPBACK in {self.FULL_NAME} with a BASE_ADDR"
 											" that isn't a power of 2.")
-
 	
+
 	def _activate_loopback(self):
 		#NonLeaf buses need to activate the loopback, we assume to call this function from a "child"
 		#and activate the loopback for both child an father
 		if (self.LOOPBACK):
+			if(not self.father):
+				raise ValueError(f"Can't enable loopback on {self.FULL_NAME} without a father")
+
 			self.father._father_enable_loopback(self.FULL_NAME)
 			self._child_enable_loopback()
 	
@@ -70,6 +80,9 @@ class NonLeafBus(Bus):
 		self.NUM_SI += 1
 
 	def _child_enable_loopback(self):
+		if(not self.father):
+			raise ValueError(f"Can't enable loopback on {self.FULL_NAME} without a father")
+
 		#NonLeaf buses that have "LOOPBACK" activated will call this function
 		#to modify themselves to support the LOOPBACK
 		#the function assumes ADDR_RANGES == 1, this invariant is kept by the
@@ -190,6 +203,7 @@ class NonLeafBus(Bus):
 			bus.check_legals()
 
 	def add_reachability(self):
+		
 		#NonLeaf buses need to modify the reachability params of their children peripherals and
 		#children buses, they also need to modify the reachability of all the addr_ranges
 		#reachable with the "LOOPBACK" configuration
@@ -205,6 +219,8 @@ class NonLeafBus(Bus):
 					addr_range.add_to_reachable(self.FULL_NAME)
 
 		if(self.LOOPBACK):
+			if(not self.father):
+				raise ValueError(f"Can't enable loopback on {self.FULL_NAME} without a father")
 			#get all the peripherals and buses from the "father" bus
 			#and check if this Nonleafbus can reach them
 
