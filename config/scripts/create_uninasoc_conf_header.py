@@ -119,8 +119,8 @@ def create_uninasoc_render_peripherals(peripherals: list) -> str:
         name = p["device"]
         base = p["base"]
         size = p["range"]
-        lines.append(f"#define _peripheral_{name}_start  0x{base:016x}")
-        lines.append(f"#define _peripheral_{name}_end    0x{base + (1 << size):016x}")
+        lines.append(f"#define _peripheral_{name}_start  0x{base:016x}u")
+        lines.append(f"#define _peripheral_{name}_end    0x{base + (1 << size):016x}u")
     return "\n".join(lines)
 
 

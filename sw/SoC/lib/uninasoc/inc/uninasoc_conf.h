@@ -6,24 +6,24 @@
 #include <stdint.h>
 
 // Address of configured peripherals
-#define _peripheral_BRAM_start  0x0000000000000000
-#define _peripheral_BRAM_end    0x0000000000010000
-#define _peripheral_DM_mem_start  0x0000000000010000
-#define _peripheral_DM_mem_end    0x0000000000020000
-#define _peripheral_CDMA_start  0x0000000000030000
-#define _peripheral_CDMA_end    0x0000000000040000
-#define _peripheral_PLIC_start  0x0000000004000000
-#define _peripheral_PLIC_end    0x0000000008000000
-#define _peripheral_UART_start  0x0000000000020000
-#define _peripheral_UART_end    0x0000000000020010
-#define _peripheral_GPIO_out_start  0x0000000000020200
-#define _peripheral_GPIO_out_end    0x0000000000020400
-#define _peripheral_GPIO_in_start  0x0000000000020400
-#define _peripheral_GPIO_in_end    0x0000000000020600
-#define _peripheral_TIM0_start  0x0000000000020600
-#define _peripheral_TIM0_end    0x0000000000020620
-#define _peripheral_TIM1_start  0x0000000000020620
-#define _peripheral_TIM1_end    0x0000000000020640
+#define _peripheral_BRAM_start  0x0000000000000000u
+#define _peripheral_BRAM_end    0x0000000000010000u
+#define _peripheral_DM_mem_start  0x0000000000010000u
+#define _peripheral_DM_mem_end    0x0000000000020000u
+#define _peripheral_CDMA_start  0x0000000000030000u
+#define _peripheral_CDMA_end    0x0000000000040000u
+#define _peripheral_PLIC_start  0x0000000004000000u
+#define _peripheral_PLIC_end    0x0000000008000000u
+#define _peripheral_UART_start  0x0000000000020000u
+#define _peripheral_UART_end    0x0000000000020010u
+#define _peripheral_GPIO_out_start  0x0000000000020200u
+#define _peripheral_GPIO_out_end    0x0000000000020400u
+#define _peripheral_GPIO_in_start  0x0000000000020400u
+#define _peripheral_GPIO_in_end    0x0000000000020600u
+#define _peripheral_TIM0_start  0x0000000000020600u
+#define _peripheral_TIM0_end    0x0000000000020620u
+#define _peripheral_TIM1_start  0x0000000000020620u
+#define _peripheral_TIM1_end    0x0000000000020640u
 
 // Enabled devices
 #define GPIO_IN_IS_ENABLED 1
