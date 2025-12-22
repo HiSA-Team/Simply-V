@@ -1,4 +1,3 @@
-#!/bin/python3.10
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>

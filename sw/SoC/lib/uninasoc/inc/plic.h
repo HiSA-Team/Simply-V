@@ -10,12 +10,10 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
-// Import linker script symbol
-extern const volatile uint32_t _peripheral_PLIC_start;
+#include "uninasoc_conf.h"
 
 // Base address
-#define PLIC_BASEADDR ((uintptr_t)&_peripheral_PLIC_start)
+#define PLIC_BASEADDR ((uintptr_t)_peripheral_PLIC_start)
 
 // Registers
 #define PLIC_INT_ENABLE_CTX0    (PLIC_BASEADDR +  0x2000)

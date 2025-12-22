@@ -8,13 +8,11 @@
 #define XLNX_GPIO_IN_H
 
 #include <stdint.h>
+#include "uninasoc_conf.h"
 
 // https://docs.amd.com/v/u/en-US/pg144-axi-gpio
 
-// Import linker script symbol
-extern const volatile uint32_t _peripheral_GPIO_in_start;
-
-#define GPIO_IN_BASEADDR ((uintptr_t)&_peripheral_GPIO_in_start)
+#define GPIO_IN_BASEADDR ((uintptr_t)_peripheral_GPIO_in_start)
 
 // INTERRUPTS
 typedef enum {

@@ -3,10 +3,12 @@
 /////////////////////////////////////////
 // Clocks declaration and assignments  //
 /////////////////////////////////////////
+
 assign main_clk = clk_20MHz;
 assign main_rstn = rstn_20MHz;
 logic clk_300MHz;
 logic rstn_300MHz;
+
 logic BRAM_clk;
 assign BRAM_clk = clk_20MHz;
 logic BRAM_rstn;
@@ -27,3 +29,5 @@ logic PLIC_clk;
 assign PLIC_clk = clk_20MHz;
 logic PLIC_rstn;
 assign PLIC_rstn = rstn_20MHz;
+
+logic HBUS_clk;

@@ -34,7 +34,8 @@ OUTPUT_HAL_CONF_FILE ?= ${SW_ROOT}/SoC/lib/uninasoc/inc/uninasoc_conf.h
 
 config_ld: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_linker_script.py \
-		${CONFIG_BUS_CSVS} \
+		${CONFIG_MBUS_CSV} \
+		${CONFIG_HBUS_CSV} \
 		${OUTPUT_LD_FILE}
 	@echo "[CONFIG] Output file is at ${OUTPUT_LD_FILE}"
 
@@ -50,6 +51,6 @@ config_xilinx:
 
 config_sw: config_check
 	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_uninasoc_conf_header.py ${CONFIG_PBUS_CSV} ${OUTPUT_HAL_CONF_FILE}
+	${PYTHON} ${CONFIG_ROOT}/scripts/create_uninasoc_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
 
 
