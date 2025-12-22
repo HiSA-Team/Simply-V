@@ -7,8 +7,9 @@
 # Note:
 #   Addresses overlaps are not sanitized.
 # Args:
-#   1: Input configuration file
-#   2: Output generated ld script
+#   1: Input configuration file for system
+#   2: Input configuration files for buses
+#   3: Output generated ld script
 
 ####################
 # Import libraries #
@@ -83,7 +84,6 @@ device_dict = {
 for name, base_addr, addr_width in zip(range_names, range_base_addr, range_addr_width):
     # memory blocks
     # TODO77: extend for multiple BRAMs
-    # TODO: tailor each memory block with specific permissions. Eg. BRAM (rx)
     if name in ["BRAM", "HBM"] or name.startswith("DDR4CH"):
         device_dict["memory"].append(
             {
@@ -156,7 +156,7 @@ SECTIONS
 # }
 #
 # The output of the should be a string in the linkerscript format. Eg:
-# BRAM (xrw): ORIGIN = 0x0, LENGHTa = 0x10000
+# BRAM (xrw): ORIGIN = 0x0, LENGHT = 0x10000
 def create_linker_render_memory(memory: list) -> str:
     lines = []
     for m in memory:
@@ -171,7 +171,7 @@ def create_linker_render_memory(memory: list) -> str:
 
 
 # Render memory global symbols as a string.
-# Each symbol is defined as (name, value) which produces, e.g.: _stack_start = 0x000000000000fff0;
+# Each symbol is defined as (name, value) which produces, e.g.: PROVIDE(_stack_start = 0x000000000000fff0);
 def create_linker_render_glomal_symbols(symbols: list) -> str:
     lines = []
     for s in symbols:
