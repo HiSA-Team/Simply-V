@@ -30,23 +30,31 @@ import utils
 ##############
 
 # CSV configuration file path
-if len(sys.argv) != 4:
-    print("Usage: <CONFIG_MAIN_BUS_CSV> <CONFIG_HIGH_PERFORMANCE_BUS_CSV> <OUTPUT_LD_FILE>")
+if len(sys.argv) != 5:
+    print("Usage: <CONFIG_SYSTEM_CSV> <CONFIG_MAIN_BUS_CSV> <CONFIG_HIGH_PERFORMANCE_BUS_CSV> <OUTPUT_LD_FILE>")
     sys.exit(1)
 
 # The last argument must be the output file
-config_file_names = sys.argv[1:-1]
+config_system_file_name = sys.argv[1]
+config_bus_file_names = sys.argv[2:-1]
 ld_file_name = sys.argv[-1]
 
 ###############
 # Read config #
 ###############
+
+# Read system CSV file
+BOOT_MEMORY_BLOCK = "BRAM"
+with open(config_system_file_name, "r") as file:
+    reader = csv.reader(file)
+    BOOT_MEMORY_BLOCK = utils.get_value_by_property(reader, "BOOT_MEMORY_BLOCK")
+
 # Read CSV files for each bus
 range_names = []
 range_base_addr = []
 range_addr_width = []
 
-for fname in config_file_names:
+for fname in config_bus_file_names:
     # Open the configuration files and parse them as csv
     with open(fname, "r") as file:
         reader = csv.reader(file)
@@ -59,6 +67,9 @@ for fname in config_file_names:
         range_names += utils.get_value_by_property(reader, "RANGE_NAMES").split(" ")
         range_base_addr += utils.get_value_by_property(reader, "RANGE_BASE_ADDR").split(" ")
         range_addr_width += utils.get_value_by_property(reader, "RANGE_ADDR_WIDTH").split(" ")
+
+# Make sure BOOT_MEMORY_BLOCK is enabled
+assert( BOOT_MEMORY_BLOCK in range_names )
 
 ##########################
 # Generate memory blocks #
@@ -83,21 +94,17 @@ for name, base_addr, addr_width in zip(range_names, range_base_addr, range_addr_
             }
         )
 
-# Currently the first memory device is selected as the boot memory device
-BOOT_MEMORY_BLOCK = "BRAM"
+
+# Select memory device for boot
 boot_memory_device = next(d for d in device_dict["memory"] if d["device"] == BOOT_MEMORY_BLOCK)
 
-# Note: The memory size specified in the config.csv file may differ from the
-# physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
-# Currently, the configuration process does not ensure alignment between config.csv
-# and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
-# 32KB for now, based on the current setting in `config.tcl`.
+# Set dict of global symbols names and values
 device_dict["global_symbols"] = [
     (
         "_stack_start",
-        # - The stack is allocated at the end of first memory block
-        # - Align at 16 bytes
-        (boot_memory_device["base"] + boot_memory_device["range"]) & (~0x0000000000000010)
+        # - Stack is allocated at the end of first memory block
+        # - Aligned at 16 bytes
+        (boot_memory_device["base"] + boot_memory_device["range"] - 0x10) & (~0x0000000000000010)
     ),
     ("_vector_table_start", boot_memory_device["base"], ")"),
     ("_vector_table_end", boot_memory_device["base"] + 32 * 4),
@@ -109,6 +116,7 @@ device_dict["global_symbols"] = [
 
 ld_template_str = """/* Auto-generated with {current_file_path} */
 
+/* Memory blocks */
 MEMORY
 {{
 {memory_block}
@@ -162,8 +170,8 @@ def create_linker_render_memory(memory: list) -> str:
     return "\n".join(lines)
 
 
-# Render memory global symbols as a string. Each symbol is defined as (name, value) which produces
-# _stack_start = 0x000000000000fff0;
+# Render memory global symbols as a string.
+# Each symbol is defined as (name, value) which produces, e.g.: _stack_start = 0x000000000000fff0;
 def create_linker_render_glomal_symbols(symbols: list) -> str:
     lines = []
     for s in symbols:

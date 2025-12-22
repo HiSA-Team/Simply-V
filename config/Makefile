@@ -34,6 +34,7 @@ OUTPUT_HAL_CONF_FILE ?= ${SW_ROOT}/SoC/lib/uninasoc/inc/uninasoc_conf.h
 
 config_ld: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_linker_script.py \
+		${CONFIG_SYSTEM_CSV} \
 		${CONFIG_MBUS_CSV} \
 		${CONFIG_HBUS_CSV} \
 		${OUTPUT_LD_FILE}
