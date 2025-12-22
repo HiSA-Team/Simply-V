@@ -19,10 +19,6 @@
 #define TRANSFER_SIZE (NUM_WORDS * sizeof(uint32_t))
 #define BUFFER_SIZE (NUM_ROUNDS * TRANSFER_SIZE)
 
-// CDMA Base Address (from linker script)
-extern const volatile uint32_t _peripheral_CDMA_start;
-#define CDMA_BASEADDR   ((uintptr_t)&_peripheral_CDMA_start)
-
 // TODO: import this from config
 #define CDMA_IRQ_ID  6
 #define CDMA_INT_PRIORITY 1
@@ -33,7 +29,7 @@ static volatile int cdma_done = 0;
 XAxiCdma cdma_handle;
 XAxiCdma_Config CdmaCfg = {
     .DeviceId    = 0,
-    .BaseAddress = CDMA_BASEADDR,
+    .BaseAddress = _peripheral_CDMA_start,
     .HasDRE      = 1,
     .IsLite      = 0,
     .DataWidth   = 32,
@@ -88,7 +84,7 @@ int main(void) {
     printf("\n\r[CDMA IRQ] CDMA Interrupt Test\n\r");
 
     // Init CDMA
-    if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CDMA_BASEADDR) != 0) {
+    if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CdmaCfg.BaseAddress) != 0) {
         printf("[CDMA IRQ] XAxiCdma_CfgInitialize failed\n");
         return -1;
     }

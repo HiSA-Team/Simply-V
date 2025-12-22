@@ -93,18 +93,14 @@ boot_memory_device = next(d for d in device_dict["memory"] if d["device"] == BOO
 # and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
 # 32KB for now, based on the current setting in `config.tcl`.
 device_dict["global_symbols"] = [
-    # The stack is allocated at the end of first memory block
-    # _stack_end can be user-defined for the application, as bss and rodata
-    # _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
     (
-        "PROVIDE(_stack_start",
-        boot_memory_device["base"]
-        + boot_memory_device["range"]
-        # stack needs to be 16-byte aligned
-        & 0x10")",
+        "_stack_start",
+        # - The stack is allocated at the end of first memory block
+        # - Align at 16 bytes
+        (boot_memory_device["base"] + boot_memory_device["range"]) & (~0x0000000000000010)
     ),
-    ("PROVIDE(_vector_table_start", boot_memory_device["base"], ")"),
-    ("PROVIDE(_vector_table_end", boot_memory_device["base"] + 32 * 4, ")"),
+    ("_vector_table_start", boot_memory_device["base"], ")"),
+    ("_vector_table_end", boot_memory_device["base"] + 32 * 4),
 ]
 
 ###############################
@@ -173,9 +169,8 @@ def create_linker_render_glomal_symbols(symbols: list) -> str:
     for s in symbols:
         name = s[0]
         value = s[1]
-        lines.append(f"{name} = 0x{value:016x};")
+        lines.append(f"PROVIDE({name} = 0x{value:016x});")
     return "\n".join(lines)
-
 
 if __name__ == "__main__":
     # The ld_template_str is a string which can be formatted (same as f-string). Provide {variable}
