@@ -48,3 +48,12 @@ class Env(metaclass=Singleton):
 				return True
 			case _:
 				raise ValueError("Unsupported Board configuration")
+
+	def get_def_clock_domains(self) -> list[str]:
+		match self._soc_profile:
+			case "embedded":
+				return ["MBUS_10", "MBUS_20", "MBUS_50", "MBUS_100"]
+			case "hpc":
+				return ["MBUS_10", "MBUS_20", "MBUS_50", "MBUS_100", "MBUS_250"]
+			case _:
+				raise ValueError("Unsupported profile configuration")

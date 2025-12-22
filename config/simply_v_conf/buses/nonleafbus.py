@@ -9,14 +9,15 @@
 
 from typing import Callable, Optional, cast
 from general.node import Node
-from general.clock_domain import  Clock_Domain
 from general.addr_range import Addr_Ranges
 from general.logger import Logger
+from general.env import Env
 from .bus import Bus
 from peripherals.peripheral import Peripheral
 from factories.buses_factory import Buses_Factory
 
 class NonLeafBus(Bus):
+	env = Env.get_instance()
 	logger = Logger.get_instance()
 	buses_factory = Buses_Factory.get_instance()
 	#These params are empty because they are defined by children classes.
@@ -30,7 +31,6 @@ class NonLeafBus(Bus):
 
 		self.father = father 
 		self._children_buses: list[Bus] = []
-		self.clock_domains: Clock_Domain
 		self.loopback_ranges: Addr_Ranges
 		self.LOOPBACK: bool = data_dict["LOOPBACK"]
 		self._RANGE_CLOCK_DOMAINS: list[str] = data_dict["RANGE_CLOCK_DOMAINS"].copy()
@@ -52,7 +52,6 @@ class NonLeafBus(Bus):
 		# because they internally use children_buses and children_peripherals, initialized
 		# with "_generate_children" in the "Bus" constructor
 		self._activate_loopback()
-		self._init_clock_domains()
 
 		if (self.LOOPBACK == True):
 			base_addr = self.asgn_addr_ranges.get_base_addr()
@@ -129,14 +128,7 @@ class NonLeafBus(Bus):
 			if b.BASE_NAME not in self.LEGAL_BUSES:
 				simply_v_crash(f"Unsupported bus {b.FULL_NAME} for this bus")
 
-		
-	def _init_clock_domains(self):
-		nodes = []
-		nodes.extend(self._children_peripherals)
-		nodes.extend(self._children_buses)
-		self.clock_domains = Clock_Domain(nodes)
-		return
-
+	
 	def _generate_children(self):
 		#NonLeaf buses need to create children peripherals and buses
 		peripherals_names: list[str] = []
@@ -251,9 +243,6 @@ class NonLeafBus(Bus):
 		for bus in self._children_buses:
 			bus.add_reachability()
 
-	# @abstractmethod
-	# def check_clock_domains(self):
-	# 	pass
 	
 	def get_buses(self, recursive: bool) -> list[Bus] | None:
 
@@ -281,10 +270,33 @@ class NonLeafBus(Bus):
 		
 		return peripherals
 
-	def check_clock_domains(self, custom_clock_check: Callable[[], None]) -> None:
-		#Run injected custom check function
-		custom_clock_check()
-		
-		#Recursive call
+	# Internal function used in "check_clock_domains" implementation
+	def _check_clock_domains(self) -> None:
+		self.get_nodes()
+
+
+	def check_clock_domains(self) -> None:
+		clock_domains = set()
+		clock_domains.update(self.env.get_def_clock_domains())
+
+		children_nodes = self.get_nodes()
+
+		# we're checking that every node on this bus that isn't generating a clock
+		# is either clocked by one of the default clocks ("MBUS" ones)
+		# or by other nodes that can generate clock
+		for node in children_nodes:
+			if(node.IS_CLOCK_GENERATOR):
+				clock_domains.add(node.CLOCK_DOMAIN)
+
+		for node in children_nodes:
+			if node.CLOCK_DOMAIN not in clock_domains:
+				raise ValueError(f"Node {node.FULL_NAME} on {self.FULL_NAME}"
+								 f"is clocked with a non existing clock domain({node.CLOCK_DOMAIN})")
+
+		# Now check that the bus itself is clocked from a default ("MBUS") or local clock domain
+		if self.CLOCK_DOMAIN not in clock_domains:
+			raise ValueError(f"{self.FULL_NAME} is clocked with a non existing clock domain({self.CLOCK_DOMAIN})")
+
+		#Recursive call on all the buses
 		for bus in self._children_buses:
 			bus.check_clock_domains()

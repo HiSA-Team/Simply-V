@@ -41,16 +41,18 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		# put reachability values in the nodes based on the hierarchy created
 		self.add_reachability()
 		# check configuration of clock domains on this bus
-		self.check_clock_domains(self.custom_clocks_checks)
+		self.check_clock_domains()
 
-	def custom_clocks_checks(self):
-		#Add MBus custom checks
+	# extend default clocks checks with custom ones
+	def check_clock_domains(self):
 		failed_checks = []
 		peripherals_to_check = ["PLIC", "BRAM", "DMMEM"]
-		for p in peripherals_to_check:
-			ret = self.clock_domains.is_in_domain(p, self.CLOCK_DOMAIN)
-			if(not ret):
-				failed_checks.append(p)
+		for children in self._children_peripherals:
+			if (children.FULL_NAME in peripherals_to_check):
+				if(children.CLOCK_DOMAIN != self.CLOCK_DOMAIN):
+					failed_checks.append(children.CLOCK_DOMAIN)
 
 		if (len(failed_checks) != 0):
 			raise ValueError(f"-{', '.join(failed_checks)} need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
+
+		super().check_clock_domains()

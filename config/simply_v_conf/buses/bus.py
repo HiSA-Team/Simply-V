@@ -128,6 +128,7 @@ class Bus(Node):
 	def _get_peripherals(self) -> list[Peripheral]:
 		return self._children_peripherals
 
+
 	# Function used to return children address ranges (of peripherals/buses) keeping an invariant
 	# of "order by base address" in this way configuration functions assume the same ordering
 	# of ranges for each "children" of a particular bus
@@ -187,7 +188,7 @@ class Bus(Node):
 		pass
 
 	@abstractmethod
-	def check_clock_domains(self, custom_clocks_checks: Callable[[], None]) -> None:
+	def check_clock_domains(self) -> None:
 		pass
 	
 	@abstractmethod
