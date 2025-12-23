@@ -1,7 +1,7 @@
-# Author: Stefano Toscano               <stefa.toscano@studenti.unina.it>
-# Author: Vincenzo Maisto               <vincenzo.maisto2@unina.it>
-# Author: Stefano Mercogliano           <stefano.mercogliano@unina.it>
-# Author: Giuseppe Capasso              <giuseppe.capasso17@studenti.unina.it>
+# Author: Stefano Toscano <stefa.toscano@studenti.unina.it>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+# Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+# Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 # Description:
 #   Generate a linker script file from the CSV configuration.
 # Note:
