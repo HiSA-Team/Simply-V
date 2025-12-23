@@ -18,6 +18,7 @@ RTL_FILES = {
     "UNINASOC": f"{os.environ.get('XILINX_ROOT')}/rtl/uninasoc_clk_assignments.svinc",
 }
 
+# Template string
 rtl_template_str = r"""// This file is auto-generated with {current_file_path}
 
 /////////////////////////////////////////
