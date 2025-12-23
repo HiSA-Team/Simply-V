@@ -14,17 +14,11 @@
 ####################
 # Import libraries #
 ####################
-# Parse args
-import sys
 
-# For basename
-import os
-
-# Manipulate CSV
-import csv
-
-# Utils function
-import utils
+import sys # Parse args
+import os # For basename
+import csv # Manipulate CSVs
+import utils # Utils function
 
 ##############
 # Parse args #
@@ -94,7 +88,6 @@ for name, base_addr, addr_width in zip(range_names, range_base_addr, range_addr_
             }
         )
 
-
 # Select memory device for boot
 boot_memory_device = next(d for d in device_dict["memory"] if d["device"] == BOOT_MEMORY_BLOCK)
 
@@ -114,6 +107,37 @@ device_dict["global_symbols"] = [
 # Generate Linker Script File #
 ###############################
 
+# Render memory blocks as a string. Each memory object is defined as follows
+# {
+#   "device": name,
+#   "permissions": "xrw",
+#   "base": int(base_addr, 16),
+#   "range": 1 << int(addr_width),
+# }
+#
+# The output is key-value string in linker script format, e.g.:
+# BRAM (xrw): ORIGIN = 0x0, LENGHT = 0x10000
+lines = []
+for m in device_dict["memory"]:
+    name = m["device"]
+    permissions = m["permissions"]
+    base = m["base"]
+    len = m["range"]
+    lines.append(
+        f"\t{name} ({permissions}): ORIGIN = 0x{base:016x}, LENGTH = 0x{len:0x}"
+    )
+memory_block = "\n".join(lines)
+
+# Render memory global symbols as a string.
+# Each symbol is defined as (name, value) which produces, e.g.: PROVIDE(_stack_start = 0x000000000000fff0);
+lines = []
+for s in device_dict["global_symbols"]:
+    name = s[0]
+    value = s[1]
+    lines.append(f"PROVIDE({name} = 0x{value:016x});")
+globals_block = "\n".join(lines)
+
+# Template string
 ld_template_str = """/* Auto-generated with {current_file_path} */
 
 /* Memory blocks */
@@ -146,50 +170,15 @@ SECTIONS
 }}
 """
 
+# The ld_template_str is a string which can be formatted (same as f-string). Provide {variable}
+# as strings.
+rendered = ld_template_str.format(
+    current_file_path=os.path.basename(__file__),
+    memory_block=memory_block,
+    globals_block=globals_block,
+    initial_memory_name=boot_memory_device["device"],
+)
 
-# Render memory blocks as a string. Each memory object is defined as follows
-# {
-#   "device": name,
-#   "permissions": "xrw",
-#   "base": int(base_addr, 16),
-#   "range": 1 << int(addr_width),
-# }
-#
-# The output is key-value string in linker script format, e.g.:
-# BRAM (xrw): ORIGIN = 0x0, LENGHT = 0x10000
-def create_linker_render_memory(memory: list) -> str:
-    lines = []
-    for m in memory:
-        name = m["device"]
-        permissions = m["permissions"]
-        base = m["base"]
-        len = m["range"]
-        lines.append(
-            f"\t{name} ({permissions}): ORIGIN = 0x{base:016x}, LENGTH = 0x{len:0x}"
-        )
-    return "\n".join(lines)
-
-
-# Render memory global symbols as a string.
-# Each symbol is defined as (name, value) which produces, e.g.: PROVIDE(_stack_start = 0x000000000000fff0);
-def create_linker_render_glomal_symbols(symbols: list) -> str:
-    lines = []
-    for s in symbols:
-        name = s[0]
-        value = s[1]
-        lines.append(f"PROVIDE({name} = 0x{value:016x});")
-    return "\n".join(lines)
-
-if __name__ == "__main__":
-    # The ld_template_str is a string which can be formatted (same as f-string). Provide {variable}
-    # as strings. This is why we call render_* functions
-    rendered = ld_template_str.format(
-        current_file_path=os.path.basename(__file__),
-        memory_block=create_linker_render_memory(device_dict["memory"]),
-        globals_block=create_linker_render_glomal_symbols(device_dict["global_symbols"]),
-        initial_memory_name=boot_memory_device["device"],
-    )
-
-    # Write the output
-    with open(ld_file_name, "w") as f:
-        f.write(rendered)
+# Write the output
+with open(ld_file_name, "w") as f:
+    f.write(rendered)
