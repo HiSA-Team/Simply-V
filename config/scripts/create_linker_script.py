@@ -155,7 +155,7 @@ SECTIONS
 #   "range": 1 << int(addr_width),
 # }
 #
-# The output of the should be a string in the linkerscript format. Eg:
+# The output is key-value string in linker script format, e.g.:
 # BRAM (xrw): ORIGIN = 0x0, LENGHT = 0x10000
 def create_linker_render_memory(memory: list) -> str:
     lines = []
