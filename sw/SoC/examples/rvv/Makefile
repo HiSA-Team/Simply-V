@@ -46,8 +46,8 @@ LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_UNINASOC)
 # Toolchain #
 #############
 
-# Enable Atomic extension
-A_EXTENSION = Y
+# Enable Vector extension
+V_EXTENSION = Y
 
 include $(SW_ROOT)/SoC/common/config.mk
 

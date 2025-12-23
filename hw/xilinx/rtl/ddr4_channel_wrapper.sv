@@ -88,8 +88,13 @@ module ddr4_channel_wrapper # (
     generate
     if (ENABLE_CACHE == 1 ) begin : with_cache
 
-            xlnx_system_cache_0 system_cache_u (
+            // Tie-off
+            logic  [31 : 0] s_axi_awuser;
+            logic  [31 : 0] s_axi_aruser;
+            assign s_axi_awuser = '0;
+            assign s_axi_aruser = '0;
 
+            xlnx_system_cache_0 system_cache_u (
                 .ACLK               ( clock_i                 ), // input wire ACLK
                 .ARESETN            ( reset_ni                ), // input wire ARESETN
                 .Initializing       ( /* empty */             ), // output wire Initializing
@@ -169,7 +174,7 @@ module ddr4_channel_wrapper # (
                 .M0_AXI_RLAST       ( to_clk_conv_axi_rlast   ), // input wire M0_AXI_RLAST
                 .M0_AXI_RVALID      ( to_clk_conv_axi_rvalid  ), // input wire M0_AXI_RVALID
                 .M0_AXI_RREADY      ( to_clk_conv_axi_rready  )  // output wire M0_AXI_RREADY
-                );
+            );
 
     end else begin : no_cache
 

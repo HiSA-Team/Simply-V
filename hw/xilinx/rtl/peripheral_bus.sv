@@ -199,7 +199,7 @@ module peripheral_bus #(
 
         // Output clock converter - convert from PBUS_DOMAIN to MAIN_DOMAIN (mainly used for interrupts)
         xpm_cdc_array_single #(
-            .DEST_SYNC_FF   ( 4             ),     // Number of sync flip-flops
+            .DEST_SYNC_FF   ( 8             ),     // Number of sync flip-flops
             .SRC_INPUT_REG  ( 1             ),     // Input register enable
             .WIDTH          ( NUM_IRQ       )      // Width of data to sync
         )

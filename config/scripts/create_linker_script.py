@@ -155,13 +155,13 @@ for peripheral in device_dict['peripheral']:
 
 # Generate global symbols
 fd.write("\n")
-fd.write("/* Global symbols */\n")
+fd.write("/* Global symbols, allow override */\n")
 # Vector table is placed at the beggining of the boot memory block.
 # It is aligned to 256 bytes and is 32 words deep. (as described in risc-v spec)
 #vector_table_start  =  memory_block_list[BOOT_MEMORY_BLOCK][DEVICE_ORIGIN]
 vector_table_start  =  device_dict['memory'][BOOT_MEMORY_BLOCK]['base']
-fd.write("_vector_table_start = 0x" + format(vector_table_start, "016x") + ";\n")
-fd.write("_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + ";\n")
+fd.write("PROVIDE(_vector_table_start = 0x" + format(vector_table_start, "016x") + ");\n")
+fd.write("PROVIDE(_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + ");\n")
 
 # The stack is allocated at the end of first memory block
 # _stack_end can be user-defined for the application, as bss and rodata

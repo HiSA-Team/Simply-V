@@ -1,0 +1,8 @@
+# Clone of ara repo
+ara
+# Bender binary
+bender
+# Bender scripts
+bender_*.tcl
+# Bender file list
+rtl.flist

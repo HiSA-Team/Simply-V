@@ -1,4 +1,4 @@
-#  AXI Crossbar Configuration Generator
+#  Configuration Generation Flow
 This tree allows for the automatic generation of the AXI crossbar IP and linker script for software development.
 
 ## Prerequisites and Tools versions
@@ -13,7 +13,7 @@ The input configuration files are CSV files. These files are under the configs d
 ``` bash
 configs
 ├── common                           # Config files shared between hpc and embedded
-│   ├── config_system.csv            # System-level configurations
+│   └── config_system.csv            # System-level configurations
 ├── embedded                         # Config files for embedded
 │   ├── config_main_bus.csv          # Main bus config file
 │   └── config_peripheral_bus.csv    # Peripheral bus config file
@@ -35,12 +35,25 @@ The following table details the supported properties.
 
 | Name  | Description | Values | Default
 |-|-|-|-|
-| CORE_SELECTOR         | Select target RV core       | CORE_PICORV32*, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6 | None (**mandatory value**)
+| CORE_SELECTOR         | Select target RV core       | CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA | None (**mandatory value**)
 | VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1] | 1
 | XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                 | 32
 | PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
 
-> \* the external PicoRV32 IP is currently bugged in CSR support. Any code running with CORE_PICORV32 must not perform any CSR operation.
+### Notes for CORE_SELECTOR
+**XLEN** configuration must match the selected `CORE_SELECTOR`:
+- `XLEN=64` requires `CORE_SELECTOR in {CORE_MICROBLAZEV_RV64, CORE_CV64A6}`
+- `XLEN=32` requires `CORE_SELECTOR in {CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32}`
+
+Additional notes:
+- `CORE_SELECTOR = CORE_PICORV32`: the external PicoRV32 IP is currently bugged in CSR support. Any code running with CORE_PICORV32 must not perform any CSR operation.
+- `CORE_SELECTOR = CORE_DUAL_MICROBLAZEV_RV32` requires two additional `MASTER_NAMES` into `config_main_bus.csv`, namely `RV_SOCKET_DATA1 RV_SOCKET_INSTR1`.
+- `CORE_SELECTOR = CORE_CV64A6_ARA` supports a maximum MAIN_CLOCK_DOMAIN frequency of 50 MHz.
+
+### VIO resetn default
+The `VIO_RESETN_DEFAULT` parameter controls the programming-time value of core reset.
+- `VIO_RESETN_DEFAULT = 1` (default): VIO resetn is non-active, the CPU starts running at programming-time, allowing debugging with DTM and GDB.
+- `VIO_RESETN_DEFAULT = 0`:  VIO resetn is active, keeping the core in a reset state when the bitstream is programmed.
 
 ### Bus Configuration
 
@@ -105,11 +118,6 @@ The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_g
 ### Clock domains
 The configuration flow gives the possibility to specify clock domains.
 The `MAIN_CLOCK_DOMAIN` is the closk domain of the core and the main bus (`MBUS`). All the slaves attached to the `MBUS` can have their own clock domain. If a slave has a domain different from the `MAIN_CLOCK_DOMAIN`, it needs a `xlnx_axi_clock_converter` to cross the clock domains. In this case the configuration flow will set the `<SLAVE_NAME>_HAS_CLOCK_DOMAIN` (i.e. `PBUS_HAS_CLOCK_DOMAIN`) variable which informs that the slave has its own clock domain.
-
-### VIO resetn default
-The `VIO_RESETN_DEFAULT` parameter controls the programming-time value of core reset.
-- `VIO_RESETN_DEFAULT = 1` (default): VIO resetn is non-active, the CPU starts running at programming-time, allowing debugging with DTM and GDB.
-- `VIO_RESETN_DEFAULT = 0`:  VIO resetn is active, keeping the core in a reset state when the bitstream is programmed.
 
 ### Scripting Architecture
 The directory `scripts/` holds multiple scripts, acting in the following scripting architecture:

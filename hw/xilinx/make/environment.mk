@@ -46,7 +46,7 @@ endif
 # Remove Microblaze-V and Microblaze Debug Module V when building with Vivado < 2024
 # TODO55: quick workaround for PR 146, extend this for all selectable IPs
 ifeq ($(shell [ ${XILINX_VIVADO_VERSION} -lt 2024 ] && echo true),true)
-    FILTER_IP    = xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v
+    FILTER_IP    = xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v xlnx_dual_microblaze_debug_module_v
     TMP_IP_LIST  = ${IP_LIST}
     IP_LIST      = $(filter-out ${FILTER_IP},${TMP_IP_LIST})
 endif
@@ -71,6 +71,11 @@ IMPL_STRATEGY      ?= "Performance_ExtraTimingOpt"
 XILINX_BITSTREAM ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl_1/${XILINX_PROJECT_NAME}.bit
 XILINX_PROBE_LTX ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl_1/${XILINX_PROJECT_NAME}.ltx
 
+# Wheter to build for development or deployment (0|1)
+# NOTE: Not reccomended to use with XILINX_ILA = 1
+HIGH_PERF_BUILD ?= 0
+# Routing directive, only used with HIGH_PERF_BUILD = 1
+HIGH_PERF_ROUTING ?= HigherDelayCost
 # Whether to use ILA probes (0|1)
 XILINX_ILA ?= 0
 # Clock net for ILA probes: use main clock by default
@@ -92,6 +97,8 @@ XILINX_VIVADO_ENV =                                 \
     HBUS_NUM_MI=${HBUS_NUM_MI}                      \
     HBUS_NUM_SI=${HBUS_NUM_SI}                      \
     HBUS_ID_WIDTH=${HBUS_ID_WIDTH}                  \
+    HIGH_PERF_BUILD=${HIGH_PERF_BUILD}              \
+    HIGH_PERF_ROUTING=${HIGH_PERF_ROUTING}          \
     XILINX_ILA=${XILINX_ILA}                        \
     XILINX_ILA_CLOCK=${XILINX_ILA_CLOCK}            \
     SYNTH_STRATEGY=${SYNTH_STRATEGY}                \

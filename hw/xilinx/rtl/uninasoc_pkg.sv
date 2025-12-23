@@ -61,9 +61,11 @@ package uninasoc_pkg;
         CORE_CV32E40P,
         CORE_IBEX,
         CORE_MICROBLAZEV_RV32,
+        CORE_DUAL_MICROBLAZEV_RV32,
         // 64-bits Cores
         CORE_MICROBLAZEV_RV64,
-        CORE_CV64A6
+        CORE_CV64A6,
+        CORE_CV64A6_ARA
     } core_selector_t;
 
     // Select core from macro
@@ -111,6 +113,7 @@ package uninasoc_pkg;
             CORE_IBEX:         return "CORE_IBEX";
             CORE_MICROBLAZEV_RV32:  return "CORE_MICROBLAZEV_RV32";
             CORE_MICROBLAZEV_RV64:  return "CORE_MICROBLAZEV_RV64";
+            CORE_DUAL_MICROBLAZEV_RV32:  return "CORE_DUAL_MICROBLAZEV_RV32";
             default:           return $sformatf("UNKNOWN_CORE_%0d", core_sel);
         endcase
     endfunction
