@@ -1,21 +1,34 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 // Description: This module is a wrapper for the HBM IP.
-//              It includes :
-//                 - A datawidth converter to increase the datawidth to 256 bit
+// 		It has: 
+// 		   - AXI4 interface for data
+// 		   - 2 AXILITE interfaces (one per stack) for accessing CSRs
+//              It includes:
+//                 - A datawidth converter to increase the datawidth of the AXI4 interface to 256 bit
 //                 - A HBM IP
 //
 //              It has the following sub-architecture
 //
-//
+//   AXI4 (Data)
 //   ADDR: PHYSICAL_ADDR_WIDTH    ____________  ADDR: PHYSICAL_ADDR_WIDTH       ADDR: 33 bit    ____________
 //   DATA: XLEN                  |   Dwidth   | DATA: 256 bit                   DATA: 256 bit  |            |
 // ----------------------------->| Converter  |----------------------------------------------->|   HBM IP   |
-//                               |____________|                                                |____________|
-//
+//                               |____________|                                                |            |
+//   AXILITE (CSR stack 0)                                                                     |            |
+//   ADDR: 22 bit                                                                              |            |
+//   DATA: 32 bit                                                                              |            |   
+// ------------------------------------------------------------------------------------------->|            |
+//                                                                                             |            |
+//   AXILITE (CSR stack 1)                                                                     |            |
+//   ADDR: 22 bit                                                                              |            |
+//   DATA: 32 bit                                                                              |            |
+// ------------------------------------------------------------------------------------------->|            |
+//                                                                                             |____________|
+//                                                                                               
+// 
 // NOTE: The HBM IP can be imported only with boards supporting it (au280, au50)
 // NOTE: For now, we use only one AXI port connected to all the HBM space.
 
-// TODO: update description adding the AXILITE interfaces for the two HBM stacks
 
 `include "uninasoc_apb.svh"
 
@@ -48,8 +61,8 @@ module hbm_wrapper #(
 
     // HBM local parameters
     localparam HBM_ADDRESS_WIDTH = 33;
-    localparam HBM_DATA_WIDTH = 256;
-    localparam HBM_ID_WIDTH = 6;
+    localparam HBM_DATA_WIDTH    = 256;
+    localparam HBM_ID_WIDTH      = 6;
 
     localparam APB_ADDRESS_WIDTH = 22;
     localparam APB_DATA_WIDTH    = 32;
@@ -58,6 +71,10 @@ module hbm_wrapper #(
     // HBM 33-bits address signals
     logic [HBM_ADDRESS_WIDTH-1:0] hbm_axi_awaddr;
     logic [HBM_ADDRESS_WIDTH-1:0] hbm_axi_araddr;
+
+    // HBM AxBURST signals
+    logic [AXI_BURST_WIDTH-1:0] hbm_axi_awburst; 
+    logic [AXI_BURST_WIDTH-1:0] hbm_axi_arburst; 
 
     // AXI4 bus from dwith converter to HBM IP AXI4 interface
     `DECLARE_AXI_BUS(dwidth_conv_to_hbm, HBM_DATA_WIDTH, LOCAL_ADDR_WIDTH, HBM_ID_WIDTH)
@@ -230,6 +247,10 @@ module hbm_wrapper #(
     assign hbm_axi_awaddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_awaddr } : dwidth_conv_to_hbm_axi_awaddr[HBM_ADDRESS_WIDTH-1:0];
     assign hbm_axi_araddr = (LOCAL_ADDR_WIDTH == 32) ? { 1'b0, dwidth_conv_to_hbm_axi_araddr } : dwidth_conv_to_hbm_axi_araddr[HBM_ADDRESS_WIDTH-1:0];
 
+    // HBP IP does not support AxBURST=0x0 (fixed address)
+    assign hbm_axi_awburst = 2'h01;
+    assign hbm_axi_arburst = 2'h01;
+    
     // HBM IP
     xlnx_hbm hbm_u (
         // Clocks and resets
@@ -241,7 +262,7 @@ module hbm_wrapper #(
         // AXI4 slave 00
         // NOTE: The documentation (PG276) states that must be fixed: AxSIZE = 0x5 and AxLEN = 0x1 (minimum). This should be done by the dwidth conv
         .AXI_00_ARADDR  ( hbm_axi_araddr                 ),    // input [32:0]
-        .AXI_00_ARBURST ( dwidth_conv_to_hbm_axi_arburst ),    // input [1:0]
+        .AXI_00_ARBURST ( hbm_axi_arburst                ),    // input [1:0]
         .AXI_00_ARID    ( dwidth_conv_to_hbm_axi_arid    ),    // input [5:0]
         .AXI_00_ARLEN   ( dwidth_conv_to_hbm_axi_arlen   ),    // input [3:0]
         .AXI_00_ARREADY ( dwidth_conv_to_hbm_axi_arready ),    // output
@@ -249,7 +270,7 @@ module hbm_wrapper #(
         .AXI_00_ARVALID ( dwidth_conv_to_hbm_axi_arvalid ),    // input
 
         .AXI_00_AWADDR  ( hbm_axi_awaddr                 ),    // input [32:0]
-        .AXI_00_AWBURST ( dwidth_conv_to_hbm_axi_awburst ),    // input [1:0]
+        .AXI_00_AWBURST ( hbm_axi_awburst                ),    // input [1:0]
         .AXI_00_AWID    ( dwidth_conv_to_hbm_axi_awid    ),    // input [5:0]
         .AXI_00_AWLEN   ( dwidth_conv_to_hbm_axi_awlen   ),    // input [3:0]
         .AXI_00_AWREADY ( dwidth_conv_to_hbm_axi_awready ),    // output
