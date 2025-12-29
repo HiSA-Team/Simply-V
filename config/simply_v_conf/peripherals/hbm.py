@@ -1,3 +1,6 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This file defines the hbm peripheral
+
 from general.addr_range import Addr_Ranges
 from .peripheral import Peripheral
 

@@ -1,3 +1,7 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This is class implements the peripheral bus
+# it's a LeafBus so it can only hold peripherals nodes
+
 from .leafbus import LeafBus
 from .bus import Bus
 from general.addr_range import Addr_Ranges
@@ -17,4 +21,4 @@ class PBus(LeafBus):
 
 		#check NUM_SI
 		if self.NUM_SI != 1:
-			self.logger.simply_v_crash(f"Invalid number of NUM_SI ({self.NUM_SI}) in {self.FULL_NAME}")
+			raise ValueError(f"Invalid number of NUM_SI ({self.NUM_SI}) in {self.FULL_NAME}")

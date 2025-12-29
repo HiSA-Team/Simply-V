@@ -1,5 +1,11 @@
 #!/usr/bin/env python3.10
 
+# Author: Salvatore Santoro	<sal.santoro@studenti.unina.it>
+# Description: This is the entry point of the configuration flow.
+# The purpose of this code is to dispatch the selected configuration target (from the config Makefile)
+# to the actual python config implementation, creating the "Simply_V" object (the root of all the configurations)
+# and using it to generate/modify the configuration files
+
 from parsers.sys_parser import Sys_Parser
 from general.env import Env
 from general.logger import Logger

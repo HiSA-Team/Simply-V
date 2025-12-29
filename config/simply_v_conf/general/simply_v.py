@@ -1,3 +1,15 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This class is the starting point for all the configuration targets
+# the purpose of this class is:
+# .1 Create the "MBUS" object (which is the root node of the buses and peripherals tree)
+# .2 Launch all the configurations checks through the "init_configurations" method of MBUS 
+# .3 Launch all the file generations/modifications that will be needed from the "sw" and "hw"
+#	 flows
+#
+# all the targets of the makefile in the "config root" are compatible with the simply_v methods
+# through the "main.py" file that launches the correct methods based on the makefile target that
+# launched the whole configuration
+
 import re
 from buses.nonleafbus import NonLeafBus
 from templates.halheader_template import HALheader_Template
@@ -20,6 +32,7 @@ class SimplyV(metaclass=Singleton):
 	logger = Logger.get_instance()
 	SUPPORTED_CORES = ("CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", \
 										"CORE_MICROBLAZEV_RV64", "CORE_CV64A6")
+	# this is the boot address of the SoC
 	BOOT_MEMORY_BLOCK = 0x0
 
 	def __init__(self, system_data: dict):
@@ -49,6 +62,7 @@ class SimplyV(metaclass=Singleton):
 		if(tree_buses):
 			self.buses.extend(tree_buses)
 
+		# differentiate memories from normal devices 
 		self.devices: list[Peripheral] = []
 		self.memories: list[Peripheral] = []
 
@@ -58,11 +72,14 @@ class SimplyV(metaclass=Singleton):
 			else:
 				self.devices.append(p)
 		
+	# Create linker script used from the "sw" flow
 	def create_linker_script(self, ld_file_name: str):
-		# Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
 		template = Ld_Template(self.memories, self.BOOT_MEMORY_BLOCK)
 		template.write_to_file(ld_file_name)
 
+
+	# Dump reachability file containing all the main information about all the peripherals
+	# in the configuration
 	def dump_reachability(self, dump_file_name: str):
 		fd = open(dump_file_name,  "w")
 
@@ -97,10 +114,13 @@ class SimplyV(metaclass=Singleton):
 				fd.write(f"{key},{hex(dim_dict[key][0])},{hex(dim_dict[key][1]-1)},{str_of_reachables}\n")
 
 	
+	# Create HAL header used from the "sw" flow
 	def create_hal_header(self, hal_hdr_file_name: str) -> None:
 		template = HALheader_Template(self.peripherals, self.devices)
 		template.write_to_file(hal_hdr_file_name)
 		
+
+	# Update the "sw" makefile with the corresponding XLEN selected
 	def update_sw_makefile(self, sw_makefile: str) -> None:
 		# read mk file
 		sw_makefile_path = Path(sw_makefile)
@@ -120,6 +140,10 @@ class SimplyV(metaclass=Singleton):
 		sw_makefile_path.write_text(new_text)
 
 
+	# Generate all the configuration files of each bus:
+	# SVINC files to use for crossbar ports declarations
+	# config.tcl files to automatically configure the Xilinx Interconnect IP
+	# CLOCK SVINC files (NonLeafBuses only) to configure the clock domains of the SOC
 	def config_bus(self, target_bus: str, outputs: list[str]) -> None:
 		for bus in self.buses:
 			if bus.FULL_NAME == target_bus.upper():
@@ -136,6 +160,9 @@ class SimplyV(metaclass=Singleton):
 		raise ValueError(f"{target_bus} wasn't configured (crossbar and svinc gen.) because it wasn't found")
 
 
+
+	# Update the "hw" makefile with the corresponding "sys_targets" and "bus_targets" selected
+	# used from Vivado 
 	def config_xilinx_makefile(self, xilinx_makefile: str) -> None:
 		makefile_path = Path(xilinx_makefile)
 		content = makefile_path.read_text()
@@ -143,27 +170,31 @@ class SimplyV(metaclass=Singleton):
 		# System targets to replace
 		sys_targets = ["CORE_SELECTOR", "VIO_RESETN_DEFAULT", "XLEN", "PHYSICAL_ADDR_WIDTH"]
 
-		# Replace system targets
+		# Replace system targets with "self" values
 		for t in sys_targets:
 			# Example pattern: "XLEN ?= 32"
 			pattern = rf"^{t}\s*\?=\s*.*$"
-			replacement = f"{t} ?= {getattr(self, t)}"
+			replacement = f"{t} ?= {getattr(self, t)}" # getattr retrieve the corresponding "self" value
 			content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
 
 		# Bus targets
 		bus_targets_suffixes = ["NUM_SI", "NUM_MI", "ID_WIDTH"]
+		# MBUS has additional targets
 		mbus_targets = [("MBUS_ADDR_WIDTH", "ADDR_WIDTH"), ("MBUS_DATA_WIDTH", "DATA_WIDTH")]
 
 		for bus in self.buses:
 			base = bus.FULL_NAME  # e.g. "MBUS", "PBUS", "HBUS"
 			for suffix in bus_targets_suffixes:
 				target = base + "_" + suffix
+				# Example pattern: "MBUS_NUM_SI ?= 5"
 				pattern = rf"^{target}\s*\?=\s*.*$"
-				replacement = f"{target} ?= {getattr(bus, suffix)}"
+				replacement = f"{target} ?= {getattr(bus, suffix)}" # getattr retrieve the corresponding "bus" value
 				content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
 
 			if (base == "MBUS"):
 				for target, name in mbus_targets:
+					# Example pattern: "MBUS_ADDR_WIDTH ?= 32" where "32" is mbus.ADDR_WIDTH parameter
+					# Example pattern: "MBUS_ADDR_WIDTH ?= 32" where "32" is mbus.DATA_WIDTH parameter
 					pattern = rf"^{target}\s*\?=\s*.*$"
 					replacement = f"{target} ?= {getattr(bus, name)}"
 					content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
@@ -171,6 +202,9 @@ class SimplyV(metaclass=Singleton):
 		makefile_path.write_text(content)
 
 
+
+	# Update the "hw" makefile with the "HAS_CLOCK_DOMAIN" values, used to conditionally istantiate
+	# clock converters (at the rtl level) in order to adapt different clock domains
 	def config_xilinx_clock_domains(self, file_name: str) -> None:
 		children_nodes = self.mbus.get_nodes()
 		prefix = "_HAS_CLOCK_DOMAIN"
@@ -198,6 +232,7 @@ class SimplyV(metaclass=Singleton):
 
 		output_mk_file.write_text(content)
 
+	# Trigger specific peripherals IPs configurations
 	def config_peripherals_ips(self, files: list[str]) -> None:
 		for p in self.peripherals:
 			if isinstance(p, DDR4):

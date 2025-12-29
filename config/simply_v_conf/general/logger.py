@@ -1,6 +1,11 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This class is just a wrapper on the python logging library
+# at the moment the logger is really simple but the logic is all centralized
+# here in order to avoid changing the rest of the code of the application in case
+# of future changes
+
 import logging
 from .singleton import Singleton
-
 
 class Logger(metaclass=Singleton):
 	def __init__(self):

@@ -1,3 +1,11 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This class contains all the "settings.sh" related configurations
+# that can impact how the configuration flow behaves.
+# The function implementations are full of switch cases to keep it simple,
+# in future if the Env class will become more involved a hierarchy of classes
+# could be designed to better manage the complexity
+
+
 import os
 from .singleton import Singleton
 

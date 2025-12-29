@@ -1,3 +1,7 @@
+# Author: Salvatore Santoro				<sal.santoro@studenti.unina.it>
+# Description:
+#   Class that can generate the svinc files associated to each bus
+
 from buses.bus import Bus
 import os
 import textwrap

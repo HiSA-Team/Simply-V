@@ -1,3 +1,6 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This file defines the BRAM peripheral
+
 import os
 from pathlib import Path
 import re

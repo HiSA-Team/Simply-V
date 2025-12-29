@@ -1,3 +1,8 @@
+# Author: Salvatore Santoro				<sal.santoro@studenti.unina.it>
+# Description:
+#   Class that can generate the config.tcl files for each crossbar in order to configure
+#	the the Xilinx's axi_crossbar IP used by all the buses implementations
+
 from buses.bus import Bus
 import textwrap
 import os

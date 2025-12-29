@@ -1,3 +1,8 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This file defines the "Clocks_Register" class in which every bus can register
+# the clock domains of all the nodes attached to it
+# UNUSED ATM
+
 from general.env import Env
 
 class Clocks_Register():

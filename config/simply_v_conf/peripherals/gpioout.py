@@ -1,3 +1,7 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This file defines the gpio out peripheral
+
+
 from general.addr_range import Addr_Ranges
 from .peripheral import Peripheral
 
