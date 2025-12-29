@@ -16,12 +16,12 @@ from general.singleton import SingletonABCMeta
 class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 	env_global = Env.get_instance()
 
-	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("BRAM", "DMMEM", "PLIC")
+	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("BRAM", "DMMEM", "PLIC", "CDMA")
 	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("PBUS",)
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
 	if env_global.get_soc_profile()=="hpc":
-		LEGAL_PERIPHERALS = LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL", "CDMA")
+		LEGAL_PERIPHERALS = LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL")
 		LEGAL_BUSES = LEGAL_BUSES + ("HBUS",)
 
 

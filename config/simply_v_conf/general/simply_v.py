@@ -144,7 +144,7 @@ class SimplyV(metaclass=Singleton):
 	# SVINC files to use for crossbar ports declarations
 	# config.tcl files to automatically configure the Xilinx Interconnect IP
 	# CLOCK SVINC files (NonLeafBuses only) to configure the clock domains of the SOC
-	def config_bus(self, target_bus: str, outputs: list[str]) -> None:
+	def config_bus(self, target_bus: str, outputs: list[str]) -> bool:
 		for bus in self.buses:
 			if bus.FULL_NAME == target_bus.upper():
 				crossbar_template = Crossbar_Template(bus)
@@ -155,9 +155,10 @@ class SimplyV(metaclass=Singleton):
 				if isinstance(bus, NonLeafBus):
 					clock_template = Clocks_Template(bus)
 					clock_template.write_to_file(outputs[2])
-				return
+				return True
 
-		raise ValueError(f"{target_bus} wasn't configured (crossbar and svinc gen.) because it wasn't found")
+		# return false if the bus wasn't found
+		return False
 
 
 

@@ -1,9 +1,12 @@
 #ifndef __DRIVER_H_
 #define __DRIVER_H_
 
-// Inlcudes
+// Includes
 #include "xil_io.h"
+#include "uninasoc.h"
 #include "xkrnl_conv_hbus_hw.h"
+
+// Import symbols for peripherals
 
 // Offsets
 #define Xkrnl_BASE             ((uintptr_t)(_peripheral_HLS_CONTROL_start))

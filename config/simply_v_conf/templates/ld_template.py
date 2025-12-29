@@ -70,7 +70,7 @@ class Ld_Template():
 		lines = []
 		lines.append(f"_vector_table_start = 0x{self.boot_memory_base:016x};")
 		lines.append(f"_vector_table_end = 0x{self.boot_memory_base + (32*4):016x};")
-		lines.append(f"_stack_start= 0x{self.stack_start:016x};")
+		lines.append(f"_stack_start = 0x{self.stack_start:016x};")
 
 		return "\n".join(lines)
 
@@ -86,7 +86,7 @@ class Ld_Template():
 				# The stack is allocated at the end of first memory block and is 16 bytes aligned
 				# ~(15) = 0x111....0000 so anding with it effectively lowers the first 4 bits,
 				# making the value aligned to 16
-				self.stack_start = dimensions[1] & ~(15)
+				self.stack_start = (dimensions[1] - 1) & ~(15)
 				return
 
 		# boot memory not found

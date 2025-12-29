@@ -66,24 +66,25 @@ void _ext_handler(void)
     // In this example, the core is connected to PLIC target 1 line.
     // Therefore, we need to access the PLIC claim/complete register 1 (base_addr + 0x200004).
     // The interrupt source ID is obtained from the claim register.
+    //
 
     uint32_t interrupt_id = plic_claim();
     switch (interrupt_id) {
     case 0x0: // unused
         break;
     case 0x1:
-        printf("Handiling GPIO_IN interrupt!\r\n");
-        #ifdef GPIO_OUT_IS_ENABLED
+        printf("Handiling GPIOIN interrupt!\r\n");
+        #ifdef GPIOOUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_0);
         #endif // GPIO_OUT_IS_ENABLED
-        #ifdef GPIO_IN_IS_ENABLED
+        #ifdef GPIOIN_IS_ENABLED
         xlnx_gpio_in_clear_int(&gpio_in);
         #endif // GPIO_IN_IS_ENABLED
         break;
     case 0x2:
         // Timer interrupt
-        printf("Handiling TIM0 interrupt!\r\n");
-        #ifdef GPIO_OUT_IS_ENABLED
+        printf("Handiling TIM_0 interrupt!\r\n");
+        #ifdef GPIOOUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
         #endif // GPIO_OUT_IS_ENABLED
         xlnx_tim_clear_int(&timer);
@@ -111,12 +112,12 @@ int main()
     plic_configure_set_array(priorities, SOURCES_NUM);
     plic_enable_all();
 
-    #ifdef GPIO_IN_IS_ENABLED
+    #ifdef GPIOIN_IS_ENABLED
     if (xlnx_gpio_in_init(&gpio_in) != UNINASOC_OK)
         printf("ERROR GPIOIN\r\n");
     #endif // GPIO_IN_IS_ENABLED
 
-    #ifdef GPIO_OUT_IS_ENABLED
+    #ifdef GPIOOUT_IS_ENABLED
     if (xlnx_gpio_out_init(&gpio_out) != UNINASOC_OK)
         printf("ERROR GPIOOUT\r\n");
     #endif // GPIO_OUT_IS_ENABLED

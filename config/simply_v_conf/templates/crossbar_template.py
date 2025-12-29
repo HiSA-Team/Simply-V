@@ -11,12 +11,11 @@ class Crossbar_Template:
 
 	# using "dedent" to ignore leading spaces
 	str_template: str = textwrap.dedent("""\
-	// This file is auto-generated with {this_file}
+	# This file is auto-generated with {this_file}
 	# Import IP
 	create_ip -name axi_crossbar -vendor xilinx.com -library ip -version 2.1 -module_name $::env(IP_NAME)
 	# Configure IP
-	set_property -dict [list
-	{bus_configs}
+	set_property -dict [list {bus_configs}
 	 \\\n                         
 	] [get_ips $::env(IP_NAME)]
 	""")

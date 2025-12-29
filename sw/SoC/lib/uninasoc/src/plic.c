@@ -5,8 +5,7 @@
 //  Very simple implementations of PLIC functions used to correctly
 //  configure and handle external interrupts
 
-
-#include "uninasoc.h"
+#include "plic.h"
 #include "io.h"
 #include <stdint.h>
 
@@ -20,14 +19,15 @@ static size_t sources = MAX_SOURCES;
 int plic_init()
 {
     // Reset priorities
-    for (unsigned id = 1; id <= 31; ++id){
+    for (unsigned id = 1; id <= 31; ++id) {
         iowrite32(PLIC_PRIO_SRC(id), 0u);
     }
 
     // Drain pending interrupts
     while (1) {
         uint32_t id = ioread32(PLIC_CLAIM_CTX0);
-        if (id == 0) break;
+        if (id == 0)
+            break;
         iowrite32(PLIC_COMPLETE_CTX0, id);
     }
 
@@ -39,24 +39,26 @@ int plic_init()
 }
 
 // Configure a single line
-void plic_configure_set_one(uint32_t priority, size_t source){
-    iowrite32(PLIC_BASEADDR + (0x4 * source) , priority);
+void plic_configure_set_one(uint32_t priority, size_t source)
+{
+    iowrite32(PLIC_BASEADDR + (0x4 * source), priority);
 }
 
 // Configure a contiguous set of interrupt sources
-void plic_configure_set_array(uint32_t* priorities, size_t source_num){
+void plic_configure_set_array(uint32_t* priorities, size_t source_num)
+{
 
-    if(source_num < MAX_SOURCES)
+    if (source_num < MAX_SOURCES)
         sources = source_num;
 
-    //Set interrupt priorities
+    // Set interrupt priorities
     for (int i = 1; i <= sources; i++) {
         plic_configure_set_one(priorities[i], i);
     }
-
 }
 
-void plic_enable_all(){
+void plic_enable_all()
+{
 
     uint32_t enable = 0;
 
@@ -66,13 +68,15 @@ void plic_enable_all(){
         // must write powers of 2 with exponents from 1 to 3
         enable += (1 << i);
     }
-    iowrite32(PLIC_INT_ENABLE_CTX0 , enable);
+    iowrite32(PLIC_INT_ENABLE_CTX0, enable);
 }
 
-uint32_t plic_claim(){
+uint32_t plic_claim()
+{
     return ioread32(PLIC_CLAIM_CTX0);
 }
 
-void plic_complete(uint32_t interrupt_id){
+void plic_complete(uint32_t interrupt_id)
+{
     iowrite32(PLIC_COMPLETE_CTX0, interrupt_id);
 }

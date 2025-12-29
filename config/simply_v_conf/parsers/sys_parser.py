@@ -15,7 +15,7 @@ class Sys_Parser(Parser):
 
 	type_parsers: dict[str, Callable[[str], Any]]= Parser.type_parsers | {
 			"XLEN": int,
-			"VIO_RESETN_DEFAULT": bool,
+			"VIO_RESETN_DEFAULT": int,
 			"PHYSICAL_ADDR_WIDTH": int
 			}
 	

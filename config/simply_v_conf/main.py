@@ -68,8 +68,10 @@ def main(logger):
 		# first output is BUS crossbar
 		# second output is BUS SVINC
 		# third output (optional) is BUS CLOCK SVINC
-		system.config_bus(args.target_bus, outputs)
-		logger.simply_v_info(f"[CONFIG] Generated {args.target_bus} configs.")
+		if(system.config_bus(args.target_bus, outputs)):
+			logger.simply_v_info(f"[CONFIG] Generated {args.target_bus} configs.")
+		else:
+			logger.simply_v_warning(f"[CONFIG] {args.target_bus} configs NOT generated (bus disabled)")
 		return
 
 	if mode == "config_sw":

@@ -6,30 +6,26 @@
 
 
 
-assign MBUS_clk = clk_MBUS_100MHz;
-assign MBUS_rstn = rstn_MBUS_100MHz;
+assign MBUS_clk = clk_MBUS_20MHz;
+assign MBUS_rstn = rstn_MBUS_20MHz;
 
 logic PBUS_clk;
-assign PBUS_clk = clk_MBUS_250MHz;
+assign PBUS_clk = clk_MBUS_10MHz;
 logic PBUS_rstn;
-assign PBUS_rstn = rstn_MBUS_250MHz;
+assign PBUS_rstn = rstn_MBUS_10MHz;
 logic BRAM_0_clk;
-assign BRAM_0_clk = clk_MBUS_100MHz;
+assign BRAM_0_clk = clk_MBUS_20MHz;
 logic BRAM_0_rstn;
-assign BRAM_0_rstn = rstn_MBUS_100MHz;
+assign BRAM_0_rstn = rstn_MBUS_20MHz;
 logic DMmem_clk;
-assign DMmem_clk = clk_MBUS_100MHz;
+assign DMmem_clk = clk_MBUS_20MHz;
 logic DMmem_rstn;
-assign DMmem_rstn = rstn_MBUS_100MHz;
+assign DMmem_rstn = rstn_MBUS_20MHz;
 logic CDMA_clk;
-assign CDMA_clk = clk_MBUS_100MHz;
+assign CDMA_clk = clk_MBUS_20MHz;
 logic CDMA_rstn;
-assign CDMA_rstn = rstn_MBUS_100MHz;
-logic HlsControl_clk;
-assign HlsControl_clk = clk_DDR4CH0_300MHz;
-logic HlsControl_rstn;
-assign HlsControl_rstn = rstn_DDR4CH0_300MHz;
+assign CDMA_rstn = rstn_MBUS_20MHz;
 logic PLIC_clk;
-assign PLIC_clk = clk_MBUS_100MHz;
+assign PLIC_clk = clk_MBUS_20MHz;
 logic PLIC_rstn;
-assign PLIC_rstn = rstn_MBUS_100MHz;
+assign PLIC_rstn = rstn_MBUS_20MHz;

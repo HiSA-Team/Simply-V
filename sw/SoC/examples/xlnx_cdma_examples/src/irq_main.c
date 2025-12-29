@@ -19,6 +19,9 @@
 #define TRANSFER_SIZE (NUM_WORDS * sizeof(uint32_t))
 #define BUFFER_SIZE (NUM_ROUNDS * TRANSFER_SIZE)
 
+// CDMA Base Address (from linker script)
+#define CDMA_BASEADDR   ((uintptr_t)_peripheral_CDMA_start)
+
 // TODO: import this from config
 #define CDMA_IRQ_ID  6
 #define CDMA_INT_PRIORITY 1
