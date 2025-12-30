@@ -5,11 +5,8 @@
 #include "xil_io.h"
 #include "xkrnl_conv_hbus_hw.h"
 
-// Import symbols for peripherals
-extern const volatile uintptr_t _peripheral_HLS_CONTROL_start;
-
 // Offsets
-#define Xkrnl_BASE             ((uintptr_t)(&_peripheral_HLS_CONTROL_start))
+#define Xkrnl_BASE             ((uintptr_t)(_peripheral_HLS_CONTROL_start))
 #define Xkrnl_Control          (Xkrnl_BASE + XKRNL_CONV_HBUS_CONTROL_ADDR_AP_CTRL)
 #define Xkrnl_GIE              (Xkrnl_BASE + XKRNL_CONV_HBUS_CONTROL_ADDR_GIE)
 #define Xkrnl_IER              (Xkrnl_BASE + XKRNL_CONV_HBUS_CONTROL_ADDR_IER)
