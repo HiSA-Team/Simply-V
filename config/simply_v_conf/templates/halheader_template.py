@@ -18,8 +18,10 @@ class HALheader_Template:
 
 	#include <stdint.h>
 
+	// Address of configured peripherals
 	{peripheral_block_str}
 
+	// Enabled devices
 	{device_block_str}
 
 	#endif // {include_guard}

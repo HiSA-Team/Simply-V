@@ -36,7 +36,7 @@ class Buses_Factory(Factory):
 		# extract informations and create "Addr_Ranges" to inject in the bus object
 		base_name = self._extract_base_name(full_name)
 
-		clock_frequency = self._extract_clock_frequency(clock_domain)
+		clock_frequency = self.extract_clock_frequency(clock_domain)
 		addr_ranges = Addr_Ranges(full_name, base_addr, addr_width)
 
 		# Assuming the bus file name is for example "config_pbus_0.csv" if full_name is "PBUS_0"

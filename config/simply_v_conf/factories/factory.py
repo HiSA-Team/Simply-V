@@ -62,7 +62,7 @@ class Factory(metaclass=SingletonABCMeta):
 
 	# Function used to extract the clock frequency value from a clock domain name enforcing the same naming convention
 	# for each clock domain
-	def _extract_clock_frequency(self, clock_domain: str) -> int | NoReturn:
+	def extract_clock_frequency(self, clock_domain: str) -> int | NoReturn:
 		try:
 			return int(clock_domain.split("_")[-1])
 		except ValueError:

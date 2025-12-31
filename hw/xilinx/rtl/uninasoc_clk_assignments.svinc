@@ -29,3 +29,4 @@ logic PLIC_clk;
 assign PLIC_clk = clk_MBUS_20MHz;
 logic PLIC_rstn;
 assign PLIC_rstn = rstn_MBUS_20MHz;
+

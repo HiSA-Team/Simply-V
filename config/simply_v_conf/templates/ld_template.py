@@ -68,18 +68,17 @@ class Ld_Template():
 
 	def _init_global_symbols_str(self):
 		lines = []
-		lines.append(f"_vector_table_start = 0x{self.boot_memory_base:016x};")
-		lines.append(f"_vector_table_end = 0x{self.boot_memory_base + (32*4):016x};")
-		lines.append(f"_stack_start = 0x{self.stack_start:016x};")
+		lines.append(f"PROVIDE(_vector_table_start = 0x{self.boot_memory_base:016x});")
+		lines.append(f"PROVIDE(_vector_table_end = 0x{self.boot_memory_base + (32*4):016x});")
+		lines.append(f"PROVIDE(_stack_start = 0x{self.stack_start:016x});")
 
 		return "\n".join(lines)
 
 
-	def _init_boot_values(self, memories: dict[str, tuple[int, int, int]], boot_address: int) -> None:
+	def _init_boot_values(self, memories: dict[str, tuple[int, int, int]], boot_memory_name: str) -> None:
 		for name, dimensions in memories.items():
-			# check the base address equal to boot address
-			if(dimensions[0] == boot_address):
-				self.boot_memory_str = name
+			# check the name of the memory to be equal to the boot one specified
+			if(name == boot_memory_name):
 				self.boot_memory_base = dimensions[0]
 				# _stack_end can be user-defined for the application, as bss and rodata
 				# _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
@@ -90,12 +89,12 @@ class Ld_Template():
 				return
 
 		# boot memory not found
-		raise ValueError(f"Unable to find a memory suited for booting (Boot starting address is {boot_address})")
+		raise ValueError(f"Unable to find a memory suited for booting (Selected boot memory is {boot_memory_name})")
 
 
-	def __init__(self, memories: list[Peripheral], boot_address: int):
+	def __init__(self, memories: list[Peripheral], boot_memory_name: str):
 		dimensions_dict: dict[str, tuple[int, int, int]] = {}
-		self.boot_memory_str: str
+		self.boot_memory_str: str = boot_memory_name
 		self.boot_memory_base: int
 		self.stack_start: int
 
@@ -103,7 +102,7 @@ class Ld_Template():
 			# retrieve addr ranges dimensions in order to generalize on the number of address ranges
 			dimensions_dict |= m.asgn_addr_ranges.get_range_dimensions(explicit=False)
 
-		self._init_boot_values(dimensions_dict, boot_address)
+		self._init_boot_values(dimensions_dict, boot_memory_name)
 
 		self.memory_block_str = self._init_memory_block_str(dimensions_dict)
 		self.globals_block_str = self._init_global_symbols_str()

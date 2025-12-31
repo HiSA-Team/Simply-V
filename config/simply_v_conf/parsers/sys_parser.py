@@ -10,7 +10,8 @@ class Sys_Parser(Parser):
 
 	optional_properties: dict[str, Any] = Parser.optional_properties | {
 											"VIO_RESETN_DEFAULT": 1,
-											"XLEN": 32
+											"XLEN": 32,
+											"BOOT_MEMORY_BLOCK": "BRAM_0"
 											}
 
 	type_parsers: dict[str, Callable[[str], Any]]= Parser.type_parsers | {
@@ -25,6 +26,7 @@ class Sys_Parser(Parser):
 			}
 
 	# intra rules expressed as lambdas producing (bool, message)
+	# the value "True" of the bool MUST express an error in the configuration
 	intra_rules: list[Callable[[dict], tuple[bool, str]]] = Parser.intra_rules + [
 			lambda d: (
 				(d["XLEN"] == 32) and (d["PHYSICAL_ADDR_WIDTH"] != 32),
@@ -32,7 +34,9 @@ class Sys_Parser(Parser):
 				),
 			lambda d: (
 				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV64" and d["XLEN"] == 32) or \
-				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV32" and d["XLEN"] == 64),
+				(d["CORE_SELECTOR"] == "CORE_CV64A6_ARA" and d["XLEN"] == 32) or \
+				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV32" and d["XLEN"] == 64) or \
+				(d["CORE_SELECTOR"] == "CORE_DUAL_MICROBLAZEV_RV32" and d["XLEN"] == 64),
 				f"XLEN={d['XLEN']} doesn't match {d['CORE_SELECTOR']} data width."
 				),
 			lambda d: (

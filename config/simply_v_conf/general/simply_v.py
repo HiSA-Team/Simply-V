@@ -31,9 +31,8 @@ class SimplyV(metaclass=Singleton):
 	buses_factory = Buses_Factory.get_instance()
 	logger = Logger.get_instance()
 	SUPPORTED_CORES = ("CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", \
-										"CORE_MICROBLAZEV_RV64", "CORE_CV64A6")
-	# this is the boot address of the SoC
-	BOOT_MEMORY_BLOCK = 0x0
+										"CORE_MICROBLAZEV_RV64", "CORE_DUAL_MICROBLAZEV_RV32", \
+										"CORE_CV64A6", "CORE_CV64A6_ARA")
 
 	def __init__(self, system_data: dict):
 		self.CORE_SELECTOR: str = system_data["CORE_SELECTOR"]
@@ -41,7 +40,15 @@ class SimplyV(metaclass=Singleton):
 		self.VIO_RESETN_DEFAULT: int = system_data["VIO_RESETN_DEFAULT"]
 		self.XLEN: int = system_data["XLEN"]
 		self.PHYSICAL_ADDR_WIDTH: int = system_data["PHYSICAL_ADDR_WIDTH"]
+		self.BOOT_MEMORY_BLOCK: str = system_data["BOOT_MEMORY_BLOCK"]
 		self.mbus: MBus
+
+		main_clock_frqz = self.buses_factory.extract_clock_frequency(self.MAIN_CLOCK_DOMAIN)
+
+		# CV64A6_ARA needs this particular check
+		if ((main_clock_frqz > 50) and (self.CORE_SELECTOR == "CORE_CV64A6_ARA")):
+			raise ValueError("CORE_CV64A6_ARA supports a maximum MAIN_CLOCK_DOMAIN frequency of 50 MHz." 
+							 f"(configured with {self.MAIN_CLOCK_DOMAIN})")
 
 		if (self.CORE_SELECTOR not in self.SUPPORTED_CORES):
 			raise ValueError("CORE_SELECTOR unsupported")

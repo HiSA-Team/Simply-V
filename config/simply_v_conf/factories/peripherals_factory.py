@@ -43,7 +43,7 @@ class Peripherals_Factory(Factory):
 		self._register_creation(full_name)
 
 		# extract informations and create "Addr_Ranges" to inject in the peripheral object
-		clock_frequency = self._extract_clock_frequency(clock_domain)
+		clock_frequency = self.extract_clock_frequency(clock_domain)
 		base_name = self._extract_base_name(full_name)
 		id = self._extract_id(full_name)
 		addr_ranges = Addr_Ranges(full_name, base_addr, addr_width)

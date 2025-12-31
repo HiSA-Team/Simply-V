@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 
+// Address of configured peripherals
 #define _peripheral_BRAM_0_start  0x0000000000000000
 #define _peripheral_BRAM_0_end    0x0000000000010000
 #define _peripheral_DMmem_start  0x0000000000010000
@@ -24,10 +25,11 @@
 #define _peripheral_TIM_1_start  0x0000000000020620
 #define _peripheral_TIM_1_end    0x0000000000020640
 
-#define UART_IS_ENABLED 1
-#define GPIOOUT_IS_ENABLED 1
-#define GPIOIN_IS_ENABLED 1
+// Enabled devices
 #define TIM_IS_ENABLED 1
 #define CDMA_IS_ENABLED 1
+#define GPIOIN_IS_ENABLED 1
+#define UART_IS_ENABLED 1
+#define GPIOOUT_IS_ENABLED 1
 
 #endif // __UNINASOC_CONF_H__
