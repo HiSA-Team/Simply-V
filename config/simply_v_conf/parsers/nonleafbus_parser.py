@@ -6,18 +6,12 @@ from .bus_parser import Bus_Parser
 
 class NonLeafBus_Parser(Bus_Parser):
 	#extend the father defined data structs used for parsing/validation
-	mandatory_properties = Bus_Parser.mandatory_properties + ("RANGE_CLOCK_DOMAINS",)
 
 	optional_properties = Bus_Parser.optional_properties | {"LOOPBACK": 0 }
 	
-	type_parsers = Bus_Parser.type_parsers | {"RANGE_CLOCK_DOMAINS": lambda s: s.split(" "),
-											  "LOOPBACK": bool}
+	type_parsers = Bus_Parser.type_parsers | {"LOOPBACK": bool}
 
 	intra_rules = Bus_Parser.intra_rules + [
-			lambda d: (
-				d["NUM_MI"] != len(d["RANGE_CLOCK_DOMAINS"]),
-				f"NUM_MI does not match RANGE_CLOCK_DOMAINS len"
-				),
 			lambda d:(
 				(d["LOOPBACK"] == 1) and (d["ADDR_RANGES"] != 1),
 				f"ADDR_RANGES must be 1 when activating LOOPBACK"

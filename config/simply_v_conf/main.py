@@ -11,6 +11,7 @@ from general.env import Env
 from general.logger import Logger
 from general.simply_v import SimplyV
 import argparse
+import traceback
 
 def parse_args():
 	parser = argparse.ArgumentParser()
@@ -119,4 +120,6 @@ if __name__ == "__main__":
 	except ValueError as e:
 		logger.simply_v_crash(f"Value error: {e.args[0]}.")
 	except Exception as e:
-		logger.simply_v_crash(f"Unexpected error: {e}")
+		logger.simply_v_crash(
+			"Unexpected error:\n" + traceback.format_exc()
+		)

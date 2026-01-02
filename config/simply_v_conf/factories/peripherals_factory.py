@@ -57,7 +57,9 @@ class Peripherals_Factory(Factory):
 				channel = id
 				if channel not in self.DDR_CHANNELS:
 					raise ValueError("Unsupported DDR4 channel for the current board configuration")
-				return DDR4(base_name, addr_ranges, clock_domain, clock_frequency, channel)
+				# DDR4 objects have their own clock domain so they statically initialize
+				# it based on channel number
+				return DDR4(base_name, addr_ranges, channel)
 			case "GPIOOUT":
 				return GPIO_out(base_name, addr_ranges, clock_domain, clock_frequency)
 			case "GPIOIN":

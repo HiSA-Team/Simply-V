@@ -28,6 +28,9 @@ class Env(metaclass=Singleton):
 	def get_soc_profile(self):
 		return self._soc_profile
 
+	def get_board(self):
+		return self._board
+
 	def get_bus_path(self, full_name: str) -> str:
 		return self.bus_input_files[full_name]
 

@@ -8,20 +8,18 @@ import re
 import os
 from pathlib import Path
 
+# DDR4 has its own clock domain, so it doesn't accept values when initialized
+# but just statically initialize its clock domain based on the channel
 class DDR4(Peripheral):
-	LEGAL_CLOCK = 300
-	def __init__(self, base_name: str, addr_ranges_list: Addr_Ranges, clock_domain: str, clock_frequency: int,
-					channel: int):
-
-		if (clock_frequency != self.LEGAL_CLOCK):
-			raise ValueError(f"DDR4 channel {channel} has a wrong clock frequency (must be 300)")
-
+	def __init__(self, base_name: str, addr_ranges_list: Addr_Ranges, channel: int):
+		clock_frequency = 300
+		clock_domain = f"DDR4CH{channel}_300"
 		super().__init__(base_name, addr_ranges_list, clock_domain, clock_frequency)
 		self.IS_A_MEMORY = True
-		self.CHANNEL = channel
 		self.IS_CLOCK_GENERATOR = True
+		self.CHANNEL = channel
 
-	def config_ip(self, root_path: str) -> None:
+	def config_ip(self, root_path: str, **kwargs) -> None:
 		# use channel number to find corresponding cache
 		cache_name = f"xlnx_system_cache_ddr4ch{self.CHANNEL}"
 		cache_path = os.path.join(root_path, cache_name, "config.tcl")

@@ -31,9 +31,19 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		# init NonLeafBus object
 		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
 				axi_data_width, clock_domain, clock_frequency, None)
+		
+		self._RANGE_CLOCK_DOMAINS = data_dict["RANGE_CLOCK_DOMAINS"].copy()
 
 	
+	# IMPORTANT:
+	# generate_children and activate_loopbeck MUST always be executed before all the other configuration functions
+	# since they define all the tree hierarchy structure on which the other functions will do the checks,
+	# so changing this order will lead to partial checks/configurations
 	def init_configurations(self):
+		#create children nodes
+		self.generate_children()
+		# activate all the loopbacks
+		self.activate_loopback()
 		# sanitize all the addr_ranges
 		self.sanitize_addr_ranges()
 		# check legals buses/peripherals
@@ -46,13 +56,14 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 	# extend default clocks checks with custom ones
 	def check_clock_domains(self):
 		failed_checks = []
+		# base names of peripherals
 		peripherals_to_check = ["PLIC", "BRAM", "DMMEM"]
 		for children in self._children_peripherals:
-			if (children.FULL_NAME in peripherals_to_check):
+			if (children.BASE_NAME in peripherals_to_check):
 				if(children.CLOCK_DOMAIN != self.CLOCK_DOMAIN):
-					failed_checks.append(children.CLOCK_DOMAIN)
+					failed_checks.append(children.FULL_NAME)
 
 		if (len(failed_checks) != 0):
-			raise ValueError(f"-{', '.join(failed_checks)} need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
+			raise ValueError(f"{', '.join(failed_checks)} need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
 
 		super().check_clock_domains()

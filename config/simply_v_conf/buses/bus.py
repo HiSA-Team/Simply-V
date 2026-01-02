@@ -7,7 +7,7 @@
 # it also defines internal function (the functions starting with "_") that expose
 # common logic and attributes used from both the "Composite" and "Leaf" classes
 
-from typing import Callable, cast
+from typing import cast
 from general.addr_range import Addr_Ranges
 from general.node import Node
 from peripherals.peripheral import Peripheral
@@ -43,10 +43,15 @@ class Bus(Node):
 		#The number of ranges associated to each children node
 		self.CHILDREN_NUM_RANGES: int = data_dict["ADDR_RANGES"]
         #Children Parameters internally used only to generate the children objects
-		#should never use them directly
+		#should never use them directly, after creating the new nodes, just refer to them to get
+		#ranges and clocks values
 		self._RANGE_NAMES: list[str] = data_dict["RANGE_NAMES"].copy()
 		self._RANGE_BASE_ADDR: list[int] = data_dict["RANGE_BASE_ADDR"].copy()
 		self._RANGE_ADDR_WIDTH: list[int] = data_dict["RANGE_ADDR_WIDTH"].copy()
+		#As default each bus just propagates its clock domain to its children
+		#MBUS is special since redefine this according to the values specified in its .csv
+		self._RANGE_CLOCK_DOMAINS: list[str] = [self.CLOCK_DOMAIN] * len(self._RANGE_NAMES)
+
 		#List of children peripherals generated in "generate_children"
 		self._children_peripherals : list[Peripheral] = []
 
@@ -62,8 +67,6 @@ class Bus(Node):
 				f"Unsupported protocol '{self.PROTOCOL}' in {self.FULL_NAME}"
 			)
 
-		#create children nodes
-		self._generate_children()
 
 	# Internal functions used from children classes to implement the "COMPOSITE INTERFACE" functions
 
@@ -166,14 +169,12 @@ class Bus(Node):
 		return children_nodes
 
 
-	# Function used by Buses to create childrens (both Peripherals and Buses)
-	@abstractmethod
-	def _generate_children(self) -> None:
-		pass
-	
 	#COMPONENT INTERFACE
 	#NonLeafBus defines the recursive part of the implementation
 	#LeafBus defines the base cases of recursion of the implementation
+	@abstractmethod
+	def generate_children(self) -> None:
+		pass
 
 	@abstractmethod
 	def sanitize_addr_ranges(self) -> None:
@@ -181,6 +182,10 @@ class Bus(Node):
 
 	@abstractmethod
 	def check_legals(self) -> None:
+		pass
+
+	@abstractmethod
+	def activate_loopback(self) -> None:
 		pass
 	
 	@abstractmethod
@@ -191,10 +196,14 @@ class Bus(Node):
 	def check_clock_domains(self) -> None:
 		pass
 	
+	# Recursive specify if we're getting ALL the buses that this single bus can reach (true)
+	# or only the ones directly attached to it (false)
 	@abstractmethod
 	def get_buses(self, recursive: bool) -> list["Bus"] | None:
 		pass
 
+	# Recursive specify if we're getting ALL the peripherals that this single bus can reach (true)
+	# or only the ones directly attached to it (false)
 	@abstractmethod
 	def get_peripherals(self, recursive: bool) -> list["Peripheral"]:
 		pass

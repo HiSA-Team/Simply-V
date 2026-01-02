@@ -21,14 +21,15 @@ class LeafBus(Bus):
 		self.IS_CLOCK_GENERATOR: bool = False
 
 
-	#Leaf buses just creates Peripherals based on all the "RANGES" attributes
-	def _generate_children(self):
-		self._children_peripherals = self._generate_peripherals(self.CHILDREN_NUM_RANGES, self._RANGE_NAMES, 
-														 self._RANGE_BASE_ADDR, self._RANGE_ADDR_WIDTH, 
-														 [self.CLOCK_DOMAIN]*len(self._RANGE_NAMES))
-
+	
 	#COMPONENT INTERFACE - LEAF IMPLEMENTATION
 	#Base cases of the recursion
+
+	#Leaf buses just creates Peripherals based on all the "RANGES" attributes
+	def generate_children(self) -> None:
+		self._children_peripherals = self._generate_peripherals(self.CHILDREN_NUM_RANGES, self._RANGE_NAMES, 
+														 self._RANGE_BASE_ADDR, self._RANGE_ADDR_WIDTH, 
+														 self._RANGE_CLOCK_DOMAINS)
 
 	#Leaf buses just need to sanitize the address ranges of peripherals
 	def sanitize_addr_ranges(self):
@@ -45,6 +46,10 @@ class LeafBus(Bus):
 
 	#Leaf bus don't support clock_domains object so just return
 	def check_clock_domains(self):
+		return
+
+	#Leaf bus don't support loopback so just return
+	def activate_loopback(self):
 		return
 	
 	#Leaf bus don't support childre_buses so just return

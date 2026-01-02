@@ -5,7 +5,6 @@
 
 import textwrap
 from general.node import Node
-from typing import cast
 from buses.nonleafbus import NonLeafBus
 import os
 

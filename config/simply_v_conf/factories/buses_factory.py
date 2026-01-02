@@ -4,6 +4,7 @@
 # and also manages the "PROTOCOL" = "DISABLE" used to deactivate
 # buses configuration, returning "None" in case of creation of a disabled bus
 
+from parsers.mbus_parser import MBUS_Parser
 from general.addr_range import Addr_Ranges
 from .factory import Factory
 from parsers.nonleafbus_parser import NonLeafBus_Parser
@@ -11,6 +12,7 @@ from parsers.leafbus_parser import LeafBus_Parser
 from buses.bus import Bus
 
 class Buses_Factory(Factory):
+	mbus_parser = MBUS_Parser.get_instance()
 	nonleafbus_parser = NonLeafBus_Parser.get_instance()
 	leafbus_parser = LeafBus_Parser.get_instance()
 
@@ -45,9 +47,9 @@ class Buses_Factory(Factory):
 		# Create concrete bus
 		match base_name:
 			case "MBUS":
-				data_dict = self.nonleafbus_parser.parse_csv(file_name)
+				data_dict = self.mbus_parser.parse_csv(file_name)
 				if data_dict["PROTOCOL"] == "DISABLE":
-					return None
+					raise ValueError("MBUS specified with DISABLE option. (MBUS is mandatory for the configuration)")
 				return MBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
 			case "PBUS":
 				data_dict = self.leafbus_parser.parse_csv(file_name)

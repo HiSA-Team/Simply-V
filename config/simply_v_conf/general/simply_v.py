@@ -26,10 +26,12 @@ from peripherals.uart import Uart
 from .singleton import Singleton
 from buses.mbus import MBus
 from .logger import Logger
+from .env import Env
 
 class SimplyV(metaclass=Singleton):
 	buses_factory = Buses_Factory.get_instance()
 	logger = Logger.get_instance()
+	env = Env.get_instance()
 	SUPPORTED_CORES = ("CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", \
 										"CORE_MICROBLAZEV_RV64", "CORE_DUAL_MICROBLAZEV_RV32", \
 										"CORE_CV64A6", "CORE_CV64A6_ARA")
@@ -52,6 +54,11 @@ class SimplyV(metaclass=Singleton):
 
 		if (self.CORE_SELECTOR not in self.SUPPORTED_CORES):
 			raise ValueError("CORE_SELECTOR unsupported")
+
+		# MICROBLAZE needs this particular check
+		if ("CORE_MICROBLAZEV" in self.CORE_SELECTOR):
+			if (self.env.get_board() == "au280"):
+				raise ValueError(f"CORE_MICROBLAZEV is not allowed when building for au280")
 
 		# Create root node (MBUS)
 		asgn_base_addr = [0]

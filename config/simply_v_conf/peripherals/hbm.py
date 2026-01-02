@@ -10,3 +10,4 @@ class HBM(Peripheral):
 
 		super().__init__(base_name, addr_ranges_list, clock_domain, clock_frequency)
 		self.IS_A_MEMORY = True
+		self.IS_CLOCK_GENERATOR
