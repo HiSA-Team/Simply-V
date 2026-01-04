@@ -11,7 +11,7 @@ config:
 hw: xilinx
 
 # Limit the number of parallel Vivado instances
-MAX_VIVADO_INSTANCES ?= 3 # This should be safe for a 16-cores CPU
+MAX_VIVADO_INSTANCES ?= 4 # This should be safe for a 16-cores CPU
 xilinx: units config
 	${MAKE} -C ${XILINX_ROOT} -j ${MAX_VIVADO_INSTANCES}
 

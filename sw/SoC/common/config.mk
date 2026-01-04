@@ -7,7 +7,7 @@
 # Toolchain #
 #############
 
-XLEN ?= 32
+XLEN ?= 64
 RV_PREFIX ?= riscv${XLEN}-unknown-elf-
 
 CC          = $(RV_PREFIX)gcc

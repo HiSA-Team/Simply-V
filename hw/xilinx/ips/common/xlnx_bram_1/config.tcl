@@ -10,13 +10,14 @@ puts "$coe_file"
 
 # Set the bram depth
 # WARNING: Do not change the following line, it is modified by config-based script
-set bram_depth {8192}
+set bram_depth {4096}
 
 # Use envvars out of list
 set_property CONFIG.Write_Width_A $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
 set_property CONFIG.Read_Width_A  $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
 set_property CONFIG.Write_Width_B $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
 set_property CONFIG.Read_Width_B  $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
+set_property CONFIG.AXI_ID_Width  $::env(MBUS_ID_WIDTH)       [get_ips $::env(IP_NAME)]
 
 # Configure IP
 set_property -dict [list CONFIG.Interface_Type {AXI4} \
@@ -40,6 +41,3 @@ set_property -dict [list CONFIG.Interface_Type {AXI4} \
                         CONFIG.Fill_Remaining_Memory_Locations {true} \
                         CONFIG.Write_Depth_A $bram_depth \
                 ] [get_ips $::env(IP_NAME)]
-
-# Set these after list
-set_property CONFIG.AXI_ID_Width  $::env(MBUS_ID_WIDTH)       [get_ips $::env(IP_NAME)]

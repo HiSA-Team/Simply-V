@@ -108,7 +108,9 @@ int main()
 
     // Configure the PLIC
     uint32_t priorities[SOURCES_NUM] = { 1, 1, 1 };
-    plic_init();
+    if (plic_init() != UNINASOC_OK)
+		printf("Error initializing PLIC\r\n");
+
     plic_configure_set_array(priorities, SOURCES_NUM);
     plic_enable_all();
 

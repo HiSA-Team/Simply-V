@@ -1,10 +1,10 @@
 #include <stdint.h>
+#include "uninasoc.h"
 
-extern const volatile uint32_t _peripheral_GPIO_out_start;
 
 int main(){
 
-    uint32_t * gpio_addr = (uint32_t *) &_peripheral_GPIO_out_start;
+    uint32_t * gpio_addr = (uint32_t *) GPIO_OUT_BASEADDR;
 
     while(1){
         for(int i = 0; i < 100000; i++);

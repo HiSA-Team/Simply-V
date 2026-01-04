@@ -31,8 +31,15 @@ LD_SCRIPT     = ld/user.ld
 # Libraries #
 #############
 
-LIB_OBJ_LIST     =
-LIB_INC_LIST     =
+LIB_OBJ_TINYIO    = $(LIB_DIR)/tinyio/lib/tinyio.a
+LIB_INC_TINYIO    = -I$(LIB_DIR)/tinyio/inc
+
+LIB_OBJ_UNINASOC  = $(LIB_DIR)/uninasoc/lib/libuninasoc.a
+LIB_INC_UNINASOC   = -I$(LIB_DIR)/uninasoc/inc
+
+LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO) $(LIB_OBJ_UNINASOC)
+LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_UNINASOC)
+
 
 #############
 # Toolchain #

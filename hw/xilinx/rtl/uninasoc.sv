@@ -343,7 +343,7 @@ module uninasoc (
         .clk_i          ( MBUS_clk   ),
         .rst_ni         ( MBUS_rstn  ),
         .core_resetn_i  ( vio_resetn ),
-        .bootaddr_i     ( '0         ),
+        .bootaddr_i     ( '0     ),
         .irq_i          ( rv_socket_interrupt_line ),
 
         // Instruction AXI Port
@@ -599,7 +599,7 @@ module uninasoc (
     ////////////////
 
     // Main memory
-    xlnx_bram_0 bram_u (
+    xlnx_bram_0 bram_u_0 (
         .rsta_busy      ( /* open */                ), // output wire rsta_busy
         .rstb_busy      ( /* open */                ), // output wire rstb_busy
         .s_aclk         ( BRAM_0_clk                  ), // input wire s_aclk
@@ -634,6 +634,45 @@ module uninasoc (
         .s_axi_rvalid   ( MBUS_to_BRAM_0_axi_rvalid   ), // output wire s_axi_rvalid
         .s_axi_rready   ( MBUS_to_BRAM_0_axi_rready   )  // input wire s_axi_rready
     );
+
+	// Main memory
+    xlnx_bram_1 bram_u_1 (
+        .rsta_busy      ( /* open */                ), // output wire rsta_busy
+        .rstb_busy      ( /* open */                ), // output wire rstb_busy
+        .s_aclk         ( BRAM_1_clk                  ), // input wire s_aclk
+        .s_aresetn      ( BRAM_1_rstn                 ), // input wire s_aresetn
+        .s_axi_awid     ( MBUS_to_BRAM_1_axi_awid     ), // input wire [3 : 0] s_axi_awid
+        .s_axi_awaddr   ( MBUS_to_BRAM_1_axi_awaddr   ), // input wire [31 : 0] s_axi_awaddr
+        .s_axi_awlen    ( MBUS_to_BRAM_1_axi_awlen    ), // input wire [7 : 0] s_axi_awlen
+        .s_axi_awsize   ( MBUS_to_BRAM_1_axi_awsize   ), // input wire [2 : 0] s_axi_awsize
+        .s_axi_awburst  ( MBUS_to_BRAM_1_axi_awburst  ), // input wire [1 : 0] s_axi_awburst
+        .s_axi_awvalid  ( MBUS_to_BRAM_1_axi_awvalid  ), // input wire s_axi_awvalid
+        .s_axi_awready  ( MBUS_to_BRAM_1_axi_awready  ), // output wire s_axi_awready
+        .s_axi_wdata    ( MBUS_to_BRAM_1_axi_wdata    ), // input wire [31 : 0] s_axi_wdata
+        .s_axi_wstrb    ( MBUS_to_BRAM_1_axi_wstrb    ), // input wire [3 : 0] s_axi_wstrb
+        .s_axi_wlast    ( MBUS_to_BRAM_1_axi_wlast    ), // input wire s_axi_wlast
+        .s_axi_wvalid   ( MBUS_to_BRAM_1_axi_wvalid   ), // input wire s_axi_wvalid
+        .s_axi_wready   ( MBUS_to_BRAM_1_axi_wready   ), // output wire s_axi_wready
+        .s_axi_bid      ( MBUS_to_BRAM_1_axi_bid      ), // output wire [3 : 0] s_axi_bid
+        .s_axi_bresp    ( MBUS_to_BRAM_1_axi_bresp    ), // output wire [1 : 0] s_axi_bresp
+        .s_axi_bvalid   ( MBUS_to_BRAM_1_axi_bvalid   ), // output wire s_axi_bvalid
+        .s_axi_bready   ( MBUS_to_BRAM_1_axi_bready   ), // input wire s_axi_bready
+        .s_axi_arid     ( MBUS_to_BRAM_1_axi_arid     ), // input wire [3 : 0] s_axi_arid
+        .s_axi_araddr   ( MBUS_to_BRAM_1_axi_araddr   ), // input wire [31 : 0] s_axi_araddr
+        .s_axi_arlen    ( MBUS_to_BRAM_1_axi_arlen    ), // input wire [7 : 0] s_axi_arlen
+        .s_axi_arsize   ( MBUS_to_BRAM_1_axi_arsize   ), // input wire [2 : 0] s_axi_arsize
+        .s_axi_arburst  ( MBUS_to_BRAM_1_axi_arburst  ), // input wire [1 : 0] s_axi_arburst
+        .s_axi_arvalid  ( MBUS_to_BRAM_1_axi_arvalid  ), // input wire s_axi_arvalid
+        .s_axi_arready  ( MBUS_to_BRAM_1_axi_arready  ), // output wire s_axi_arready
+        .s_axi_rid      ( MBUS_to_BRAM_1_axi_rid      ), // output wire [3 : 0] s_axi_rid
+        .s_axi_rdata    ( MBUS_to_BRAM_1_axi_rdata    ), // output wire [31 : 0] s_axi_rdata
+        .s_axi_rresp    ( MBUS_to_BRAM_1_axi_rresp    ), // output wire [1 : 0] s_axi_rresp
+        .s_axi_rlast    ( MBUS_to_BRAM_1_axi_rlast    ), // output wire s_axi_rlast
+        .s_axi_rvalid   ( MBUS_to_BRAM_1_axi_rvalid   ), // output wire s_axi_rvalid
+        .s_axi_rready   ( MBUS_to_BRAM_1_axi_rready   )  // input wire s_axi_rready
+    );
+
+
 
     // Platform-Level Interrupt Controller (PLIC)
     logic [31:0] plic_int_line;

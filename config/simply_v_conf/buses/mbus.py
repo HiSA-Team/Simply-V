@@ -55,6 +55,7 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 
 	# extend default clocks checks with custom ones
 	def check_clock_domains(self):
+		super().check_clock_domains()
 		failed_checks = []
 		# base names of peripherals
 		peripherals_to_check = ["PLIC", "BRAM", "DMMEM"]
@@ -66,4 +67,3 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		if (len(failed_checks) != 0):
 			raise ValueError(f"{', '.join(failed_checks)} need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
 
-		super().check_clock_domains()

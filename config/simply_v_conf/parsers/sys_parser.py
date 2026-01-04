@@ -33,10 +33,14 @@ class Sys_Parser(Parser):
 				f"PHYSICAL_ADDR_WIDTH doesn't match when XLEN = 32"
 				),
 			lambda d: (
-				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV64" and d["XLEN"] == 32) or \
-				(d["CORE_SELECTOR"] == "CORE_CV64A6_ARA" and d["XLEN"] == 32) or \
-				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV32" and d["XLEN"] == 64) or \
-				(d["CORE_SELECTOR"] == "CORE_DUAL_MICROBLAZEV_RV32" and d["XLEN"] == 64),
+				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV64" and d["XLEN"] != 64) or \
+				(d["CORE_SELECTOR"] == "CORE_CV64A6_ARA" and d["XLEN"] != 64) or \
+				(d["CORE_SELECTOR"] == "CORE_CV64A6" and d["XLEN"] != 64) or \
+				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV32" and d["XLEN"] != 32) or \
+				(d["CORE_SELECTOR"] == "CORE_PICORV32" and d["XLEN"] != 32) or\
+				(d["CORE_SELECTOR"] == "CORE_CV32E40P" and d["XLEN"] != 32) or\
+				(d["CORE_SELECTOR"] == "CORE_IBEX" and d["XLEN"] != 32) or\
+				(d["CORE_SELECTOR"] == "CORE_DUAL_MICROBLAZEV_RV32" and d["XLEN"] != 32),
 				f"XLEN={d['XLEN']} doesn't match {d['CORE_SELECTOR']} data width."
 				),
 			lambda d: (

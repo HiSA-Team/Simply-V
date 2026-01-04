@@ -280,7 +280,7 @@ class NonLeafBus(Bus):
 		for node in children_nodes:
 			if node.CLOCK_DOMAIN not in clock_domains:
 				raise ValueError(f"Node {node.FULL_NAME} on {self.FULL_NAME}"
-								 f"is clocked with a non existing clock domain({node.CLOCK_DOMAIN})")
+								 f" is clocked with a non existing clock domain ({node.CLOCK_DOMAIN})")
 
 		# Now check that the bus itself is clocked from a default ("MBUS") or local clock domain
 		if self.CLOCK_DOMAIN not in clock_domains:
