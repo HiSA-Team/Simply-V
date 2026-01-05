@@ -34,7 +34,7 @@ Since not all CPUs supported by `CORE_SELECTOR` have a backend or dedicated load
 > NOTE: This loading flow writes a flat binary image, including zero-padding between memory sections. Therefore, during linking, you might need to keep an eye for this.
 
 ``` bash
-make load_binary BIN_PATH=<path-to-bin> BASE_ADDRESS=<value> JTAG_READBACK=<false|true>
+make load_binary BIN_PATH=<path-to-bin> BASE_ADDRESS=<value> LOAD_BINARY_READBACK=<false|true>
 ```
 Once the binary is loaded, manually trigger a CPU reset with:
 ``` bash

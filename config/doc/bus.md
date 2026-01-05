@@ -26,7 +26,7 @@ This applies to:
 - Factory registration names
 - Legal buses/peripherals supported by the bus
 
-`FULL_NAME` and `BASE_NAME` semantic are specified in `names.md`
+`FULL_NAME` and `BASE_NAME` semantic are specified in [Naming convention](./doc/names.md)
 
 ---
 

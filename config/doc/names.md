@@ -1,4 +1,4 @@
-# Naming Conventions
+# Naming Convention
 
 Each Node (peripheral or bus) exposes three distinct name categories.
 
