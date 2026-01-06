@@ -1,0 +1,32 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+
+abstract class Factory <<Singleton>> {
+    +env: Env
+    +ALREADY_CREATED: set
+    -_register_creation(full_name: str)
+    -_extract_base_name(full_name: str): str
+    -_extract_id(full_name: str): int
+    
+    +extract_clock_frequency(clock_domain: str): int
+}
+
+
+class Buses_Factory {
+    +create_bus(full_name: str, base_addr: list[int], addr_width: list[int], clock_domain: str, **kwargs): Bus | None
+}
+
+class Peripherals_Factory {
+    +create_peripheral(full_name: str, base_addr: list[int], addr_width: list[int], clock_domain: str): Peripheral
+    -_extract_ddr4_channel(full_name: str): int
+    -DDR_CHANNELS: list[int]
+    -HBM_SUPPORTED: bool
+}
+
+Factory <|-- Buses_Factory
+Factory <|-- Peripherals_Factory
+
+
+@enduml

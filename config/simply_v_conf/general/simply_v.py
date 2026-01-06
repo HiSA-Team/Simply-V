@@ -12,6 +12,7 @@
 
 import re
 from buses.nonleafbus import NonLeafBus
+from templates.dump_template import Dump_Template
 from templates.halheader_template import HALheader_Template
 from templates.crossbar_template import Crossbar_Template
 from templates.clocks_template import Clocks_Template
@@ -95,42 +96,13 @@ class SimplyV(metaclass=Singleton):
 	# Dump reachability file containing all the main information about all the peripherals
 	# in the configuration
 	def dump_reachability(self, dump_file_name: str):
-		fd = open(dump_file_name,  "w")
-
-		#Avoid duplicates
-		buses = set()
-		for p in self.peripherals:
-			reach_dict = p.asgn_addr_ranges.get_reachable_from(explicit=True)
-			for value in reach_dict.values():
-				buses.update(value)
-
-		#"buses_list" is the source of truth for the rest of the configuration
-		#in order to have coherent results about the same bus in different rows (peripherals)
-		buses_list = list(buses)
-
-		#HEADER
-		buses_list_hdr = ",".join(buses_list)
-		fd.write(f"NAME,BASE_ADDR,END_ADDR,{buses_list_hdr}\n")
-
-		#BODY
-		for p in self.peripherals:
-			reach_dict = p.asgn_addr_ranges.get_reachable_from(explicit=False)
-			dim_dict = p.asgn_addr_ranges.get_range_dimensions(explicit=False)
-
-			for key, value in reach_dict.items():
-				list_of_reachables = ["N"] * len(buses_list)
-				for full_name in value:
-					position = buses_list.index(full_name)
-					list_of_reachables[position] = "Y"
-
-				str_of_reachables = ",".join(list_of_reachables)
-				#write row
-				fd.write(f"{key},{hex(dim_dict[key][0])},{hex(dim_dict[key][1]-1)},{str_of_reachables}\n")
-
+		dump_template = Dump_Template(self.peripherals)
+		dump_template.write_to_file(dump_file_name)
+		
 	
 	# Create HAL header used from the "sw" flow
 	def create_hal_header(self, hal_hdr_file_name: str) -> None:
-		template = HALheader_Template(self.peripherals, self.devices)
+		template = HALheader_Template(self.peripherals, self.devices, hal_hdr_file_name)
 		template.write_to_file(hal_hdr_file_name)
 		
 

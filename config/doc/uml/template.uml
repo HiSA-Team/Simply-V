@@ -1,0 +1,70 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam classFontSize 10
+skinparam classAttributeFontSize 10
+skinparam classMethodFontSize 10
+skinparam classPadding 2
+skinparam minClassWidth 120
+skinparam maxMessageSize 80
+skinparam wrapWidth 200
+
+
+abstract class Template {
+    -{static} _str_template: str
+    +{abstract} get_params(): dict[str, str]
+    +write_to_file(file_name: str)
+}
+
+class SVinc_Template {
+    -_get_width_params(bus: Bus): str
+    -_get_masters_to_bus(bus: Bus): list[str]
+    -_get_bus_to_slaves(bus: Bus): list[str]
+    -_get_declaration_str(names_str: list[str], declare_prefix: str, width_params_str: str): str
+    -_get_concatenated_str(names_str: list[str], bus: Bus, master: bool, declare_prefix: str, concat_prefix: str): str
+    +__init__(bus: Bus)
+    +get_params(): dict[str, str]
+}
+
+class Ld_Template {
+    -_init_memory_block_str(memories: dict[str, tuple[int,int,int]]): str
+    -_init_global_symbols_str()
+    -_init_boot_values(memories: dict[str, tuple[int,int,int]], boot_memory_name: str)
+    +__init__(memories: list[Peripheral], boot_memory_name: str)
+    +get_params(): dict[str, str]
+}
+
+class HALheader_Template {
+    -_init_peripheral_block_str(peripherals: list[Peripheral]): str
+    -_init_device_block_str(devices: list[Peripheral]): str
+    +__init__(peripherals: list[Peripheral], devices: list[Peripheral], file_name: str)
+    +get_params(): dict[str, str]
+}
+
+class Dump_Template {
+    -_get_body(buses: list[str], peripherals: list[Peripheral])
+    +__init__(peripherals: list[Peripheral])
+    +get_params(): dict[str, str]
+}
+
+class Crossbar_Template {
+    -_compose_index(index_int: int)
+    -_init_bus_configs(bus: Bus)
+    +__init__(bus: Bus)
+    +get_params(): dict[str, str]
+}
+
+class Clocks_Template {
+    +str_template: str
+    -_init_clock_domains_block(children_nodes: list[Node]): str
+    +__init__(bus: NonLeafBus)
+    +get_params(): dict[str, str]
+}
+
+Template <|-- SVinc_Template
+Template <|-- Ld_Template
+Template <|-- HALheader_Template
+Template <|-- Dump_Template
+Template <|-- Crossbar_Template
+Template <|-- Clocks_Template
+
+@enduml

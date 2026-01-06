@@ -1,0 +1,54 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+class Parser  <<Singleton>> {
+  - logger : Logger
+  --
+  {static} mandatory_properties
+  {static} optional_properties
+  {static} type_parsers
+  {static} range_validators
+  {static} intra_rules
+  {static} _check_range(value, min_value, max_value) : bool
+  
+  - _validate_mandatory(data : dict)
+  - _apply_defaults(data : dict)
+  - _cast_and_validate(data : dict)
+  - _check_intra(data : dict)
+  - _validate_values(data : dict)
+  
+  + parse_csv(file_name : str) : dict
+}
+
+
+class Bus_Parser {
+  {static} protocol_min_width
+  --
+  - _check_intra(data : dict)
+}
+Parser <|-- Bus_Parser
+
+
+class LeafBus_Parser
+
+Bus_Parser <|-- LeafBus_Parser
+
+class NonLeafBus_Parser
+
+Bus_Parser <|-- NonLeafBus_Parser
+
+class MBUS_Parser
+NonLeafBus_Parser <|-- MBUS_Parser
+
+
+class Sys_Parser
+Parser <|-- Sys_Parser
+
+note right of Parser
+  All the parsing logic is implemented here, children classes just redefine
+  the class variables used during parsing in order to define the rules that the parser
+  must enforce
+end note
+
+@enduml

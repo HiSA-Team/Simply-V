@@ -3,12 +3,13 @@
 #   Class that can generate the svinc files associated to each bus
 
 from buses.bus import Bus
+from .template import Template
 import os
 import textwrap
 
-class SVinc_Template:
+class SVinc_Template(Template):
 	# using "dedent" to ignore leading spaces
-	str_template: str = textwrap.dedent("""\
+	_str_template: str = textwrap.dedent("""\
 	// This file is auto-generated with {this_file}
 
 	/////////////////////////////////////////
@@ -66,75 +67,68 @@ class SVinc_Template:
 			ret_list.insert(0, f"{bus.FULL_NAME}_to_{addr_range.FULL_NAME}")
 		return ret_list
 
-	def _get_declaration_str(self, names_str) -> str:
+	def _get_declaration_str(self, names_str: list[str], declare_prefix: str, width_params_str: str) -> str:
 		declarations = []
 		for name in names_str:
-			declarations.append(self.declare_prefix + "(" + name + ", " + self.width_params_str + ")")
+			declarations.append(declare_prefix + "(" + name + ", " + width_params_str + ")")
 		return "\n".join(declarations) + "\n"
 
-	def _init_declare_masters(self) -> str:
-		master_declarations = []
-		for master_str in self.masters_to_bus_str:
-			master_declarations.append(self.declare_prefix + "(" + master_str + ", " + self.width_params_str + ")")
-		return "\n".join(master_declarations) + "\n"
-
-	def _init_declare_slaves(self) -> str:
-		slave_declarations = []
-		for slave_str in self.bus_to_slaves_str:
-			slave_declarations.append(self.declare_prefix + "(" + slave_str + ", " + self.width_params_str + ")")
-		return "\n".join(slave_declarations) + "\n"
-
-	def _get_concatenated_str(self, bus: Bus, master: bool) -> str:
+	def _get_concatenated_str(self, names_str: list[str], bus: Bus, master: bool, \
+								declare_prefix: str, concat_prefix:str) -> str:
 		name = bus.FULL_NAME
+
 		if(master):
 			signals_name = name + "_masters"
 			array_prefix = "_MASTERS_ARRAY"
 			num_interfaces = bus.NUM_SI
 			interfaces_suffix = "_NUM_SI"
-			nodes_signals = self.masters_to_bus_str
 		else:
 			signals_name = name + "_slaves"
 			array_prefix = "_SLAVES_ARRAY"
 			num_interfaces = bus.NUM_MI
 			interfaces_suffix = "_NUM_MI"
-			nodes_signals = self.bus_to_slaves_str
 
-		declare_array_str: str = self.declare_prefix + "_ARRAY" + \
+		nodes_signals = names_str
+
+		declare_array_str: str = declare_prefix + "_ARRAY" + \
 							"(" + signals_name + ", " + \
 							name + interfaces_suffix + ", " + \
-							self.width_params_str + \
+							self._get_width_params(bus) + \
 							")"
 		
-		concat_array_str: str = self.concat_prefix + array_prefix + \
+		concat_array_str: str = concat_prefix + array_prefix + \
 							str(num_interfaces) + \
 							"(" + signals_name + ", " + ", ".join(nodes_signals) +")"
 
 		return declare_array_str + "\n" + concat_array_str + "\n"
 
+
 	def __init__(self, bus: Bus):
 		if (bus.PROTOCOL == "AXI4LITE"):
-			self.declare_prefix: str =  "`DECLARE_AXILITE_BUS"
-			self.concat_prefix: str = "`CONCAT_AXILITE"
+			declare_prefix: str =  "`DECLARE_AXILITE_BUS"
+			concat_prefix: str = "`CONCAT_AXILITE"
 		else:
-			self.declare_prefix: str = "`DECLARE_AXI_BUS"
-			self.concat_prefix: str = "`CONCAT_AXI"
+			declare_prefix: str = "`DECLARE_AXI_BUS"
+			concat_prefix: str = "`CONCAT_AXI"
 
-		self.width_params_str: str = self._get_width_params(bus)
-		self.masters_to_bus_str: list[str] = self._get_masters_to_bus(bus)
-		self.bus_to_slaves_str: list[str] = self._get_bus_to_slaves(bus)
-		self.declare_masters_str = self._get_declaration_str(self.masters_to_bus_str)
-		self.declare_slaves_str = self._get_declaration_str(self.bus_to_slaves_str)
-		self.concat_masters_str: str = self._get_concatenated_str(bus, True)
-		self.concat_slaves_str: str = self._get_concatenated_str(bus, False)
+		# get these to reuse them in declare and concat implementations
+		width_params_str: str = self._get_width_params(bus)
+		masters_to_bus_str: list[str] = self._get_masters_to_bus(bus)
+		bus_to_slaves_str: list[str] = self._get_bus_to_slaves(bus)
 
-	
-	def write_to_file(self, file_name: str) -> None:
-		formatted = self.str_template.format(
-											this_file = os.path.basename(__file__),
-											masters_str = self.declare_masters_str,
-											slaves_str = self.declare_slaves_str,
-											concatenated_masters = self.concat_masters_str,
-											concatenated_slaves = self.concat_slaves_str
-											)
-		with open(file_name, "w", encoding="utf-8") as f:
-			f.write(formatted)
+		# initialize all the strings needed in the template
+		self.declare_masters_str = self._get_declaration_str(masters_to_bus_str, declare_prefix, width_params_str)
+		self.declare_slaves_str = self._get_declaration_str(bus_to_slaves_str, declare_prefix, width_params_str)
+		self.concat_masters_str: str = self._get_concatenated_str(masters_to_bus_str, bus, True, declare_prefix, concat_prefix)
+		self.concat_slaves_str: str = self._get_concatenated_str(bus_to_slaves_str, bus, False, declare_prefix, concat_prefix)
+
+
+	# Used by template.py in the write_to_file implementation
+	def get_params(self) -> dict[str, str]:
+		return {
+				"this_file": os.path.basename(__file__),
+				"masters_str": self.declare_masters_str,
+				"slaves_str": self.declare_slaves_str,
+				"concatenated_masters": self.concat_masters_str,
+				"concatenated_slaves": self.concat_slaves_str
+				}

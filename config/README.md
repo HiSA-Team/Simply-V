@@ -153,6 +153,11 @@ The generation flow can be summarized as follows:
    The generation of peripheral dumps for the *config_dump* flow is handled by [`dump_template.py`](simply_v_conf/templates/dump_template.py).
 
 ### How to add a new property
+In the table above, multiple properties are supported, but more can be added. To add a new property:
+
+1. In the target CSV file, e.g. `config_mbus.csv`, add the new key-value pair.
+2. In file `buses/bus.py` or `general/simply_v.py` (depending on where you're adding the property), add the new property to the class. Name must match the key in the `.csv` file.
+3. In one of the parser classes file, depending if the property is system o bus specific (NonLeaf or Leaf) add the new rules for parsing and validations, following the [`parser.py`](simply_v_conf/parsers/parser.py) design expressed in the header file.
 
 ### How to add a new Bus
 

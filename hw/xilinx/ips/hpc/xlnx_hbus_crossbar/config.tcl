@@ -3,7 +3,7 @@
 create_ip -name axi_crossbar -vendor xilinx.com -library ip -version 2.1 -module_name $::env(IP_NAME)
 # Configure IP
 set_property -dict [list CONFIG.PROTOCOL {AXI4} \
-                         CONFIG.ADDR_WIDTH {32} \
+                         CONFIG.ADDR_WIDTH {36} \
                          CONFIG.DATA_WIDTH {512} \
                          CONFIG.ID_WIDTH {4} \
                          CONFIG.NUM_SI {2} \

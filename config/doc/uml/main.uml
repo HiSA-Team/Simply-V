@@ -1,0 +1,177 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+
+
+' ===== Abstract Node and Bus classes =====
+abstract class Node {
+    + asgn_addr_ranges : Addr_Ranges
+    + BASE_NAME : str
+    + FULL_NAME : str
+    + CLOCK_DOMAIN : str
+    + CLOCK_FREQUENCY : int
+    + IS_CLOCK_GENERATOR : bool
+
+    + __str__() : str
+    + get_base_addr()
+    + get_end_addr()
+    + split_addr_ranges()
+}
+
+
+
+
+
+' ===== Addr_Ranges and Addr_Range =====
+class Addr_Range {
+    +RANGE_NAME : str
+    +RANGE_BASE_ADDR : int
+    +RANGE_ADDR_WIDTH : int
+    +RANGE_END_ADDR : int
+    +RANGE_LENGTH : int
+    +REACHABLE_FROM : set
+
+    +__str__() : str
+    +__contains__(addr_range) : bool
+    +split(old_range_name, new_range_name) : Addr_Range
+    +add_to_reachable(bus_name)
+    +add_list_to_reachable(list_of_names)
+    +get_reachable() : list
+    +is_contained(addr_range) : bool
+    +overlaps(addr_range) : bool
+
+    -_compute_end_addr(base_addr, addr_width) : int
+}
+
+class Addr_Ranges {
+    +FULL_NAME : str
+    +addr_ranges : list<Addr_Range>
+    +contiguous : bool
+
+    +__str__() : str
+    +__iter__()
+    +__contains__(addr_range) : bool
+    +__lt__(other) : bool
+    +overlaps(addr_ranges_chk) : bool
+    +split_addr_ranges()
+    +get_reachable_from(explicit) : dict
+    +get_range_dimensions(explicit) : dict
+    +get_base_addr() : int
+    +get_end_addr() : int
+
+    -_add_range_suffix(name, i) : str
+    -_check_contiguous()
+}
+
+
+class Peripheral {
+    - IS_A_MEMORY: bool
+    - HAL_DRIVER: bool
+    + config_ip(root_path: str, **kwargs)
+}
+
+
+
+abstract class Bus {
+    {static} peripherals_factory
+    {static} LEGAL_PERIPHERALS
+    {static} LEGAL_PROTOCOLS
+
+    +ID_WIDTH : int
+    +NUM_MI : int
+    +NUM_SI : int
+    +MASTER_NAMES : list[str]
+    +PROTOCOL : str
+    +ADDR_WIDTH : int
+    +DATA_WIDTH : int
+    +CHILDREN_NUM_RANGES : int
+
+    -_RANGE_NAMES : list[str]
+    -_RANGE_BASE_ADDR : list[int]
+    -_RANGE_ADDR_WIDTH : list[int]
+    -_RANGE_CLOCK_DOMAINS : list[str]
+
+    -_children_peripherals : list[Peripheral]
+    {abstract} +generate_children()
+    {abstract} +sanitize_addr_ranges()
+    {abstract} +check_legals()
+    {abstract} +activate_loopback()
+    {abstract} +add_reachability()
+    {abstract} +check_clock_domains()
+    {abstract} +get_buses(recursive : bool) : list[Bus]
+    {abstract} +get_peripherals(recursive : bool) : list[Peripheral]
+
+    +get_ordered_children_ranges() : list[Addr_Ranges]
+    +get_nodes() : list[Node]
+    +__str__() : str
+
+    -_generate_peripherals()
+    -_sanitize_addr_ranges(nodes : list[Node]) : None
+    -_check_legal_peripherals()
+    -_add_peripherals_reachability()
+    -_get_peripherals() : list[Peripheral]
+}
+
+' ===== Bus Hierarchy =====
+abstract class NonLeafBus {
+  {static} LEGAL_BUSES
+  {static} env
+  {static} buses_factory
+
+  +father: NonLeafBus
+  +LOOPBACK: bool
+  -_children_buses: list[Bus]
+  -_loopback_ranges : Addr_Ranges
+
+  +generate_children()
+  +activate_loopback()
+  +sanitize_addr_ranges()
+  +check_legals()
+  +add_reachability()
+  +get_buses(recursive)
+  +get_peripherals(recursive)
+  +check_clock_domains()
+
+  -_father_enable_loopback(child_name)
+  -_child_enable_loopback()
+  -_check_legal_buses()
+}
+
+abstract class LeafBus {
+    +generate_children()
+    +sanitize_addr_ranges()
+    +check_legals()
+    +add_reachability()
+    +check_clock_domains()
+    +activate_loopback()
+    +get_buses(recursive: bool): list[Bus] | None
+    +get_peripherals(recursive: bool): list[Peripheral]
+}
+
+class MBus <<Singleton>> {
+    +init_configurations()
+    +check_clock_domains()
+}
+class HBus {}
+class PBus {}
+
+
+
+' ===== Inheritance connections =====
+Bus <|-- NonLeafBus
+Bus <|-- LeafBus
+NonLeafBus <|-- MBus
+NonLeafBus <|-- HBus
+LeafBus <|-- PBus
+Node <|-- Bus
+Node <|-- Peripheral
+
+NonLeafBus "1     " *-- "1..* " Bus : contains
+Addr_Ranges "1" *-- "1..*  " Addr_Range : contains
+Node "1    " *-- " 1" Addr_Ranges : contains
+Bus "1    " *-- " 1..*     " Peripheral : contains
+
+
+
+@enduml

@@ -5,13 +5,14 @@
 
 import textwrap
 from general.node import Node
+from .template import Template
 from buses.nonleafbus import NonLeafBus
 import os
 
 
-class Clocks_Template:
+class Clocks_Template(Template):
 	# using "dedent" to ignore leading spaces
-	str_template: str = textwrap.dedent("""\
+	_str_template: str = textwrap.dedent("""\
 	// This file is auto-generated with {current_file_path}
 
 	/////////////////////////////////////////
@@ -72,16 +73,13 @@ class Clocks_Template:
 			if(bus.father):
 				self.generated_clock = f"assign {bus.FULL_NAME}_clk_o = clk_{bus.CLOCK_DOMAIN}MHz;"
 
-
-	def write_to_file(self, file_name: str) -> None:
-		formatted = self.str_template.format(
-											current_file_path = os.path.basename(__file__),
-											generated_clock = self.generated_clock,
-											bus_name = self.bus_name,
-											bus_rstn = self.bus_rstn,
-											clock_domains_block = self.clock_domains_block,
-											bus_clock_domain = self.bus_clock_domain
-											)
-
-		with open(file_name, "w", encoding="utf-8") as f:
-			f.write(formatted)
+	# Used by template.py in the write_to_file implementation
+	def get_params(self) -> dict[str, str]:
+		return {
+				"current_file_path": os.path.basename(__file__),
+				"generated_clock": self.generated_clock,
+				"bus_name": self.bus_name,
+				"bus_rstn": self.bus_rstn,
+				"clock_domains_block": self.clock_domains_block,
+				"bus_clock_domain": self.bus_clock_domain
+				}

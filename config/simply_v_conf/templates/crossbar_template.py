@@ -6,11 +6,12 @@
 from buses.bus import Bus
 import textwrap
 import os
+from .template import Template
 
-class Crossbar_Template:
+class Crossbar_Template(Template):
 
 	# using "dedent" to ignore leading spaces
-	str_template: str = textwrap.dedent("""\
+	_str_template: str = textwrap.dedent("""\
 	# This file is auto-generated with {this_file}
 	# Import IP
 	create_ip -name axi_crossbar -vendor xilinx.com -library ip -version 2.1 -module_name $::env(IP_NAME)
@@ -63,11 +64,9 @@ class Crossbar_Template:
 		self.bus_configs_str = self._init_bus_configs(bus)
 
 
-	def write_to_file(self, file_name: str) -> None:
-		formatted = self.str_template.format(
-											this_file = os.path.basename(__file__),
-											bus_configs = self.bus_configs_str
-											)
-
-		with open(file_name, "w", encoding="utf-8") as f:
-			f.write(formatted)
+	# Used by template.py in the write_to_file implementation
+	def get_params(self) -> dict[str, str]:
+		return {
+				"this_file": os.path.basename(__file__),
+				"bus_configs": self.bus_configs_str
+				}

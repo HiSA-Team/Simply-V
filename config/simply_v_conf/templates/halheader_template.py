@@ -6,11 +6,12 @@
 
 import textwrap
 import os
+from .template import Template
 from peripherals.peripheral import Peripheral
 
-class HALheader_Template:
+class HALheader_Template(Template):
 	# using "dedent" to ignore leading spaces
-	str_template: str = textwrap.dedent("""\
+	_str_template: str = textwrap.dedent("""\
 	// This file is auto-generated with {this_file}
 
 	#ifndef {include_guard}
@@ -61,23 +62,17 @@ class HALheader_Template:
 
 		return "\n".join(lines)
 
-	def __init__(self, peripherals: list[Peripheral], devices: list[Peripheral]):
+	def __init__(self, peripherals: list[Peripheral], devices: list[Peripheral], file_name: str):
 		self.peripheral_block_str = self._init_peripheral_block_str(peripherals)
 		self.device_block_str = self._init_device_block_str(devices)
-
-	def write_to_file(self, file_name: str) -> None:
-		# Extract base name and make it a valid macro name for the include guard
 		base_filename = os.path.basename(file_name).replace(".", "_").upper()
-		include_guard = f"__{base_filename}__"
-		# The hal_template_str is a string which can be formatted (same as f-string). Provide {variable}
-		# as strings. This is why we call render_* functions
-		rendered = self.str_template.format(
-											this_file = os.path.basename(__file__),
-											peripheral_block_str = self.peripheral_block_str,
-											include_guard = include_guard,
-											device_block_str = self.device_block_str,
-											)
+		self.include_guard = f"__{base_filename}__"
 
-		# === Output to file ===
-		with open(file_name, "w") as f:
-			f.write(rendered)
+	# Used by template.py in the write_to_file implementation
+	def get_params(self) -> dict[str, str]:
+		return {
+				"this_file": os.path.basename(__file__),
+				"peripheral_block_str": self.peripheral_block_str,
+				"device_block_str": self.device_block_str,
+				"include_guard": self.include_guard
+		}

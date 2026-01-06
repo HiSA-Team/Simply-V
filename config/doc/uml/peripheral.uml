@@ -1,0 +1,73 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam classFontSize 10
+skinparam classAttributeFontSize 10
+skinparam classMethodFontSize 10
+skinparam classPadding 2
+skinparam minClassWidth 120
+skinparam maxMessageSize 80
+skinparam wrapWidth 200
+
+
+@startuml
+
+class Peripheral {
+    - IS_A_MEMORY: bool
+    - HAL_DRIVER: bool
+    + __init__(base_name: str, asgn_addr_ranges: Addr_Ranges, clock_domain: str, clock_frequency: int)
+    + config_ip(root_path: str, **kwargs)
+}
+
+
+class Bram {
+    + config_ip(root_path: str, **kwargs)
+}
+Peripheral <|-- Bram
+
+class DDR4 {
+    - CHANNEL: int
+    + config_ip(root_path: str, **kwargs)
+}
+Peripheral <|-- DDR4
+
+class HBM {
+}
+Peripheral <|-- HBM
+
+class CDMA {
+}
+Peripheral <|-- CDMA
+
+class Debug_Module {
+}
+Peripheral <|-- Debug_Module
+
+class GPIO_in {
+}
+Peripheral <|-- GPIO_in
+
+class GPIO_out {
+}
+Peripheral <|-- GPIO_out
+
+class HLS {
+}
+Peripheral <|-- HLS
+
+class PLIC {
+}
+Peripheral <|-- PLIC
+
+class Timer {
+}
+Peripheral <|-- Timer
+
+class Uart {
+    + config_ip(root_path: str, **kwargs)
+}
+Peripheral <|-- Uart
+
+@enduml
+
+
+@enduml

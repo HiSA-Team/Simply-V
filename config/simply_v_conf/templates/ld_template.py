@@ -8,6 +8,7 @@
 
 import textwrap
 import os
+from .template import Template
 from peripherals.peripheral import Peripheral
 
 
@@ -17,9 +18,9 @@ from peripherals.peripheral import Peripheral
 # and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
 # 32KB for now, based on the current setting in `config.tcl`.
 
-class Ld_Template():
+class Ld_Template(Template):
 	# using "dedent" to ignore leading spaces
-	str_template: str = textwrap.dedent("""\
+	_str_template: str = textwrap.dedent("""\
 	/* Auto-generated with {this_file} */
 
 	MEMORY
@@ -106,14 +107,13 @@ class Ld_Template():
 
 		self.memory_block_str = self._init_memory_block_str(dimensions_dict)
 		self.globals_block_str = self._init_global_symbols_str()
+	
 
-
-	def write_to_file(self, file_name: str) -> None:
-		formatted = self.str_template.format( 
-											this_file = os.path.basename(__file__),
-											memory_block_str = self.memory_block_str,
-											globals_block_str = self.globals_block_str,
-											boot_memory_str = self.boot_memory_str
-											)
-		with open(file_name, "w", encoding="utf-8") as f:
-			f.write(formatted)
+	# Used by template.py in the write_to_file implementation
+	def get_params(self) -> dict[str, str]:
+		return {
+				"this_file": os.path.basename(__file__),
+				"memory_block_str": self.memory_block_str,
+				"globals_block_str": self.globals_block_str,
+				"boot_memory_str": self.boot_memory_str
+				}

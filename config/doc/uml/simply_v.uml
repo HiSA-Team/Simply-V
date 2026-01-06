@@ -1,0 +1,99 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+
+
+class SimplyV <<Singleton>> {
+    - {static} buses_factory
+    - {static} logger
+    - {static} env
+    - {static} SUPPORTED_CORES
+    --
+    + CORE_SELECTOR : str
+    + MAIN_CLOCK_DOMAIN : str
+    + VIO_RESETN_DEFAULT : int
+    + XLEN : int
+    + PHYSICAL_ADDR_WIDTH : int
+    + BOOT_MEMORY_BLOCK : str
+    + mbus : MBus
+    + peripherals : list[Peripheral]
+    + buses : list[Bus]
+    + devices : list[Peripheral]
+    + memories : list[Peripheral]
+    --
+    + create_linker_script(ld_file_name : str)
+    + dump_reachability(dump_file_name : str)
+    + create_hal_header(hal_hdr_file_name : str)
+    + update_sw_makefile(sw_makefile : str)
+    + config_bus(target_bus : str, outputs : list) : bool
+    + config_xilinx_makefile(xilinx_makefile : str)
+    + config_xilinx_clock_domains(file_name : str)
+    + config_peripherals_ips(files : list)
+}
+
+note right of SimplyV
+    SimplyV object contains the MBus (root of the tree hierarchy) a list of all the buses
+    in the configuration (retrieved from the MBus) a list of all the peripherals in the configuration
+    (retrieved from the MBus) that it uses to enable all the files configuration/generation.
+end note
+
+
+
+class MBus <<Singleton>> {
+    +init_configurations()
+    +check_clock_domains()
+}
+
+
+abstract class Bus {
+    {static} peripherals_factory
+    {static} LEGAL_PERIPHERALS
+    {static} LEGAL_PROTOCOLS
+
+    +ID_WIDTH : int
+    +NUM_MI : int
+    +NUM_SI : int
+    +MASTER_NAMES : list[str]
+    +PROTOCOL : str
+    +ADDR_WIDTH : int
+    +DATA_WIDTH : int
+    +CHILDREN_NUM_RANGES : int
+
+    -_RANGE_NAMES : list[str]
+    -_RANGE_BASE_ADDR : list[int]
+    -_RANGE_ADDR_WIDTH : list[int]
+    -_RANGE_CLOCK_DOMAINS : list[str]
+
+    -_children_peripherals : list[Peripheral]
+    {abstract} +generate_children()
+    {abstract} +sanitize_addr_ranges()
+    {abstract} +check_legals()
+    {abstract} +activate_loopback()
+    {abstract} +add_reachability()
+    {abstract} +check_clock_domains()
+    {abstract} +get_buses(recursive : bool) : list[Bus]
+    {abstract} +get_peripherals(recursive : bool) : list[Peripheral]
+
+    +get_ordered_children_ranges() : list[Addr_Ranges]
+    +get_nodes() : list[Node]
+    +__str__() : str
+
+    -_generate_peripherals()
+    -_sanitize_addr_ranges(nodes : list[Node]) : None
+    -_check_legal_peripherals()
+    -_add_peripherals_reachability()
+    -_get_peripherals() : list[Peripheral]
+}
+
+
+class Peripheral {
+    - IS_A_MEMORY: bool
+    - HAL_DRIVER: bool
+    + config_ip(root_path: str, **kwargs)
+}
+
+SimplyV "1    " *-- " 1" MBus : contains
+SimplyV "1    " *-- " 1..*     " Bus : contains
+SimplyV "1    " *-- " 1..*     " Peripheral : contains
+@enduml

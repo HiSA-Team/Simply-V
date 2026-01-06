@@ -26,10 +26,10 @@
 #define _peripheral_TIM_1_end    0x0000000000030640u
 
 // Enabled devices
+#define UART_IS_ENABLED 1
+#define TIM_IS_ENABLED 1
 #define GPIOIN_IS_ENABLED 1
 #define CDMA_IS_ENABLED 1
-#define TIM_IS_ENABLED 1
 #define GPIOOUT_IS_ENABLED 1
-#define UART_IS_ENABLED 1
 
 #endif // __UNINASOC_CONF_H__
