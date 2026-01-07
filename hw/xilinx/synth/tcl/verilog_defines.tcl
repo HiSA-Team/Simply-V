@@ -9,6 +9,7 @@ set verilog_defines ""
 # HPC/EMBEDDED
 if { "$::env(SOC_CONFIG)" == "hpc" } {
     lappend verilog_defines HPC=1
+    # TODO192: Extend this (HBM_IS_SUPPORTED macro) to DDR IP too
     if {"$::env(XILINX_BOARD_PART)" == "xilinx.com:au280:part0:1.2"} {
         lappend verilog_defines HBM_IS_SUPPORTED=1
     }
