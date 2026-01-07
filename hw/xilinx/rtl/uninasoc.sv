@@ -1138,7 +1138,7 @@ module uninasoc (
     );
 
     // Instantiate the HBM only if board is au280 (or au50 in the future)
-
+    // TODO192: Extend this to DDR too
     `ifdef HBM_IS_SUPPORTED
         hbm_wrapper # (
             .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),

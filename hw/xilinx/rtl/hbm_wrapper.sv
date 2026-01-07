@@ -176,6 +176,7 @@ module hbm_wrapper #(
     // IDs to 0 from the dwidth conv.
     // As stated in the HBM IP documentation (PG276), IDs are used by the internal switch for requests reordering.
     // For now, we can set IDs to 0, since it not affects functionality, only performance.
+    // TODO158: manage the IDs in a performance-oriented way
     assign dwidth_conv_to_hbm_axi_awid = '0;
     assign dwidth_conv_to_hbm_axi_bid  = '0;
     assign dwidth_conv_to_hbm_axi_arid = '0;
