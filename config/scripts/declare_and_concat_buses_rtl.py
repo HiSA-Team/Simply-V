@@ -1,4 +1,3 @@
-#!/bin/python3.10
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Description: utility functions to write RTL file for BUS declaration and concatenation
 

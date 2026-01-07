@@ -1,214 +1,184 @@
-#!/bin/python3.10
-# Author: Stefano Toscano 		<stefa.toscano@studenti.unina.it>
-# Author: Vincenzo Maisto 		<vincenzo.maisto2@unina.it>
-# Author: Stefano Mercogliano 		<stefano.mercogliano@unina.it>
+# Author: Stefano Toscano <stefa.toscano@studenti.unina.it>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+# Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+# Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 # Description:
 #   Generate a linker script file from the CSV configuration.
 # Note:
 #   Addresses overlaps are not sanitized.
 # Args:
-#   1: Input configuration file
-#   2: Output generated ld script
+#   1: Input configuration file for system
+#   2: Input configuration files for buses
+#   3: Output generated ld script
 
 ####################
 # Import libraries #
 ####################
-# Parse args
-import sys
-# For basename
-import os
-# Manipulate CSV
-import pandas as pd
+
+import sys # Parse args
+import os # For basename
+import csv # Manipulate CSVs
+import utils # Utils function
 
 ##############
 # Parse args #
 ##############
 
 # CSV configuration file path
-config_file_names = [
-		'config/configs/embedded/config_main_bus.csv',
-		'config/configs/embedded/config_peripheral_bus.csv',
-		'config/configs/embedded/config_highperformance_bus.csv',
-	]
+if len(sys.argv) != 5:
+    print("Usage: <CONFIG_SYSTEM_CSV> <CONFIG_MAIN_BUS_CSV> <CONFIG_HIGH_PERFORMANCE_BUS_CSV> <OUTPUT_LD_FILE>")
+    sys.exit(1)
 
-if len(sys.argv) >= len(config_file_names)+1:
-	# Get the array of bus names from the second arg to the last but one
-	config_file_names = sys.argv[1:len(config_file_names)+1]
-
-# Target linker script file
-ld_file_name = 'sw/SoC/common/UninaSoC.ld'
-if len(sys.argv) >= 5:
-	# Get the linker script name, the last arg
-	ld_file_name = sys.argv[len(config_file_names)+1]
-
+# The last argument must be the output file
+config_system_file_name = sys.argv[1]
+config_bus_file_names = sys.argv[2:-1]
+ld_file_name = sys.argv[-1]
 
 ###############
 # Read config #
 ###############
+
+# Read system CSV file
+BOOT_MEMORY_BLOCK = "BRAM"
+with open(config_system_file_name, "r") as file:
+    reader = csv.reader(file)
+    BOOT_MEMORY_BLOCK = utils.get_value_by_property(reader, "BOOT_MEMORY_BLOCK")
+
 # Read CSV files for each bus
-config_dfs = []
-for name in config_file_names:
-	config_dfs.append(pd.read_csv(name, sep=",", index_col=0))
+range_names = []
+range_base_addr = []
+range_addr_width = []
 
-# Each bus has an element in these vectors
-NUM_MI = []
-RANGE_NAMES = []
-RANGE_BASE_ADDR = []
-RANGE_ADDR_WIDTH = []
-# For each bus
-for config_df in config_dfs:
+for fname in config_bus_file_names:
+    # Open the configuration files and parse them as csv
+    with open(fname, "r") as file:
+        reader = csv.reader(file)
 
-	# Skip DISABLE buses
-	if config_df.loc["PROTOCOL"]["Value"] == "DISABLE":
-		continue
+        # next gets a single value
+        protocol = utils.get_value_by_property(reader, "PROTOCOL")
+        if protocol == "DISABLE":
+            continue
 
-	# Read number of masters interfaces
-	NUM_MI.append(int(config_df.loc["NUM_MI"]["Value"]))
-	# print("[DEBUG] NUM_MI", NUM_MI)
+        range_names += utils.get_value_by_property(reader, "RANGE_NAMES").split(" ")
+        range_base_addr += utils.get_value_by_property(reader, "RANGE_BASE_ADDR").split(" ")
+        range_addr_width += utils.get_value_by_property(reader, "RANGE_ADDR_WIDTH").split(" ")
 
-	# Read slaves' names
-	RANGE_NAMES.append(config_df.loc["RANGE_NAMES"]["Value"].split())
-	# print("[DEBUG] RANGE_NAMES", RANGE_NAMES)
-
-	# Read address Ranges
-	RANGE_BASE_ADDR.append(config_df.loc["RANGE_BASE_ADDR"]["Value"].split())
-	# print("[DEBUG] RANGE_BASE_ADDR", RANGE_BASE_ADDR)
-
-	# Read address widths
-	RANGE_ADDR_WIDTH.append(config_df.loc["RANGE_ADDR_WIDTH"]["Value"].split())
-	# Turns the values into Integers
-	for i in range(len(RANGE_ADDR_WIDTH[-1])):
-		RANGE_ADDR_WIDTH[-1][i] = int(RANGE_ADDR_WIDTH[-1][i])
-
-# Currently the first memory device is selected as the boot memory device
-BOOT_MEMORY_BLOCK = 0x0
-
-
-################
-# Sanity check #
-################
-# For each bus
-for i in range(len(NUM_MI)):
-	assert (NUM_MI[i] == len(RANGE_NAMES[i])) & (NUM_MI[i] == len(RANGE_BASE_ADDR[i]) ) & (NUM_MI[i]  == len(RANGE_ADDR_WIDTH[i])), \
-		"Mismatch in lenght of configurations: NUM_MI(" + str(NUM_MI[i]) + "), RANGE_NAMES (" + str(len(RANGE_NAMES[i])) + \
-		"), RANGE_BASE_ADDR(" + str(len(RANGE_BASE_ADDR[i])) + ") RANGE_ADDR_WIDTH(" + str(len(RANGE_ADDR_WIDTH[i])) + ")"
+# Make sure BOOT_MEMORY_BLOCK is enabled
+assert( BOOT_MEMORY_BLOCK in range_names )
 
 ##########################
 # Generate memory blocks #
 ##########################
 # Currently only one copy of BRAM, DDR and HBM memory ranges are supported.
-
 device_dict = {
-	'memory':		[],
-	'peripheral':	[]
+    "memory": [],
 }
 
-counter = 0
-# For each bus
-for i in range(len(RANGE_NAMES)):
-	for device in RANGE_NAMES[i]:
-		match device:
-			# memory blocks
-			# TODO77: extend for multiple BRAMs
-			case d if d in {"BRAM", "HBM"} or d.startswith("DDR4CH"):
-				device_dict['memory'].append({'device': device, 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
+# For each range_name, if it's  memory device (BRAM, HBM or starts with DDR4CH) add it to the map
+for name, base_addr, addr_width in zip(range_names, range_base_addr, range_addr_width):
+    # memory blocks
+    # TODO77: extend for multiple BRAMs
+    if name in ["BRAM", "HBM"] or name.startswith("DDR4CH"):
+        device_dict["memory"].append(
+            {
+                "device": name,
+                "permissions": "xrw",
+                "base": int(base_addr, 16),
+                "range": 1 << int(addr_width),
+            }
+        )
 
-			# peripherals
-			case _:
-				# Check if the device is not a bus (the last three chars are not BUS)
-				if device[-3:] != "BUS":
-					device_dict['peripheral'].append({'device': device, 'base': int(RANGE_BASE_ADDR[i][counter], 16), 'range': 1 << RANGE_ADDR_WIDTH[i][counter]})
+# Select memory device for boot
+boot_memory_device = next(d for d in device_dict["memory"] if d["device"] == BOOT_MEMORY_BLOCK)
 
-		# Increment counter
-		counter += 1
-		# If we reach the last element of a bus we need to reset the counter to start with a new bus
-		if counter == len(RANGE_NAMES[i]):
-			counter = 0
-
+# Set dict of global symbols names and values
+device_dict["global_symbols"] = [
+    (
+        "_stack_start",
+        # - Stack is allocated at the end of first memory block
+        # - Aligned at 16 bytes
+        (boot_memory_device["base"] + boot_memory_device["range"] - 0x10) & (~0x0000000000000010)
+    ),
+    ("_vector_table_start", boot_memory_device["base"], ")"),
+    ("_vector_table_end", boot_memory_device["base"] + 32 * 4),
+]
 
 ###############################
 # Generate Linker Script File #
 ###############################
 
-# Create the Linker Script File
-fd = open(ld_file_name,  "w")
+# Render memory blocks as a string. Each memory object is defined as follows
+# {
+#   "device": name,
+#   "permissions": "xrw",
+#   "base": int(base_addr, 16),
+#   "range": 1 << int(addr_width),
+# }
+#
+# The output is key-value string in linker script format, e.g.:
+# BRAM (xrw): ORIGIN = 0x0, LENGHT = 0x10000
+lines = []
+for m in device_dict["memory"]:
+    name = m["device"]
+    permissions = m["permissions"]
+    base = m["base"]
+    len = m["range"]
+    lines.append(
+        f"\t{name} ({permissions}): ORIGIN = 0x{base:016x}, LENGTH = 0x{len:0x}"
+    )
+memory_block = "\n".join(lines)
 
-# Write header
-fd.write("/* This file is auto-generated with " + os.path.basename(__file__) + " */\n")
+# Render memory global symbols as a string.
+# Each symbol is defined as (name, value) which produces, e.g.: PROVIDE(_stack_start = 0x000000000000fff0);
+lines = []
+for s in device_dict["global_symbols"]:
+    name = s[0]
+    value = s[1]
+    lines.append(f"PROVIDE({name} = 0x{value:016x});")
+globals_block = "\n".join(lines)
 
-# Generate the memory blocks layout
-fd.write("\n")
-fd.write("/* Memory blocks */\n")
-fd.write("MEMORY\n")
-fd.write("{\n")
+# Template string
+ld_template_str = """/* Auto-generated with {current_file_path} */
 
-for block in device_dict['memory']:
-	fd.write("\t" + block['device'] + " (xrw) : ORIGIN = 0x" + format(block['base'], "016x") + ",  LENGTH = " + hex(block['range']) + "\n")
-fd.write("}\n")
+/* Memory blocks */
+MEMORY
+{{
+{memory_block}
+}}
 
-# Generate symbols from peripherals
-fd.write("\n")
-fd.write("/* Peripherals symbols */\n")
-for peripheral in device_dict['peripheral']:
-	fd.write("_peripheral_" + peripheral['device'] + "_start = 0x" + format(peripheral['base'], "016x") + ";\n")
-	fd.write("_peripheral_" + peripheral['device'] + "_end = 0x" + format(peripheral['base'] + peripheral['range'], "016x") + ";\n")
+/* Global symbols */
+{globals_block}
 
-# Generate global symbols
-fd.write("\n")
-fd.write("/* Global symbols, allow override */\n")
-# Vector table is placed at the beggining of the boot memory block.
-# It is aligned to 256 bytes and is 32 words deep. (as described in risc-v spec)
-#vector_table_start  =  memory_block_list[BOOT_MEMORY_BLOCK][DEVICE_ORIGIN]
-vector_table_start  =  device_dict['memory'][BOOT_MEMORY_BLOCK]['base']
-fd.write("PROVIDE(_vector_table_start = 0x" + format(vector_table_start, "016x") + ");\n")
-fd.write("PROVIDE(_vector_table_end = 0x" + format(vector_table_start + 32*4, "016x") + ");\n")
+SECTIONS
+{{
+    .vector_table _vector_table_start :
+    {{
+        KEEP(*(.vector_table))
+    }}> {initial_memory_name}
 
-# The stack is allocated at the end of first memory block
-# _stack_end can be user-defined for the application, as bss and rodata
-# _stack_end will be aligned to 64 bits, making it working for both 32 and 64 bits configurations
+    .text :
+    {{
+        . = ALIGN(32);
+        _text_start = .;
+        *(.text.handlers)
+        *(.text.start)
+        *(.text)
+        *(.text*)
+        . = ALIGN(32);
+        _text_end = .;
+    }}> {initial_memory_name}
+}}
+"""
 
-# Note: The memory size specified in the config.csv file may differ from the
-# physical memory allocated for the SoC (refer to hw/xilinx/ips/common/xlnx_blk_mem_gen/config.tcl).
-# Currently, the configuration process does not ensure alignment between config.csv
-# and xlnx_blk_mem_gen/config.tcl. As a result, we assume a maximum memory size of
-# 32KB for now, based on the current setting in `config.tcl`.
+# The ld_template_str is a string which can be formatted (same as f-string). Provide {variable}
+# as strings.
+rendered = ld_template_str.format(
+    current_file_path=os.path.basename(__file__),
+    memory_block=memory_block,
+    globals_block=globals_block,
+    initial_memory_name=boot_memory_device["device"],
+)
 
-stack_start = device_dict['memory'][BOOT_MEMORY_BLOCK]['base'] + device_dict['memory'][BOOT_MEMORY_BLOCK]['range'] - 0x10
-fd.write("_stack_start = 0x" + format(stack_start, "016x") + ";\n")
-
-# Generate sections
-# vector table and text sections are here defined.
-# data, bss and rodata can be explicitly defined by the user application if required.
-fd.write("\n")
-fd.write("/* Sections */\n")
-fd.write("SECTIONS\n")
-fd.write("{\n")
-
-# Vector Table section
-fd.write("\t.vector_table _vector_table_start :\n")
-fd.write("\t{\n")
-fd.write("\t\tKEEP(*(.vector_table))\n")
-fd.write("\t}> " + device_dict['memory'][BOOT_MEMORY_BLOCK]['device'] + "\n")
-
-# Text section
-fd.write("\n")
-fd.write("\t.text :\n")
-fd.write("\t{\n")
-fd.write("\t\t. = ALIGN(32);\n")
-fd.write("\t\t_text_start = .;\n")
-fd.write("\t\t*(.text.handlers)\n")
-fd.write("\t\t*(.text.start)\n")
-fd.write("\t\t*(.text)\n")
-fd.write("\t\t*(.text*)\n")
-fd.write("\t\t. = ALIGN(32);\n")
-fd.write("\t\t_text_end = .;\n")
-fd.write("\t}> " + device_dict['memory'][BOOT_MEMORY_BLOCK]['device'] + "\n")
-
-fd.write("}\n")
-
-# Files closing
-fd.write("\n")
-fd.close()
-
-
-
+# Write the output
+with open(ld_file_name, "w") as f:
+    f.write(rendered)

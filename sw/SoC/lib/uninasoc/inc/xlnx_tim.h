@@ -8,17 +8,12 @@
 #define TIM_H
 
 #include <stdint.h>
+#include "uninasoc_conf.h"
 
 // https://docs.amd.com/v/u/en-US/pg079-axi-timer
-
-// Import linker script symbols
-extern const volatile uint32_t _peripheral_TIM0_start;
-extern const volatile uint32_t _peripheral_TIM1_start;
-
 // Base address
-#define TIM0_BASEADDR ((uintptr_t)&_peripheral_TIM0_start)
-#define TIM1_BASEADDR ((uintptr_t)&_peripheral_TIM1_start)
-
+#define TIM0_BASEADDR ((uintptr_t)_peripheral_TIM0_start)
+#define TIM1_BASEADDR ((uintptr_t)_peripheral_TIM1_start)
 
 // The timer keeps reloading the initial counter value
 #define TIM_RELOAD_AUTO 0

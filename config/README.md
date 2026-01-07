@@ -39,6 +39,7 @@ The following table details the supported properties.
 | VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1] | 1
 | XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                 | 32
 | PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
+| BOOT_MEMORY_BLOCK     | Select memory device to use for boot | [BRAM, DDR4CH\<n\>] | BRAM
 
 ### Notes for CORE_SELECTOR
 **XLEN** configuration must match the selected `CORE_SELECTOR`:
