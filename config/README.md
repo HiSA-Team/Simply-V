@@ -95,6 +95,10 @@ The `VIO_RESETN_DEFAULT` parameter controls the programming-time value of core r
 
 > \* Using `DISABLE` as AXI PROTOCOL, disable all checks for a given bus. Useful for non-instantiated buses, e.g. HBUS in `embedded` profile
 
+> \**: AXI Crossbar (PG059) uses an opaque THREAD_ID_WIDTH parameter to track transaction ordering alongside ID_WIDTH.
+Hence, the ID_WIDTH parameter requires to accommodate the Master ID plus the maximum THREAD_ID_WIDTH value, i.e. [ceil_log2(NUM_SI) + max(THREAD_ID_WIDTH)].
+
+
 ## Genenerate Configurations
 After applying configuration changes to the target CSV files (`embedded` or `hpc`), apply though `make`.
 
