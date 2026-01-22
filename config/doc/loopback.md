@@ -61,8 +61,6 @@ In the third case the child bus will use the new added slave interface to addres
 
 ![Loopback_Before_After](loopback_before_after.png)
 
-In the case of setting `ADDR_RANGES = 2` the bus will also split all the address ranges of its children peripherals and buses (transparently to the user) in order to have two different ranges for each master port for every slave node, not only the "loopbacking" one (this is done since the `ADDR_RANGES` isn't port specific but has effect on all the master ports).
-
 ---
 
 ## Rationale

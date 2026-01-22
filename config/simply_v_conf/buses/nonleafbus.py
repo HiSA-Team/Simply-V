@@ -40,7 +40,6 @@ class NonLeafBus(Bus):
 		# if the clock domain used in the configuration contains the name of the father bus
 		# then this bus isn't generating a clock but it's taking a clock directly from the father
 
-		# MBUS has "IS_CLOCK_GENERATOR" always to true
 		self.IS_CLOCK_GENERATOR: bool = True
 		if(father):
 			self.IS_CLOCK_GENERATOR: bool = not father.FULL_NAME in clock_domain
@@ -100,13 +99,7 @@ class NonLeafBus(Bus):
 
 		if((father_0_base_addr != this_base_addr) and (father_1_end_addr != this_end_addr)):
 			self.ADDR_RANGES = 2
-			# split all the addr ranges to respect "ADDR_RANGES = 2" 
-			for peripheral in self._children_peripherals:
-				peripheral.split_addr_ranges()
-
-			for bus in self._children_buses:
-				bus.split_addr_ranges()
-
+			
 		if(father_0_base_addr != this_base_addr):
 			base_addresses.append(father_0_base_addr)
 			addresses_widths.append(father_0_addr_width)
@@ -182,7 +175,8 @@ class NonLeafBus(Bus):
 			self.father._father_enable_loopback(self.FULL_NAME)
 			self._child_enable_loopback()
 
-		#Recursive call on all the buses
+		#Recursive call on all the buses in order to activate the LOOPBACK feature
+		#in one pass on all the Buses that specified LOOPBACK=1 in their .csv config file.
 		for bus in self._children_buses:
 			bus.activate_loopback()
 
