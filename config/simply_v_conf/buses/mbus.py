@@ -19,7 +19,6 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 
 	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("BRAM", "DMMEM", "PLIC", "CDMA")
 	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("PBUS",)
-	LEGAL_DDR4_CHANNELS  = NonLeafBus.LEGAL_DDR4_CHANNELS  +  (1,)
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
 	if env_global.get_soc_profile()=="hpc":

@@ -12,7 +12,6 @@
 #include <stdint.h>
 #include "uninasoc.h"
 
-// Import linker script symbol
 
 // Base address
 #define PLIC_BASEADDR ((uintptr_t)_peripheral_PLIC_start)

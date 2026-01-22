@@ -1,7 +1,6 @@
 #ifndef __DRIVER_H_
 #define __DRIVER_H_
 
-// Includes
 #include "xil_io.h"
 #include "uninasoc.h"
 #include "xkrnl_conv_hbus_hw.h"
