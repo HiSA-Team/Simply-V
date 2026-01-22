@@ -51,13 +51,15 @@ Then three different behaviours are possible depending on the position of the `c
 
 In the first case the child bus will use the new added slave interface to address the address space on its father `AFTER` its own address space.
 
+![Loopback_After](loopback_after.png)
+
 In the second case the child bus will use the new added slave interface to address the address space on its father `BEFORE` its own address space.
+
+![Loopback_Before](loopback_before.png)
 
 In the third case the child bus will use the new added slave interface to address both the address space on its father `BEFORE` and `AFTER` its own. In order to accomodate two different address spaces through the same master port the child bus will also set the `ADDR_RANGES` parameter equal to **2** (this enables the addressing of two different address ranges for each **MASTER (M)** port on the bus).
 
-All the possible configurations are depicted in the following picture using the **MBUS** as a father bus and the **HBUS** as the child bus activating loopback.
-
-![Loopback](loopback.png)
+![Loopback_Before_After](loopback_before_after.png)
 
 In the case of setting `ADDR_RANGES = 2` the bus will also split all the address ranges of its children peripherals and buses (transparently to the user) in order to have two different ranges for each master port for every slave node, not only the "loopbacking" one (this is done since the `ADDR_RANGES` isn't port specific but has effect on all the master ports).
 
@@ -65,7 +67,7 @@ In the case of setting `ADDR_RANGES = 2` the bus will also split all the address
 
 ## Rationale
 
-The constraints associated with the use of the LOOPBACK functionality originate from considerations about the [AXI Interconnect v2.1 Product Guide](https://www.xilinx.com/support/documents/ip_documentation/axi_interconnect/v2_1/pg059-axi-interconnect.pdf) 
+The constraints associated with the use of the LOOPBACK functionality originate from considerations about the [AXI Interconnect v2.1 Product Guide](https://docs.amd.com/r/en-US/pg059-axi-interconnect) 
 
 More specifically:
   - `P. 104: AXI Crossbar Global Parameters table` for the `ADDR_RANGES` parameter description

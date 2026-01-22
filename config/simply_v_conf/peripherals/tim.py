@@ -7,7 +7,7 @@ from .peripheral import Peripheral
 
 class Timer(Peripheral):
 	# Given the MMIO registers layout this peripheral needs 32 bytes in the address space
-	# refer to: https://docs.amd.com/viewer/book-attachment/7aOjdvedJEcrg0QugvEIRw/VvRPtTvuW7m8g783LjGXZg-7aOjdvedJEcrg0QugvEIRw
+	# refer to: https://docs.amd.com/r/en-US/pg079-axi-timer
 	# for the registers space
 	min_addr_space = 32
 
