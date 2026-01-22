@@ -1,5 +1,3 @@
-#!/usr/bin/env python3.10
-
 # Author: Salvatore Santoro	<sal.santoro@studenti.unina.it>
 # Description: This is the entry point of the configuration flow.
 # The purpose of this code is to dispatch the selected configuration target (from the config Makefile)
@@ -14,26 +12,35 @@ import argparse
 import traceback
 
 def parse_args():
-	parser = argparse.ArgumentParser()
+	arg_parser = argparse.ArgumentParser()
 
-	parser.add_argument("--mode", required=True,
-	choices=[
-		"config_mbus", "config_pbus", "config_hbus",
-		"config_sw", "config_xilinx", "config_dump",
-		"config_check"
-	])
+	arg_parser.add_argument("--mode", required=True, choices=[
+														"config_mbus", "config_pbus", 
+														"config_hbus", "config_sw", 
+														"config_xilinx", "config_dump",
+														"config_check"
+														])
 
-	parser.add_argument("--system", required=True)
-	parser.add_argument("--mbus", required=True)
-	parser.add_argument("--pbus", required=True)
-	parser.add_argument("--hbus", required=True)
+	arg_parser.add_argument("--system", required=True)
+	arg_parser.add_argument("--mbus", required=True)
+	arg_parser.add_argument("--pbus", required=True)
+	arg_parser.add_argument("--hbus", required=True)
 	# Used only when configuring buses
-	parser.add_argument("--target_bus", required=False)
+	arg_parser.add_argument("--target_bus", required=False)
 
 	# everything after known args is treated as OUTPUT_FILES in the Makefile invocation
-	args, output_files = parser.parse_known_args()
+	# depending on the value of "mode" the order changes:
+	#
+	# mode: config_*bus -> [0] BUS crossbar, [1] BUS interconnect svinc [2] BUS clock SVINC (optional)
+	# mode: config_sw -> [0] HAL config, [1] SW Makefile, [2] Linker script
+	# mode: config_xilinx -> [0] xilinx makefile, [1] DDR4 ips root folder, 
+	#						 [2] BRAM ips root folder, [3] UART ips root folder
+	# mode: config_dump -> [0] dump file
+
+	args, output_files = arg_parser.parse_known_args()
 	args.output_files = output_files
 
+		
 	return args
 
 def main(logger):
@@ -57,60 +64,62 @@ def main(logger):
 	mode = args.mode
 	outputs = args.output_files
 
-	if mode == "config_check":
-		# Configs are already checked after creating "SimplyV" object
-		logger.simply_v_info(f"[CONFIG] Configuration check was successful.")
-		return
+	match mode:
+		case "config_check":
+			# Configs are implicitly checked while creating the "SimplyV" object above
+			logger.simply_v_info(f"[CONFIG] Configuration check was successful.")
+			return
 
-	if mode in ("config_mbus", "config_pbus", "config_hbus"):
-		if (len(outputs) != 2) and (len(outputs) != 3):
-			raise ValueError(f"{mode} expects 2 or 3 output files, got {len(outputs)}")
+		case "config_mbus" | "config_pbus" | "config_hbus":
+			if (len(outputs) != 2) and (len(outputs) != 3):
+				raise ValueError(f"{mode} expects 2 or 3 output files, got {len(outputs)}")
 
-		# first output is BUS crossbar
-		# second output is BUS SVINC
-		# third output (optional) is BUS CLOCK SVINC
-		if(system.config_bus(args.target_bus, outputs)):
-			logger.simply_v_info(f"[CONFIG] Generated {args.target_bus} configs.")
-		else:
-			logger.simply_v_warning(f"[CONFIG] {args.target_bus} configs NOT generated (bus disabled)")
-		return
+			# first output is BUS crossbar
+			# second output is BUS SVINC
+			# third output (optional) is BUS CLOCK SVINC
+			if(system.config_bus(args.target_bus, outputs)):
+				logger.simply_v_info(f"[CONFIG] Generated {args.target_bus} configs.")
+			else:
+				logger.simply_v_warning(f"[CONFIG] {args.target_bus} configs NOT generated (bus disabled)")
+			return
 
-	if mode == "config_sw":
-		if len(outputs) != 3:
-			raise ValueError(f"{mode} expects 3 output files, got {len(outputs)}")
-		# first output is HAL conf file
-		system.create_hal_header(outputs[0])
-		logger.simply_v_info("[CONFIG] Generated HAL header.")
-		# second output is SW makefile
-		system.update_sw_makefile(outputs[1])
-		logger.simply_v_info("[CONFIG] Updated sw Makefile.")
-		# third output is linker script file
-		system.create_linker_script(outputs[2])
-		logger.simply_v_info("[CONFIG] Generated linker script.")
-		return
+		case "config_sw":
+			if len(outputs) != 3:
+				raise ValueError(f"{mode} expects 3 output files, got {len(outputs)}")
+			# first output is HAL conf file
+			system.create_hal_header(outputs[0])
+			logger.simply_v_info("[CONFIG] Generated HAL header.")
+			# second output is SW makefile
+			system.update_sw_makefile(outputs[1])
+			logger.simply_v_info("[CONFIG] Updated sw Makefile.")
+			# third output is linker script file
+			system.create_linker_script(outputs[2])
+			logger.simply_v_info("[CONFIG] Generated linker script.")
+			return
 
-	if mode == "config_xilinx":
-		if len(outputs) != 4:
-			raise ValueError(f"{mode} expects 4 output files, got {len(outputs)}")
-		# first output is xilinx makefile
-		system.config_xilinx_makefile(outputs[0])
-		system.config_xilinx_clock_domains(outputs[0])
-		# second output is ddr4 ips root
-		# third output is bram ips root
-		# fourth output is uart ips root
-		system.config_peripherals_ips(outputs[1:4])
+		case "config_xilinx":
+			if len(outputs) != 4:
+				raise ValueError(f"{mode} expects 4 output files, got {len(outputs)}")
+			# first output is xilinx makefile
+			system.config_xilinx_makefile(outputs[0])
+			system.config_xilinx_clock_domains(outputs[0])
+			# second output is ddr4 ips root
+			# third output is bram ips root
+			# fourth output is uart ips root
+			system.config_peripherals_ips(outputs[1:4])
 
-		logger.simply_v_info("[CONFIG] Generated xilinx configs.")
-		return
+			logger.simply_v_info("[CONFIG] Generated xilinx configs.")
+			return
 
-	if mode == "config_dump":
-		if len(outputs) != 1:
-			raise ValueError(f"{mode} expects 1 output file, got {len(outputs)}")
-		system.dump_reachability(outputs[0])
-		logger.simply_v_info("[CONFIG] Generated reachability dump.")
-		return
+		case "config_dump":
+			if len(outputs) != 1:
+				raise ValueError(f"{mode} expects 1 output file, got {len(outputs)}")
+			system.dump_reachability(outputs[0])
+			logger.simply_v_info("[CONFIG] Generated reachability dump.")
+			return
 
-	raise ValueError(f"Unknown mode {mode}")
+		case _:
+			raise ValueError(f"Unknown mode {mode}")
 
 
 if __name__ == "__main__":

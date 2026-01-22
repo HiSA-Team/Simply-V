@@ -6,14 +6,10 @@ from typing import Any, Callable
 from .parser import Parser
 
 class Sys_Parser(Parser):
-	mandatory_properties = Parser.mandatory_properties + ("CORE_SELECTOR", "MAIN_CLOCK_DOMAIN")
+	mandatory_properties = Parser.mandatory_properties + ("CORE_SELECTOR", "MAIN_CLOCK_DOMAIN",
+														  "VIO_RESETN_DEFAULT", "XLEN", "BOOT_MEMORY_BLOCK")
 
-	optional_properties: dict[str, Any] = Parser.optional_properties | {
-											"VIO_RESETN_DEFAULT": 1,
-											"XLEN": 32,
-											"BOOT_MEMORY_BLOCK": "BRAM_0"
-											}
-
+	
 	type_parsers: dict[str, Callable[[str], Any]]= Parser.type_parsers | {
 			"XLEN": int,
 			"VIO_RESETN_DEFAULT": int,
@@ -33,14 +29,11 @@ class Sys_Parser(Parser):
 				f"PHYSICAL_ADDR_WIDTH doesn't match when XLEN = 32"
 				),
 			lambda d: (
-				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV64" and d["XLEN"] != 64) or \
-				(d["CORE_SELECTOR"] == "CORE_CV64A6_ARA" and d["XLEN"] != 64) or \
-				(d["CORE_SELECTOR"] == "CORE_CV64A6" and d["XLEN"] != 64) or \
-				(d["CORE_SELECTOR"] == "CORE_MICROBLAZEV_RV32" and d["XLEN"] != 32) or \
-				(d["CORE_SELECTOR"] == "CORE_PICORV32" and d["XLEN"] != 32) or\
-				(d["CORE_SELECTOR"] == "CORE_CV32E40P" and d["XLEN"] != 32) or\
-				(d["CORE_SELECTOR"] == "CORE_IBEX" and d["XLEN"] != 32) or\
-				(d["CORE_SELECTOR"] == "CORE_DUAL_MICROBLAZEV_RV32" and d["XLEN"] != 32),
+				(d["CORE_SELECTOR"] in ["CORE_MICROBLAZEV_RV64", "CORE_CV64A6_ARA", "CORE_CV64A6"]
+										and d["XLEN"] != 64) or \
+				(d["CORE_SELECTOR"] in ["CORE_MICROBLAZEV_RV32", "CORE_PICORV32", "CORE_CV32E40P",
+										"CORE_IBEX", "CORE_DUAL_MICROBLAZEV_RV32"] \
+										and d["XLEN"] != 32),
 				f"XLEN={d['XLEN']} doesn't match {d['CORE_SELECTOR']} data width."
 				),
 			lambda d: (

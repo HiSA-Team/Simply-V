@@ -16,7 +16,3 @@ class MBUS_Parser(NonLeafBus_Parser):
 				f"NUM_MI does not match RANGE_CLOCK_DOMAINS len"
 				)
 			]
-
-	def __init__(self):
-		pass
-

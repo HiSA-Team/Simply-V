@@ -16,7 +16,6 @@ configs
 │   └── config_system.csv            # System-level configurations
 ├── embedded                         # Config files for embedded
 │   ├── config_mbus.csv              # MBUS config file
-│   ├── config_hbus.csv              # HBUS config file
 │   └── config_pbus.csv              # PBUS config file
 └── hpc                              # Config files for hpc
     ├── config_mbus.csv              # MBUS config file
@@ -35,13 +34,16 @@ The following table details the supported properties.
 
 > **IMPORTANT NOTE**: XLEN parameter will only affect main bus sizes. Other buses (such as the peripheral bus) will have a hardcoded DATA_WIDTH and ADDRESS_WIDTH value.
 
-| Name  | Description | Values | Default
-|-|-|-|-|
-| CORE_SELECTOR         | Select target RV core       | CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA | None (**mandatory value**)
-| VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1] | 1
-| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                 | 32
-| PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
-| BOOT_MEMORY_BLOCK     | Select memory device to use for boot | [BRAM_\<n\>, DDR4CH\<n\>] | BRAM_0
+| Name  | Description | Values
+|-|-|-|
+| CORE_SELECTOR         | Select target RV core       | CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA
+| VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1]
+| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                
+| PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64)
+| BOOT_MEMORY_BLOCK     | Select memory device to use for boot | [BRAM_\<n\>, DDR4CH_\<n\>]
+| MAIN_CLOCK_DOMAIN     | Clock domain of the core + MBUS                           | (10, 20, 50, 100) for embedded. (10, 20, 50, 100, 250) for hpc | None
+
+
 
 ### Notes for CORE_SELECTOR
 **XLEN** configuration must match the selected `CORE_SELECTOR`:
@@ -62,21 +64,20 @@ The `VIO_RESETN_DEFAULT` parameter controls the programming-time value of core r
 
 > **IMPORTANT NOTE**: the address range of a bus (child) that is a slave of another bus (parent), in its configuration (.csv) file, must be an absolute address range, this means that if the child bus is mapped in the parent bus at the address 0x1000 to 0x1FFF, then the peripherals in the child bus must be in the address range 0x1000 to 0x1FFFE
 
-| Name  | Description | Values | Default
-|-|-|-|-|
-| PROTOCOL              | AXI PROTOCOL                                              | (AXI4, AXI4LITE, AXI3, DISABLE*)                           | N/A
-| ID_WIDTH              | AXI ID Width                                              | (4..32)                                                   | 4
-| NUM_MI                | Number of Master Interfaces (number of slaves)            | (0..16)                                                   | 2
-| NUM_SI                | Number of Slave Interfaces (number of masters)            | (0..16)                                                   | 1
-| MASTER_NAMES          | Names of masters connected to the bus                     | [NUM_SI] Strings | N/A
-| RANGE_NAMES           | Names of slave memory ranges                                               | [NUM_MI] Strings                                          | N/A
-| MAIN_CLOCK_DOMAIN     | Clock domain of the core + MBUS                           | (10, 20, 50, 100) for embedded. (10, 20, 50, 100, 250) for hpc | None
+| Name  | Description | Values
+|-|-|-|
+| PROTOCOL              | AXI PROTOCOL                                              | (AXI4, AXI4LITE, AXI3)                           
+| LOOPBACK     | [`Full description here`](./doc/loopback.md) (NonLeafBus only)                           | [0,1] 
+| ID_WIDTH              | AXI ID Width                                              | (4..32)                                                   
+| NUM_MI                | Number of Master Interfaces (number of slaves)            | (0..16)                                                   
+| NUM_SI                | Number of Slave Interfaces (number of masters)            | (0..16)                                                   
+| MASTER_NAMES          | Names of masters connected to the bus                     | [NUM_SI] Strings 
+| RANGE_NAMES           | Names of slave memory ranges                                               | [NUM_MI] Strings                                          
 | RANGE_CLOCK_DOMAINS         | Clock domains of the slaves (RANGE_NAMES) of the MBUS | [NUM_MI] (10, 20, 50, 100, 250 hpc only)| Note: the BRAM, DM_mem, PLIC clock domain must be the same as MAIN_CLOCK_DOMAIN, while the DDR clock domain must have the same frequency of the DDR board clock (i.e. 300MHz)
-| ADDR_RANGES           | Number of ranges for master interfaces                    | (1..16)                                                   | 1
-| BASE_ADDR             | The Base Addresses for each range of each Master          | [NUM_MI*ADDR_RANGES] 64 bits hex                          | 0x100000 for the first range of every Master, otherwise is 0xffffffffffffffff [not used], it must be lesser or equal of Global ADDR_WIDTH
-| RANGE_ADDR_WIDTH      | Number of bytes covered by each range of each Master      | [NUM_MI*ADDR_RANGES] (12..64) for AXI4 and AXI3, (1..64) for AXI4LITE | 12 for the first range of every Master, otherwise is 0 [not used]
+| ADDR_RANGES           | Number of ranges for master interfaces                    | (1..16)                                                   
+| BASE_ADDR             | The Base Addresses for each range of each Master          | [NUM_MI*ADDR_RANGES] 64 bits hex                          
+| RANGE_ADDR_WIDTH      | Number of bytes covered by each range of each Master      | [NUM_MI*ADDR_RANGES] (12..64) for AXI4 and AXI3, (1..64) for AXI4LITE
 
-> \* Using `DISABLE` as AXI PROTOCOL, disable all checks for a given bus. Useful for non-instantiated buses, e.g. HBUS in `embedded` profile
 
 > \**: AXI Crossbar (PG059) uses an opaque THREAD_ID_WIDTH parameter to track transaction ordering alongside ID_WIDTH.
 Hence, the ID_WIDTH parameter requires to accommodate the Master ID plus the maximum THREAD_ID_WIDTH value, i.e. [ceil_log2(NUM_SI) + max(THREAD_ID_WIDTH)].
@@ -110,16 +111,10 @@ The `config_xilinx` flow also configures:
 The configuration flow gives the possibility to specify clock domains.
 The `MAIN_CLOCK_DOMAIN` is the clock domain of the core and the main bus (`MBUS`). All the slaves attached to the `MBUS` can have their own clock domain. If a slave has a domain different from the `MAIN_CLOCK_DOMAIN`, it needs a `xlnx_axi_clock_converter` to cross the clock domains. In this case the configuration flow will set the `<SLAVE_NAME>_HAS_CLOCK_DOMAIN` (i.e. `PBUS_HAS_CLOCK_DOMAIN`) variable which informs that the slave has its own clock domain.
 
-### Scripting Architecture
+### Configuration Architecture
 The directory `simply_v_conf/` holds all the configuration related files, the main configuration flow is depicted here:
 
 ![Configuration flow](./doc/simply_v.png)
-
-The multiple scripts generate outputs from common inputs:
-1. The Xilinx-related environment configuration in [`config.mk`](../hw/xilinx/make/config.mk) is handled by [`config_xilinx.sh`](scripts/config_xilinx.sh).
-1. The software-related environment (including toolchain and compilation flags) configuration in [`config.mk`](../sw/SoC/common/config.mk) is handled by [`config_sw.sh`](scripts/config_sw.sh).
-1. [Linker script](../sw/SoC/common/UninaSoC.ld) generation is handled solely by [`create_linker_script.py`](scripts/create_linker_script.py) source.
-1. Configuration TCL files (for [MBUS](../hw/xilinx/ips/common/xlnx_main_crossbar/config.tcl) and [PBUS](../hw/xilinx/ips/common/xlnx_peripheral_crossbar/config.tcl)) for the platform crossbars are generated with [`create_crossbar_config.py`](scripts/create_crossbar_config.py) as master script.
 
 
 The generation flow can be summarized as follows:
@@ -146,7 +141,7 @@ The generation flow can be summarized as follows:
 4. **Bus-related configuration**  
    All bus-related files (*config_bus* flow) are generated by:
    - [`crossbar_template.py`](simply_v_conf/templates/crossbar_template.py)
-   - [`svinc_template.py`](simply_v_conf/templates/svinc_template.py)
+   - [`bus_interconnect_template.py`](simply_v_conf/templates/bus_interconnect_template.py)
    - [`clocks_template.py`](simply_v_conf/templates/clocks_template.py)
 
 5. **Peripheral dumping**  

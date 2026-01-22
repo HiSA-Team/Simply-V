@@ -7,7 +7,7 @@ from .template import Template
 import os
 import textwrap
 
-class SVinc_Template(Template):
+class Bus_Interconnect_Template(Template):
 	# using "dedent" to ignore leading spaces
 	_str_template: str = textwrap.dedent("""\
 	// This file is auto-generated with {this_file}
@@ -57,12 +57,11 @@ class SVinc_Template(Template):
 		slaves_ranges = bus.get_ordered_children_ranges()
 		ret_list = []
 		for addr_range in slaves_ranges:
-			# we're effectively "left appending" the names because the order need to be reversed
-			# when concatenating signals arrays in order to be compatible with the 
-			# crossbar generation code to match the "M" (slaves) ports of the crossbar.
-			# The code we're generating in the "svinc" files will use macros to connect the slaves to the crossbar
-			# but basically due to the way in which signals are defined in the RTL the names assigned to the signal
-			# need to be reversed. (example slave in position 0 in the crossbar configuration file need to be the last
+			# we're effectively "prepending" the names 
+			# due to the order (which the RTL requires) is most to least significant array positions.
+			# This ensures compatibility with the crossbar generation code
+			# matching the correct "M" (slaves) ports order expected by the crossbar.
+			# (example slave in position 0 in the crossbar configuration file need to be the last
 			# in the concatenation order and so on)
 			ret_list.insert(0, f"{bus.FULL_NAME}_to_{addr_range.FULL_NAME}")
 		return ret_list

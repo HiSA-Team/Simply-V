@@ -1,3 +1,5 @@
+# Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This file defines the BRAM peripheral
 
@@ -18,14 +20,19 @@ class Bram(Peripheral):
 		bram_path = os.path.join(root_path, "xlnx_" + self.FULL_NAME.lower(), "config.tcl")
 		bram_path = Path(bram_path)
 
+
 		length = 0
 		# generalize to many ranges to compute the bram space address length
-		dimensions = self.asgn_addr_ranges.get_range_dimensions(explicit=True)
+		dimensions = self.assigned_addr_ranges.get_range_dimensions(explicit=True)
 		for values in dimensions.values():
 			length += values[2]
 		# divide for XLEN_bytes
 		bram_depth = int(length / kwargs["xlen_bytes"])
-		content = bram_path.read_text()
+		try:
+			content = bram_path.read_text()
+		except:
+			raise ValueError(f"BRAM peripheral {self.FULL_NAME} not found (id not supported)")
+
 		pattern = r"(set\s+bram_depth)\s*\{[^}]+\}"
 		replacement = rf"\1 {{{bram_depth}}}"
 

@@ -26,10 +26,10 @@ class Bus(Node):
 	LEGAL_PROTOCOLS = ()
 
 	# Bus Constructor
-	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
+	def __init__(self, base_name: str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 					axi_data_width: int, clock_domain: str, clock_frequency: int):
 		#Create Node object
-		super().__init__(base_name, asgn_addr_ranges, clock_domain, clock_frequency)
+		super().__init__(base_name, assigned_addr_ranges, clock_domain, clock_frequency)
 
         #General configuration parameters
 		self.ID_WIDTH			 : int = data_dict["ID_WIDTH"]
@@ -41,7 +41,7 @@ class Bus(Node):
 		self.ADDR_WIDTH: int = axi_addr_width
 		self.DATA_WIDTH: int = axi_data_width
 		#The number of ranges associated to each children node
-		self.CHILDREN_NUM_RANGES: int = data_dict["ADDR_RANGES"]
+		self.ADDR_RANGES: int = data_dict["ADDR_RANGES"]
         #Children Parameters internally used only to generate the children objects
 		#should never use them directly, after creating the new nodes, just refer to them to get
 		#ranges and clocks values
@@ -49,7 +49,7 @@ class Bus(Node):
 		self._RANGE_BASE_ADDR: list[int] = data_dict["RANGE_BASE_ADDR"].copy()
 		self._RANGE_ADDR_WIDTH: list[int] = data_dict["RANGE_ADDR_WIDTH"].copy()
 		#As default each bus just propagates its clock domain to its children
-		#MBUS is special since redefine this according to the values specified in its .csv
+		#MBUS is special since redefines this according to the values specified in its .csv
 		self._RANGE_CLOCK_DOMAINS: list[str] = [self.CLOCK_DOMAIN] * len(self._RANGE_NAMES)
 
 		#List of children peripherals generated in "generate_children"
@@ -64,13 +64,13 @@ class Bus(Node):
 		#check protocol
 		if self.PROTOCOL not in self.LEGAL_PROTOCOLS:
 			raise ValueError(
-				f"Unsupported protocol '{self.PROTOCOL}' in {self.FULL_NAME}"
+					f"Unsupported protocol '{self.PROTOCOL}' in {self.FULL_NAME} (supported: {self.LEGAL_PROTOCOLS})"
 			)
 
 
-	# Internal functions used from children classes to implement the "COMPOSITE INTERFACE" functions
+	# functions used from children classes to implement the "COMPOSITE INTERFACE" functions
 
-	# Internal function used in "generate_children" implementation
+	# PRIVATE, used in "generate_children" implementation
 	def _generate_peripherals(self, addr_ranges: int, range_names: list[str], base_addr: list[int], 
 						   addr_width: list[int], clock_domain: list[str]) -> list[Peripheral]:
 		peripherals = []
@@ -84,26 +84,26 @@ class Bus(Node):
 		return peripherals
 
 
-	# Internal function used in "sanitize_addr_ranges" implementation
+	# PRIVATE, used in "sanitize_addr_ranges" implementation
 	def _sanitize_addr_ranges(self, nodes: list[Node]) -> None:
 		for node1 in nodes:
 			#check that nodes address ranges dont overlap
 			for node2 in nodes:
-				if (node1 != node2 and node1.asgn_addr_ranges.overlaps(node2.asgn_addr_ranges)):
+				if (node1 != node2 and node1.assigned_addr_ranges.overlaps(node2.assigned_addr_ranges)):
 					raise ValueError(
 						f"Address ranges of {node1.FULL_NAME} overlap with {node2.FULL_NAME} in {self.FULL_NAME}"
 					)
 
 			#check that all nodes address ranges are contained
 			#(using "__contains__" defined in addr_range.py)
-			for addr_range in node1.asgn_addr_ranges:
-				if addr_range not in self.asgn_addr_ranges:
+			for addr_range in node1.assigned_addr_ranges:
+				if addr_range not in self.assigned_addr_ranges:
 					raise ValueError(
 						f"Address ranges of {node1.FULL_NAME} are not fully contained in {self.FULL_NAME} address ranges"
 					)
 
 
-	# Internal function used in "check_legals" implementation
+	# PRIVATE, used in "check_legals" implementation
 	def _check_legal_peripherals(self) -> None:
 		for p in self._children_peripherals:
 			if p.BASE_NAME not in self.LEGAL_PERIPHERALS:
@@ -111,14 +111,14 @@ class Bus(Node):
 						f"Unsupported peripheral {p.FULL_NAME} for {self.FULL_NAME}"
 				)
 	
-	# Internal function used in "add_reachability" implementation
+	# PRIVATE, used in "add_reachability" implementation
 	# iterate over each "children_peripheral" addr range, and
 	# if they are contained in at least 1 Bus addr range, then add
 	# reachability values to them
 	def _add_peripherals_reachability(self) -> None:
 		for peripheral in self._children_peripherals:
-			for addr_range in peripheral.asgn_addr_ranges:
-				for self_range in self.asgn_addr_ranges:
+			for addr_range in peripheral.assigned_addr_ranges:
+				for self_range in self.assigned_addr_ranges:
 					if addr_range in self_range:
 						# add bus name
 						addr_range.add_to_reachable(self.FULL_NAME)
@@ -127,19 +127,17 @@ class Bus(Node):
 						break
 
 		
-	# Internal function used in "get_peripherals" implementation
+	# PRIVATE, used in "get_peripherals" implementation
 	def _get_peripherals(self) -> list[Peripheral]:
 		return self._children_peripherals
 
 
-	# Function used to return children address ranges (of peripherals/buses) keeping an invariant
-	# of "order by base address" in this way configuration functions assume the same ordering
-	# of ranges for each "children" of a particular bus
+	# Return children peripherals address ranges ordered by increasing base address
 	def get_ordered_children_ranges(self) -> list[Addr_Ranges]:
-		# Implicitly using "__lt__" function of "Addr_Ranges"
 		ranges: list[Addr_Ranges] = []
 		for p in self._children_peripherals:
-			ranges.append(p.asgn_addr_ranges)
+			ranges.append(p.assigned_addr_ranges)
+		# Implicitly using "__lt__" function of "Addr_Ranges"
 		return sorted(ranges)
 
 	# Used when printing the object 
@@ -152,6 +150,7 @@ class Bus(Node):
 			f"ID_WIDTH={self.ID_WIDTH}, "
 			f"NUM_MI={self.NUM_MI}, "
 			f"NUM_SI={self.NUM_SI}, "
+			f"ADDR_RANGES={self.ADDR_RANGES}, "
 			f"MASTER_NAMES={self.MASTER_NAMES}, "
 			f"PROTOCOL={self.PROTOCOL}, "
 			f"ADDR_WIDTH={self.ADDR_WIDTH}, "
@@ -196,14 +195,14 @@ class Bus(Node):
 	def check_clock_domains(self) -> None:
 		pass
 	
-	# Recursive specify if we're getting ALL the buses that this single bus can reach (true)
-	# or only the ones directly attached to it (false)
+	# if the "recursive" parameter is True, the function returns all the buses that the "self" bus can reach
+	# if the "recursive" parameter is False, the function returns only the buses directly attached to the "self" bus
 	@abstractmethod
 	def get_buses(self, recursive: bool) -> list["Bus"] | None:
 		pass
 
-	# Recursive specify if we're getting ALL the peripherals that this single bus can reach (true)
-	# or only the ones directly attached to it (false)
+	# if the "recursive" parameter is True, the function returns all the peripherals that the "self" bus can reach
+	# if the "recursive" parameter is False, the function returns only the peripherals directly attached to the "self" bus
 	@abstractmethod
 	def get_peripherals(self, recursive: bool) -> list["Peripheral"]:
 		pass

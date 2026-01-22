@@ -15,7 +15,7 @@ abstract class Template {
     +write_to_file(file_name: str)
 }
 
-class SVinc_Template {
+class Bus_Interconnect_Template {
     -_get_width_params(bus: Bus): str
     -_get_masters_to_bus(bus: Bus): list[str]
     -_get_bus_to_slaves(bus: Bus): list[str]
@@ -60,7 +60,7 @@ class Clocks_Template {
     +get_params(): dict[str, str]
 }
 
-Template <|-- SVinc_Template
+Template <|-- Bus_Interconnect_Template
 Template <|-- Ld_Template
 Template <|-- HALheader_Template
 Template <|-- Dump_Template

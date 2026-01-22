@@ -7,9 +7,11 @@ from .bus_parser import Bus_Parser
 class NonLeafBus_Parser(Bus_Parser):
 	#extend the father defined data structs used for parsing/validation
 
-	optional_properties = Bus_Parser.optional_properties | {"LOOPBACK": 0 }
-	
-	type_parsers = Bus_Parser.type_parsers | {"LOOPBACK": bool}
+	mandatory_properties = Bus_Parser.mandatory_properties + ("LOOPBACK",)
+
+	#Converting first to int and then to bool since the string "0"
+	#directly converted to bool evaluates to True
+	type_parsers = Bus_Parser.type_parsers | {"LOOPBACK": lambda s: bool(int(s))}
 
 	intra_rules = Bus_Parser.intra_rules + [
 			lambda d:(
@@ -27,6 +29,3 @@ class NonLeafBus_Parser(Bus_Parser):
 				"the loopback configuration"	
 				)
 			]
-
-	def __init__(self):
-		pass

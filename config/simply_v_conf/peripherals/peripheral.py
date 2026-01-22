@@ -5,14 +5,36 @@ from general.addr_range import Addr_Ranges
 from general.node import Node
 
 class Peripheral(Node):
-	def __init__(self, base_name: str, asgn_addr_ranges: Addr_Ranges, clock_domain: str, clock_frequency: int):
+	# Value to check erroneous configuration of the ADDR_WIDTH for a peripheral.
+	# Since devices using MMIO need to have a certain address range associated to them
+	# to map their registers, not giving them sufficient memory will make some registers
+	# unadressable (children classes will redefine this value accordingly in order to enforce
+	#               the right check in the Peripheral constructor)
+	# measured in bytes
+	min_addr_space: int = 0
 
+	def __init__(self, base_name: str, assigned_addr_ranges: Addr_Ranges, clock_domain: str, clock_frequency: int):
+
+		super().__init__(base_name, assigned_addr_ranges, clock_domain, clock_frequency)
 		self.IS_A_MEMORY: bool = False
 		# Used by the configuration flow to enable conditional compilation
 		# of C drivers in the HAL if the peripheral is included in the configuration
 		self.HAL_DRIVER: bool = False
-		super().__init__(base_name, asgn_addr_ranges, clock_domain, clock_frequency)
+
+		# Get address dimensions associated to this Node
+		dimensions = self.assigned_addr_ranges.get_range_dimensions(explicit=False)
+		ranges_length = 0
+
+		for value in dimensions.values():
+			# Second element is the range length
+			ranges_length += value[2]
+
+		if (ranges_length < self.min_addr_space):
+			raise ValueError(f"Device {self.FULL_NAME} has an address space of {ranges_length} Bytes "
+							 f"(Minimum needed for MMIO is {self.min_addr_space} Bytes)")
 
 	
+	#this is a concrete method for those peripherals that perform no configuration
+	#since making it abstract would force them to implement it as empty anyway
 	def config_ip(self, root_path: str, **kwargs) -> None:
 		return

@@ -33,7 +33,9 @@ class Addr_Range():
 
 		#RANGE_BASE_ADDR need to have "n" consecutive least significant bits equal to 0
 		if (self.RANGE_BASE_ADDR & least_significant_zeroes) != 0:
-			raise ValueError(f"BASE_ADDR not compatible with RANGE_ADDR_WIDTH in {self.RANGE_NAME}")
+			raise ValueError(f"BASE_ADDR not compatible with RANGE_ADDR_WIDTH in {self.RANGE_NAME}, "
+							  "RANGE_ADDR_WIDTH must match the number of consecutive least significant bits "
+							  "equal to 0 in BASE_ADDR")
 
 		# RANGE_END_ADDR is the first address outside the addressable range
 		self.RANGE_END_ADDR = self._compute_end_addr(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)
@@ -55,7 +57,7 @@ class Addr_Range():
 		return (self.RANGE_BASE_ADDR <= addr_range.RANGE_BASE_ADDR and
 				self.RANGE_END_ADDR >= addr_range.RANGE_END_ADDR)
 
-	# Private function used to compute the range end address based on range base address and address width
+	# PRIVATE, used to compute the range end address based on range base address and address width
 	# (the end address is the first address OUTSIDE the range)
 	def _compute_end_addr(self, base_addr: int, addr_width: int):
 		return base_addr + ~(~ 1 << (addr_width-1)) + 1
@@ -152,7 +154,7 @@ class Addr_Ranges():
 		# sorting based on the "addr ranges" ordering
 		return self.get_base_addr() < other.get_base_addr()
 
-	# Internal function used to manipulate "RANGE_NAMES"
+	# PRIVATE, used to manipulate "RANGE_NAMES"
 	# if the name already contains a range suffix, like "*_range_0"
 	# just substitute the number with the number "i" passed, otherwise
 	# append the full suffix "_range_str(i)"
@@ -164,7 +166,7 @@ class Addr_Ranges():
 		return f"{name}_range_{i}"
 
 
-	# Internal function used to check if all the address ranges are contiguous
+	# PRIVATE, used to check if all the address ranges are contiguous
 	def _check_contiguous(self):
 		# sort the ranges ascending respect to BASE_ADDR in order 
 		# to facilitate the check

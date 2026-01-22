@@ -1,6 +1,6 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This is the base abstract class "Factory" from which other specific
-# factories (peripherals_factory and buses_factory) derives
+# factories (peripherals_factory and buses_factory) derive
 # it is intended to be more as a central point of creation of objects to enforce
 # all the naming conventions and general checks based on "Node(s)" names
 # rather than an "idiomatic" factory method design pattern, in which there is
@@ -32,16 +32,14 @@ class Factory(metaclass=SingletonABCMeta):
 
 	# Private functions used from derived classes
 	
-	# Function used to register the creation of every node so that duplicate "FULL_NAMEs"
-	# can be spotted
+	# Register the creation of every node so that duplicate "FULL_NAMEs" can be spotted
 	def _register_creation(self, full_name: str) -> None:
 		if(full_name in self.ALREADY_CREATED):
 			raise ValueError(f"There are multiple nodes with the same full name ({full_name})")
 
 		self.ALREADY_CREATED.add(full_name)
 
-	# Function used to extract the BASENAME from a FULLNAME enforcing the same naming convention
-	# for each node
+	# Extract the BASENAME from a FULLNAME enforcing the same naming convention for each node
 	def _extract_base_name(self, full_name: str) -> str:
 		return full_name.split("_")[0].upper()
 	
@@ -60,7 +58,7 @@ class Factory(metaclass=SingletonABCMeta):
 		
 		return id
 
-	# Function used to extract the clock frequency value from a clock domain name enforcing the same naming convention
+	# Extract the clock frequency value from a clock domain name enforcing the same naming convention
 	# for each clock domain
 	def extract_clock_frequency(self, clock_domain: str) -> int | NoReturn:
 		try:

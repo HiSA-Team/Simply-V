@@ -6,7 +6,7 @@ skinparam linetype ortho
 
 ' ===== Abstract Node and Bus classes =====
 abstract class Node {
-    + asgn_addr_ranges : Addr_Ranges
+    + assigned_addr_ranges : Addr_Ranges
     + BASE_NAME : str
     + FULL_NAME : str
     + CLOCK_DOMAIN : str
@@ -53,10 +53,10 @@ class Addr_Ranges {
     +__iter__()
     +__contains__(addr_range) : bool
     +__lt__(other) : bool
-    +overlaps(addr_ranges_chk) : bool
+    +overlaps(addr_ranges_chk: Addr_Ranges) : bool
     +split_addr_ranges()
-    +get_reachable_from(explicit) : dict
-    +get_range_dimensions(explicit) : dict
+    +get_reachable_from(explicit: bool) : dict
+    +get_range_dimensions(explicit: bool) : dict
     +get_base_addr() : int
     +get_end_addr() : int
 
@@ -66,6 +66,7 @@ class Addr_Ranges {
 
 
 class Peripheral {
+    -{static} min_addr_space: int 
     - IS_A_MEMORY: bool
     - HAL_DRIVER: bool
     + config_ip(root_path: str, **kwargs)
@@ -85,7 +86,7 @@ abstract class Bus {
     +PROTOCOL : str
     +ADDR_WIDTH : int
     +DATA_WIDTH : int
-    +CHILDREN_NUM_RANGES : int
+    +ADDR_RANGES : int
 
     -_RANGE_NAMES : list[str]
     -_RANGE_BASE_ADDR : list[int]
@@ -116,6 +117,7 @@ abstract class Bus {
 ' ===== Bus Hierarchy =====
 abstract class NonLeafBus {
   {static} LEGAL_BUSES
+  {static} LEGAL_DDR4_CHANNELS
   {static} env
   {static} buses_factory
 
@@ -168,6 +170,7 @@ Node <|-- Bus
 Node <|-- Peripheral
 
 NonLeafBus "1     " *-- "1..* " Bus : contains
+NonLeafBus "1     " *-- "1 " Addr_Ranges : contains
 Addr_Ranges "1" *-- "1..*  " Addr_Range : contains
 Node "1    " *-- " 1" Addr_Ranges : contains
 Bus "1    " *-- " 1..*     " Peripheral : contains

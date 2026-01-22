@@ -13,9 +13,9 @@ class HBus(NonLeafBus):
 	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("MBUS",)
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
-	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, clock_domain: str, 
+	def __init__(self, base_name: str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, clock_domain: str, 
 					clock_frequency: int, axi_addr_width: int, father: NonLeafBus):
 		# init NonleafBus object
 		axi_data_width = 512
-		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, axi_data_width, clock_domain,
+		super().__init__(base_name, data_dict, assigned_addr_ranges, axi_addr_width, axi_data_width, clock_domain,
 						clock_frequency, father)

@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: This script uses "pyreverse" to automatically generate class diagrams
+# of all the Python classes in the configuration flow, a more structured and precise
+# documentation is in the {CONFIG_ROOT}/doc folder, but since that documentation need to
+# be manually kept up to date when changing the code, this script can be used to have updated
+# class diagrams in a immediate manner.
+
 set -euo pipefail
 
 # pyreverse need to see the root folder in PYTHONPATH to work correctly
@@ -14,7 +22,7 @@ fi
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-DOCS_DIR="docs"
+DOCS_DIR="doc_gen"
 mkdir -p "$DOCS_DIR"
 
 # Find python packages

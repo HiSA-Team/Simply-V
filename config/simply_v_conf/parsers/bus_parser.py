@@ -12,17 +12,14 @@ class Bus_Parser(Parser, metaclass=Singleton):
 
 	mandatory_properties = Parser.mandatory_properties + ("PROTOCOL", "NUM_MI", "NUM_SI", 
 						"MASTER_NAMES", "RANGE_NAMES",
-						"RANGE_BASE_ADDR", "RANGE_ADDR_WIDTH")
-
-	optional_properties = {
-						 "ID_WIDTH" : 4, 
-						 "ADDR_RANGES": 1
-						 }
+						"RANGE_BASE_ADDR", "RANGE_ADDR_WIDTH",
+						"ID_WIDTH", "ADDR_RANGES")
 
 	type_parsers: dict[str, Callable[[str], Any]]= Parser.type_parsers | {
 						 "ID_WIDTH": int,
 						 "NUM_MI": int,
 						 "NUM_SI": int, 
+						 "ADDR_RANGES": int,
 						 "MASTER_NAMES": lambda s: s.split(" "),
 						 "RANGE_NAMES": lambda s: s.split(" "),
 						 "RANGE_BASE_ADDR": lambda s: [int(x, 16) for x in s.split(" ")],
@@ -32,6 +29,8 @@ class Bus_Parser(Parser, metaclass=Singleton):
 	range_validators: dict[str, Callable[[Any], bool]] = Parser.range_validators | {
 						 "ID_WIDTH":			lambda v: Parser._check_range(v, 4, 32),
 						 "NUM_SI":				lambda v: Parser._check_range(v, 1, 16),
+						 "NUM_MI":				lambda v: Parser._check_range(v, 1, 16),
+						 "ADDR_RANGES":			lambda v: Parser._check_range(v, 1, 16),
 						 "RANGE_ADDR_WIDTH":	lambda vls: all([Parser._check_range(v, 1, 64) for v in vls]),
 						}
 
@@ -70,3 +69,4 @@ class Bus_Parser(Parser, metaclass=Singleton):
 
 		if any(w < min_width for w in data["RANGE_ADDR_WIDTH"]):
 			raise ValueError(f"RANGE_ADDR_WIDTH is less than {min_width}")	
+

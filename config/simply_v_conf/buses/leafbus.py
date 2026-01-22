@@ -12,10 +12,10 @@ from .bus import Bus
 from typing import cast
 
 class LeafBus(Bus):
-	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
+	def __init__(self, base_name: str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 					axi_data_width: int, clock_domain: str, clock_frequency: int):
 
-		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
+		super().__init__(base_name, data_dict, assigned_addr_ranges, axi_addr_width, 
 						axi_data_width, clock_domain, clock_frequency)
 
 		self.IS_CLOCK_GENERATOR: bool = False
@@ -27,7 +27,7 @@ class LeafBus(Bus):
 
 	#Leaf buses just creates Peripherals based on all the "RANGES" attributes
 	def generate_children(self) -> None:
-		self._children_peripherals = self._generate_peripherals(self.CHILDREN_NUM_RANGES, self._RANGE_NAMES, 
+		self._children_peripherals = self._generate_peripherals(self.ADDR_RANGES, self._RANGE_NAMES, 
 														 self._RANGE_BASE_ADDR, self._RANGE_ADDR_WIDTH, 
 														 self._RANGE_CLOCK_DOMAINS)
 

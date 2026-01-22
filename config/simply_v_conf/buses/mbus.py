@@ -14,10 +14,12 @@ from general.singleton import SingletonABCMeta
 
 #Only one MBUS should be created
 class MBus(NonLeafBus, metaclass=SingletonABCMeta):
+	# Env is the class that manages all the "settings.sh" related values (project's paths and profile configuration)
 	env_global = Env.get_instance()
 
 	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("BRAM", "DMMEM", "PLIC", "CDMA")
 	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("PBUS",)
+	LEGAL_DDR4_CHANNELS  = NonLeafBus.LEGAL_DDR4_CHANNELS  +  (1,)
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
 	if env_global.get_soc_profile()=="hpc":
@@ -25,20 +27,22 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		LEGAL_BUSES = LEGAL_BUSES + ("HBUS",)
 
 
-	def __init__(self, base_name:str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, clock_domain: str, 
+	def __init__(self, base_name:str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, clock_domain: str, 
 				clock_frequency: int, axi_addr_width: int, axi_data_width: int):
 
 		# init NonLeafBus object
-		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
+		super().__init__(base_name, data_dict, assigned_addr_ranges, axi_addr_width, 
 				axi_data_width, clock_domain, clock_frequency, None)
+
+		# Parameters used to assert that the bus/peripheral tree is generated and correctly connected
+		# (in the case of buses activating the loopback functionality) before doing any check and sanitizaion
+		# of the configuration
+		self.tree_generated: bool = False
+		self.loopback_activated: bool = False
+		self.main_clock_domain_peripherals: list[str] = ["PLIC", "BRAM", "DMMEM"]
 		
 		self._RANGE_CLOCK_DOMAINS = data_dict["RANGE_CLOCK_DOMAINS"].copy()
 
-	
-	# IMPORTANT:
-	# generate_children and activate_loopbeck MUST always be executed before all the other configuration functions
-	# since they define all the tree hierarchy structure on which the other functions will do the checks,
-	# so changing this order will lead to partial checks/configurations
 	def init_configurations(self):
 		#create children nodes
 		self.generate_children()
@@ -53,14 +57,60 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		# check configuration of clock domains on this bus
 		self.check_clock_domains()
 
-	# extend default clocks checks with custom ones
+	# IMPORTANT:
+	# since generate_children and activate_loopback MUST always be executed before all the other configuration functions
+	# the MBUS redefines all of them in order to apply this constraint and avoid any possible programming error
+
+	# call the actual implementation and then register it as activated
+	def generate_children(self):
+		super().generate_children()
+		self.tree_generated = True
+		
+	# call the actual implementation and then register it as activated
+	def activate_loopback(self):
+		super().activate_loopback()
+		self.loopback_activated = True
+
+	# check constraint and then call the actual implementation
+	def sanitize_addr_ranges(self):
+		if (not self.tree_generated) or (not self.loopback_activated):
+			raise ValueError(
+					"sanitize_addr_ranges() failed executon on MBUS since it was "
+					"called before generate_children() or activate_loopback()"
+					)
+		super().sanitize_addr_ranges()
+
+	# check constraint and then call the actual implementation
+	def check_legals(self):
+		if (not self.tree_generated) or (not self.loopback_activated):
+			raise ValueError(
+					"check_legals() failed execution on MBUS since it was "
+					"called before generate_children() or activate_loopback()"
+					)
+		super().check_legals()
+
+	# check constraint and then call the actual implementation
+	def add_reachability(self):
+		if (not self.tree_generated) or (not self.loopback_activated):
+			raise ValueError(
+					"add_reachability() failed execution on MBUS since it was "
+					"called before generate_children() or activate_loopback()"
+					)
+		super().add_reachability()
+
+	# check constraint and then call the actual implementation
 	def check_clock_domains(self):
+		if (not self.tree_generated) or (not self.loopback_activated):
+			raise ValueError(
+					"check_clock_domains() failed execution on MBUS since it was "
+					"called before generate_children() or activate_loopback()"
+					)
 		super().check_clock_domains()
+		# extend default clocks checks with custom ones
 		failed_checks = []
-		# base names of peripherals
-		peripherals_to_check = ["PLIC", "BRAM", "DMMEM"]
+		# check all the peripherals that are mandated to be on MBUS domain
 		for children in self._children_peripherals:
-			if (children.BASE_NAME in peripherals_to_check):
+			if (children.BASE_NAME in self.main_clock_domain_peripherals):
 				if(children.CLOCK_DOMAIN != self.CLOCK_DOMAIN):
 					failed_checks.append(children.FULL_NAME)
 

@@ -18,10 +18,10 @@ class Dump_Template(Template):
 		for p in peripherals:
 			# key = RANGE_NAME (FULL_NAME of peripheral if it's composed of only 1 range or contiguous ranges)
 			# value = copy of REACHABLE_FROM
-			reach_dict = p.asgn_addr_ranges.get_reachable_from(explicit=False)
+			reach_dict = p.assigned_addr_ranges.get_reachable_from(explicit=False)
 			# key = RANGE_NAME (FULL_NAME of peripheral if it's composed of only 1 range or contiguous ranges)
 			# value = (RANGE_BASE, RANGE_END, RANGE_LENGTH)
-			dim_dict = p.asgn_addr_ranges.get_range_dimensions(explicit=False)
+			dim_dict = p.assigned_addr_ranges.get_range_dimensions(explicit=False)
 
 			for key, value in reach_dict.items():
 				list_of_reachables = ["N"] * len(buses)
@@ -39,7 +39,7 @@ class Dump_Template(Template):
 		#Avoid duplicates
 		buses = set()
 		for p in peripherals:
-			reach_dict = p.asgn_addr_ranges.get_reachable_from(explicit=True)
+			reach_dict = p.assigned_addr_ranges.get_reachable_from(explicit=True)
 			for value in reach_dict.values():
 				buses.update(value)
 

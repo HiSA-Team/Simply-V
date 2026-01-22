@@ -38,7 +38,7 @@ class Crossbar_Template(Template):
 		config_list.append("CONFIG.ID_WIDTH {"          + str(bus.ID_WIDTH)     + "}")
 		config_list.append("CONFIG.NUM_SI {"            + str(bus.NUM_SI)       + "}")
 		config_list.append("CONFIG.NUM_MI {"            + str(bus.NUM_MI)       + "}")
-		config_list.append("CONFIG.ADDR_RANGES {"       + str(bus.CHILDREN_NUM_RANGES)  + "}")
+		config_list.append("CONFIG.ADDR_RANGES {"       + str(bus.ADDR_RANGES)  + "}")
 
 		# Address ranges
 		BASE_ADDR_config_list           = []

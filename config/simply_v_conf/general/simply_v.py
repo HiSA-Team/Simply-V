@@ -1,3 +1,7 @@
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+# Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
+# Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+# Author: Valerio Di Domenico <valerio.didomenico@unina.it>
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This class is the starting point for all the configuration targets
 # the purpose of this class is:
@@ -19,7 +23,7 @@ from templates.clocks_template import Clocks_Template
 from templates.ld_template import Ld_Template
 from peripherals.ddr4 import DDR4
 from peripherals.bram import Bram
-from templates.svinc_template import SVinc_Template 
+from templates.bus_interconnect_template import Bus_Interconnect_Template 
 from pathlib import Path
 from factories.buses_factory import Buses_Factory
 from peripherals.peripheral import Peripheral
@@ -62,11 +66,11 @@ class SimplyV(metaclass=Singleton):
 				raise ValueError(f"CORE_MICROBLAZEV is not allowed when building for au280")
 
 		# Create root node (MBUS)
-		asgn_base_addr = [0]
-		asgn_addr_width = [self.PHYSICAL_ADDR_WIDTH]
+		assigned_base_addr = [0]
+		assigned_addr_width = [self.PHYSICAL_ADDR_WIDTH]
 		clock_domain = self.MAIN_CLOCK_DOMAIN
 
-		self.mbus = self.buses_factory.create_bus("MBUS", asgn_base_addr, asgn_addr_width, clock_domain,\
+		self.mbus = self.buses_factory.create_bus("MBUS", assigned_base_addr, assigned_addr_width, clock_domain,\
 												axi_addr_width=self.PHYSICAL_ADDR_WIDTH, axi_data_width=self.XLEN)
 
 		self.mbus.init_configurations()
@@ -135,8 +139,8 @@ class SimplyV(metaclass=Singleton):
 			if bus.FULL_NAME == target_bus.upper():
 				crossbar_template = Crossbar_Template(bus)
 				crossbar_template.write_to_file(outputs[0])
-				svinc_template = SVinc_Template(bus)
-				svinc_template.write_to_file(outputs[1])
+				bus_interconnect_template = Bus_Interconnect_Template(bus)
+				bus_interconnect_template.write_to_file(outputs[1])
 				# only NonLeafBus need to configure the clock svinc file
 				if isinstance(bus, NonLeafBus):
 					clock_template = Clocks_Template(bus)

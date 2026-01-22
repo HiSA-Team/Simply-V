@@ -1,8 +1,6 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This is the Factory specialization class used to create buses, 
 # it uses the parsers objects to extract the buses data 
-# and also manages the "PROTOCOL" = "DISABLE" used to deactivate
-# buses configuration, returning "None" in case of creation of a disabled bus
 
 from parsers.mbus_parser import MBUS_Parser
 from general.addr_range import Addr_Ranges
@@ -20,10 +18,10 @@ class Buses_Factory(Factory):
 	def __init__(self):
 		super().__init__()
 
-	# Function used for the creation of buses, checks for duplicated buses, extracts base name from full name and
-	# clock frequency from clock domain
+	# Create buses extracting base name from full name and
+	# clock frequency from clock domain while checking for duplicated ones
 	def create_bus(self, full_name: str, base_addr: list[int], addr_width: list[int], 
-						clock_domain: str, **kwargs) -> Bus | None:
+						clock_domain: str, **kwargs) -> Bus:
 
 		# this can be avoided implementing the "full" factory method design
 		# decoupling "Buses_Factory" from the actual concrete buses
@@ -48,18 +46,12 @@ class Buses_Factory(Factory):
 		match base_name:
 			case "MBUS":
 				data_dict = self.mbus_parser.parse_csv(file_name)
-				if data_dict["PROTOCOL"] == "DISABLE":
-					raise ValueError("MBUS specified with DISABLE option. (MBUS is mandatory for the configuration)")
 				return MBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
 			case "PBUS":
 				data_dict = self.leafbus_parser.parse_csv(file_name)
-				if data_dict["PROTOCOL"] == "DISABLE":
-					return None
 				return PBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency)
 			case "HBUS":
 				data_dict = self.nonleafbus_parser.parse_csv(file_name)
-				if data_dict["PROTOCOL"] == "DISABLE":
-					return None
 				return HBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
 			case _:
 				raise ValueError(f"Unsupported Bus {full_name}\n")

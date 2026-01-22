@@ -101,7 +101,7 @@ class Ld_Template(Template):
 
 		for m in memories:
 			# retrieve addr ranges dimensions in order to generalize on the number of address ranges
-			dimensions_dict |= m.asgn_addr_ranges.get_range_dimensions(explicit=False)
+			dimensions_dict |= m.assigned_addr_ranges.get_range_dimensions(explicit=False)
 
 		self._init_boot_values(dimensions_dict, boot_memory_name)
 

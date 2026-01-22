@@ -32,9 +32,9 @@ class Peripherals_Factory(Factory):
 	def _extract_ddr4_channel(self, full_name: str) -> int:
 		return int(full_name.split("_")[-1])
 
-	# Function used for the creation of peripherals, checks for duplicated peripherals, 
-	# extracts base name from full name and clock frequency from clock domain
-	# in case of DDR4 or HBM also enforces checks based on the board
+	# Create peripherals extracting base name from full name and clock frequency from clock domain.
+	# In case of DDR4 or HBM also enforces checks based on the board.
+	# This function checks for duplicated peripherals creation
 	def create_peripheral(self, full_name: str, base_addr: list[int], addr_width: list[int], 
 							clock_domain: str) -> Peripheral:
 

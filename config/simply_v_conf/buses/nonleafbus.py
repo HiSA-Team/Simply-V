@@ -23,11 +23,12 @@ class NonLeafBus(Bus):
 	#adequate values, they're specified here so that "NonLeafBus" class can expose
 	#common functions that will use them (_check_legal_buses function)
 	LEGAL_BUSES = ()
+	
 
-	def __init__(self, base_name: str, data_dict: dict, asgn_addr_ranges: Addr_Ranges, axi_addr_width: int, 
+	def __init__(self, base_name: str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 				axi_data_width: int, clock_domain: str, clock_frequency: int, father: Optional["NonLeafBus"]):
 		# init Bus object
-		super().__init__(base_name, data_dict, asgn_addr_ranges, axi_addr_width, 
+		super().__init__(base_name, data_dict, assigned_addr_ranges, axi_addr_width, 
 							axi_data_width, clock_domain, clock_frequency)
 
 		self.father = father 
@@ -45,12 +46,12 @@ class NonLeafBus(Bus):
 			self.IS_CLOCK_GENERATOR: bool = not father.FULL_NAME in clock_domain
 
 		if (self.LOOPBACK == True):
-			base_addr = self.asgn_addr_ranges.get_base_addr()
+			base_addr = self.assigned_addr_ranges.get_base_addr()
 
 			# Force base addr to power of 2
-			if(not ((base_addr & (base_addr -1) == 0) and base_addr != 0)):
+			if(not (base_addr & (base_addr -1) == 0)):
 				raise ValueError(f"Activated LOOPBACK in {self.FULL_NAME} with a BASE_ADDR"
-											" that isn't a power of 2.")
+											" that isn't a power of 2 or 0.")
 	
 
 	
@@ -73,27 +74,46 @@ class NonLeafBus(Bus):
 		#equal to 2, and add a slave interface, ADDR_RANGE is = 2 because 
 		#the slave interface for the loopback will address 2 ranges, the
 		#addresses BEFORE this bus and the addresses AFTER this bus
-		self.CHILDREN_NUM_RANGES = 2
-		self.NUM_MI += 1
 
-		# split all the addr ranges to respect "ADDR_RANGES = 2" 
-		for peripheral in self._children_peripherals:
-			peripheral.split_addr_ranges()
+		#Two Edge Cases to keep in mind:
+		#this bus is in the first range of the father (base_addr == father_base_addr)
+		#this bus is in the last range of the father (end_addr == father_end_addr)
+		#in each of these cases the loopback can be activated without using the "ADDR_RANGE = 2"
+		#method
 
-		for bus in self._children_buses:
-			bus.split_addr_ranges()
-
-		# this is the range of all the addresses BEFORE the range of children nonleaf bus
 		father_0_base_addr = self.father.get_base_addr()
-		father_0_addr_width = self.get_base_addr().bit_length() - 1 
+		this_base_addr = self.get_base_addr()
+		# this is the range of all the addresses BEFORE the range of children nonleaf bus
+		father_0_addr_width = this_base_addr.bit_length() - 1 
 
 		# this is the range of all the addresses AFTER the range of children nonleaf bus
-		father_1_base_addr = self.get_end_addr()
+		this_end_addr = self.get_end_addr()
+		father_1_base_addr = this_end_addr 
 		# compute the number of consecutive least significant bits equal to 0
 		father_1_addr_width = (father_1_base_addr & - father_1_base_addr).bit_length() - 1
+		father_1_end_addr = self.father.get_end_addr()
 
-		base_addresses = [father_0_base_addr, father_1_base_addr]
-		addresses_widths = [father_0_addr_width, father_1_addr_width]
+		base_addresses = []
+		addresses_widths = []
+
+		self.NUM_MI += 1
+
+		if((father_0_base_addr != this_base_addr) and (father_1_end_addr != this_end_addr)):
+			self.ADDR_RANGES = 2
+			# split all the addr ranges to respect "ADDR_RANGES = 2" 
+			for peripheral in self._children_peripherals:
+				peripheral.split_addr_ranges()
+
+			for bus in self._children_buses:
+				bus.split_addr_ranges()
+
+		if(father_0_base_addr != this_base_addr):
+			base_addresses.append(father_0_base_addr)
+			addresses_widths.append(father_0_addr_width)
+
+		if(father_1_end_addr != this_end_addr):
+			base_addresses.append(father_1_base_addr)
+			addresses_widths.append(father_1_addr_width)
 
 		self.loopback_ranges = Addr_Ranges(self.father.FULL_NAME, base_addresses, addresses_widths)
 
@@ -103,19 +123,18 @@ class NonLeafBus(Bus):
 			if b.BASE_NAME not in self.LEGAL_BUSES:
 				raise ValueError(f"Unsupported bus {b.FULL_NAME} for this bus")
 
-
 	
-	# Function used to return children address ranges (of peripherals/buses) keeping an invariant
-	# of "order by base address" this function extends "Bus" 's one with loopback and busses ranges
+	# Return bus and peripherals children address ranges (taking into account LOOPBACK ranges also)
+	# ordered by increasing base address
 	def get_ordered_children_ranges(self) -> list[Addr_Ranges]:
-		# Implicitly using "__lt__" function of "Addr_Ranges"
 		ranges: list[Addr_Ranges] = super().get_ordered_children_ranges()
 		for bus in self._children_buses:
-			ranges.append(bus.asgn_addr_ranges)
+			ranges.append(bus.assigned_addr_ranges)
 
 		if(self.LOOPBACK):
 			ranges.append(self.loopback_ranges)
 
+		# Implicitly using "__lt__" function of "Addr_Ranges"
 		return sorted(ranges)
 
 
@@ -130,16 +149,14 @@ class NonLeafBus(Bus):
 		peripherals_clock_domains: list[str] = []
 
 		for i, node_name in enumerate(self._RANGE_NAMES):
-			bases: list[int] = self._RANGE_BASE_ADDR[i:(i+self.CHILDREN_NUM_RANGES)]
-			widths: list[int] = self._RANGE_ADDR_WIDTH[i:(i+self.CHILDREN_NUM_RANGES)]
+			bases: list[int] = self._RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)]
+			widths: list[int] = self._RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)]
 			domain: str = self._RANGE_CLOCK_DOMAINS[i]
 			# Create bus
 			if("BUS" in node_name):
 				bus = self.buses_factory.create_bus(node_name, bases, widths, domain, \
 						axi_addr_width=self.ADDR_WIDTH, father = self)
-				# "create_bus" can return "None" if the bus is deactivated
-				if(bus):
-					self._children_buses.append(bus)
+				self._children_buses.append(bus)
 			# if the name doesn't contain "BUS" treat this addr_range as a peripheral
 			else:
 				peripherals_names.append(node_name)
@@ -148,7 +165,7 @@ class NonLeafBus(Bus):
 				peripherals_clock_domains.append(domain)
 		
 		# create all the peripherals
-		self._children_peripherals = self._generate_peripherals(self.CHILDREN_NUM_RANGES, peripherals_names, 
+		self._children_peripherals = self._generate_peripherals(self.ADDR_RANGES, peripherals_names, 
 														 peripherals_bases, peripherals_widths, 
 														 peripherals_clock_domains)
 		#Recursive call on all the buses
@@ -183,6 +200,7 @@ class NonLeafBus(Bus):
 		#NonLeaf buses need to control that both children peripherals and buses are legal
 		self._check_legal_peripherals()
 		self._check_legal_buses()
+		#Also control that configured DDR4 channels are right
 
 		#Recursive call on all the buses
 		for bus in self._children_buses:
@@ -198,8 +216,8 @@ class NonLeafBus(Bus):
 		
 		#add reachability of buses
 		for bus in self._children_buses:
-			for addr_range in bus.asgn_addr_ranges:
-				for self_range in self.asgn_addr_ranges:
+			for addr_range in bus.assigned_addr_ranges:
+				for self_range in self.assigned_addr_ranges:
 					addr_range.add_list_to_reachable(self_range.get_reachable())
 					addr_range.add_to_reachable(self.FULL_NAME)
 
@@ -221,14 +239,14 @@ class NonLeafBus(Bus):
 
 			nodes += cast(list[Node], buses)
 
-			#Check all the "asgn_addr_ranges" of the children nodes (Peripherals/Buses)
+			#Check all the "assigned_addr_ranges" of the children nodes (Peripherals/Buses)
 			#if an addr_range is included in 1 of the ranges reachable from the loopback
 			#adjust their reachability
 			for n in nodes:
-				for addr_range in n.asgn_addr_ranges:
+				for addr_range in n.assigned_addr_ranges:
 					if addr_range in self.loopback_ranges:
 						addr_range.add_to_reachable(self.FULL_NAME)
-						for self_range in self.asgn_addr_ranges:
+						for self_range in self.assigned_addr_ranges:
 							addr_range.add_list_to_reachable(self_range.get_reachable())
 			
 

@@ -24,9 +24,6 @@ class Parser(metaclass=SingletonABCMeta):
 	# These are the properties that if missing in the .csv file will lead to a crash
 	mandatory_properties = ()
 
-	# These are the properties that if missing in the .csv file will be initialized with a default value
-	optional_properties: dict[str, Any] = {}
-
 	# These are lambda functions that will cast the parsed values to the expected values
 	# substituting the parsed values with the casted ones in the dictionary that "parse_csv" returns
 	type_parsers: dict[str, Callable[[str], Any]]= {}
@@ -51,10 +48,6 @@ class Parser(metaclass=SingletonABCMeta):
 		if missing:
 			raise KeyError(f"Missing mandatory properties: {', '.join(missing)}")
 
-	def _apply_defaults(self, data: dict) -> None:
-		for key, default in self.optional_properties.items():
-			data.setdefault(key, default)
-
 	def _cast_and_validate(self, data: dict) -> None:
 		for key, raw_value in data.items():
 			if key in self.type_parsers:
@@ -72,7 +65,6 @@ class Parser(metaclass=SingletonABCMeta):
 
 	def _validate_values(self, data: dict) -> None:
 		self._validate_mandatory(data)
-		self._apply_defaults(data)
 		self._cast_and_validate(data)
 		self._check_intra(data)
 

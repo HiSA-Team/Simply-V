@@ -36,7 +36,7 @@ class HALheader_Template(Template):
 		dimensions_dict = {}
 		for p in peripherals:
 			# retrieve addr ranges dimensions in order to generalize on the number of address ranges
-			dimensions_dict |= p.asgn_addr_ranges.get_range_dimensions(explicit=False)
+			dimensions_dict |= p.assigned_addr_ranges.get_range_dimensions(explicit=False)
 
 		for name, dimensions in dimensions_dict.items():
 			name = name
