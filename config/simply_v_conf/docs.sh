@@ -22,6 +22,24 @@ fi
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
+# Add __init__.py in current directory and subfolders
+# Skip __pycache__ and test directories
+
+ADDED_INIT_FILES=()
+
+while read -r dir; do
+  init_file="$dir/__init__.py"
+  if [ ! -f "$init_file" ]; then
+    touch "$init_file"
+    ADDED_INIT_FILES+=("$init_file")
+  fi
+done < <(
+  find . -maxdepth 1 -type d \
+    -not -name "__pycache__" \
+    -not -name "test" \
+	-not -name "doc_gen"
+)
+
 DOCS_DIR="doc_gen"
 mkdir -p "$DOCS_DIR"
 
@@ -49,3 +67,9 @@ for pkg in "${PACKAGES[@]}"; do
 
   rm -f "packages_${pkg_name}.png"
 done
+
+# Remove the __init__.py files we added
+for file in "${ADDED_INIT_FILES[@]}"; do
+  rm -f "$file"
+done
+
