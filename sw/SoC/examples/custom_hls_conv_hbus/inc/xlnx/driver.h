@@ -5,8 +5,6 @@
 #include "uninasoc.h"
 #include "xkrnl_conv_hbus_hw.h"
 
-// Import symbols for peripherals
-
 // Offsets
 #define Xkrnl_BASE             ((uintptr_t)(_peripheral_HLS_CONTROL_start))
 #define Xkrnl_Control          (Xkrnl_BASE + XKRNL_CONV_HBUS_CONTROL_ADDR_AP_CTRL)

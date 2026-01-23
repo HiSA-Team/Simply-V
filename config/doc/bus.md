@@ -116,11 +116,20 @@ LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
 ## 4. Register the Bus in the Bus Factory
 
-Update the create_bus method in `buses_factory.py`.
+Update the create_bus method in ['buses_factory'](../simply_v_conf/factories/buses_factory.py) class.
 
 Add a new case that:
 - Matches the bus `BASE_NAME`
+- Uses the correct parser to parse the .csv file of the bus
+    (leafbus_parser or nonleafbus_parser depending on the type of bus)
 - Instantiates and returns the new bus class
+
+For example:
+```python
+    case "SBUS":
+        data_dict = self.nonleafbus_parser.parse_csv(file_name)
+        return SBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
+```
 
 This ensures the bus can be created correctly when requested.
 
