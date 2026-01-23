@@ -27,6 +27,9 @@ class Peripherals_Factory(Factory):
 		# Initialize the board dependent params
 		self.DDR_CHANNELS: list[int] = self.env.get_supp_ddr_chs()
 		self.HBM_SUPPORTED: bool = self.env.get_supp_hbm()
+		# Bus dependent parameters
+		self.MBUS_CHANNELS = (1,)
+		self.HBUS_CHANNELS = (0,)
 
 	# Extract DDR4 channel number (assuming the format is something like DDR4_CH_0)
 	def _extract_ddr4_channel(self, full_name: str) -> int:
@@ -36,7 +39,7 @@ class Peripherals_Factory(Factory):
 	# In case of DDR4 or HBM also enforces checks based on the board.
 	# This function checks for duplicated peripherals creation
 	def create_peripheral(self, full_name: str, base_addr: list[int], addr_width: list[int], 
-							clock_domain: str) -> Peripheral:
+					   clock_domain: str, bus_name: str) -> Peripheral:
 
 		
 		# register creation to check for duplicates
@@ -57,9 +60,15 @@ class Peripherals_Factory(Factory):
 				channel = id
 				if channel not in self.DDR_CHANNELS:
 					raise ValueError("Unsupported DDR4 channel for the current board configuration")
-				# DDR4 objects have their own clock domain so they statically initialize
-				# it based on channel number
-				return DDR4(base_name, addr_ranges, channel)
+				# MBUS and HBUS only support particular DDR4 channels, so enforce the check
+				if(bus_name == "MBUS") and (channel not in self.MBUS_CHANNELS):
+					raise ValueError(f"DDR4CH_{channel} was configured on MBUS that only supports "
+									 f"channels {self.MBUS_CHANNELS}")
+
+				if(bus_name == "HBUS") and (channel not in self.HBUS_CHANNELS):
+					raise ValueError(f"DDR4CH_{channel} was configured on HBUS that only supports "
+									 f"channels {self.HBUS_CHANNELS}")
+				return DDR4(base_name, addr_ranges, clock_domain, channel, bus_name)
 			case "GPIOOUT":
 				return GPIO_out(base_name, addr_ranges, clock_domain, clock_frequency)
 			case "GPIOIN":

@@ -3,7 +3,6 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This file defines the DDR4 peripheral
 
-
 from general.addr_range import Addr_Ranges
 from .peripheral import Peripheral
 import re
@@ -12,14 +11,26 @@ from pathlib import Path
 
 # DDR4 has its own clock domain, so it doesn't accept values when initialized
 # but just statically initialize its clock domain based on the channel
+# the only exception is the MBUS that will try to configure the CLOCK_DOMAIN
+# based on its .csv values, so a check on correctness need to be done
 class DDR4(Peripheral):
-	def __init__(self, base_name: str, addr_ranges_list: Addr_Ranges, channel: int):
-		clock_frequency = 300
-		clock_domain = f"DDR4CH{channel}_300"
-		super().__init__(base_name, addr_ranges_list, clock_domain, clock_frequency)
+	def __init__(self, base_name: str, addr_ranges_list: Addr_Ranges, clock_domain: str, \
+					   channel: int, father_bus_name: str):
+
+		static_domain = f"DDR4CH{channel}_300"
+		static_frequency = 300
+
+		super().__init__(base_name, addr_ranges_list, static_domain, static_frequency)
 		self.IS_A_MEMORY = True
 		self.IS_CLOCK_GENERATOR = True
 		self.CHANNEL = channel
+
+		# MBUS will propagate the clock domain from its .csv file (RANGE_CLOCK_DOMAINS)
+		# so we need to enforce the correct value
+		if(father_bus_name == "MBUS") and (clock_domain != static_domain):
+			raise ValueError(f"DDR4CH_{channel} was configured by MBUS with CLOCK_DOMAIN: "
+							 f"{clock_domain}, the only acceptable value is {static_domain}")
+
 
 	def config_ip(self, root_path: str, **kwargs) -> None:
 		# use channel number to find corresponding cache

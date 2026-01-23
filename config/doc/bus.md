@@ -11,7 +11,7 @@ To add a new bus, you must:
 1. Add a new configuration `.csv` file
 2. Adapt the configuration Makefile with new INPUT and OUTPUT files related to the new bus
 3. Implement a new Python bus class (for example ['pbus.py'](../buses/pbus.py))
-4. Register the new bus in the bus factory
+4. Register the new bus in the ['buses_factory'](../factories/buses_factory.py)
 5. (Optional) Extend the parser hierarchy for complex buses
 
 ### Naming Conventions

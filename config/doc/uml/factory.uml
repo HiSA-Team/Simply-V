@@ -19,7 +19,7 @@ class Buses_Factory {
 }
 
 class Peripherals_Factory {
-    +create_peripheral(full_name: str, base_addr: list[int], addr_width: list[int], clock_domain: str): Peripheral
+    +create_peripheral(full_name: str, base_addr: list[int], addr_width: list[int], clock_domain: str, bus_name: str): Peripheral
     -_extract_ddr4_channel(full_name: str): int
     -DDR_CHANNELS: list[int]
     -HBM_SUPPORTED: bool

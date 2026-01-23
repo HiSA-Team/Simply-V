@@ -78,7 +78,8 @@ class Bus(Node):
 			p = self.peripherals_factory.create_peripheral(range_names[i], \
 						base_addr[i:(i+addr_ranges)], \
 						addr_width[i:(i+addr_ranges)], \
-						clock_domain[i])
+						clock_domain[i],
+						self.FULL_NAME)
 			peripherals.append(p)
 
 		return peripherals

@@ -33,16 +33,16 @@ Think of it like the "type" of a particular node.
 Where `id` is a numeric identifier (used as channel number for DDR4, ex. DDR4CH_0).
 `id` can be omitted if there aren't multiple istances of the same "FULL_NAME" in the configuration.
 
-Since the "BASE_NAME" part extracted from a "FULL_NAME" is internally enforced as an UPPERCASE string from the
-configuration flow, the "FULL_NAME" specified in the .csv config files of buses is case insensitive but since
-FULL_NAMEs are assumed to be used in the generation of every file in the configuration, keep in mind
-that when specifying a particular node with a FULL_NAME, that name will be used to refer to that particular node in the context of the various configuration files (as it is, or as a prefix/suffix based on the particular configuration file).
+Since the "BASE_NAME" part extracted from a "FULL_NAME" is case insensitive, the "FULL_NAMEs" specified
+in the .csv config files of buses are also case insensitive. 
+FULL_NAMEs are assumed to be used in the generation of every file in the configuration, so keep in mind
+that when specifying a particular node with a FULL_NAME (in a .csv file), that name will be used to refer to that particular node in the context of the various configuration files (as it is, or as a prefix/suffix based on the particular configuration file).
 So every "sw" or "hw" file that depends on generated files, will be influenced by the particular FULL_NAME given
 to a node in the configuration flow.
 
 for example:
     specifying "HlsControl" as a FULL_NAME leads to these kind of definitions in the HAL header
-    (keep in mind that this potentially apply to all configuration files generated)
+    (This is just a single example, this logic potentially apply to all configuration files generated)
 
     #define _peripheral_HlsControl_start  0x0000000000040000
     #define _peripheral_HlsControl_end    0x0000000000050000

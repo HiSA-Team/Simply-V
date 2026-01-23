@@ -157,3 +157,17 @@ In the table above, multiple properties are supported, but more can be added. To
 ### How to add a new Bus
 
 For a guide on how to add a new bus in the configuration flow refer to [`Adding a New Bus to the System`](./doc/bus.md)
+
+### Configuration flow Class Diagrams
+
+The bash script [`docs.sh`](simply_v_conf/docs.sh) uses Pyreverse to automatically generate class diagrams
+of all the Python classes in the configuration flow and is suited to have a quick reference when modifying the
+actual configuration flow implementation.
+
+How to install the dependencies needed to run the script:
+``` bash
+pip install pylint
+sudo apt install graphviz
+```
+A more structured and precise reference is in the [`doc`](doc) folder,
+that need to be manually kept up to date when changing the code modifying the PlantUML code accordingly.
