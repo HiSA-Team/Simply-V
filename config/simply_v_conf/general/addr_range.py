@@ -206,31 +206,14 @@ class Addr_Ranges():
 	# Returns a key, value dict, each entry represents an addr range with:
 	# key = RANGE_NAME
 	# value = copy of REACHABLE_FROM
-	# if all the ranges have the same "REACHABLE_FROM" and explicit is set to "False"
+	# if the ranges are contiguous and explicit is set to "False"
 	# returns a dict with a single entry with:
 	# key = FULL_NAME
 	# value = copy of REACHABLE_FROM
 	def get_reachable_from(self, explicit: bool) -> dict[str, list[str]]:
 		ret_dict = {}
-		equal = True
-		prev_reachables = set()
-
-		for addr_range in self.addr_ranges:
-			if(prev_reachables):
-				if(prev_reachables != addr_range.REACHABLE_FROM):
-					equal = False
-					break
-			prev_reachables = addr_range.REACHABLE_FROM
 		
-        # if all ranges share the same REACHABLE_FROM, return just a single entry
-		# using "FULL_NAME" as a value (it's used to give a more compact information,
-		# if all addr ranges of a Node are addressable from the same Buses, instead
-		# of returning information for each addr range, just consider all the addr ranges as a single
-		# "FULL_NAME" node)
-		# but if only a single range have different REACHABLE_FROM from the other just return
-		# informations about every range
-
-		if(equal and not explicit):
+		if(self.contiguous and not explicit):
 			ret_dict = {self.FULL_NAME: list(self.addr_ranges[0].REACHABLE_FROM.copy()) }
 		else:
 			ret_dict = {addr_range.RANGE_NAME: list(addr_range.REACHABLE_FROM.copy()) for addr_range in self.addr_ranges}
