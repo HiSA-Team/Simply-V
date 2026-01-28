@@ -11,6 +11,48 @@ The document explains:
 * how to create software for the two cores
 * how to load and execute the programs on the FPGA
 
+## Development Environment
+
+The project was developed and tested inside a Linux virtual machine in order to provide a controlled, stable, and reproducible environment compatible with Simply-V and the FPGA toolchain.
+
+### Virtual Machine
+
+The development environment is based on a VirtualBox virtual machine running Ubuntu 64-bit.
+The VM is configured with sufficient computational resources to support hardware synthesis, software builds, and debugging activities.
+
+* **Operating System:** Ubuntu 64-bit
+* **Hypervisor:** VirtualBox
+* **Memory:** 20 GB RAM
+* **CPU:** 4 cores
+* **Acceleration:**
+
+  * Nested paging
+  * KVM paravirtualization
+* **Storage:**
+
+  * Virtual disk format: VDI
+  * Disk size: 200 GB
+* **Networking:** Disabled
+* **Graphics:** VMSVGA, 100 MB VRAM
+* **USB:** xHCI controller enabled
+
+This configuration supports:
+
+* RTL generation
+* FPGA synthesis and implementation
+* multi-core software compilation
+* xsdb/JTAG-based debugging
+
+### FPGA Toolchain
+
+The FPGA development flow is based on **Vivado**, installed using the **offline installer**.
+This choice ensures a self-contained development setup, independent from network connectivity, and improves long-term reproducibility of the build environment.
+
+Vivado is used for the complete hardware flow, including RTL elaboration, synthesis, implementation, and bitstream generation for the Simply-V SoC.
+It is also responsible for integrating and synthesizing the dual MicroBlaze-V RV32 cores within the same rv_socket instance.
+
+Using an offline installation allows the same toolchain to be deployed consistently across different machines and isolated systems without requiring additional downloads or online access during setup.
+
 # Configuring the Main Bus
 
 Modify `config/configs/common/config_system.csv`, setting `CORE_SELECTOR`:
