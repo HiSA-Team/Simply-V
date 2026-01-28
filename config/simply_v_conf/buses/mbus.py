@@ -21,6 +21,8 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("PBUS",)
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
+	DDR4_LEGAL_CHANNELS = (1,)
+
 	if env_global.get_soc_profile()=="hpc":
 		LEGAL_PERIPHERALS = LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL")
 		LEGAL_BUSES = LEGAL_BUSES + ("HBUS",)

@@ -11,115 +11,208 @@ from general.simply_v import SimplyV
 import argparse
 import traceback
 
+
 def parse_args():
-	arg_parser = argparse.ArgumentParser()
+	# Each argument corresponds directly to a Makefile variable passed
+	# in the various CONFIG_*_ARGS groups.
+	parser = argparse.ArgumentParser()
 
-	arg_parser.add_argument("--mode", required=True, choices=[
-														"config_mbus", "config_pbus", 
-														"config_hbus", "config_sw", 
-														"config_xilinx", "config_dump",
-														"config_check"
-														])
+	# =====================
+	# Input CSV files
+	# (INPUT_*_CSV in Makefile, always passed)
+	# =====================
+	parser.add_argument("--system_csv", required=True)
+	parser.add_argument("--mbus_csv", required=True)
+	parser.add_argument("--pbus_csv", required=True)
+	parser.add_argument("--hbus_csv", required=True)
 
-	arg_parser.add_argument("--system", required=True)
-	arg_parser.add_argument("--mbus", required=True)
-	arg_parser.add_argument("--pbus", required=True)
-	arg_parser.add_argument("--hbus", required=True)
-	# Used only when configuring buses
-	arg_parser.add_argument("--target_bus", required=False)
+	# =====================
+	# Configuration modes
+	# (enabled by Makefile targets: --config_mbus, --config_sw, etc.)
+	# =====================
+	parser.add_argument("--config_mbus", action="store_true")
+	parser.add_argument("--config_pbus", action="store_true")
+	parser.add_argument("--config_hbus", action="store_true")
+	parser.add_argument("--config_sw", action="store_true")
+	parser.add_argument("--config_xilinx", action="store_true")
+	parser.add_argument("--config_dump", action="store_true")
 
-	# everything after known args is treated as OUTPUT_FILES in the Makefile invocation
-	# depending on the value of "mode" the order changes:
-	#
-	# mode: config_*bus -> [0] BUS crossbar, [1] BUS interconnect svinc [2] BUS clock SVINC (optional)
-	# mode: config_sw -> [0] HAL config, [1] SW Makefile, [2] Linker script
-	# mode: config_xilinx -> [0] xilinx makefile, [1] DDR4 ips root folder, 
-	#						 [2] BRAM ips root folder, [3] UART ips root folder
-	# mode: config_dump -> [0] dump file
+	# =====================
+	# MBUS outputs
+	# =====================
+	parser.add_argument("--mbus_tcl")
+	parser.add_argument("--mbus_interconnect")
+	parser.add_argument("--mbus_clock")
 
-	args, output_files = arg_parser.parse_known_args()
-	args.output_files = output_files
+	# =====================
+	# PBUS outputs
+	# =====================
+	parser.add_argument("--pbus_tcl")
+	parser.add_argument("--pbus_interconnect")
 
-		
-	return args
+	# =====================
+	# HBUS outputs
+	# =====================
+	parser.add_argument("--hbus_tcl")
+	parser.add_argument("--hbus_interconnect")
+	parser.add_argument("--hbus_clock")
+
+	# =====================
+	# Software outputs
+	# =====================
+	parser.add_argument("--hal_conf")
+	parser.add_argument("--sw_mk")
+	parser.add_argument("--ld_conf")
+
+	# =====================
+	# Xilinx outputs
+	# =====================
+	parser.add_argument("--xilinx_mk")
+	parser.add_argument("--ddr4_root")
+	parser.add_argument("--bram_root")
+	parser.add_argument("--uart_root")
+
+	# =====================
+	# Dump output
+	# =====================
+	parser.add_argument("--dump_path")
+
+	return parser.parse_args()
+
 
 def main(logger):
 	args = parse_args()
+
+	# (INPUT_ARGS) from Makefile 
 	bus_input_files = {
-		"MBUS":   args.mbus,
-		"PBUS":   args.pbus,
-		"HBUS":   args.hbus,
+		"MBUS": args.mbus_csv,
+		"PBUS": args.pbus_csv,
+		"HBUS": args.hbus_csv,
 	}
 
-	#Parser for SimplyV params
+	# Global initialization
 	sys_parser = Sys_Parser.get_instance()
-	#initialize Env
 	env = Env.get_instance()
 	env.set_inputs(bus_input_files)
 
-	#Parse SimplyV configs
-	sys_dict = sys_parser.parse_csv(args.system)
+	sys_dict = sys_parser.parse_csv(args.system_csv)
+	# Create SimplyV main object that will also create the nodes hierarchy
 	system = SimplyV(sys_dict)
 
-	mode = args.mode
-	outputs = args.output_files
+	# Triggered by Makefile: config_mbus or all
+	# =====================
+	# MBUS
+	# =====================
+	if args.config_mbus:
+		if not all([args.mbus_tcl, args.mbus_interconnect, args.mbus_clock]):
+			raise ValueError(
+				"config_mbus requires --mbus_tcl, --mbus_interconnect, and --mbus_clock"
+			)
 
-	match mode:
-		case "config_check":
-			# Configs are implicitly checked while creating the "SimplyV" object above
-			logger.simply_v_info(f"[CONFIG] Configuration check was successful.")
-			return
+		outputs = [
+			args.mbus_tcl,
+			args.mbus_interconnect,
+			args.mbus_clock,
+		]
 
-		case "config_mbus" | "config_pbus" | "config_hbus":
-			if (len(outputs) != 2) and (len(outputs) != 3):
-				raise ValueError(f"{mode} expects 2 or 3 output files, got {len(outputs)}")
+		if system.config_bus("MBUS", outputs):
+			logger.simply_v_info("Generated MBUS configs")
+		else:
+			logger.simply_v_warning("MBUS configs NOT generated (bus disabled)")
 
-			# first output is BUS crossbar
-			# second output is BUS SVINC
-			# third output (optional) is BUS CLOCK SVINC
-			if(system.config_bus(args.target_bus, outputs)):
-				logger.simply_v_info(f"[CONFIG] Generated {args.target_bus} configs.")
-			else:
-				logger.simply_v_warning(f"[CONFIG] {args.target_bus} configs NOT generated (bus disabled)")
-			return
+	# Triggered by Makefile: config_pbus or all
+	# =====================
+	# PBUS
+	# =====================
+	if args.config_pbus:
+		if not all([args.pbus_tcl, args.pbus_interconnect]):
+			raise ValueError(
+				"config_pbus requires --pbus_tcl and --pbus_interconnect"
+			)
 
-		case "config_sw":
-			if len(outputs) != 3:
-				raise ValueError(f"{mode} expects 3 output files, got {len(outputs)}")
-			# first output is HAL conf file
-			system.create_hal_header(outputs[0])
-			logger.simply_v_info("[CONFIG] Generated HAL header.")
-			# second output is SW makefile
-			system.update_sw_makefile(outputs[1])
-			logger.simply_v_info("[CONFIG] Updated sw Makefile.")
-			# third output is linker script file
-			system.create_linker_script(outputs[2])
-			logger.simply_v_info("[CONFIG] Generated linker script.")
-			return
+		outputs = [
+			args.pbus_tcl,
+			args.pbus_interconnect,
+		]
 
-		case "config_xilinx":
-			if len(outputs) != 4:
-				raise ValueError(f"{mode} expects 4 output files, got {len(outputs)}")
-			# first output is xilinx makefile
-			system.config_xilinx_makefile(outputs[0])
-			system.config_xilinx_clock_domains(outputs[0])
-			# second output is ddr4 ips root
-			# third output is bram ips root
-			# fourth output is uart ips root
-			system.config_peripherals_ips(outputs[1:4])
+		if system.config_bus("PBUS", outputs):
+			logger.simply_v_info("Generated PBUS configs")
+		else:
+			logger.simply_v_warning("PBUS configs NOT generated (bus disabled)")
+	
 
-			logger.simply_v_info("[CONFIG] Generated xilinx configs.")
-			return
+	# Triggered by Makefile: config_hbus or all
+	# =====================
+	# HBUS
+	# =====================
+	if args.config_hbus:
+		if not all([args.hbus_tcl, args.hbus_interconnect, args.hbus_clock]):
+			raise ValueError(
+				"config_hbus requires --hbus_tcl, --hbus_interconnect, and --hbus_clock"
+			)
 
-		case "config_dump":
-			if len(outputs) != 1:
-				raise ValueError(f"{mode} expects 1 output file, got {len(outputs)}")
-			system.dump_reachability(outputs[0])
-			logger.simply_v_info("[CONFIG] Generated reachability dump.")
-			return
+		outputs = [
+			args.hbus_tcl,
+			args.hbus_interconnect,
+			args.hbus_clock,
+		]
 
-		case _:
-			raise ValueError(f"Unknown mode {mode}")
+		if system.config_bus("HBUS", outputs):
+			logger.simply_v_info("Generated HBUS configs")
+		else:
+			logger.simply_v_warning("HBUS configs NOT generated (bus disabled)")
+
+	# Triggered by Makefile: config_sw or all
+	# =====================
+	# Software
+	# =====================
+	if args.config_sw:
+		if not all([args.hal_conf, args.sw_mk, args.ld_conf]):
+			raise ValueError(
+				"config_sw requires --hal_conf, --sw_mk, and --ld_conf"
+			)
+
+		system.create_hal_header(args.hal_conf)
+		system.update_sw_makefile(args.sw_mk)
+		system.create_linker_script(args.ld_conf)
+		logger.simply_v_info("Generated software configs")
+
+	# Triggered by Makefile: config_xilinx or all
+	# =====================
+	# Xilinx
+	# =====================
+	if args.config_xilinx:
+		if not all([
+			args.xilinx_mk,
+			args.ddr4_root,
+			args.bram_root,
+			args.uart_root,
+		]):
+			raise ValueError(
+				"config_xilinx requires --xilinx_mk, --ddr4_root, --bram_root, and --uart_root"
+			)
+
+		system.config_xilinx_makefile(args.xilinx_mk)
+		system.config_xilinx_clock_domains(args.xilinx_mk)
+		system.config_peripherals_ips([
+			args.ddr4_root,
+			args.bram_root,
+			args.uart_root,
+		])
+		logger.simply_v_info("Generated Xilinx configs")
+	
+	# Triggered by Makefile: config_dump or all
+	# =====================
+	# Dump
+	# =====================
+	if args.config_dump:
+		if not args.dump_path:
+			raise ValueError(
+				"config_dump requires --dump_path"
+			)
+
+		system.dump_reachability(args.dump_path)
+		logger.simply_v_info("Generated reachability dump")
 
 
 if __name__ == "__main__":
@@ -127,8 +220,9 @@ if __name__ == "__main__":
 	try:
 		main(logger)
 	except ValueError as e:
-		logger.simply_v_crash(f"Value error: {e.args[0]}.")
-	except Exception as e:
+		logger.simply_v_crash(f"Value error: {e.args[0]}")
+	except Exception:
 		logger.simply_v_crash(
 			"Unexpected error:\n" + traceback.format_exc()
 		)
+

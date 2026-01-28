@@ -13,16 +13,16 @@ INPUT_SYSTEM_CSV ?= $(CONFIG_ROOT)/configs/common/config_system.csv
 
 # Generated from "config_mbus"
 OUTPUT_MBUS_CROSSBAR := $(XILINX_ROOT)/ips/common/xlnx_mbus_crossbar/config.tcl
-OUTPUT_MBUS_SVINC    := $(XILINX_ROOT)/rtl/mbus_buses.svinc
+OUTPUT_MBUS_INTERCONNECT    := $(XILINX_ROOT)/rtl/mbus_buses.svinc
 OUTPUT_MBUS_CLK_ASSIGNMENTS := $(XILINX_ROOT)/rtl/uninasoc_clk_assignments.svinc
 
 # Generated from "config_pbus"
 OUTPUT_PBUS_CROSSBAR := $(XILINX_ROOT)/ips/common/xlnx_pbus_crossbar/config.tcl
-OUTPUT_PBUS_SVINC    := $(XILINX_ROOT)/rtl/pbus_buses.svinc
+OUTPUT_PBUS_INTERCONNECT    := $(XILINX_ROOT)/rtl/pbus_buses.svinc
 
 # Generated from "config_hbus"
 OUTPUT_HBUS_CROSSBAR := $(XILINX_ROOT)/ips/hpc/xlnx_hbus_crossbar/config.tcl
-OUTPUT_HBUS_SVINC    := $(XILINX_ROOT)/rtl/hbus_buses.svinc
+OUTPUT_HBUS_INTERCONNECT    := $(XILINX_ROOT)/rtl/hbus_buses.svinc
 OUTPUT_HBUS_CLK_ASSIGNMENTS := $(XILINX_ROOT)/rtl/hbus_clk_assignments.svinc
 
 # Generated from "config_sw"
@@ -48,58 +48,93 @@ OUTPUT_DUMP := $(CONFIG_ROOT)/dump.csv
 
 PYTHON ?= python3.10
 
-CMD_ARGS = \
-	--system $(INPUT_SYSTEM_CSV) \
-	--mbus   $(INPUT_MBUS_CSV)  \
-	--pbus   $(INPUT_PBUS_CSV)  \
-	--hbus   $(INPUT_HBUS_CSV)
+INPUT_ARGS = \
+	--system_csv $(INPUT_SYSTEM_CSV) \
+	--mbus_csv   $(INPUT_MBUS_CSV)  \
+	--pbus_csv   $(INPUT_PBUS_CSV)  \
+	--hbus_csv   $(INPUT_HBUS_CSV)
+
+CONFIG_MBUS_ARGS = \
+	--config_mbus \
+	--mbus_tcl $(OUTPUT_MBUS_CROSSBAR) \
+	--mbus_interconnect $(OUTPUT_MBUS_INTERCONNECT) \
+	--mbus_clock $(OUTPUT_MBUS_CLK_ASSIGNMENTS)
+
+CONFIG_PBUS_ARGS = \
+	--config_pbus \
+	--pbus_tcl $(OUTPUT_PBUS_CROSSBAR) \
+	--pbus_interconnect $(OUTPUT_PBUS_INTERCONNECT) 
+
+CONFIG_HBUS_ARGS = \
+	--config_hbus \
+	--hbus_tcl $(OUTPUT_HBUS_CROSSBAR) \
+	--hbus_interconnect $(OUTPUT_HBUS_INTERCONNECT) \
+	--hbus_clock $(OUTPUT_HBUS_CLK_ASSIGNMENTS)
+
+CONFIG_SW_ARGS = \
+	--config_sw \
+	--hal_conf $(OUTPUT_HAL_CONF) \
+	--sw_mk $(OUTPUT_SW_MK) \
+	--ld_conf $(OUTPUT_LD)
+
+CONFIG_HW_ARGS = \
+	--config_xilinx \
+	--xilinx_mk $(OUTPUT_XILINX_MK) \
+	--ddr4_root $(OUTPUT_DDR4_ROOT) \
+	--bram_root $(OUTPUT_BRAM_ROOT) \
+	--uart_root $(OUTPUT_UART_ROOT)
+
+CONFIG_DUMP_ARGS = \
+	--config_dump \
+	--dump_path $(OUTPUT_DUMP)
+				 
 
 ###########################
 ###  	 TARGETS        ###
 ###########################
 
-all: config_mbus config_pbus config_hbus config_sw config_xilinx config_dump
+all: 
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_MBUS_ARGS) $(CONFIG_PBUS_ARGS)\
+			   $(CONFIG_HBUS_ARGS) $(CONFIG_SW_ARGS) $(CONFIG_HW_ARGS) $(CONFIG_DUMP_ARGS)
+
 
 # This target can be used to validate configuration without generating
 # any output files, isn't needed as "prerequisite" for any other target
 # because validation of configuration is implicit in the generation of files
 config_check:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS)
 
 
 ############################################################
 ###     		 BUS TARGETS (mbus, pbus, hbus)			 ###
 ############################################################
 
-config_mbus: OUTPUT_FILES := $(OUTPUT_MBUS_CROSSBAR) $(OUTPUT_MBUS_SVINC) $(OUTPUT_MBUS_CLK_ASSIGNMENTS)
-config_pbus: OUTPUT_FILES := $(OUTPUT_PBUS_CROSSBAR) $(OUTPUT_PBUS_SVINC)
-config_hbus: OUTPUT_FILES := $(OUTPUT_HBUS_CROSSBAR) $(OUTPUT_HBUS_SVINC) $(OUTPUT_HBUS_CLK_ASSIGNMENTS)
+config_mbus: CONFIG_BUS_ARGS := $(CONFIG_MBUS_ARGS)
+config_pbus: CONFIG_BUS_ARGS := $(CONFIG_PBUS_ARGS)
+config_hbus: CONFIG_BUS_ARGS := $(CONFIG_HBUS_ARGS)
 
 config_%bus:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ --target_bus $*bus $(CMD_ARGS) $(OUTPUT_FILES)
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_BUS_ARGS)
 
 ############################################################
 ###					 SOFTWARE TARGETS					 ###
 ############################################################
 
-config_sw: OUTPUT_FILES := $(OUTPUT_HAL_CONF) $(OUTPUT_SW_MK) $(OUTPUT_LD)
 config_sw:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_SW_ARGS) 
 
 
 ############################################################
 ###					 XILINX TARGET					 	 ###
 ############################################################
 
-config_xilinx: OUTPUT_FILES := $(OUTPUT_XILINX_MK) $(OUTPUT_DDR4_ROOT) $(OUTPUT_BRAM_ROOT) $(OUTPUT_UART_ROOT)
 config_xilinx:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_HW_ARGS) 
 
 
 ############################################################
 ###					  DUMP TARGET						 ###
 ############################################################
 
-config_dump: OUTPUT_FILES := $(OUTPUT_DUMP)
 config_dump:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --mode $@ $(CMD_ARGS) $(OUTPUT_FILES)
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_DUMP_ARGS) 

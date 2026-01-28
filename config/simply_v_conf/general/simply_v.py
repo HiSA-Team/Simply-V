@@ -90,6 +90,10 @@ class SimplyV(metaclass=Singleton):
 				self.memories.append(p)
 			else:
 				self.devices.append(p)
+
+		# Check BOOT_MEMORY
+		if (not any(m.FULL_NAME == self.BOOT_MEMORY_BLOCK for m in self.memories)):
+			raise ValueError("BOOT_MEMORY_BLOCK specified not supported")
 		
 	# Create linker script used from the "sw" flow
 	def create_linker_script(self, ld_file_name: str):

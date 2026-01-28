@@ -4,6 +4,7 @@
 
 from parsers.mbus_parser import MBUS_Parser
 from general.addr_range import Addr_Ranges
+from general.logger import Logger
 from .factory import Factory
 from parsers.nonleafbus_parser import NonLeafBus_Parser
 from parsers.leafbus_parser import LeafBus_Parser
@@ -13,6 +14,7 @@ class Buses_Factory(Factory):
 	mbus_parser = MBUS_Parser.get_instance()
 	nonleafbus_parser = NonLeafBus_Parser.get_instance()
 	leafbus_parser = LeafBus_Parser.get_instance()
+	logger = Logger.get_instance()
 
 	# Buses Factory constructor
 	def __init__(self):
@@ -42,16 +44,20 @@ class Buses_Factory(Factory):
 		# Assuming the bus file name is for example "config_pbus_0.csv" if full_name is "PBUS_0"
 		file_name = self.env.get_config_path(full_name)
 
+
 		# Create concrete bus
 		match base_name:
 			case "MBUS":
 				data_dict = self.mbus_parser.parse_csv(file_name)
-				return MBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
+				bus = MBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
 			case "PBUS":
 				data_dict = self.leafbus_parser.parse_csv(file_name)
-				return PBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency)
+				bus = PBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency)
 			case "HBUS":
 				data_dict = self.nonleafbus_parser.parse_csv(file_name)
-				return HBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
+				bus =  HBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
 			case _:
 				raise ValueError(f"Unsupported Bus {full_name}\n")
+
+		self.logger.simply_v_info(f"Created BUS {full_name} parsing file: {file_name}")
+		return bus

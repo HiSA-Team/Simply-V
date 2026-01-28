@@ -11,6 +11,7 @@ from typing import Optional, cast
 from general.node import Node
 from general.addr_range import Addr_Ranges
 from general.env import Env
+from general.logger import Logger
 from .bus import Bus
 from peripherals.peripheral import Peripheral
 from factories.buses_factory import Buses_Factory
@@ -18,12 +19,14 @@ from factories.buses_factory import Buses_Factory
 class NonLeafBus(Bus):
 	env = Env.get_instance()
 	buses_factory = Buses_Factory.get_instance()
+	logger = Logger.get_instance()
 	#These params are empty because they are defined by children classes.
 	#Based on the bus type a children class must initialize them with the 
 	#adequate values, they're specified here so that "NonLeafBus" class can expose
 	#common functions that will use them (_check_legal_buses function)
 	LEGAL_BUSES = ()
-	
+	DDR4_LEGAL_CHANNELS = ()
+
 
 	def __init__(self, base_name: str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, axi_addr_width: int, 
 				axi_data_width: int, clock_domain: str, clock_frequency: int, father: Optional["NonLeafBus"]):
@@ -35,7 +38,8 @@ class NonLeafBus(Bus):
 		self._children_buses: list[Bus] = []
 		self.loopback_ranges: Addr_Ranges
 		self.LOOPBACK: bool = data_dict["LOOPBACK"]
-
+		# Set legal ddr4 channels in order to find erroneous ddr4 channels configurations
+		self.peripherals_factory.set_ddr4_legal_channels(self.FULL_NAME, self.DDR4_LEGAL_CHANNELS)
 		# NonLeafBuses can expose clock to their parent (this is used to generate the svinc clock configuration)
 		# if the clock domain used in the configuration contains the name of the father bus
 		# then this bus isn't generating a clock but it's taking a clock directly from the father
@@ -110,6 +114,11 @@ class NonLeafBus(Bus):
 
 		self.loopback_ranges = Addr_Ranges(self.father.FULL_NAME, base_addresses, addresses_widths)
 
+		# logging
+		for addr_range in self.loopback_ranges:
+			self.logger.simply_v_info(f"Created LOOPBACK range [{hex(addr_range.RANGE_BASE_ADDR)} " 
+							          f"- { hex(addr_range.RANGE_END_ADDR - 1)}] on {self.father.FULL_NAME} "
+							          f"from {self.FULL_NAME}")
 	
 	def _check_legal_buses(self):
 		for b in self._children_buses:

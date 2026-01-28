@@ -27,13 +27,20 @@ class Peripherals_Factory(Factory):
 		# Initialize the board dependent params
 		self.DDR_CHANNELS: list[int] = self.env.get_supp_ddr_chs()
 		self.HBM_SUPPORTED: bool = self.env.get_supp_hbm()
-		# Bus dependent parameters
-		self.MBUS_CHANNELS = (1,)
-		self.HBUS_CHANNELS = (0,)
+		self.MBUS_DDR4_LEGAL_CHANNELS: tuple
+		self.HBUS_DDR4_LEGAL_CHANNELS: tuple
 
 	# Extract DDR4 channel number (assuming the format is something like DDR4_CH_0)
 	def _extract_ddr4_channel(self, full_name: str) -> int:
 		return int(full_name.split("_")[-1])
+
+	def set_ddr4_legal_channels(self, bus_name: str, legal_channels: tuple):
+		if(bus_name == "MBUS"):
+			self.MBUS_DDR4_LEGAL_CHANNELS = legal_channels
+		elif(bus_name == "HBUS"):
+			self.HBUS_DDR4_LEGAL_CHANNELS = legal_channels
+		else:
+			raise ValueError(f"Bus {bus_name} doesn't support ddr4 channels {legal_channels}")
 
 	# Create peripherals extracting base name from full name and clock frequency from clock domain.
 	# In case of DDR4 or HBM also enforces checks based on the board.
@@ -61,13 +68,13 @@ class Peripherals_Factory(Factory):
 				if channel not in self.DDR_CHANNELS:
 					raise ValueError("Unsupported DDR4 channel for the current board configuration")
 				# MBUS and HBUS only support particular DDR4 channels, so enforce the check
-				if(bus_name == "MBUS") and (channel not in self.MBUS_CHANNELS):
+				if(bus_name == "MBUS") and (channel not in self.MBUS_DDR4_LEGAL_CHANNELS):
 					raise ValueError(f"DDR4CH_{channel} was configured on MBUS that only supports "
-									 f"channels {self.MBUS_CHANNELS}")
+									 f"channels {self.MBUS_DDR4_LEGAL_CHANNELS}")
 
-				if(bus_name == "HBUS") and (channel not in self.HBUS_CHANNELS):
+				if(bus_name == "HBUS") and (channel not in self.HBUS_DDR4_LEGAL_CHANNELS):
 					raise ValueError(f"DDR4CH_{channel} was configured on HBUS that only supports "
-									 f"channels {self.HBUS_CHANNELS}")
+									 f"channels {self.HBUS_DDR4_LEGAL_CHANNELS}")
 				return DDR4(base_name, addr_ranges, clock_domain, channel, bus_name)
 			case "GPIOOUT":
 				return GPIO_out(base_name, addr_ranges, clock_domain, clock_frequency)

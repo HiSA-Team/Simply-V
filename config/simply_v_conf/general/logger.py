@@ -18,14 +18,14 @@ class Logger(metaclass=Singleton):
 			self.logger.addHandler(handler)
 	
 	def simply_v_error(self, message: str):
-		self.logger.error(message)
+		self.logger.error("[CONFIG] " + message)
 
 	def simply_v_warning(self, message: str):
-		self.logger.warning(message)
+		self.logger.warning(" [CONFIG] " + message)
 
 	def simply_v_crash(self, message: str):
-		self.logger.error(message)
+		self.logger.error("[CONFIG] " + message)
 		exit(1)
 
 	def simply_v_info(self, message: str):
-		self.logger.info(f"---{message}---")
+		self.logger.info(f"--- [CONFIG] {message} ---")
