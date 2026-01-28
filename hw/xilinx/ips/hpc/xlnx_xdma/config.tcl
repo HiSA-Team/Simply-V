@@ -11,6 +11,7 @@ set_property -dict [list \
   CONFIG.pf0_bar0_size {32} \
   CONFIG.axisten_freq {250} \
   CONFIG.axi_data_width {64_bit} \
+  CONFIG.s_axi_id_width {$::env(MBUS_ID_WIDTH)} \
   CONFIG.en_gt_selection {true} \
   CONFIG.mode_selection {Advanced} \
   CONFIG.pl_link_cap_max_link_speed {2.5_GT/s} \
