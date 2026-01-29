@@ -80,7 +80,7 @@ module hls_conv2d_wrapper # (
 
     // HLS_DOTPROD_CONTROL AXI-lite
     // xlnx_axi4_to_axilite_u -> custom_hls_conv_hbus_u
-    `DECLARE_AXILITE_BUS(HLS_CONTROL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH);
+    `DECLARE_AXILITE_BUS(HLS_CONTROL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH);
 
     /////////////
     // Modules //
@@ -182,10 +182,11 @@ module hls_conv2d_wrapper # (
         );
     `else // notdefined(HLS_CONTROL_HAS_CLOCK_DOMAIN)
         // Error out for now
-        $error("This version of HLS CONV2D IP must be in HBUS clock domain")
+        $error("This version of HLS CONV2D IP must be in HBUS clock domain");
     `endif
 
     // Use a Dwidth converter if System XLEN is 64-bits wide.
+    generate
     if ( MBUS_DATA_WIDTH == 64 ) begin : gen_dwidth_conv
 
         xlnx_axi_dwidth_64_to_32_converter axi_dwidth_conv_u (
@@ -281,6 +282,7 @@ module hls_conv2d_wrapper # (
         `ASSIGN_AXI_BUS (to_prot_conv, sync_HLS_CONTROL)
 
     end : no_dwidth_conv
+    endgenerate
 
     // AXI converter for HLS_DOTPROD_CONTROL
     xlnx_axi4_to_axilite_d32_converter xlnx_axi4_to_axilite_u (
