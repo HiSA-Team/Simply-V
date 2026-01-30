@@ -95,6 +95,7 @@ $ make config_hbus                # Generates HBUS config
 $ make config_sw                  # Update software config
 $ make config_xilinx              # Update xilinx config
 $ make config_dump                # Generates peripherals reachability dump
+$ make help                       # Retrieve Makefile targets information and python application cmd help
 ```
 
 ### BRAM size DDR4 cache configuration and UART clk frequency

@@ -138,3 +138,28 @@ config_xilinx:
 
 config_dump:
 	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_DUMP_ARGS) 
+
+
+############################################################
+###                     HELP TARGET                      ###
+############################################################
+
+help:
+	@echo ""
+	@echo "Simply-V configuration Makefile"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  -all            Generate all HW/SW configurations"
+	@echo "  -config_check   Validate CSV configuration files only"
+	@echo ""
+	@echo "  -config_mbus    Generate MBUS-related configuration files"
+	@echo "  -config_pbus    Generate PBUS-related configuration files"
+	@echo "  -config_hbus    Generate HBUS-related configuration files"
+	@echo ""
+	@echo "  -config_sw      Generate software configuration files"
+	@echo "  -config_xilinx  Generate Xilinx-specific configuration files (HW flow)"
+	@echo "  -config_dump    Generate reachability dump of the configured peripherals (CSV)"
+	@echo ""
+	@echo "Python application help:"
+	@echo "------------------------------------------------------------"
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --help

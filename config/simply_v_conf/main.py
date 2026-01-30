@@ -15,67 +15,118 @@ import traceback
 def parse_args():
 	# Each argument corresponds directly to a Makefile variable passed
 	# in the various CONFIG_*_ARGS groups.
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(
+					description=(
+					"Simply-V configuration tool.\n\n"
+					"This application is invoked by the configuration Makefile to "
+					"parse CSV-based Buses informations and generate HW/SW"
+					"configuration outputs."
+					),
+					usage=argparse.SUPPRESS,
+			)
 
 	# =====================
 	# Input CSV files
 	# (INPUT_*_CSV in Makefile, always passed)
 	# =====================
-	parser.add_argument("--system_csv", required=True)
-	parser.add_argument("--mbus_csv", required=True)
-	parser.add_argument("--pbus_csv", required=True)
-	parser.add_argument("--hbus_csv", required=True)
+	parser.add_argument(
+		"--system_csv",
+		required=True,
+		help="System-level configuration CSV (global SoC description)"
+	)
+	parser.add_argument(
+		"--mbus_csv",
+		required=True,
+		help="MBUS configuration CSV"
+	)
+	parser.add_argument(
+		"--pbus_csv",
+		required=True,
+		help="PBUS configuration CSV"
+	)
+	parser.add_argument(
+		"--hbus_csv",
+		required=True,
+		help="HBUS configuration CSV"
+	)
 
 	# =====================
 	# Configuration modes
 	# (enabled by Makefile targets: --config_mbus, --config_sw, etc.)
 	# =====================
-	parser.add_argument("--config_mbus", action="store_true")
-	parser.add_argument("--config_pbus", action="store_true")
-	parser.add_argument("--config_hbus", action="store_true")
-	parser.add_argument("--config_sw", action="store_true")
-	parser.add_argument("--config_xilinx", action="store_true")
-	parser.add_argument("--config_dump", action="store_true")
+
+	parser.add_argument(
+		"--config_mbus",
+		action="store_true",
+		help="Generate MBUS configuration outputs"
+	)
+	parser.add_argument(
+		"--config_pbus",
+		action="store_true",
+		help="Generate PBUS configuration outputs"
+	)
+	parser.add_argument(
+		"--config_hbus",
+		action="store_true",
+		help="Generate HBUS configuration outputs"
+	)
+	parser.add_argument(
+		"--config_sw",
+		action="store_true",
+		help="Generate software configuration outputs"
+	)
+	parser.add_argument(
+		"--config_xilinx",
+		action="store_true",
+		help="Generate Xilinx-specific configuration outputs"
+	)
+	parser.add_argument(
+		"--config_dump",
+		action="store_true",
+		help="Generate reachability dump (CSV)"
+	)
+
 
 	# =====================
 	# MBUS outputs
 	# =====================
-	parser.add_argument("--mbus_tcl")
-	parser.add_argument("--mbus_interconnect")
-	parser.add_argument("--mbus_clock")
+	parser.add_argument("--mbus_tcl", help="Output config.tcl file for MBUS crossbar")
+	parser.add_argument("--mbus_interconnect", help="Output SVinc file for MBUS interconnect")
+	parser.add_argument("--mbus_clock", help="Output SVinc file for MBUS clock assignments")
 
 	# =====================
 	# PBUS outputs
 	# =====================
-	parser.add_argument("--pbus_tcl")
-	parser.add_argument("--pbus_interconnect")
+
+	parser.add_argument("--pbus_tcl", help="Output config.tcl file for PBUS crossbar")
+	parser.add_argument("--pbus_interconnect", help="Output SVinc file for PBUS interconnect")
 
 	# =====================
 	# HBUS outputs
 	# =====================
-	parser.add_argument("--hbus_tcl")
-	parser.add_argument("--hbus_interconnect")
-	parser.add_argument("--hbus_clock")
+	parser.add_argument("--hbus_tcl", help="Output config.tcl file for HBUS crossbar")
+	parser.add_argument("--hbus_interconnect", help="Output SVinc file for HBUS interconnect")
+	parser.add_argument("--hbus_clock", help="Output SVinc file for HBUS clock assignments")
 
 	# =====================
 	# Software outputs
 	# =====================
-	parser.add_argument("--hal_conf")
-	parser.add_argument("--sw_mk")
-	parser.add_argument("--ld_conf")
+	parser.add_argument("--hal_conf", help="Output HAL configuration header")
+	parser.add_argument("--sw_mk", help="Output software Makefile")
+	parser.add_argument("--ld_conf", help="Output linker script")
 
 	# =====================
 	# Xilinx outputs
 	# =====================
-	parser.add_argument("--xilinx_mk")
-	parser.add_argument("--ddr4_root")
-	parser.add_argument("--bram_root")
-	parser.add_argument("--uart_root")
+	parser.add_argument("--xilinx_mk", help="Output Xilinx Makefile")
+	parser.add_argument("--ddr4_root", help="Root directory for DDR4 IP generation")
+	parser.add_argument("--bram_root", help="Root directory for BRAM IP generation")
+	parser.add_argument("--uart_root", help="Root directory for UART IP generation")
 
 	# =====================
 	# Dump output
 	# =====================
-	parser.add_argument("--dump_path")
+	parser.add_argument("--dump_path", help="Output path for reachability dump CSV")
 
 	return parser.parse_args()
 
@@ -225,4 +276,3 @@ if __name__ == "__main__":
 		logger.simply_v_crash(
 			"Unexpected error:\n" + traceback.format_exc()
 		)
-
