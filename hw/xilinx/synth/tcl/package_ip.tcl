@@ -12,7 +12,7 @@ set_property top ${top_module} [current_fileset]
 set_msg_config -id {[IP_Flow 19-3833]} -suppress
 
 # Package the IP and update the catalog
-ipx::package_project -SIMPLY_ROOT_DIR $::env(IP_DIR)/build/$::env(IP_PRJ_NAME).srcs/sources_1/imports -vendor user.org -library user -taxonomy /UserIP
+ipx::package_project -root_dir $::env(IP_DIR)/build/$::env(IP_PRJ_NAME).srcs/sources_1/imports -vendor user.org -library user -taxonomy /UserIP
 set_property name $::env(IP_PRJ_NAME) [ipx::current_core]
 set_property core_revision 2 [ipx::current_core]
 ipx::update_checksums [ipx::current_core]
