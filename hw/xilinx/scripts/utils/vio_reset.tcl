@@ -1,5 +1,5 @@
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
-# Description: Utility script to toggle (0-> 1-> 0) VIO probe
+# Description: Utility script to toggle (1 -> 0) VIO probe
 # Args:
 #  $1: VIO probe name
 
@@ -36,25 +36,18 @@ if { $hw_probe == "" } {
 }
 puts $hw_probe
 
+# Set 1
+set value 1
+puts "\[INFO\] Setting probe $probe_name to $value"
+set_property OUTPUT_VALUE $value [get_hw_probes $hw_probe]
+commit_hw_vio [get_hw_probes $hw_probe]
+
+# Wait 0.5s
+puts "\[INFO\] Waiting 0.5 seconds..."
+after 500
+
 # Set 0
-puts "\[INFO\] Setting probe $probe_name to 0"
-set_property OUTPUT_VALUE 0 [get_hw_probes $hw_probe]
-commit_hw_vio [get_hw_probes $hw_probe]
-
-# Wait 0.5s
-puts "\[INFO\] Waiting 0.5 seconds..."
-after 500
-
-# Set 1
-puts "\[INFO\] Setting probe $probe_name to 0"
-set_property OUTPUT_VALUE 1 [get_hw_probes $hw_probe]
-commit_hw_vio [get_hw_probes $hw_probe]
-
-# Wait 0.5s
-puts "\[INFO\] Waiting 0.5 seconds..."
-after 500
-
-# Set 1
-puts "\[INFO\] Setting probe $probe_name to 1"
-set_property OUTPUT_VALUE 1 [get_hw_probes $hw_probe]
+set value 0
+puts "\[INFO\] Setting probe $probe_name to $value"
+set_property OUTPUT_VALUE $value [get_hw_probes $hw_probe]
 commit_hw_vio [get_hw_probes $hw_probe]
