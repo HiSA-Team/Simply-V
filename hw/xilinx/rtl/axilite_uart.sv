@@ -1,5 +1,5 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
-// Description: AXI4 Uart - This module encapsulates the AXI lite uart. The uart is selected based on the SOC_CONFIG.
+// Description: AXI4 Uart - This module encapsulates the AXI lite uart. The uart is selected based on the SIMPLYV_PROFILE.
 //              EMBEDDED -> AXILITE UART
 //              HPC      -> VIRTUAL UART
 

@@ -35,7 +35,7 @@ from utils import *
 VALID_PROTOCOLS = ["AXI4", "AXI4LITE", "DISABLE"] # AXI3 not implemented yet
 MIN_AXI4_ADDR_WIDTH = 12
 MIN_AXI4LITE_ADDR_WIDTH = 1
-SOC_CONFIG = os.getenv("SOC_CONFIG", "embedded")
+SIMPLYV_PROFILE = os.getenv("SIMPLYV_PROFILE", "embedded")
 # NOTE: These frequencies depend on the clock_wizard configuration (config.tcl)
 SUPPORTED_CLOCK_DOMAINS_EMBEDDED = [10, 20, 50, 100]
 SUPPORTED_CLOCK_DOMAINS_HPC      = [10, 20, 50, 100, 250]
@@ -147,7 +147,7 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
 
     # Check valid main clock domain
     if config.CONFIG_NAME == "MBUS":
-        if config.MAIN_CLOCK_DOMAIN not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG]:
+        if config.MAIN_CLOCK_DOMAIN not in SUPPORTED_CLOCK_DOMAINS[SIMPLYV_PROFILE]:
             print_error(f"The clock domain {clok_domain}MHz is not supported")
             return False
         # Check valid clock domains
@@ -155,7 +155,7 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
             # Check if the clock frequency is valid (DDR has its own clock domain)
             # TOD143: decide a prefix for HBUS-attached accelerators here, maybe ACC_* or HBUS_*
             exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS", "HLS_CONTROL"]
-            if ( config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SOC_CONFIG] ) and ( config.RANGE_NAMES[i] not in exclude_list):
+            if ( config.RANGE_CLOCK_DOMAINS[i] not in SUPPORTED_CLOCK_DOMAINS[SIMPLYV_PROFILE] ) and ( config.RANGE_NAMES[i] not in exclude_list):
                 print_error(f"The clock domain {config.RANGE_CLOCK_DOMAINS[i]}MHz is not supported")
                 return False
             # Check if all the main_clock_domain slaves have the same frequency as MAIN_CLOCK_DOMAIN
