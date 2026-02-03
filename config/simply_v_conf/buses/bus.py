@@ -8,6 +8,7 @@
 # common logic and attributes used from both the "Composite" and "Leaf" classes
 
 from typing import cast
+from factories import peripherals_factory
 from general.addr_range import Addr_Ranges
 from general.node import Node
 from peripherals.peripheral import Peripheral
@@ -75,9 +76,10 @@ class Bus(Node):
 						   addr_width: list[int], clock_domain: list[str]) -> list[Peripheral]:
 		peripherals = []
 		for i in range(len(range_names)):
+			start_pos = i * addr_ranges
 			p = self.peripherals_factory.create_peripheral(range_names[i], \
-						base_addr[i:(i+addr_ranges)], \
-						addr_width[i:(i+addr_ranges)], \
+						base_addr[start_pos:(start_pos+addr_ranges)], \
+						addr_width[start_pos:(start_pos+addr_ranges)], \
 						clock_domain[i],
 						self.FULL_NAME)
 			peripherals.append(p)
@@ -117,15 +119,14 @@ class Bus(Node):
 	# if they are contained in at least 1 Bus addr range, then add
 	# reachability values to them
 	def _add_peripherals_reachability(self) -> None:
+		reaching_buses = self.assigned_addr_ranges.get_reachable_from(explicit=False)
 		for peripheral in self._children_peripherals:
 			for addr_range in peripheral.assigned_addr_ranges:
-				for self_range in self.assigned_addr_ranges:
-					if addr_range in self_range:
-						# add bus name
-						addr_range.add_to_reachable(self.FULL_NAME)
-						# add the nodes that can reach the bus
-						addr_range.add_list_to_reachable(self_range.get_reachable())
-						break
+				if addr_range in self.assigned_addr_ranges:
+					# add bus name
+					addr_range.add_to_reachable(self.FULL_NAME)
+					# add the nodes that can reach the bus
+					addr_range.add_list_to_reachable(reaching_buses[self.FULL_NAME])
 
 		
 	# PRIVATE, used in "get_peripherals" implementation

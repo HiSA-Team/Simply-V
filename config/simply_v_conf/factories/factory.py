@@ -17,7 +17,6 @@
 # {id} can be omitted. "BASE_NAME" MUST contain only alphanumerics
 
 
-import re
 from typing import NoReturn
 from general.singleton import SingletonABCMeta
 from general.env import Env

@@ -5,6 +5,7 @@
 # of future changes
 
 import logging
+import sys
 from .singleton import Singleton
 
 class Logger(metaclass=Singleton):
@@ -13,10 +14,23 @@ class Logger(metaclass=Singleton):
 		self.logger.setLevel(logging.INFO)
 
 		if not self.logger.handlers:
-			handler = logging.StreamHandler()
-			handler.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
-			self.logger.addHandler(handler)
-	
+			formatter = logging.Formatter("%(levelname)s: %(message)s")
+
+			# Handler for stdout: INFO and WARNING
+			stdout_handler = logging.StreamHandler(sys.stdout)
+			stdout_handler.setLevel(logging.INFO)
+			stdout_handler.addFilter(lambda record: record.levelno < logging.ERROR)
+			stdout_handler.setFormatter(formatter)
+
+			# Handler for stderr: ERROR only
+			stderr_handler = logging.StreamHandler(sys.stderr)
+			stderr_handler.setLevel(logging.ERROR)
+			stderr_handler.setFormatter(formatter)
+
+			self.logger.addHandler(stdout_handler)
+			self.logger.addHandler(stderr_handler)
+
+			
 	def simply_v_error(self, message: str):
 		self.logger.error("[CONFIG] " + message)
 

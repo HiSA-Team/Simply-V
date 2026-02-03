@@ -143,11 +143,21 @@ class Addr_Ranges():
 	# Check if the passed "addr_range_chk" object is contained in "self"
 	# so that the range "addr_range_chk" is contained in AT LEAST 1 addr range
 	# of "self"
+	# if the ranges contained in "self" are contiguous the implementation treats them
+	# as an unique address range.
 	def __contains__(self, addr_range_chk: "Addr_Range") -> bool:
-		for addr_range in self.addr_ranges:
-			if addr_range_chk in addr_range:
-				return True
-		return False
+		if (self.contiguous):
+			dims = self.get_range_dimensions(explicit=False)
+			self_base = dims[self.FULL_NAME][0]
+			self_end  = dims[self.FULL_NAME][1]
+			check_base = addr_range_chk.RANGE_BASE_ADDR
+			check_end = addr_range_chk.RANGE_END_ADDR
+			return (self_base <= check_base) and (check_end <= self_end)
+		else:
+			for addr_range in self.addr_ranges:
+				if addr_range_chk in addr_range:
+					return True
+			return False
 
 	# Used to order address ranges based on the base address
 	def __lt__(self, other: "Addr_Ranges") -> bool:

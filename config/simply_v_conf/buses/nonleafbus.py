@@ -151,8 +151,9 @@ class NonLeafBus(Bus):
 		peripherals_clock_domains: list[str] = []
 
 		for i, node_name in enumerate(self._RANGE_NAMES):
-			bases: list[int] = self._RANGE_BASE_ADDR[i:(i+self.ADDR_RANGES)]
-			widths: list[int] = self._RANGE_ADDR_WIDTH[i:(i+self.ADDR_RANGES)]
+			start_pos = i * self.ADDR_RANGES
+			bases: list[int] = self._RANGE_BASE_ADDR[start_pos:(start_pos+self.ADDR_RANGES)]
+			widths: list[int] = self._RANGE_ADDR_WIDTH[start_pos:(start_pos+self.ADDR_RANGES)]
 			domain: str = self._RANGE_CLOCK_DOMAINS[i]
 			# Create bus
 			if("BUS" in node_name):
@@ -165,7 +166,8 @@ class NonLeafBus(Bus):
 				peripherals_bases += bases
 				peripherals_widths += widths
 				peripherals_clock_domains.append(domain)
-		
+
+			
 		# create all the peripherals
 		self._children_peripherals = self._generate_peripherals(self.ADDR_RANGES, peripherals_names, 
 														 peripherals_bases, peripherals_widths, 
@@ -216,12 +218,13 @@ class NonLeafBus(Bus):
 
 		#add reachability of peripherals
 		super()._add_peripherals_reachability()
+		reaching_buses = self.assigned_addr_ranges.get_reachable_from(explicit=False)
 		
 		#add reachability of buses
 		for bus in self._children_buses:
 			for addr_range in bus.assigned_addr_ranges:
-				for self_range in self.assigned_addr_ranges:
-					addr_range.add_list_to_reachable(self_range.get_reachable())
+				if addr_range in self.assigned_addr_ranges:
+					addr_range.add_list_to_reachable(reaching_buses[self.FULL_NAME])
 					addr_range.add_to_reachable(self.FULL_NAME)
 
 		if(self.LOOPBACK):
@@ -249,9 +252,7 @@ class NonLeafBus(Bus):
 				for addr_range in n.assigned_addr_ranges:
 					if addr_range in self.loopback_ranges:
 						addr_range.add_to_reachable(self.FULL_NAME)
-						for self_range in self.assigned_addr_ranges:
-							addr_range.add_list_to_reachable(self_range.get_reachable())
-			
+						addr_range.add_list_to_reachable(reaching_buses[self.FULL_NAME])
 
 		#Recursive call on all the buses
 		for bus in self._children_buses:

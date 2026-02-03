@@ -30,7 +30,7 @@ from .addr_range import Addr_Ranges
 
 class Node(ABC):
 	def __init__(self, base_name: str, assigned_addr_ranges: Addr_Ranges, clock_domain: str, clock_frequency: int):
-		self.assigned_addr_ranges = assigned_addr_ranges 
+		self.assigned_addr_ranges: Addr_Ranges = assigned_addr_ranges 
 		self.BASE_NAME = base_name
 		self.FULL_NAME = assigned_addr_ranges.FULL_NAME
 		self.CLOCK_DOMAIN: str = clock_domain
