@@ -1,5 +1,5 @@
-# This Makefile provides rules to compile and link application in app/ with the FreeRTOS kernel and 
-# the UninaSoC HAL. Applications are supposed to be in app/<app-name> and will be built in build/<app-name>.
+# This Makefile provides rules to compile and link application in app/ with the FreeRTOS kernel and
+# the Simply-V HAL. Applications are supposed to be in app/<app-name> and will be built in build/<app-name>.
 #
 # Users may want to customize the Heap Profile by passing HEAP_PROFILE to make variable (default is 1).
 #
@@ -9,7 +9,7 @@
 #
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 
-ifndef ROOT_DIR
+ifndef SIMPLY_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
@@ -50,7 +50,7 @@ INCLUDES := -I$(APP_DIR) \
             -I$(KERNEL_DIR)/include \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RISCV_no_extensions \
-            -I$(SW_SOC_ROOT)/lib/uninasoc/inc \
+            -I$(SW_SOC_ROOT)/lib/simplyv/inc \
             -I$(SW_SOC_ROOT)/lib/tinyio/inc
 
 ifeq ($(DEBUG), 1)
@@ -63,7 +63,7 @@ CFLAGS  += $(INCLUDES)
 # Linker flags
 ###############################################################################################
 LDFLAGS  = -nostdlib -nostartfiles -T$(FREERTOS_COMMON)/linker.ld
-LDFLAGS += $(SW_SOC_ROOT)/lib/uninasoc/lib/libuninasoc.a $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
+LDFLAGS += $(SW_SOC_ROOT)/lib/simplyv/lib/libsimplyv.a $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
 
 ###############################################################################################
 # Application sources

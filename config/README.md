@@ -132,7 +132,7 @@ The directory `scripts/` holds multiple scripts, acting in the following scripti
 The multiple scripts generate outputs from common inputs:
 1. The Xilinx-related environment configuration in [`config.mk`](../hw/xilinx/make/config.mk) is handled by [`config_xilinx.sh`](scripts/config_xilinx.sh).
 1. The software-related environment (including toolchain and compilation flags) configuration in [`config.mk`](../sw/SoC/common/config.mk) is handled by [`config_sw.sh`](scripts/config_sw.sh).
-1. [Linker script](../sw/SoC/common/UninaSoC.ld) generation is handled solely by [`create_linker_script.py`](scripts/create_linker_script.py) source.
+1. [Linker script](../sw/SoC/common/simplyv.ld) generation is handled solely by [`create_linker_script.py`](scripts/create_linker_script.py) source.
 1. Configuration TCL files (for [MBUS](../hw/xilinx/ips/common/xlnx_main_crossbar/config.tcl) and [PBUS](../hw/xilinx/ips/common/xlnx_peripheral_crossbar/config.tcl)) for the platform crossbars are generated with [`create_crossbar_config.py`](scripts/create_crossbar_config.py) as master script.
 
 ### How to add a new property

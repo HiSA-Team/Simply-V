@@ -5,10 +5,10 @@
 
 
 // Import packages
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 // Import headers
-`include "uninasoc_axi.svh"
+`include "simplyv_axi.svh"
 
 
 module axilite_uart # (

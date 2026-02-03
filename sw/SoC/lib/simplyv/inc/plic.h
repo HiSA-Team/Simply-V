@@ -10,7 +10,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "uninasoc_conf.h"
+#include "simplyv_conf.h"
 
 // Base address
 #define PLIC_BASEADDR ((uintptr_t)_peripheral_PLIC_start)

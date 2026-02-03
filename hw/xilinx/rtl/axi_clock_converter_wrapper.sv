@@ -4,7 +4,7 @@
 // Description: This module is a wrapper for a xlnx_clock_converter.
 //              It either instantiates a 32 or 64 or 512 bits clock converter
 
-`include "uninasoc_axi.svh"
+`include "simplyv_axi.svh"
 
 module axi_clock_converter_wrapper # (
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32,

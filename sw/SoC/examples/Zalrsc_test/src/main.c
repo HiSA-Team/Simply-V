@@ -3,7 +3,7 @@
 //   This program performs a memory access test over a defined DDR address range, validating both normal read/write accesses
 //   and atomic LR/SC (Load-Reserved / Store-Conditional) accesses.
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
 #include "zalrsc.h"
 
@@ -13,7 +13,7 @@ extern unsigned int _DDR4CH1_end;
 int main(int argc, char* argv[]) {
 
     // Initialize HAL
-    uninasoc_init();
+    simplyv_init();
 
     uintptr_t ddr_base = (uintptr_t)&_DDR4CH1_start;
     uintptr_t ddr_end  = (uintptr_t)&_DDR4CH1_end;

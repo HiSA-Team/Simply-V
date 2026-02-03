@@ -1,8 +1,8 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 // Description: Utility variables and macros for DDR4 interface
 
-`ifndef UNINASOC_DDR4_SVH__
-`define UNINASOC_DDR4_SVH__
+`ifndef SIMPLYV_DDR4_SVH__
+`define SIMPLYV_DDR4_SVH__
 
 
 // DDR4 Ports

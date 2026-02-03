@@ -6,7 +6,7 @@
 //  configure and handle external interrupts
 
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include "io.h"
 #include <stdint.h>
 
@@ -35,7 +35,7 @@ int plic_init()
     iowrite32(PLIC_THRESHOLD_CTX0, 0u);
     iowrite32(PLIC_INT_ENABLE_CTX0, 0x00000000u);
 
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 // Configure a single line

@@ -15,7 +15,7 @@ directory structure is:
   * `linker.ld`: linkerscript defining `.bss` and `.data` sections
 
 ## Documentation
-This guide explains how to build and create a new FreeRTOS application for RISC-V. More detailed 
+This guide explains how to build and create a new FreeRTOS application for RISC-V. More detailed
 documentation can be found here:
 
 - [Porting Guide](./doc/PORTING.md): how the port has been implemented and what is needed to integrate RISC-V on SoC
@@ -28,7 +28,7 @@ make freertos
 ```
 
 > [!Note]
-> Toolchain, architecture, ABI etc. are managed from `${ROOT_DIR}/sw/SoC/common/config.mk`. You can define your 
+> Toolchain, architecture, ABI etc. are managed from `${SIMPLY_ROOT_DIR}/sw/SoC/common/config.mk`. You can define your
 custom RV_PREFIX by running something `make RV_PREFIX=<path-to-prefix> XLEN=<32-64>`
 
 Build an application with:
@@ -40,11 +40,11 @@ The application will be in `app/<app-name>/build/`.
 
 ## FreeRTOS configuration
 
-Users can configure applications by modifing the `FreeRTOSConfig.h` and specifying the heap profile 
+Users can configure applications by modifing the `FreeRTOSConfig.h` and specifying the heap profile
 with the HEAP_PROFILE variable.
 
 ### Configuration
-The `FreeRTOSConfig.h` contains configuration for the FreeRTOS-Kernel and the applications. Based 
+The `FreeRTOSConfig.h` contains configuration for the FreeRTOS-Kernel and the applications. Based
 on the platform capabilities user can tune parameters like `configTOTAL_HEAP_SIZE, configMINIMAL_STACK_SIZE`.
 
 Some usefule variables to enable extra debugging are:
@@ -54,7 +54,7 @@ Some usefule variables to enable extra debugging are:
 ```
 
 When enabled they mandate to provide `void vApplicationMallocFailedHook(void)` and `
-void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)` functions that will get 
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)` functions that will get
 called when the malloc fails or when the stack overflows happens.
 
 In order for timers to work, users will need to configure CPU clock and TickRate accordingly:
@@ -66,7 +66,7 @@ In order for timers to work, users will need to configure CPU clock and TickRate
 
 #### Heap configuration
 FreeRTOS has different heap implemenations, you can choose the heap implementation by specifying
-the `HEAP_PROFILE` variable on the `make` command (from 1 to 5, default is 1). 
+the `HEAP_PROFILE` variable on the `make` command (from 1 to 5, default is 1).
 include file in the `Makefile` (default is `1`). For example to use `heap_3.c`:
 
 ```sh
@@ -74,7 +74,7 @@ make HEAP_PROFILE=3
 ```
 
 ## Creating a new application
-An application must live in the `app/` directory. Users may use `common/` files (linkerscript, Makefile 
+An application must live in the `app/` directory. Users may use `common/` files (linkerscript, Makefile
 and configuration) and tailor them for their need. Main requirements are:
 - build and link against the FreeRTOS kernel;
 - specify RISC_V freertos port;

@@ -3,7 +3,7 @@
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Description:
 #   Rebuild HLS sources to Verilog  and copy in rtl/ dir.
-#   Package C standalone drivers and copy to UninaSoC software dir
+#   Package C standalone drivers and copy to Simply-V software dir
 
 # Colors
 RED='\033[1;31m'

@@ -162,7 +162,7 @@ puts "    \[REPORT\] prj         [current_project]
     \[REPORT\] elapsed     [get_property stats.elapsed  [get_runs]]
     \[REPORT\] wns         [get_property stats.wns      [get_runs impl_1]]
     \[REPORT\] whs         [get_property stats.whs      [get_runs impl_1]]
-    \[PARAMETERS\] SIMPLYV_PROFILE          = $::env(SIMPLYV_PROFILE)
+    \[PARAMETERS\] SIMPLYV_PROFILE     = $::env(SIMPLYV_PROFILE)
     \[PARAMETERS\] XILINX_BOARD_PART   = $::env(XILINX_BOARD_PART)
     \[PARAMETERS\] VIO_RESETN_DEFAULT  = $::env(VIO_RESETN_DEFAULT)
     \[PARAMETERS\] CORE_SELECTOR       = $::env(CORE_SELECTOR)

@@ -1,13 +1,13 @@
 // Author: Vincenzo Maisto      <vincenzo.maisto2@unina.it>
 // Author: Stefano Mercogliano  <stefano.mercogliano@unina.it>
 // Author: Manuel Maddaluno     <manuel.maddaluno@unina.it>
-// Description: Utility variables and macros for AXI interconnections in UninaSoC
+// Description: Utility variables and macros for AXI interconnections in Simply-V
 // Note: The main rationale behind this macro is to avoid the usage of structs and
 //       macros for the widest possible syntax compatibility.
 
 
-`ifndef UNINASOC_AXI_SVH__
-`define UNINASOC_AXI_SVH__
+`ifndef SIMPLYV_AXI_SVH__
+`define SIMPLYV_AXI_SVH__
 
 //////////////////////////////////////////////////////
 //    ___                         _                 //
@@ -1278,4 +1278,4 @@ typedef logic [AXI_REGION_WIDTH -1 : 0] axi_region_t;
     assign ``bus_name`_axilite_rvalid  = '0;    \
     assign ``bus_name`_axilite_rresp   = '0;
 
-`endif // UNINASOC_AXI_SVH__
+`endif // SIMPLYV_AXI_SVH__

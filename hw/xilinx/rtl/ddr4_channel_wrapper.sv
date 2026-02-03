@@ -25,8 +25,8 @@
 //                                                 |_____________|
 
 
-`include "uninasoc_pcie.svh"
-`include "uninasoc_ddr4.svh"
+`include "simplyv_pcie.svh"
+`include "simplyv_ddr4.svh"
 
 module ddr4_channel_wrapper # (
     parameter int unsigned    ENABLE_CACHE      = 0,

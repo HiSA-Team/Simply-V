@@ -1,7 +1,7 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Description: Baremetal host code for conv_hbus HLS IP core.
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include "xlnx/xlnx.h"
 #include "krnl_conv_hbus.h"
 #include "utils.h"
@@ -62,7 +62,7 @@ int main() {
     uint32_t cnt;
 
     // Init platform
-    uninasoc_init();
+    simplyv_init();
 
     // Pre-allocate tensors, aligned to power of two
     #define ALIGN_I 2048
