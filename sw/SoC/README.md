@@ -1,32 +1,31 @@
-# UninaSoC Software Compilation and Usage
+# Simply-V Software Compilation and Usage
 
-This repository contains the software infrastructure needed to build bare-metal applications for UninaSoC.
-All example applications, as well as custom projects, are built upon the `projects/template` project.
-Projects rely on a common set of files in the `common` directory.
+This repository contains the software infrastructure needed to build bare-metal applications for Simply-V.
+> NOTE: We assume that the RISC-V toolchain, selected with the config flow (XLEN parameter), is in your PATH.
+
+Examples rely on a common set of files in the `common` directory:
 
 * The `startup.s` that implements the very basic initialization operations.
-* The `UninaSoC.ld`, automatically generated during the configuration flow (see the root [README](../../README.md)).
+* The `Simply-V.ld`, automatically generated during the configuration flow (see the root [README](../../README.md)).
 * The `Makefile`, that implements all basic targets for building, shared among bare-metal applications.
 
-It is expected that libraries and projects depend at least on the common files.
+The directory `example/` hosts simple bare-metal examples and tests to exercise the platform.
 
-**Notes**
-* For Linux-based configurations, please refer to the appropriate documentation, as this tree does not apply.
-* We assume that the RISC-V toolchain, selected with the config flow (XLEN parameter), is in your PATH.
+The directory `projects/` contains more advanced projects, such as Free-RTOS, OpenSBI, etc.
 
-## Build examples
+## Build Examples
 
-to build the `examples`, run
+To build the `examples`, run:
 ``` bash
 make examples
 ```
 The existing examples include:
-- `blinky` - Blink board leds Supported only on the `embedded` configuration.
-- `echo` - echo server for strings.
+- `blinky` - Basic and self-contained led blinking example. Requires no external libraries or devices. Supported only on the `embedded` profile.
 - `hello_world` - basic Hello World on UART.
+- `echo` - echo server for strings.
 - `interrupts` - PLIC reference example.
 
-Some examples use the [tinyio](https://github.com/Granp4sso/TinyIO-library-for-printf-and-scanf-) library for `printf()` and `scanf()` on UART.
+Most examples use our light-weight HAL (`lib/simplyv`) and the [tinyio](https://github.com/Granp4sso/TinyIO-library-for-printf-and-scanf-) library for `printf()` and `scanf()` on UART.
 
 You can build individual examples or create new projects as described in the following sections.
 Each directory under examples or projects includes a `common/Makefile` that provides baseline commands for building code.
@@ -55,24 +54,6 @@ This outputs the binary content of your program.
 make dump
 ```
 
-
-## Create a new project
-
-To create a new application project, make a copy of the `template` directory and rename it accordingly to your application name.
-
-The tree must have the following structure:
-```
-project_name
-├── ld
-│   └── user.ld
-├── Makefile
-├── inc
-└── src
-    └── main.c
-```
-
-To add user-defined code, place source files in the `src` directory and header files in the `inc` directory.
-
 ### User-defined Makefile
 
 The `Makefile` in the project folder is a user-defined Makefile, that imports the `common/Makefile`.
@@ -82,7 +63,7 @@ described in **Build examples** ca be applied.
 
 ### User-defined linker script
 
-The shared linker script is automatically generated during the configuration phase of the UninaSoC project, based on the specified SoC configuration.
+The shared linker script is automatically generated during the configuration phase of the Simply-V project, based on the specified SoC configuration.
 By default, only a few symbols and sections are defined:
 
 - **Symbols**: Include the vector table base address, stack pointer value, and peripheral symbols (which can be imported into user code).
