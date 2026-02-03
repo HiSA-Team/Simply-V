@@ -12,7 +12,7 @@
 //   This example is useful to validate CDMA behavior across different
 //   transfer sizes and to stress-test basic DMA functionality.
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
 
 // CDMA Base Address (from linker script)
@@ -128,7 +128,7 @@ int main(void) {
     };
 
     // Initialize platform
-    uninasoc_init();
+    simplyv_init();
 
     printf("\n[CDMA SIMPLE] CDMA multi-round transfer test start\n\r");
 

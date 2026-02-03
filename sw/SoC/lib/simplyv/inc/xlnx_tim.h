@@ -8,7 +8,7 @@
 #define TIM_H
 
 #include <stdint.h>
-#include "uninasoc_conf.h"
+#include "simplyv_conf.h"
 
 // https://docs.amd.com/v/u/en-US/pg079-axi-timer
 // Base address
@@ -32,7 +32,7 @@ typedef struct {
     uint32_t count_direction : TIM_COUNT_UP;
 } xlnx_tim_t;
 
-// All the Functions return UNINASOC_ERROR in case of error and UNINASOC_OK otherwise
+// All the Functions return SIMPLYV_ERROR in case of error and SIMPLYV_OK otherwise
 
 // Initialize timer peripheral
 int xlnx_tim_init(xlnx_tim_t* timer);

@@ -1,5 +1,5 @@
 # Environment check
-ifndef ROOT_DIR
+ifndef SIMPLY_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 

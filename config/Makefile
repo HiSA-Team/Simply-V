@@ -28,9 +28,9 @@ config_%_bus: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/declare_and_assign_clocks_rtl.py ${CONFIG_BUS_CSV}
 
 
-OUTPUT_LD_FILE ?= ${SW_ROOT}/SoC/common/UninaSoC.ld
+OUTPUT_LD_FILE ?= ${SW_ROOT}/SoC/common/simplyv.ld
 # Generate HAL configuration file
-OUTPUT_HAL_CONF_FILE ?= ${SW_ROOT}/SoC/lib/uninasoc/inc/uninasoc_conf.h
+OUTPUT_HAL_CONF_FILE ?= ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
 
 config_ld: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_linker_script.py \
@@ -52,6 +52,6 @@ config_xilinx:
 
 config_sw: config_check
 	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_uninasoc_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
+	${PYTHON} ${CONFIG_ROOT}/scripts/create_simplyv_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
 
 

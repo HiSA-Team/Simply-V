@@ -1,5 +1,5 @@
 /*
- * This example shows a simple Task communication using Yield. Tasks have different priority and 
+ * This example shows a simple Task communication using Yield. Tasks have different priority and
  * do not share anything. This just demonstrated the basic FreeRTOS scheduler functionalities.
  *
  * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
@@ -7,7 +7,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "uninasoc.h"
+#include "simplyv.h"
 
 #define BASIC_TASK1_YIELD_PRIORITY (tskIDLE_PRIORITY + 1)
 #define BASIC_TASK2_YIELD_PRIORITY (tskIDLE_PRIORITY + 2)
@@ -91,7 +91,7 @@ void vApplicationMallocFailedHook(void) {
 
 int main() {
 
-  uninasoc_init();
+  simplyv_init();
   printf("================= SIMPLY-V Yield Example =================\n\r");
 
   // Create FreeRTOS Task

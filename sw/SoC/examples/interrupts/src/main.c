@@ -14,7 +14,7 @@
 //      Note 2: The IS_EMBEDDED macro is automatically defined depending on SoC profile
 //
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
 
 #define SOURCES_NUM 3 // regardless of embedded/hpc
@@ -102,7 +102,7 @@ void _ext_handler(void)
 int main()
 {
     // Initialize HAL
-    uninasoc_init();
+    simplyv_init();
 
     printf("Interrupts Example\r\n");
 
@@ -113,28 +113,28 @@ int main()
     plic_enable_all();
 
     #ifdef GPIO_IN_IS_ENABLED
-    if (xlnx_gpio_in_init(&gpio_in) != UNINASOC_OK)
+    if (xlnx_gpio_in_init(&gpio_in) != SIMPLYV_OK)
         printf("ERROR GPIOIN interrupt init\r\n");
     #endif // GPIO_IN_IS_ENABLED
 
     #ifdef GPIO_OUT_IS_ENABLED
-    if (xlnx_gpio_out_init(&gpio_out) != UNINASOC_OK)
+    if (xlnx_gpio_out_init(&gpio_out) != SIMPLYV_OK)
         printf("ERROR GPIOOUT\r\n");
     #endif // GPIO_OUT_IS_ENABLED
 
     // Configure timer0
-    if (xlnx_tim_init(&timer0) != UNINASOC_OK)
+    if (xlnx_tim_init(&timer0) != SIMPLYV_OK)
         printf("ERROR TIMER INIT\r\n");
 
-    if (xlnx_tim_configure(&timer0) != UNINASOC_OK)
+    if (xlnx_tim_configure(&timer0) != SIMPLYV_OK)
         printf("ERROR TIMER CONFIG\r\n");
 
     // Enable interrupts
-    if (xlnx_tim_enable_int(&timer0) != UNINASOC_OK)
+    if (xlnx_tim_enable_int(&timer0) != SIMPLYV_OK)
         printf("ERROR TIMER interrupt enable\r\n");
 
     // Start timer0
-    if (xlnx_tim_start(&timer0) != UNINASOC_OK)
+    if (xlnx_tim_start(&timer0) != SIMPLYV_OK)
         printf("ERROR TIMER start\r\n");
 
     // Hot-loop, waiting for interrupts to occur

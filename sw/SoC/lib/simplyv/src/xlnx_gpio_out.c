@@ -4,7 +4,7 @@
 // Description:
 //  This file implements all the Output GPIO's related functions
 
-#include "uninasoc.h"
+#include "simplyv.h"
 
 // #ifdef IS_EMBEDDED // TODO47: placeholder to HAL
 
@@ -27,52 +27,52 @@
 static inline int assert_gpio_out(xlnx_gpio_out_t* gpio)
 {
     if ((gpio->base_addr != GPIO_OUT_BASEADDR)) {
-        return UNINASOC_ERROR;
+        return SIMPLYV_ERROR;
     }
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 
 int xlnx_gpio_out_init(xlnx_gpio_out_t* gpio)
 {
     // Already configured in output as default
-    if (assert_gpio_out(gpio) != UNINASOC_OK){
-        return UNINASOC_ERROR;
+    if (assert_gpio_out(gpio) != SIMPLYV_OK){
+        return SIMPLYV_ERROR;
     }
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 int xlnx_gpio_out_write(xlnx_gpio_out_t* gpio, pin_t val)
 {
-    if (assert_gpio_out(gpio) != UNINASOC_OK)
-        return UNINASOC_ERROR;
+    if (assert_gpio_out(gpio) != SIMPLYV_OK)
+        return SIMPLYV_ERROR;
     uintptr_t gpio_data = (uintptr_t)(gpio->base_addr + GPIO_DATA);
     iowrite16(gpio_data, val);
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 int xlnx_gpio_out_read(xlnx_gpio_out_t* gpio, uint16_t* data)
 {
-    if (assert_gpio_out(gpio) != UNINASOC_OK)
-        return UNINASOC_ERROR;
+    if (assert_gpio_out(gpio) != SIMPLYV_OK)
+        return SIMPLYV_ERROR;
     uintptr_t gpio_data = (uintptr_t)(gpio->base_addr + GPIO_DATA);
     *data = ioread16(gpio_data);
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 int xlnx_gpio_out_toggle(xlnx_gpio_out_t* gpio, pin_t pin)
 {
-    if (assert_gpio_out(gpio) != UNINASOC_OK)
-        return UNINASOC_ERROR;
+    if (assert_gpio_out(gpio) != SIMPLYV_OK)
+        return SIMPLYV_ERROR;
 
     if ((pin <= 0) || (pin > 0xFFFF))
-        return UNINASOC_ERROR;
+        return SIMPLYV_ERROR;
 
     uint16_t data;
     xlnx_gpio_out_read(gpio, &data);
     data ^= pin;
     xlnx_gpio_out_write(gpio, data);
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 #endif

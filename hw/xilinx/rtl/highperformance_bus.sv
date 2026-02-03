@@ -37,11 +37,11 @@
 //
 
 // Import packages
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_ddr4.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_ddr4.svh"
 
 module highperformance_bus #(
     // HBUS AXI parameters

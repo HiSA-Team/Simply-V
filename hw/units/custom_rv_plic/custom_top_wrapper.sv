@@ -4,8 +4,8 @@
 
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 `include "axi_typedef.svh"
 `include "reg_typedef.svh"
 `include "assertions.svh"

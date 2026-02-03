@@ -1,13 +1,13 @@
 /*
- *  This example shows a Producer-Consumer with a timer. The Producer is a periodic task which uses 
- *  the `vTaskDelayUntil` promitives to suspend until the new period starts. The producer sends a 
- *  counter which is increment by the passed as input. The Consumer receives the value and simulates some 
+ *  This example shows a Producer-Consumer with a timer. The Producer is a periodic task which uses
+ *  the `vTaskDelayUntil` promitives to suspend until the new period starts. The producer sends a
+ *  counter which is increment by the passed as input. The Consumer receives the value and simulates some
  *  work with `vTaskDelay` primitive.
  *
- *  The System Timer in FreeRTOS using the Simply-V timer peripheral. The Simply-V timer peripheral is behind a PLIC. To enable and configure  the Timer 
+ *  The System Timer in FreeRTOS using the Simply-V timer peripheral. The Simply-V timer peripheral is behind a PLIC. To enable and configure  the Timer
  *  we need to implement the `vPortSetupTimerInterrupt` (defined as weak and callend by the OS during initialization).
- *  Finally, we need to provide `void freertos_risc_v_application_interrupt_handler` (defined as weak) and handle 
- *  the timer interrupt. The handler routine should call the `vExternalTickIncrement` function to 
+ *  Finally, we need to provide `void freertos_risc_v_application_interrupt_handler` (defined as weak) and handle
+ *  the timer interrupt. The handler routine should call the `vExternalTickIncrement` function to
  *  increment the System Tick (it will also call the context switch).
  *
  * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
@@ -17,7 +17,7 @@
 #include "queue.h"
 #include "task.h"
 
-#include "uninasoc.h"
+#include "simplyv.h"
 
 /*  =============================== Variables ================================ */
 static xlnx_tim_t timer = {.base_addr = TIM0_BASEADDR,
@@ -74,7 +74,7 @@ static void queueConsumerTaskTimer(void *pvParameters) {
 
 /*
  * Increment the SystemTick. If the increment unblocks a task, `xTaskIncrementTick` returns True.
- * The task can be scheduled using `portYIELD_FROM_ISR` (*_FROM_ISR procedures are ok to call within 
+ * The task can be scheduled using `portYIELD_FROM_ISR` (*_FROM_ISR procedures are ok to call within
  * an ISR).
  *
  * https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick
@@ -89,8 +89,8 @@ static void vExternalTickIncrement() {
   xSwitchRequired = xTaskIncrementTick();
 
   // If a task was unblocked, yield to it
-  if (xSwitchRequired != pdFALSE) { 
-    portYIELD_FROM_ISR(xSwitchRequired); 
+  if (xSwitchRequired != pdFALSE) {
+    portYIELD_FROM_ISR(xSwitchRequired);
   }
 
 }
@@ -153,19 +153,19 @@ void vPortSetupTimerInterrupt(void) {
   xlnx_tim_init(&timer);
 
   ret = xlnx_tim_configure(&timer);
-  if (ret != UNINASOC_OK) {
+  if (ret != SIMPLYV_OK) {
     printf("Cannot configure timer\r\n");
     return;
   }
 
   ret = xlnx_tim_enable_int(&timer);
-  if (ret != UNINASOC_OK) {
+  if (ret != SIMPLYV_OK) {
     printf("Cannot enable timer\r\n");
     return;
   }
 
   ret = xlnx_tim_start(&timer);
-  if (ret != UNINASOC_OK) {
+  if (ret != SIMPLYV_OK) {
     printf("Cannot start timer\r\n");
     return;
   }
@@ -177,7 +177,7 @@ void vPortSetupTimerInterrupt(void) {
 
 int main() {
 
-  uninasoc_init();
+  simplyv_init();
 
   printf("================= Simply-V Producer - Consumer with Timer ==================\n\r");
 

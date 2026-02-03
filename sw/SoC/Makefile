@@ -6,7 +6,7 @@
 #  It can be used to compile all default examples
 
 # Environment check
-ifndef ROOT_DIR
+ifndef SIMPLY_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
@@ -35,7 +35,7 @@ lib:
 #	Build TinyIO
 	${MAKE} -C lib/tinyio XLEN=${XLEN} C_EXTENSION=Y
 #	Build light-weight HAL
-	${MAKE} -C lib/uninasoc
+	${MAKE} -C lib/simplyv
 
 projects: lib
 	@echo "[Make] Compile all the projects"
@@ -55,6 +55,6 @@ clean:
 	done
 	@echo "[Make] Clean library projects"
 	${MAKE} -C lib/tinyio clean
-	${MAKE} -C lib/uninasoc clean
+	${MAKE} -C lib/simplyv clean
 
 .PHONY: examples lib

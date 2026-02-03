@@ -44,8 +44,8 @@ Program bitstream parameters:
 |--------------------------|---------------------------|-----------------|------------------|
 | XILINX_VIVADO_MODE       | Vivado `-mode` flag value | batch           | batch, tcl, gui  |
 | XILINX_PROJECT_BUILD_DIR | Target build directory    | hw/xilinx/build | Legal directory  |
-| XILINX_BITSTREAM         | Target bitstream file     | `${XILINX_PROJECT_BUILD_DIR}`/uninasoc.runs/impl_1/uninasoc.bit | Legal file path  |
-| XILINX_PROBE_LTX         | Target probe file         | `${XILINX_PROJECT_BUILD_DIR}`/uninasoc.runs/impl_1/uninasoc.ltx | Legal file path  |
+| XILINX_BITSTREAM         | Target bitstream file     | `${XILINX_PROJECT_BUILD_DIR}`/simplyv.runs/impl_1/simplyv.bit | Legal file path  |
+| XILINX_PROBE_LTX         | Target probe file         | `${XILINX_PROJECT_BUILD_DIR}`/simplyv.runs/impl_1/simplyv.ltx | Legal file path  |
 | PCIE_BDF $^1$            | Target PCIe device        | 01:00.0         | Legal PCIe address  |
 > $^1$ Only for `hpc` profile, necessary to rescan the PCIe bus for accelerator cards.
 

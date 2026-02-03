@@ -29,9 +29,9 @@
 //
 
 
-// Import UninaSoC headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+// Import Simply-V headers
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 
 // Import PULP headers
 `include "typedef.svh" // axi/typedef.svh

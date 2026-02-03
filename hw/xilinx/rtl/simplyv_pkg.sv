@@ -1,8 +1,8 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description: Basic system variables for UninaSoC
+// Description: Basic system variables for Simply-V
 
-package uninasoc_pkg;
+package simplyv_pkg;
 
     ///////////////////////
     // SoC-level defines //
@@ -118,4 +118,4 @@ package uninasoc_pkg;
         endcase
     endfunction
 
-endpackage : uninasoc_pkg
+endpackage : simplyv_pkg

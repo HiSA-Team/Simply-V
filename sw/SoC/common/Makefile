@@ -3,8 +3,7 @@
 #   The common Makefile includes the standard targets to build bare-metal code.
 #	Each application will include this makefile and define the envvar related to path, dependencies and compilation flags.
 
-SOC_SW_ROOT_DIR = $(SW_ROOT)/SoC
-LIB_DIR	= $(SOC_SW_ROOT_DIR)/lib
+LIB_DIR	= $(SW_SOC_ROOT)/lib
 
 ########
 # Misc #
