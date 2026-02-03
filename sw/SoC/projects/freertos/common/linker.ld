@@ -1,12 +1,12 @@
 /*
- * This is the linkerscript for FreeRTOS application. This includes the Simply-V.ld and defines
+ * This is the linkerscript for FreeRTOS application. This includes the simplyv.ld and defines
  * the BSS and DATA section where FreeRTOS Heap and static variables will be allocated. Also it defines
  * the symbols for the stack and performs some checks.
  *
  * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
  */
 
-INCLUDE ../../../../common/Simply-V.ld
+INCLUDE ../../../../common/simplyv.ld
 
 /*
 
@@ -15,7 +15,7 @@ trap_vector_start is the base address for the interrupt handlers
 
 */
 
-/* let's assume this memory block is defined in Simply-V.ld */
+/* let's assume this memory block is defined in simplyv.ld */
 __bram_end        = ORIGIN(BRAM) + LENGTH(BRAM);
 __stack_size      = 0x1000; /* 4k */
 __stack_bottom    = _stack_start - __stack_size;

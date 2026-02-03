@@ -6,7 +6,7 @@ This repository contains the software infrastructure needed to build bare-metal 
 Examples rely on a common set of files in the `common` directory:
 
 * The `startup.s` that implements the very basic initialization operations.
-* The `Simply-V.ld`, automatically generated during the configuration flow (see the root [README](../../README.md)).
+* The `simplyv.ld`, automatically generated during the configuration flow (see the root [README](../../README.md)).
 * The `Makefile`, that implements all basic targets for building, shared among bare-metal applications.
 
 The directory `example/` hosts simple bare-metal examples and tests to exercise the platform.
