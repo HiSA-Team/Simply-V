@@ -1285,7 +1285,7 @@ module rv_socket # (
             custom_cv64a6_ara cv64a6_ara_core (
                 .clk_i             ( clk_i                         ),
                 .rst_ni            ( core_resetn_internal          ),
-                .boot_addr_i       ( extended_a64_boot_addr       ),
+                .boot_addr_i       ( extended_a64_boot_addr        ),
                 .hart_id_i         ( hart_id                       ),
                 // Interrupts
                 .irq_i             ( {1'b0,irq_i[CORE_EXT_INTERRUPT]} ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
@@ -1377,6 +1377,11 @@ module rv_socket # (
     endcase
     endgenerate
 
+    // Sink unused interfaces for multi-core
+    if ( !(CORE_SELECTOR inside {CORE_DUAL_MICROBLAZEV_RV32}) ) begin : sink_multicore
+        `SINK_AXI_MASTER_INTERFACE(rv_socket_instr1);
+        `SINK_AXI_MASTER_INTERFACE(rv_socket_data1);
+    end : sink_multicore
 
     /////////////////////////////////////////////////////////
     //  MEM to AXI-Full converters (Instruction and Data)  //
@@ -1537,6 +1542,7 @@ module rv_socket # (
             .dbg_slave_axi_awqos        ( rv_socket_dbg_slave_axi_awqos     ),
             .dbg_slave_axi_awvalid      ( rv_socket_dbg_slave_axi_awvalid   ),
             .dbg_slave_axi_awready      ( rv_socket_dbg_slave_axi_awready   ),
+            .dbg_slave_axi_awregion     ( rv_socket_dbg_slave_axi_awregion  ),
             .dbg_slave_axi_wdata        ( rv_socket_dbg_slave_axi_wdata     ),
             .dbg_slave_axi_wstrb        ( rv_socket_dbg_slave_axi_wstrb     ),
             .dbg_slave_axi_wlast        ( rv_socket_dbg_slave_axi_wlast     ),
@@ -1557,6 +1563,7 @@ module rv_socket # (
             .dbg_slave_axi_arqos        ( rv_socket_dbg_slave_axi_arqos     ),
             .dbg_slave_axi_arvalid      ( rv_socket_dbg_slave_axi_arvalid   ),
             .dbg_slave_axi_arready      ( rv_socket_dbg_slave_axi_arready   ),
+            .dbg_slave_axi_arregion     ( rv_socket_dbg_slave_axi_arregion  ),
             .dbg_slave_axi_rid          ( rv_socket_dbg_slave_axi_rid       ),
             .dbg_slave_axi_rdata        ( rv_socket_dbg_slave_axi_rdata     ),
             .dbg_slave_axi_rresp        ( rv_socket_dbg_slave_axi_rresp     ),
@@ -1632,6 +1639,7 @@ module rv_socket # (
             .dbg_slave_axi_awqos        ( rv_socket_dbg_slave_axi_awqos     ),
             .dbg_slave_axi_awvalid      ( rv_socket_dbg_slave_axi_awvalid   ),
             .dbg_slave_axi_awready      ( rv_socket_dbg_slave_axi_awready   ),
+            .dbg_slave_axi_awregion     ( rv_socket_dbg_slave_axi_awregion  ),
             .dbg_slave_axi_wdata        ( rv_socket_dbg_slave_axi_wdata     ),
             .dbg_slave_axi_wstrb        ( rv_socket_dbg_slave_axi_wstrb     ),
             .dbg_slave_axi_wlast        ( rv_socket_dbg_slave_axi_wlast     ),
@@ -1652,6 +1660,7 @@ module rv_socket # (
             .dbg_slave_axi_arqos        ( rv_socket_dbg_slave_axi_arqos     ),
             .dbg_slave_axi_arvalid      ( rv_socket_dbg_slave_axi_arvalid   ),
             .dbg_slave_axi_arready      ( rv_socket_dbg_slave_axi_arready   ),
+            .dbg_slave_axi_arregion     ( rv_socket_dbg_slave_axi_arregion  ),
             .dbg_slave_axi_rid          ( rv_socket_dbg_slave_axi_rid       ),
             .dbg_slave_axi_rdata        ( rv_socket_dbg_slave_axi_rdata     ),
             .dbg_slave_axi_rresp        ( rv_socket_dbg_slave_axi_rresp     ),

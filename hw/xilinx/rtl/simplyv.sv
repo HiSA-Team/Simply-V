@@ -115,6 +115,7 @@ module simplyv (
 
     localparam peripherals_interrupts_num = 4;
     localparam HBUS_AXI_DATAWIDTH = 512;
+    localparam RV_SOCKET_BOOT_ADDRESS = '0;
 
     ///////////////////
     // Local Signals //
@@ -145,6 +146,12 @@ module simplyv (
     // Peripheral bus interrupts
     logic [peripherals_interrupts_num-1:0] pbus_int_line;
 
+    // Platform-Level Interrupt Controller (PLIC)
+    logic [31:0] plic_int_lines;
+    logic plic_int_irq_o;
+    logic hls_interrupt_to_plic;
+    logic irq_cdma_to_plic;
+
     /////////////////////////////////////////
     // Buses declaration and concatenation //
     /////////////////////////////////////////
@@ -169,7 +176,7 @@ module simplyv (
       .clk        ( main_clk        ),
       .probe_out0 ( vio_resetn      ),
       .probe_out1 (                 ),
-      .probe_in0  (                 )
+      .probe_in0  ( plic_int_irq_o  )
     );
 
     // Axi Crossbar
@@ -341,12 +348,11 @@ module simplyv (
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH    ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH      ),
         .CORE_SELECTOR      ( CORE_SELECTOR      )
-
     ) rv_socket_u (
         .clk_i          ( main_clk   ),
         .rst_ni         ( main_rstn  ),
         .core_resetn_i  ( vio_resetn ),
-        .bootaddr_i     ( '0         ),
+        .bootaddr_i     ( RV_SOCKET_BOOT_ADDRESS   ),
         .irq_i          ( rv_socket_interrupt_line ),
 
         // Instruction AXI Port
@@ -638,29 +644,24 @@ module simplyv (
         .s_axi_rready   ( MBUS_to_BRAM_axi_rready   )  // input wire s_axi_rready
     );
 
-    // Platform-Level Interrupt Controller (PLIC)
-    logic [31:0] plic_int_line;
-    logic plic_int_irq_o;
-    logic hls_interrupt_to_plic;
-    logic irq_cdma_to_plic;
-
     always_comb begin : system_interrupts
 
         // Default non-assigned lines
-        plic_int_line = '0;
+        plic_int_lines = '0;
         rv_socket_interrupt_line = '0;
 
         // Mapping PLIC input interrupts (only from pbus at the moment)
         // Mapping is static (refer to simplyv_pkg.sv)
         // TODO154: generate by config
-        plic_int_line[PLIC_RESERVED_INTERRUPT]  = 1'b0;
-        plic_int_line[PLIC_GPIOIN_INTERRUPT]    = pbus_int_line[PBUS_GPIOIN_INTERRUPT];
-        plic_int_line[PLIC_TIM0_INTERRUPT]      = pbus_int_line[PBUS_TIM0_INTERRUPT];
-        plic_int_line[PLIC_TIM1_INTERRUPT]      = pbus_int_line[PBUS_TIM1_INTERRUPT];
-        plic_int_line[PLIC_UART_INTERRUPT]      = pbus_int_line[PBUS_UART_INTERRUPT];
-        plic_int_line[PLIC_HLS_INTERRUPT]       = hls_interrupt_to_plic;
-        plic_int_line[PLIC_CDMA_INTERRUPT]      = irq_cdma_to_plic;
-        // Map system-interrupts pins to socket interrupts
+        plic_int_lines[PLIC_RESERVED_INTERRUPT ] = 1'b0;
+        plic_int_lines[PLIC_GPIOIN_INTERRUPT   ] = pbus_int_line[PBUS_GPIOIN_INTERRUPT];
+        plic_int_lines[PLIC_TIM0_INTERRUPT     ] = pbus_int_line[PBUS_TIM0_INTERRUPT];
+        plic_int_lines[PLIC_TIM1_INTERRUPT     ] = pbus_int_line[PBUS_TIM1_INTERRUPT];
+        plic_int_lines[PLIC_UART_INTERRUPT     ] = pbus_int_line[PBUS_UART_INTERRUPT];
+        plic_int_lines[PLIC_HLS_INTERRUPT      ] = hls_interrupt_to_plic;
+        plic_int_lines[PLIC_CDMA_INTERRUPT     ] = irq_cdma_to_plic;
+
+        // Map platform interrupt pin to socket ext interrupts
         rv_socket_interrupt_line[CORE_EXT_INTERRUPT] = plic_int_irq_o;
 
     end : system_interrupts
@@ -670,10 +671,10 @@ module simplyv (
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
     ) plic_wrapper_u (
-        .clk_i          ( main_clk                      ), // input wire s_axi_aclk
-        .rst_ni         ( main_rstn                     ), // input wire s_axi_aresetn
+        .clk_i          ( PLIC_clk                      ), // input wire s_axi_aclk
+        .rst_ni         ( PLIC_rstn                     ), // input wire s_axi_aresetn
         // AXI4 slave port (from xbar)
-        .intr_src_i     ( plic_int_line                 ), // Input interrupt lines (Sources)
+        .intr_src_i     ( plic_int_lines                ), // Input interrupt lines (Sources)
         .irq_o          ( plic_int_irq_o                ), // Output Interrupts (Targets -> Socket)
         .s_axi_awid     ( MBUS_to_PLIC_axi_awid         ), // input wire [1 : 0] s_axi_awid
         .s_axi_awaddr   ( MBUS_to_PLIC_axi_awaddr       ), // input wire [25 : 0] s_axi_awaddr
@@ -721,26 +722,23 @@ module simplyv (
     ////////////////////
 
     peripheral_bus # (
-
         .LOCAL_DATA_WIDTH   ( PBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( PBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( PBUS_ID_WIDTH   )
-
-        ) peripheral_bus_u (
-
+    ) peripheral_bus_u (
+        // Clocks and resets
         .main_clock_i   ( main_clk    ),
         .main_reset_ni  ( main_rstn   ),
         .PBUS_clock_i   ( PBUS_clk    ),
         .PBUS_reset_ni  ( PBUS_rstn   ),
-
         // EMBEDDED ONLY
         .uart_rx_i      ( uart_rx_i      ),
         .uart_tx_o      ( uart_tx_o      ),
         .gpio_out_o     ( gpio_out_o     ),
         .gpio_in_i      ( gpio_in_i      ),
-
+        // Interrupts
         .int_o          ( pbus_int_line  ),
-
+        // AXI slave
         .s_axi_awid     ( MBUS_to_PBUS_axi_awid     ),
         .s_axi_awaddr   ( MBUS_to_PBUS_axi_awaddr   ),
         .s_axi_awlen    ( MBUS_to_PBUS_axi_awlen    ),
@@ -949,11 +947,9 @@ module simplyv (
         // DDR4 differential clock
         .clk_300mhz_x_p_i     ( clk_300mhz_1_p_i  ),
         .clk_300mhz_x_n_i     ( clk_300mhz_1_n_i  ),
-
         // Output clock and reset
         .ddr_clk_o            ( ddr4ch1_clk300MHz ),
         .ddr_rst_o            ( ddr4ch1_rst300MHz ),
-
         // Connect DDR4 channel 1
         .cx_ddr4_adr          ( c1_ddr4_adr       ),
         .cx_ddr4_ba           ( c1_ddr4_ba        ),
@@ -969,7 +965,6 @@ module simplyv (
         .cx_ddr4_reset_n      ( c1_ddr4_reset_n   ),
         .cx_ddr4_ck_t         ( c1_ddr4_ck_t      ),
         .cx_ddr4_ck_c         ( c1_ddr4_ck_c      ),
-
         // AXILITE interface - for ECC status and control - not connected
         .s_ctrl_axilite_awvalid  ( 1'b0  ),
         .s_ctrl_axilite_awready  (       ),
@@ -987,7 +982,6 @@ module simplyv (
         .s_ctrl_axilite_rready   ( 1'b1  ),
         .s_ctrl_axilite_rdata    (       ),
         .s_ctrl_axilite_rresp    (       ),
-
         // Slave interface
         .s_axi_awid           ( MBUS_to_DDR4CH1_axi_awid     ),
         .s_axi_awaddr         ( MBUS_to_DDR4CH1_axi_awaddr   ),
@@ -1282,7 +1276,6 @@ module simplyv (
         .s_acc_axi_rlast    ( s_acc_HBUS_axi_rlast    ),
         .s_acc_axi_rvalid   ( s_acc_HBUS_axi_rvalid   ),
         .s_acc_axi_rready   ( s_acc_HBUS_axi_rready   ),
-
         // DDR channel 0 on MBUS
         // DDR4 differential clock
         .clk_300mhz_x_p_i     ( clk_300mhz_0_p_i  ),
@@ -1305,7 +1298,6 @@ module simplyv (
         .cx_ddr4_reset_n      ( c0_ddr4_reset_n   ),
         .cx_ddr4_ck_t         ( c0_ddr4_ck_t      ),
         .cx_ddr4_ck_c         ( c0_ddr4_ck_c      ),
-
         // AXILITE interface - for ECC status and control - not connected
         .s_ctrl_axilite_awvalid  ( 1'b0  ),
         .s_ctrl_axilite_awready  (       ),
@@ -1327,8 +1319,10 @@ module simplyv (
         .s_ctrl_axilite_wstrb    ( '0    ),
         .s_ctrl_axilite_awprot   ( '0    )
     );
-
-`endif // HPC
+`else // HPC not defined
+    // Tie-off HLS interrupt line
+    assign hls_interrupt_to_plic = '0;
+`endif // HPC not defined
 
 
 endmodule : simplyv
