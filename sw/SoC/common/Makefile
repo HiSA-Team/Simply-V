@@ -21,7 +21,7 @@ MKDIR   = @mkdir -p $(@D)			 # Creates folders if not present
 ##########
 
 MACRO_LIST =
-ifeq ($(SOC_CONFIG), embedded)
+ifeq ($(SIMPLYV_PROFILE), embedded)
 	MACRO_LIST += -DIS_EMBEDDED
 endif
 

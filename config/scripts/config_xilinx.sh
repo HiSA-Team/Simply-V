@@ -229,7 +229,7 @@ done
 # Replace in target MK file
 sed -E -i "s/MAIN_CLOCK_FREQ_MHZ.?\?=.+/MAIN_CLOCK_FREQ_MHZ \?= ${main_clock_domain}/g" ${OUTPUT_MK_FILE};
 sed -E -i "s/RANGE_CLOCK_DOMAINS.?\?=.+/RANGE_CLOCK_DOMAINS \?= ${clock_domains_list}/g" ${OUTPUT_MK_FILE};
-if [[ ${SOC_CONFIG} == "embedded" ]]; then
+if [[ ${SIMPLYV_PROFILE} == "embedded" ]]; then
     # Replace in AXI Lite UART
     # NOTE: this will trigger the rebuild of the IP
     AXI_UARTLITE_CONFIG=${XILINX_IPS_ROOT}/embedded/xlnx_axi_uartlite/config.tcl

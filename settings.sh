@@ -49,12 +49,12 @@ export XILINX_PROJECT_NAME=uninasoc
 
 # PS: Environmental variable BOARD should match the .xdc constraint file name.
 
-SOC_CONFIG=$1
+SIMPLYV_PROFILE=$1
 BOARD_CONFIG=$2
 
-if [[ ${SOC_CONFIG} == "hpc" ]]; then
+if [[ ${SIMPLYV_PROFILE} == "hpc" ]]; then
 
-    export SOC_CONFIG=hpc
+    export SIMPLYV_PROFILE=hpc
 
     if [[ ${BOARD_CONFIG} == "au280" ]]; then
         # Alveo U280
@@ -78,7 +78,7 @@ if [[ ${SOC_CONFIG} == "hpc" ]]; then
 
 else
 
-    export SOC_CONFIG=embedded
+    export SIMPLYV_PROFILE=embedded
 
     # Use wildcard instead device specific part number
     export XILINX_HW_SERVER_FPGA_PATH=xilinx_tcf/Digilent/*
