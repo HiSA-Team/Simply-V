@@ -4,12 +4,12 @@
 // Description:
 //      This code demonstrates the usage of PLIC and interrupts.
 //      Physically, three interrupt lines are connected (in addition to line 0, which is reserved).
-//      Logically, two interrupt sources are utilized: a timer and gpio_in (embedded only).
+//      Logically, two interrupt sources are utilized: a timer0 and gpio_in (embedded only).
 //          - GPIO_IN interrupts trigger a toggle on led 0.
-//          - TIM0 timer interrupts trigger a toggle on led 1.
+//          - TIM0 timer0 interrupts trigger a toggle on led 1.
 //
-//      Note 1: The PLIC is connected to the core via the EXT line. Both the timer and gpio_in are expected
-//      to be connected to the PLIC. The timer must NOT be connected directly to the core's TIM line in this example.
+//      Note 1: The PLIC is connected to the core via the EXT line. Both the timer0 and gpio_in are expected
+//      to be connected to the PLIC. The timer0 must NOT be connected directly to the core's TIM line in this example.
 //
 //      Note 2: The IS_EMBEDDED macro is automatically defined depending on SoC profile
 //
@@ -30,10 +30,13 @@ xlnx_gpio_out_t gpio_out = {
 };
 #endif // IS_EMBEDDED
 
-xlnx_tim_t timer = {
-    .base_addr = TIM0_BASEADDR,
-    .counter = 20000000,
-    .reload_mode = TIM_RELOAD_AUTO,
+// Reset counter value for one interrupt each second (assuming a 10MHz clock)
+#define COUNT_VALUE 10000000
+
+xlnx_tim_t timer0 = {
+    .base_addr       = TIM0_BASEADDR,
+    .counter         = COUNT_VALUE,
+    .reload_mode     = TIM_RELOAD_AUTO,
     .count_direction = TIM_COUNT_DOWN
 };
 
@@ -69,9 +72,7 @@ void _ext_handler(void)
 
     uint32_t interrupt_id = plic_claim();
     switch (interrupt_id) {
-    case 0x0: // unused
-        break;
-    case 0x1:
+    case PLIC_GPIOIN_INTERRUPT:
         printf("Handiling GPIO_IN interrupt!\r\n");
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_0);
@@ -80,13 +81,13 @@ void _ext_handler(void)
         xlnx_gpio_in_clear_int(&gpio_in);
         #endif // GPIO_IN_IS_ENABLED
         break;
-    case 0x2:
+    case PLIC_TIM0_INTERRUPT:
         // Timer interrupt
         printf("Handiling TIM0 interrupt!\r\n");
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
         #endif // GPIO_OUT_IS_ENABLED
-        xlnx_tim_clear_int(&timer);
+        xlnx_tim_clear_int(&timer0);
         break;
     default:
         break;
@@ -113,7 +114,7 @@ int main()
 
     #ifdef GPIO_IN_IS_ENABLED
     if (xlnx_gpio_in_init(&gpio_in) != UNINASOC_OK)
-        printf("ERROR GPIOIN\r\n");
+        printf("ERROR GPIOIN interrupt init\r\n");
     #endif // GPIO_IN_IS_ENABLED
 
     #ifdef GPIO_OUT_IS_ENABLED
@@ -121,17 +122,20 @@ int main()
         printf("ERROR GPIOOUT\r\n");
     #endif // GPIO_OUT_IS_ENABLED
 
-    // Configure the timer for one interrupt each second (assuming a 20MHz clock)
-    xlnx_tim_init(&timer);
+    // Configure timer0
+    if (xlnx_tim_init(&timer0) != UNINASOC_OK)
+        printf("ERROR TIMER INIT\r\n");
 
-    if (xlnx_tim_configure(&timer) != UNINASOC_OK)
-        printf("ERROR TIMER\r\n");
+    if (xlnx_tim_configure(&timer0) != UNINASOC_OK)
+        printf("ERROR TIMER CONFIG\r\n");
 
-    if (xlnx_tim_enable_int(&timer) != UNINASOC_OK)
-        printf("ERROR TIMER\r\n");
+    // Enable interrupts
+    if (xlnx_tim_enable_int(&timer0) != UNINASOC_OK)
+        printf("ERROR TIMER interrupt enable\r\n");
 
-    if (xlnx_tim_start(&timer) != UNINASOC_OK)
-        printf("ERROR TIMER\r\n");
+    // Start timer0
+    if (xlnx_tim_start(&timer0) != UNINASOC_OK)
+        printf("ERROR TIMER start\r\n");
 
     // Hot-loop, waiting for interrupts to occur
     while (1);

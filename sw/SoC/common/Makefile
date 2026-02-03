@@ -13,7 +13,7 @@ LIB_DIR	= $(SOC_SW_ROOT_DIR)/lib
 SRCS	 ?= $(wildcard src/*.c) $(wildcard lib/*.c)
 OBJS	 ?= $(addprefix $(OBJ_DIR)/, $(notdir $(SRCS:.c=.o)))
 
-RM	  = rm -rf					 # Remove recursively command
+RM	    = rm -rf					 # Remove recursively command
 MKDIR   = @mkdir -p $(@D)			 # Creates folders if not present
 
 ##########
@@ -22,7 +22,7 @@ MKDIR   = @mkdir -p $(@D)			 # Creates folders if not present
 
 MACRO_LIST =
 ifeq ($(SOC_CONFIG), embedded)
-MACRO_LIST += -DIS_EMBEDDED
+	MACRO_LIST += -DIS_EMBEDDED
 endif
 
 ###############################################################################

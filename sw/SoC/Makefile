@@ -18,7 +18,7 @@ PROJECTS_LIST  := $(foreach ip,${PROJECTS_NAMES},$(SW_ROOT)/SoC/projects/${ip})
 # We need to import the XLEN envvar
 include $(SW_ROOT)/SoC/common/config.mk
 
-all: lib examples projects
+all: lib examples
 
 # Compile all examples in the example dir
 examples: lib
