@@ -1137,6 +1137,109 @@ module uninasoc (
         .hls_interrupt_o                ( hls_interrupt_to_plic       )
     );
 
+    // Instantiate the HBM only if board is au280 (or au50 in the future)
+    // TODO192: Extend this to DDR too
+    `ifdef HBM_IS_SUPPORTED
+        hbm_wrapper # (
+            .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
+            .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
+            .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
+        ) hbm_wrapper_u (
+
+            // Clocks and resets
+            .hbm_ref_clk_i  ( clk_100MHz  ),
+            .clock_i        ( main_clk    ),
+            .reset_ni       ( main_rstn   ),
+            .csr_clock_i    ( clk_100MHz  ),
+            .csr_reset_ni   ( rstn_100MHz ),
+
+            // AXI4 Slave 0 from MBUS
+            .s0_axi_awid     ( MBUS_to_HBM_axi_awid     ),
+            .s0_axi_awaddr   ( MBUS_to_HBM_axi_awaddr   ),
+            .s0_axi_awlen    ( MBUS_to_HBM_axi_awlen    ),
+            .s0_axi_awsize   ( MBUS_to_HBM_axi_awsize   ),
+            .s0_axi_awburst  ( MBUS_to_HBM_axi_awburst  ),
+            .s0_axi_awvalid  ( MBUS_to_HBM_axi_awvalid  ),
+            .s0_axi_awready  ( MBUS_to_HBM_axi_awready  ),
+            .s0_axi_wdata    ( MBUS_to_HBM_axi_wdata    ),
+            .s0_axi_wstrb    ( MBUS_to_HBM_axi_wstrb    ),
+            .s0_axi_wlast    ( MBUS_to_HBM_axi_wlast    ),
+            .s0_axi_wvalid   ( MBUS_to_HBM_axi_wvalid   ),
+            .s0_axi_wready   ( MBUS_to_HBM_axi_wready   ),
+            .s0_axi_bid      ( MBUS_to_HBM_axi_bid      ),
+            .s0_axi_bresp    ( MBUS_to_HBM_axi_bresp    ),
+            .s0_axi_bvalid   ( MBUS_to_HBM_axi_bvalid   ),
+            .s0_axi_bready   ( MBUS_to_HBM_axi_bready   ),
+            .s0_axi_arid     ( MBUS_to_HBM_axi_arid     ),
+            .s0_axi_araddr   ( MBUS_to_HBM_axi_araddr   ),
+            .s0_axi_arlen    ( MBUS_to_HBM_axi_arlen    ),
+            .s0_axi_arsize   ( MBUS_to_HBM_axi_arsize   ),
+            .s0_axi_arburst  ( MBUS_to_HBM_axi_arburst  ),
+            .s0_axi_arvalid  ( MBUS_to_HBM_axi_arvalid  ),
+            .s0_axi_arready  ( MBUS_to_HBM_axi_arready  ),
+            .s0_axi_rid      ( MBUS_to_HBM_axi_rid      ),
+            .s0_axi_rdata    ( MBUS_to_HBM_axi_rdata    ),
+            .s0_axi_rresp    ( MBUS_to_HBM_axi_rresp    ),
+            .s0_axi_rlast    ( MBUS_to_HBM_axi_rlast    ),
+            .s0_axi_rvalid   ( MBUS_to_HBM_axi_rvalid   ),
+            .s0_axi_rready   ( MBUS_to_HBM_axi_rready   ),
+            .s0_axi_awlock   ( MBUS_to_HBM_axi_awlock   ),
+            .s0_axi_awcache  ( MBUS_to_HBM_axi_awcache  ),
+            .s0_axi_awprot   ( MBUS_to_HBM_axi_awprot   ),
+            .s0_axi_awqos    ( MBUS_to_HBM_axi_awqos    ),
+            .s0_axi_awregion ( MBUS_to_HBM_axi_awregion ),
+            .s0_axi_arlock   ( MBUS_to_HBM_axi_arlock   ),
+            .s0_axi_arcache  ( MBUS_to_HBM_axi_arcache  ),
+            .s0_axi_arprot   ( MBUS_to_HBM_axi_arprot   ),
+            .s0_axi_arqos    ( MBUS_to_HBM_axi_arqos    ),
+            .s0_axi_arregion ( MBUS_to_HBM_axi_arregion ),
+
+            // AXILITE interface for accessing memory controllers' CSRs stack 0 - not connected
+            .s0_axilite_awaddr  ( '0 ),
+            .s0_axilite_awprot  ( '0 ),
+            .s0_axilite_awvalid ( '0 ),
+            .s0_axilite_awready (    ),
+            .s0_axilite_wdata   ( '0 ),
+            .s0_axilite_wstrb   ( '0 ),
+            .s0_axilite_wvalid  ( '0 ),
+            .s0_axilite_wready  (    ),
+            .s0_axilite_bresp   (    ),
+            .s0_axilite_bvalid  (    ),
+            .s0_axilite_bready  ( '0 ),
+            .s0_axilite_araddr  ( '0 ),
+            .s0_axilite_arprot  ( '0 ),
+            .s0_axilite_arvalid ( '0 ),
+            .s0_axilite_arready (    ),
+            .s0_axilite_rdata   (    ),
+            .s0_axilite_rresp   (    ),
+            .s0_axilite_rvalid  (    ),
+            .s0_axilite_rready  ( '0 ),
+
+            // AXILITE interface for accessing memory controllers' CSRs stack 1 - not connected
+            .s1_axilite_awaddr  ( '0 ),
+            .s1_axilite_awprot  ( '0 ),
+            .s1_axilite_awvalid ( '0 ),
+            .s1_axilite_awready (    ),
+            .s1_axilite_wdata   ( '0 ),
+            .s1_axilite_wstrb   ( '0 ),
+            .s1_axilite_wvalid  ( '0 ),
+            .s1_axilite_wready  (    ),
+            .s1_axilite_bresp   (    ),
+            .s1_axilite_bvalid  (    ),
+            .s1_axilite_bready  ( '0 ),
+            .s1_axilite_araddr  ( '0 ),
+            .s1_axilite_arprot  ( '0 ),
+            .s1_axilite_arvalid ( '0 ),
+            .s1_axilite_arready (    ),
+            .s1_axilite_rdata   (    ),
+            .s1_axilite_rresp   (    ),
+            .s1_axilite_rvalid  (    ),
+            .s1_axilite_rready  ( '0 )
+        );
+    `endif // HBM_IS_SUPPORTED
+
+
+
     //////////
     // HBUS //
     //////////

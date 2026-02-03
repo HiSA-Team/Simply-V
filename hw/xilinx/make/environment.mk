@@ -43,11 +43,19 @@ else
 $(error "Unsupported config ${SOC_CONFIG}")
 endif
 
-# Remove Microblaze-V and Microblaze Debug Module V when building with Vivado < 2024
+# Remove CV64A6_ARA, Microblaze-V, and Microblaze Debug Module V when building with Vivado < 2024
 # TODO55: quick workaround for PR 146, extend this for all selectable IPs
 ifeq ($(shell [ ${XILINX_VIVADO_VERSION} -lt 2024 ] && echo true),true)
-    FILTER_IP    = xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v xlnx_dual_microblaze_debug_module_v
-    TMP_IP_LIST  = ${IP_LIST}
+    FILTER_IP    = custom_cv64a6_ara xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v xlnx_dual_microblaze_debug_module_v
+    TMP_IP_LIST  := ${IP_LIST}
+    IP_LIST      = $(filter-out ${FILTER_IP},${TMP_IP_LIST})
+endif
+
+# Remove HBM when not building for au280 (for now only au250)
+# TODO55: quick workaround for PR 146, extend this for all selectable IPs
+ifneq (${BOARD}, au280)
+    FILTER_IP    = xlnx_hbm
+    TMP_IP_LIST  := ${IP_LIST}
     IP_LIST      = $(filter-out ${FILTER_IP},${TMP_IP_LIST})
 endif
 
