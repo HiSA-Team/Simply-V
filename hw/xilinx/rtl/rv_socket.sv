@@ -57,7 +57,8 @@ module rv_socket # (
 
     // Extended boot_addr_i to 64-bits
     // - For cores that have a fixed adddress width
-    logic [63 : 0] extended_a64_boot_addr = {{(64-LOCAL_ADDR_WIDTH){1'b0}}, bootaddr_i };
+    // logic [63 : 0] extended_a64_boot_addr = {{(64-LOCAL_ADDR_WIDTH){1'b0}}, bootaddr_i };
+    logic [63 : 0] extended_a64_boot_addr = {{1'b0}'(64-LOCAL_ADDR_WIDTH), bootaddr_i };
 
     //////////////////////////////////////
     //    ___ _                _        //
@@ -1211,62 +1212,65 @@ module rv_socket # (
 
             // CVA6 only has one Master port (for both data and instruction)
             `DECLARE_AXI_BUS(cv64a6, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
-            // Attach to socket
-            `ASSIGN_AXI_BUS( rv_socket_data , cv64a6 );
-            // Sink instruction port (we only use data port)
-            `SINK_AXI_MASTER_INTERFACE(rv_socket_instr);
 
             // CVA6 IP
             custom_cv64a6 cv64a6_core (
-                .clk_i          ( clk_i                         ),
-                .rst_ni         ( core_resetn_internal          ),
-                .boot_addr_i    ( extended_a64_boot_addr        ),
-                .hart_id_i      ( hart_id                       ),
-                .irq_i          ( {0,irq_i[CORE_EXT_INTERRUPT]} ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
-                .ipi_i          ( irq_i[CORE_SW_INTERRUPT]      ), // Shoult be SW interrupt
-                .time_irq_i     ( irq_i[CORE_TIM_INTERRUPT]     ), // Should be TIM interrupt
-                .debug_req_i    ( debug_req_core                ),
-                // AXI master
-                .m_axi_awaddr   ( cv64a6_axi_awaddr             ),
-                .m_axi_awlen    ( cv64a6_axi_awlen              ),
-                .m_axi_awsize   ( cv64a6_axi_awsize             ),
-                .m_axi_awburst  ( cv64a6_axi_awburst            ),
-                .m_axi_awlock   ( cv64a6_axi_awlock             ),
-                .m_axi_awcache  ( cv64a6_axi_awcache            ),
-                .m_axi_awprot   ( cv64a6_axi_awprot             ),
-                .m_axi_awregion ( cv64a6_axi_awregion           ),
-                .m_axi_awqos    ( cv64a6_axi_awqos              ),
-                .m_axi_awvalid  ( cv64a6_axi_awvalid            ),
-                .m_axi_awready  ( cv64a6_axi_awready            ),
-                .m_axi_awid     ( cv64a6_axi_awid               ),
-                .m_axi_wdata    ( cv64a6_axi_wdata              ),
-                .m_axi_wstrb    ( cv64a6_axi_wstrb              ),
-                .m_axi_wlast    ( cv64a6_axi_wlast              ),
-                .m_axi_wvalid   ( cv64a6_axi_wvalid             ),
-                .m_axi_wready   ( cv64a6_axi_wready             ),
-                .m_axi_bresp    ( cv64a6_axi_bresp              ),
-                .m_axi_bvalid   ( cv64a6_axi_bvalid             ),
-                .m_axi_bready   ( cv64a6_axi_bready             ),
-                .m_axi_bid      ( cv64a6_axi_bid                ),
-                .m_axi_araddr   ( cv64a6_axi_araddr             ),
-                .m_axi_arlen    ( cv64a6_axi_arlen              ),
-                .m_axi_arsize   ( cv64a6_axi_arsize             ),
-                .m_axi_arburst  ( cv64a6_axi_arburst            ),
-                .m_axi_arlock   ( cv64a6_axi_arlock             ),
-                .m_axi_arcache  ( cv64a6_axi_arcache            ),
-                .m_axi_arprot   ( cv64a6_axi_arprot             ),
-                .m_axi_arregion ( cv64a6_axi_arregion           ),
-                .m_axi_arqos    ( cv64a6_axi_arqos              ),
-                .m_axi_arvalid  ( cv64a6_axi_arvalid            ),
-                .m_axi_arready  ( cv64a6_axi_arready            ),
-                .m_axi_arid     ( cv64a6_axi_arid               ),
-                .m_axi_rdata    ( cv64a6_axi_rdata              ),
-                .m_axi_rresp    ( cv64a6_axi_rresp              ),
-                .m_axi_rlast    ( cv64a6_axi_rlast              ),
-                .m_axi_rvalid   ( cv64a6_axi_rvalid             ),
-                .m_axi_rready   ( cv64a6_axi_rready             ),
-                .m_axi_rid      ( cv64a6_axi_rid                )
+
+                .clk_i           ( clk_i                            ),
+                .rst_ni          ( core_resetn_internal             ),
+                .boot_addr_i     ( extended_a64_boot_addr           ),
+                .hart_id_i       ( hart_id                          ),
+                .irq_i           ( {0,irq_i[CORE_EXT_INTERRUPT]}    ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
+                .ipi_i           ( irq_i[CORE_SW_INTERRUPT]         ), // Shoult be SW interrupt
+                .time_irq_i      ( irq_i[CORE_TIM_INTERRUPT]        ), // Should be TIM interrupt
+                .debug_req_i     ( debug_req_core                   ),
+
+                .m_axi_awaddr   ( cv64a6_axi_awaddr                 ), // output wire [31 : 0] m_axi_awaddr
+                .m_axi_awlen    ( cv64a6_axi_awlen                  ), // output wire [7 : 0] m_axi_awlen
+                .m_axi_awsize   ( cv64a6_axi_awsize                 ), // output wire [2 : 0] m_axi_awsize
+                .m_axi_awburst  ( cv64a6_axi_awburst                ), // output wire [1 : 0] m_axi_awburst
+                .m_axi_awlock   ( cv64a6_axi_awlock                 ), // output wire [0 : 0] m_axi_awlock
+                .m_axi_awcache  ( cv64a6_axi_awcache                ), // output wire [3 : 0] m_axi_awcache
+                .m_axi_awprot   ( cv64a6_axi_awprot                 ), // output wire [2 : 0] m_axi_awprot
+                .m_axi_awregion ( cv64a6_axi_awregion               ), // output wire [3 : 0] m_axi_awregion
+                .m_axi_awqos    ( cv64a6_axi_awqos                  ), // output wire [3 : 0] m_axi_awqos
+                .m_axi_awvalid  ( cv64a6_axi_awvalid                ), // output wire m_axi_awvalid
+                .m_axi_awready  ( cv64a6_axi_awready                ), // input wire m_axi_awready
+                .m_axi_awid     ( cv64a6_axi_awid                   ),
+                .m_axi_wdata    ( cv64a6_axi_wdata                  ), // output wire [31 : 0] m_axi_wdata
+                .m_axi_wstrb    ( cv64a6_axi_wstrb                  ), // output wire [3 : 0] m_axi_wstrb
+                .m_axi_wlast    ( cv64a6_axi_wlast                  ), // output wire m_axi_wlast
+                .m_axi_wvalid   ( cv64a6_axi_wvalid                 ), // output wire m_axi_wvalid
+                .m_axi_wready   ( cv64a6_axi_wready                 ), // input wire m_axi_wready
+                .m_axi_bresp    ( cv64a6_axi_bresp                  ), // input wire [1 : 0] m_axi_bresp
+                .m_axi_bvalid   ( cv64a6_axi_bvalid                 ), // input wire m_axi_bvalid
+                .m_axi_bready   ( cv64a6_axi_bready                 ), // output wire m_axi_bready
+                .m_axi_bid      ( cv64a6_axi_bid                    ), // output wire m_axi_bready
+                .m_axi_araddr   ( cv64a6_axi_araddr                 ), // output wire [31 : 0] m_axi_araddr
+                .m_axi_arlen    ( cv64a6_axi_arlen                  ), // output wire [7 : 0] m_axi_arlen
+                .m_axi_arsize   ( cv64a6_axi_arsize                 ), // output wire [2 : 0] m_axi_arsize
+                .m_axi_arburst  ( cv64a6_axi_arburst                ), // output wire [1 : 0] m_axi_arburst
+                .m_axi_arlock   ( cv64a6_axi_arlock                 ), // output wire [0 : 0] m_axi_arlock
+                .m_axi_arcache  ( cv64a6_axi_arcache                ), // output wire [3 : 0] m_axi_arcache
+                .m_axi_arprot   ( cv64a6_axi_arprot                 ), // output wire [2 : 0] m_axi_arprot
+                .m_axi_arregion ( cv64a6_axi_arregion               ), // output wire [3 : 0] m_axi_arregion
+                .m_axi_arqos    ( cv64a6_axi_arqos                  ), // output wire [3 : 0] m_axi_arqos
+                .m_axi_arvalid  ( cv64a6_axi_arvalid                ), // output wire m_axi_arvalid
+                .m_axi_arready  ( cv64a6_axi_arready                ), // input wire m_axi_arready
+                .m_axi_arid     ( cv64a6_axi_arid                   ),
+                .m_axi_rdata    ( cv64a6_axi_rdata                  ), // input wire [31 : 0] m_axi_rdata
+                .m_axi_rresp    ( cv64a6_axi_rresp                  ), // input wire [1 : 0] m_axi_rresp
+                .m_axi_rlast    ( cv64a6_axi_rlast                  ), // input wire m_axi_rlast
+                .m_axi_rvalid   ( cv64a6_axi_rvalid                 ), // input wire m_axi_rvalid
+                .m_axi_rready   ( cv64a6_axi_rready                 ), // output wire m_axi_rready
+                .m_axi_rid      ( cv64a6_axi_rid                    )  // output wire m_axi_rready
+
             );
+
+            // Attach to socket (we only use data port)
+            `ASSIGN_AXI_BUS( rv_socket_data , cv64a6 );
+            `SINK_AXI_MASTER_INTERFACE(rv_socket_instr);
+
         end : core_cv64a6
         CORE_CV64A6_ARA : begin : core_cv64a6_ara
 
