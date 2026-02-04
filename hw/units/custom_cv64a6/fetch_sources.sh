@@ -28,11 +28,11 @@ GIT_TAG=v5.3.0
 CLONE_DIR=$(pwd)/cva6
 FLIST=${ASSETS_DIR}/flist
 
-printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository${NC}\n"
-git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
-cd ${CLONE_DIR};
-git submodule update --init --recursive
-cd ..;
+# printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository${NC}\n"
+# git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
+# cd ${CLONE_DIR};
+# git submodule update --init --recursive
+# cd ..;
 
 ######################
 # Prepare file lists #
@@ -64,13 +64,18 @@ for rtl_file in "${headers[@]}" ; do
 
     filename=$(basename "$rtl_file")
 
-    if [[ "$rtl_file" == *"axi"* ]]; then
+    # Remove $SIMPLY_ROOT_DIR/ prefix if present
+    relative_rtl_file="${rtl_file/#\$SIMPLY_ROOT_DIR\//}"
+
+    # Rename headers for flat build
+    if [[ "$relative_rtl_file" == *"axi"* ]]; then
         filename="axi_${filename}"
-    elif [[ "$rtl_file" == *"register_interface"* ]]; then
+    elif [[ "$relative_rtl_file" == *"register_interface"* ]]; then
         filename="register_interface_${filename}"
     fi
 
-    cp "$rtl_file" "${RTL_DIR}/${filename}"
+    # Copy in rtl dir
+    cp "$relative_rtl_file" "${RTL_DIR}/${filename}"
 
 done;
 
