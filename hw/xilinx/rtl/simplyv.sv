@@ -115,7 +115,6 @@ module simplyv (
 
     localparam peripherals_interrupts_num = 4;
     localparam HBUS_AXI_DATAWIDTH = 512;
-    localparam RV_SOCKET_BOOT_ADDRESS = '0;
 
     ///////////////////
     // Local Signals //
@@ -352,7 +351,7 @@ module simplyv (
         .clk_i          ( main_clk   ),
         .rst_ni         ( main_rstn  ),
         .core_resetn_i  ( vio_resetn ),
-        .bootaddr_i     ( RV_SOCKET_BOOT_ADDRESS   ),
+        .bootaddr_i     ( '0         ),
         .irq_i          ( rv_socket_interrupt_line ),
 
         // Instruction AXI Port
