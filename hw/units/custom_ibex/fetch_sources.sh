@@ -7,6 +7,7 @@ RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+IP_NAME=$( basename $(dirname $( realpath ${BASH_SOURCE[0]} ) ))
 
 
 # Create rtl dir
@@ -17,7 +18,7 @@ GIT_URL=https://github.com/lowRISC/ibex.git
 GIT_BRANCH=master
 GIT_COMMIT=6e466c1504b61333d1b2ba85c69bff94b65e9284
 CLONE_DIR=ibex
-printf "${YELLOW}[FETCH_SOURCES] Cloning source repository${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository${NC}\n"
 git clone ${GIT_URL} -b ${GIT_BRANCH} ${CLONE_DIR}
 cd ${CLONE_DIR};
 git checkout ${GIT_COMMIT}
@@ -32,7 +33,7 @@ FLIST="$PWD/assets/flist"
 LOOKUP_DIR="$PWD/ibex"
 RTL_DIR="$PWD/rtl"
 
-printf "${YELLOW}[FETCH_SOURCES] Copy all sources into rtl${NC}\n" s
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Copy all sources into rtl${NC}\n" s
 while IFS= read -r filename; do
     # Find the file in LOOKUP_DIR
     filepath=$(find "$LOOKUP_DIR" -type f -name "$filename" 2>/dev/null | head -n 1)
@@ -42,11 +43,11 @@ while IFS= read -r filename; do
         cp "$filepath" "$RTL_DIR/"
     # Error
     else
-        printf "${RED}[FETCH_SOURCES] Error: $filename not found in $LOOKUP_DIR${NC}\n"
+        printf "${RED}[FETCH_SOURCES $IP_NAME] Error: $filename not found in $LOOKUP_DIR${NC}\n"
         exit 1
     fi
 done < "$FLIST"
 
 # Info
-printf "${GREEN}[FETCH_SOURCES] Completed${NC}\n"
+printf "${GREEN}[FETCH_SOURCES $IP_NAME] Completed${NC}\n"
 

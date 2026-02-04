@@ -20,7 +20,7 @@ ASSETS_DIR=$(pwd)/assets
 # TODO142: migrate to venv
 
 # Install the required modules
-echo -e "${YELLOW}[FETCH_SOURCES] Installing Python modules: hjson, tabulate, pyyaml, mako ...${NC}"
+echo -e "${YELLOW}[FETCH_SOURCES $IP_NAME] Installing Python modules: hjson, tabulate, pyyaml, mako ...${NC}"
 pip3.10 install --upgrade pip
 pip3.10 install hjson tabulate pyyaml mako
 
@@ -30,10 +30,10 @@ pip3.10 install hjson tabulate pyyaml mako
 
 # Create the rtl directory structure
 # Create rtl dir
-echo -e "${YELLOW}[FETCH_SOURCES] Creating the rtl directory structure${NC}"
+echo -e "${YELLOW}[FETCH_SOURCES $IP_NAME] Creating the rtl directory structure${NC}"
 mkdir ${RTL_DIR}
 
-echo -e "${YELLOW}[FETCH_SOURCES] Fetching Open-Titan Peripherals (aiming to PLIC) sources${NC}"
+echo -e "${YELLOW}[FETCH_SOURCES $IP_NAME] Fetching Open-Titan Peripherals (aiming to PLIC) sources${NC}"
 # clone repo (Release v1.8.3 Jul 15 2024)
 GIT_URL=https://github.com/pulp-platform/opentitan_peripherals.git
 GIT_TAG=v0.4.0
@@ -41,7 +41,7 @@ CLONE_DIR=otp
 git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
 cd ${CLONE_DIR};
 
-echo -e "${YELLOW}[FETCH_SOURCES] Use Bender to retrieve dependencies ${NC}"
+echo -e "${YELLOW}[FETCH_SOURCES $IP_NAME] Use Bender to retrieve dependencies ${NC}"
 # Open-Titan peripherals (by PULP) requires a preliminar configuration and patching
 # Apply hjson configurations and patches
 cp ${ASSETS_DIR}/Bender.yml ./
@@ -54,14 +54,14 @@ cp ${ASSETS_DIR}/Bender.lock ./
 # Move PLIC sources and depencencies #
 ######################################
 
-echo -e "${YELLOW}[FETCH_SOURCES] Configure and Patch${NC}"
+echo -e "${YELLOW}[FETCH_SOURCES $IP_NAME] Configure and Patch${NC}"
 DEP_REGISTER_INTERFACE="$(./bender path register_interface)"
 DEP_AXI="$(./bender path axi)"
 DEP_COMMON_CELLS="$(./bender path common_cells)"
 cd ..;
 
 # Move Source Files
-echo -e "${YELLOW}[FETCH_SOURCES] Move all RTL files${NC}"
+echo -e "${YELLOW}[FETCH_SOURCES $IP_NAME] Move all RTL files${NC}"
 cp ${CLONE_DIR}/src/rv_plic/rtl/* ${RTL_DIR};
 cp ${CLONE_DIR}/src/prim/rtl/* ${RTL_DIR};
 cp ${CLONE_DIR}/src/prim/prim_pulp_platform/* ${RTL_DIR};
@@ -105,5 +105,5 @@ done
 rm ${RTL_DIR}/reg_intf.sv
 
 # Info
-echo -e "${GREEN}[FETCH_SOURCES] Completed${NC}"
+echo -e "${GREEN}[FETCH_SOURCES $IP_NAME] Completed${NC}"
 

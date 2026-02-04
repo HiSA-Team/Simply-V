@@ -42,7 +42,7 @@ cp ${HLS_DIR}/hw/${COMPONENT_NAME}/hls/syn/verilog/* ${RTL_DIR}/
 # Packaging for the C driver files
 # NOTE: requires Vitis HLS 2024
 CUSTOM_IP_NAME=$(basename $(realpath $WORK_DIR/..))
-printf "\n${YELLOW}[FETCH_SOURCES] Packaging for C standalone driver files${NC}\n"
+printf "\n${YELLOW}[REBUILD_HLS] Packaging for C standalone driver files${NC}\n"
 make package
 
 # Back to top
