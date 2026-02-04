@@ -176,7 +176,7 @@ module simplyv (
       .clk        ( main_clk        ),
       .probe_out0 ( vio_resetn      ),
       .probe_out1 (                 ),
-      .probe_in0  ( plic_int_irq_o  )
+      .probe_in0  (                 )
     );
 
     // Axi Crossbar
