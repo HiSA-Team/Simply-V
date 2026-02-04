@@ -51,7 +51,7 @@ LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
 include $(SW_ROOT)/SoC/common/config.mk
 
 # This example only works at 32 bits for now
-ifeq (${XLEN},32)
+ifeq (${XLEN},64)
 $(error "Trying to build ${PROGRAM_NAME} with RV64, but it only supportx RV32 for now)
 endif
 
