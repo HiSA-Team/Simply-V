@@ -29,11 +29,11 @@ make openocd_run
 ```
 Once the backend is enabled, load an example ELF file using:
 ``` bash
-make gdb_run EXAMPLE=hello_world GDB_PORT=[3004|3005]
+make gdb_run EXAMPLE=hello_world
 ```
 Or explicitly pick your ELF:
 ``` bash
-make gdb_run ELF_PATH=<path-to-elf> GDB_PORT=[3004|3005]
+make gdb_run ELF_PATH=<path-to-elf>
 ```
 
 ## Load a binary file
