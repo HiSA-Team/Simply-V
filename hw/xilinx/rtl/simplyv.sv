@@ -113,8 +113,9 @@ module simplyv (
     // Local variables //
     /////////////////////
 
-    localparam peripherals_interrupts_num = 4;
-    localparam HBUS_AXI_DATAWIDTH = 512;
+    localparam unsigned peripherals_interrupts_num = 4;
+    localparam unsigned HBUS_AXI_DATAWIDTH = 512;
+    localparam logic [MBUS_DATA_WIDTH-1 : 0] RV_SOCKET_BOOT_ADDRESS = 0;
 
     ///////////////////
     // Local Signals //
@@ -342,7 +343,6 @@ module simplyv (
 
     // RV Socket
     rv_socket # (
-
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH    ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH    ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH      ),
@@ -351,9 +351,8 @@ module simplyv (
         .clk_i          ( main_clk   ),
         .rst_ni         ( main_rstn  ),
         .core_resetn_i  ( vio_resetn ),
-        .bootaddr_i     ( '0         ),
+        .bootaddr_i     ( RV_SOCKET_BOOT_ADDRESS   ),
         .irq_i          ( rv_socket_interrupt_line ),
-
         // Instruction AXI Port
         .rv_socket_instr_axi_awid      ( RV_SOCKET_INSTR_to_MBUS_axi_awid     ),
         .rv_socket_instr_axi_awaddr    ( RV_SOCKET_INSTR_to_MBUS_axi_awaddr   ),
