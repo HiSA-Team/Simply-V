@@ -33,22 +33,22 @@ endif
 all: bin/$(PROGRAM_NAME).bin bin/$(PROGRAM_NAME).dump
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	@echo "\n[OBJ] Creating OBJs from src"
+	@echo "[OBJ] Creating OBJs from src"
 	$(MKDIR)
 	$(CC) -o $@ $^ -I$(INC_DIR) $(LIB_INC_LIST) $(CFLAGS) $(MACRO_LIST)
 
 obj/startup.o:
-	@echo "\n[OBJ] Creating OBJs from $(STARTUP_DIR)/startup.s"
+	@echo "[OBJ] Creating OBJs from $(STARTUP_DIR)/startup.s"
 	$(MKDIR)
 	$(CC) -o obj/startup.o $(STARTUP_DIR)/startup.s $(LIB_INC_LIST) $(CFLAGS)
 
 bin/$(PROGRAM_NAME).elf: $(OBJS) obj/startup.o
-	@echo "\n[ELF] Creating elf file"
+	@echo "[ELF] Creating elf file"
 	$(MKDIR)
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 bin/$(PROGRAM_NAME).bin: bin/$(PROGRAM_NAME).elf
-	@echo "\n[ELF] Linking OBJs $^ into ELF $@"
+	@echo "[ELF] Linking OBJs $^ into ELF $@"
 	$(OBJCOPY) -O binary bin/$(PROGRAM_NAME).elf bin/$(PROGRAM_NAME).bin
 
 dump: bin/$(PROGRAM_NAME).dump
