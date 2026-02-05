@@ -114,7 +114,7 @@ typedef logic [AXI_REGION_WIDTH -1 : 0] axi_region_t;
     axi_ready_t                   ``bus_name``_axi_rready;
 
 // Single define for whole AXI4-LITE bus
-`define DECLARE_AXILITE_BUS(bus_name, DATA_WIDTH, ADDR_WIDTH, ID_WIDTH) \
+`define DECLARE_AXILITE_BUS(bus_name, DATA_WIDTH, ADDR_WIDTH) \
     // AW channel                               \
     logic [ADDR_WIDTH-1 : 0]        ``bus_name``_axilite_awaddr;    \
     axi_prot_t                      ``bus_name``_axilite_awprot;    \
@@ -183,7 +183,7 @@ typedef logic [AXI_REGION_WIDTH -1 : 0] axi_region_t;
     axi_ready_t                     [``size`` -1 : 0] ``array_name``_axi_rready   ;
 
 // Declare AXI4 LITE array
-`define DECLARE_AXILITE_BUS_ARRAY(array_name, size, DATA_WIDTH, ADDR_WIDTH, ID_WIDTH) \
+`define DECLARE_AXILITE_BUS_ARRAY(array_name, size, DATA_WIDTH, ADDR_WIDTH) \
     logic [ADDR_WIDTH-1 : 0]        [``size`` -1 : 0] ``array_name``_axilite_awaddr   ; \
     axi_prot_t                      [``size`` -1 : 0] ``array_name``_axilite_awprot   ; \
     axi_valid_t                     [``size`` -1 : 0] ``array_name``_axilite_awvalid  ; \
@@ -1091,7 +1091,7 @@ typedef logic [AXI_REGION_WIDTH -1 : 0] axi_region_t;
   input  axi_ready_t                    ``slave_name``_axi_rready
 
 // AXI4 LITE MASTER PORTS
-`define DEFINE_AXILITE_MASTER_PORTS(master_name, DATA_WIDTH, ADDR_WIDTH, ID_WIDTH)          \
+`define DEFINE_AXILITE_MASTER_PORTS(master_name, DATA_WIDTH, ADDR_WIDTH)  \
     // AW channel                                        \
     output logic [ADDR_WIDTH-1 : 0]     ``master_name``_axilite_awaddr,   \
     output axi_prot_t                   ``master_name``_axilite_awprot,   \
@@ -1118,7 +1118,7 @@ typedef logic [AXI_REGION_WIDTH -1 : 0] axi_region_t;
     output axi_ready_t                  ``master_name``_axilite_rready
 
 // AXI4 LITE SLAVE PORTS
-`define DEFINE_AXILITE_SLAVE_PORTS(slave_name, DATA_WIDTH, ADDR_WIDTH, ID_WIDTH)           \
+`define DEFINE_AXILITE_SLAVE_PORTS(slave_name, DATA_WIDTH, ADDR_WIDTH)           \
     // AW channel                                        \
     input  logic [ADDR_WIDTH-1 : 0]     ``slave_name``_axilite_awaddr,   \
     input  axi_prot_t                   ``slave_name``_axilite_awprot,   \
@@ -1146,7 +1146,7 @@ typedef logic [AXI_REGION_WIDTH -1 : 0] axi_region_t;
 
 
 // AXI4 LITE SLAVE PORTS ARRAY
-`define DEFINE_AXILITE_SLAVE_PORTS_ARRAY(slave_array_name, size, DATA_WIDTH, ADDR_WIDTH, ID_WIDTH)                 \
+`define DEFINE_AXILITE_SLAVE_PORTS_ARRAY(slave_array_name, size, DATA_WIDTH, ADDR_WIDTH)          \
     // AW channel                                                                \
     input  logic [ADDR_WIDTH-1 : 0]     [``size`` -1 : 0]  ``slave_array_name``_axilite_awaddr,   \
     input  axi_prot_t                   [``size`` -1 : 0]  ``slave_array_name``_axilite_awprot,   \
@@ -1174,7 +1174,7 @@ typedef logic [AXI_REGION_WIDTH -1 : 0] axi_region_t;
 
 
 // AXI4 LITE MASTER PORTS ARRAY
-`define DEFINE_AXILITE_MASTER_PORTS_ARRAY(master_array_name, size, DATA_WIDTH, ADDR_WIDTH, ID_WIDTH)                \
+`define DEFINE_AXILITE_MASTER_PORTS_ARRAY(master_array_name, size, DATA_WIDTH, ADDR_WIDTH)         \
     // AW channel                                                                 \
     output logic [ADDR_WIDTH-1 : 0]     [``size`` -1 : 0]  ``master_array_name``_axilite_awaddr,   \
     output axi_prot_t                   [``size`` -1 : 0]  ``master_array_name``_axilite_awprot,   \

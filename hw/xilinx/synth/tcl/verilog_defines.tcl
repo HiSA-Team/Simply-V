@@ -23,10 +23,10 @@ lappend verilog_defines MBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
 lappend verilog_defines MBUS_NUM_SI=$::env(MBUS_NUM_SI)
 lappend verilog_defines MBUS_NUM_MI=$::env(MBUS_NUM_MI)
 lappend verilog_defines PBUS_NUM_MI=$::env(PBUS_NUM_MI)
-lappend verilog_defines PBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
+lappend verilog_defines PBUS_ID_WIDTH=$::env(PBUS_ID_WIDTH)
 lappend verilog_defines HBUS_NUM_MI=$::env(HBUS_NUM_MI)
 lappend verilog_defines HBUS_NUM_SI=$::env(HBUS_NUM_SI)
-lappend verilog_defines HBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
+lappend verilog_defines HBUS_ID_WIDTH=$::env(HBUS_ID_WIDTH)
 # Core selection
 lappend verilog_defines CORE_SELECTOR=$::env(CORE_SELECTOR)
 # Clock domains

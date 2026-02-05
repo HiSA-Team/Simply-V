@@ -302,7 +302,7 @@ module rv_socket # (
 
             // Declare AXI interfaces for instruction memory port and data memory port for MicroblazeV
             `DECLARE_AXI_BUS(microblaze_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
-            `DECLARE_AXILITE_BUS(microblaze_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXILITE_BUS(microblaze_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
 
             // Declare AXI interface for Protocol Converter
             `DECLARE_AXI_BUS(converter_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
@@ -505,8 +505,8 @@ module rv_socket # (
             // Declare AXI interfaces for instruction memory port and data memory port for MicroblazeV
             `DECLARE_AXI_BUS(microblaze0_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
             `DECLARE_AXI_BUS(microblaze1_data,  LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
-            `DECLARE_AXILITE_BUS(microblaze0_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
-            `DECLARE_AXILITE_BUS(microblaze1_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXILITE_BUS(microblaze0_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
+            `DECLARE_AXILITE_BUS(microblaze1_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
             // Declare AXI interface for Protocol Converter
             `DECLARE_AXI_BUS(converter0_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
             `DECLARE_AXI_BUS(converter1_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
@@ -864,7 +864,7 @@ module rv_socket # (
 
             // Declare AXI interfaces for instruction memory port and data memory port for MicroblazeV
             `DECLARE_AXI_BUS(microblaze_data, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
-            `DECLARE_AXILITE_BUS(microblaze_instr, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXILITE_BUS(microblaze_instr, 32, LOCAL_ADDR_WIDTH);
 
             // Declare AXI dwith 32-64 adapters
             `DECLARE_AXI_BUS(dwidth_conv_to_d64_data, 64, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);

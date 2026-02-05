@@ -783,7 +783,7 @@ module simplyv (
     /////////////////////
 
     // AXI-Lite bus from adapter to CDMA control interface
-    `DECLARE_AXILITE_BUS(AXILITE_to_CDMA, 32, 32, MBUS_ID_WIDTH)
+    `DECLARE_AXILITE_BUS(AXILITE_to_CDMA, 32, 32)
 
     // AXI-lite converter
     xlnx_axi4_to_axilite_d32_converter axi4_to_axilite_cdma_u (
@@ -873,20 +873,20 @@ module simplyv (
         // AXI-Lite Control Interface (from converter)
         .s_axi_lite_awvalid ( AXILITE_to_CDMA_axilite_awvalid     ),
         .s_axi_lite_awready ( AXILITE_to_CDMA_axilite_awready     ),
-        .s_axi_lite_awaddr  ( AXILITE_to_CDMA_axilite_awaddr[5:0] ),
+        .s_axi_lite_awaddr  ( AXILITE_to_CDMA_axilite_awaddr      ),
         .s_axi_lite_wvalid  ( AXILITE_to_CDMA_axilite_wvalid      ),
         .s_axi_lite_wready  ( AXILITE_to_CDMA_axilite_wready      ),
-        .s_axi_lite_wdata   ( AXILITE_to_CDMA_axilite_wdata[31:0] ),
+        .s_axi_lite_wdata   ( AXILITE_to_CDMA_axilite_wdata       ),
         // .s_axi_lite_wstrb   (  ), // not present
         .s_axi_lite_bvalid  ( AXILITE_to_CDMA_axilite_bvalid      ),
         .s_axi_lite_bready  ( AXILITE_to_CDMA_axilite_bready      ),
         .s_axi_lite_bresp   ( AXILITE_to_CDMA_axilite_bresp       ),
         .s_axi_lite_arvalid ( AXILITE_to_CDMA_axilite_arvalid     ),
         .s_axi_lite_arready ( AXILITE_to_CDMA_axilite_arready     ),
-        .s_axi_lite_araddr  ( AXILITE_to_CDMA_axilite_araddr[5:0] ),
+        .s_axi_lite_araddr  ( AXILITE_to_CDMA_axilite_araddr      ),
         .s_axi_lite_rvalid  ( AXILITE_to_CDMA_axilite_rvalid      ),
         .s_axi_lite_rready  ( AXILITE_to_CDMA_axilite_rready      ),
-        .s_axi_lite_rdata   ( AXILITE_to_CDMA_axilite_rdata[31:0] ),
+        .s_axi_lite_rdata   ( AXILITE_to_CDMA_axilite_rdata       ),
         .s_axi_lite_rresp   ( AXILITE_to_CDMA_axilite_rresp       ),
         // AXI4 Master
         .m_axi_awaddr       ( CDMA_to_MBUS_axi_awaddr             ),

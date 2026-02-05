@@ -50,7 +50,7 @@ module ddr4_channel_wrapper # (
     output logic ddr_rst_o,
 
     // AXI-lite CSR interface
-    `DEFINE_AXILITE_SLAVE_PORTS(s_ctrl, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXILITE_SLAVE_PORTS(s_ctrl, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH),
 
     // AXI4 Slave interface
     `DEFINE_AXI_SLAVE_PORTS(s, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)

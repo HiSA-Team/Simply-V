@@ -81,7 +81,7 @@ module highperformance_bus #(
     // DDR channel
     `DEFINE_DDR4_PORTS(x),
     // AXI-lite CSR interface
-    `DEFINE_AXILITE_SLAVE_PORTS(s_ctrl, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
+    `DEFINE_AXILITE_SLAVE_PORTS(s_ctrl, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH)
 
     // TODO: expose an array of NUM_HBM_CHANNELS pins and interfaces
     // TBD

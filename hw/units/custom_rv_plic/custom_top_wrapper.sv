@@ -28,23 +28,23 @@ module custom_top_wrapper # (
 
     // TODO121: Automatically align with config
     // AXI-related paraamters
-    parameter                           AXI_DATA_WIDTH      = 32,
-    parameter                           AXI_ADDR_WIDTH      = 32,
-    parameter                           AXI_STRB_WIDTH      = AXI_ADDR_WIDTH / 8,
-    parameter                           AXI_ID_WIDTH        = 4,
-    parameter                           AXI_USER_WIDTH      = 2,
-    parameter                           AXI_REGION_WIDTH    = 4,
-    parameter                           AXI_LEN_WIDTH       = 8,
-    parameter                           AXI_SIZE_WIDTH      = 3,
-    parameter                           AXI_BURST_WIDTH     = 2,
-    parameter                           AXI_LOCK_WIDTH      = 1,
-    parameter                           AXI_CACHE_WIDTH     = 4,
-    parameter                           AXI_PROT_WIDTH      = 3,
-    parameter                           AXI_QOS_WIDTH       = 4,
-    parameter                           AXI_VALID_WIDTH     = 1,
-    parameter                           AXI_READY_WIDTH     = 1,
-    parameter                           AXI_LAST_WIDTH      = 1,
-    parameter                           AXI_RESP_WIDTH      = 2,
+    parameter                           LOCAL_AXI_DATA_WIDTH   = 32,
+    parameter                           LOCAL_AXI_ADDR_WIDTH   = 32,
+    parameter                           LOCAL_AXI_STRB_WIDTH   = LOCAL_AXI_ADDR_WIDTH / 8,
+    parameter                           LOCAL_AXI_ID_WIDTH     = 5,
+    parameter                           LOCAL_AXI_USER_WIDTH   = 2,
+    parameter                           LOCAL_AXI_REGION_WIDTH = 4,
+    parameter                           LOCAL_AXI_LEN_WIDTH    = 8,
+    parameter                           LOCAL_AXI_SIZE_WIDTH   = 3,
+    parameter                           LOCAL_AXI_BURST_WIDTH  = 2,
+    parameter                           LOCAL_AXI_LOCK_WIDTH   = 1,
+    parameter                           LOCAL_AXI_CACHE_WIDTH  = 4,
+    parameter                           LOCAL_AXI_PROT_WIDTH   = 3,
+    parameter                           LOCAL_AXI_QOS_WIDTH    = 4,
+    parameter                           LOCAL_AXI_VALID_WIDTH  = 1,
+    parameter                           LOCAL_AXI_READY_WIDTH  = 1,
+    parameter                           LOCAL_AXI_LAST_WIDTH   = 1,
+    parameter                           LOCAL_AXI_RESP_WIDTH   = 2,
 
     // REG-related parameters
     parameter int unsigned              REG_DATA_WIDTH      = 32,
@@ -74,7 +74,7 @@ module custom_top_wrapper # (
     ////////////////////////////
 
     // AXI Slave Interface
-    `DEFINE_AXI_SLAVE_PORTS(s, AXI_DATA_WIDTH, AXI_ADDR_WIDTH, AXI_ID_WIDTH)
+    `DEFINE_AXI_SLAVE_PORTS(s, LOCAL_AXI_DATA_WIDTH, LOCAL_AXI_ADDR_WIDTH, LOCAL_AXI_ID_WIDTH)
 );
 
     ////////////////////////
@@ -85,18 +85,18 @@ module custom_top_wrapper # (
     // Define the req_t and resp_t type using axi_typedef.svh macro
     `AXI_TYPEDEF_ALL(
         axi,
-        logic [AXI_ADDR_WIDTH-1:0],
-        logic [AXI_ID_WIDTH-1:0],
-        logic [AXI_DATA_WIDTH-1:0],
-        logic [AXI_STRB_WIDTH-1:0],
+        logic [LOCAL_AXI_ADDR_WIDTH-1:0],
+        logic [LOCAL_AXI_ID_WIDTH-1:0],
+        logic [LOCAL_AXI_DATA_WIDTH-1:0],
+        logic [LOCAL_AXI_STRB_WIDTH-1:0],
         logic [0:0]  // This is for the user field, which is missing from our interface (or unused)
     )
     // Define the req_t and resp_t type using reg_typedef.svh macro
     `REG_BUS_TYPEDEF_ALL(
         reg,
-        logic [AXI_ADDR_WIDTH-1:0],
-        logic [AXI_DATA_WIDTH-1:0],
-        logic [AXI_STRB_WIDTH-1:0]
+        logic [LOCAL_AXI_ADDR_WIDTH-1:0],
+        logic [LOCAL_AXI_DATA_WIDTH-1:0],
+        logic [LOCAL_AXI_STRB_WIDTH-1:0]
     )
 
     // Instantiate intermediate signals to connect the axi converter to the reg-based plic interface
@@ -134,10 +134,10 @@ module custom_top_wrapper # (
     );
 
     axi_to_reg_v2 #(
-        .AxiAddrWidth       ( AXI_ADDR_WIDTH ),
-        .AxiDataWidth       ( AXI_DATA_WIDTH ),
-        .AxiIdWidth         ( AXI_ID_WIDTH ),
-        .AxiUserWidth       ( AXI_USER_WIDTH ),
+        .AxiAddrWidth       ( LOCAL_AXI_ADDR_WIDTH ),
+        .AxiDataWidth       ( LOCAL_AXI_DATA_WIDTH ),
+        .AxiIdWidth         ( LOCAL_AXI_ID_WIDTH ),
+        .AxiUserWidth       ( LOCAL_AXI_USER_WIDTH ),
         .RegDataWidth       ( REG_DATA_WIDTH ) ,
         .CutMemReqs         ( CUT_MEM_REQS ) ,
         .CutMemRsps         ( CUT_MEM_RSPS ) ,
@@ -145,7 +145,7 @@ module custom_top_wrapper # (
         .axi_rsp_t          ( axi_resp_t),
         .reg_req_t          ( reg_req_t),
         .reg_rsp_t          ( reg_rsp_t),
-        .id_t               ( logic[AXI_ID_WIDTH-1:0] )
+        .id_t               ( logic[LOCAL_AXI_ID_WIDTH-1:0] )
     )axi_to_reg_v2_u (
         .clk_i              (clk_i),
         .rst_ni             (rst_ni),

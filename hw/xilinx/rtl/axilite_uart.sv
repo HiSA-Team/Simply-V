@@ -25,7 +25,7 @@ module axilite_uart # (
     input  logic [1:0]  int_ack_i,
 
     // AXI4 Slave interface
-    `DEFINE_AXILITE_SLAVE_PORTS(s, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXILITE_SLAVE_PORTS(s, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH),
 
     // EMBEDDED ONLY
     // RX and TX signas
