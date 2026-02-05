@@ -80,7 +80,7 @@ module hls_conv2d_wrapper # (
 
     // HLS_DOTPROD_CONTROL AXI-lite
     // xlnx_axi4_to_axilite_u -> custom_hls_conv_hbus_u
-    `DECLARE_AXILITE_BUS(HLS_CONTROL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH);
+    `DECLARE_AXILITE_BUS(HLS_CONTROL, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH);
 
     /////////////
     // Modules //
