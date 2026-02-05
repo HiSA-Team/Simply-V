@@ -22,11 +22,11 @@ all: lib examples
 
 # Compile all examples in the example dir
 examples: lib
-	@echo "[Make] Compile all the example projects"
+	@echo "[Make] Compile all example projects"
 	@for example in ${EXAMPLES_LIST}; do \
-		echo "[Make] Compiling example $$example" ; \
+		echo "[Make] Building example $$example" ; \
 		${MAKE} -C $$example && \
-		echo "\n[Make] Done\n" ; \
+		echo "[Make] Done building example $$example" ; \
 	done
 
 # Build all libraries
