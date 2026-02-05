@@ -57,8 +57,7 @@ module rv_socket # (
 
     // Extended boot_addr_i to 64-bits
     // - For cores that have a fixed adddress width
-    // logic [63 : 0] extended_a64_boot_addr = {{(64-LOCAL_ADDR_WIDTH){1'b0}}, bootaddr_i };
-    logic [63 : 0] extended_a64_boot_addr = {{1'b0}'(64-LOCAL_ADDR_WIDTH), bootaddr_i };
+    logic [63 : 0] extended_a64_boot_addr = {{(64-LOCAL_ADDR_WIDTH){1'b0}}, bootaddr_i };
 
     //////////////////////////////////////
     //    ___ _                _        //
