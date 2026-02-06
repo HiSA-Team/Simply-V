@@ -70,7 +70,6 @@ openocd_run:
 # For MicroblazeV, Vivado HW Server exposes ports:
 # - 3004 for 32-bit,
 # - 3005 for 64-bit
-# Although if one of the port has already been used, hw_server will not switch and use the active one for either 32 or 64 bits.
 # If using OpenOCD, we always connect to port 3004
 GDB_HOST ?= localhost
 GDB_PORT ?= 3004
