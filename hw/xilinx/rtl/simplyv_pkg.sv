@@ -110,13 +110,15 @@ package simplyv_pkg;
     // This function is used to turn a core_selector id into the corresponding core name string
     function string core_selector_to_string(input int core_sel);
         case (core_sel)
-            CORE_PICORV32:     return "CORE_PICORV32";
-            CORE_CV32E40P:     return "CORE_CV32E40P";
-            CORE_IBEX:         return "CORE_IBEX";
-            CORE_MICROBLAZEV_RV32:  return "CORE_MICROBLAZEV_RV32";
-            CORE_MICROBLAZEV_RV64:  return "CORE_MICROBLAZEV_RV64";
+            CORE_PICORV32:               return "CORE_PICORV32";
+            CORE_CV32E40P:               return "CORE_CV32E40P";
+            CORE_IBEX:                   return "CORE_IBEX";
+            CORE_MICROBLAZEV_RV32:       return "CORE_MICROBLAZEV_RV32";
+            CORE_MICROBLAZEV_RV64:       return "CORE_MICROBLAZEV_RV64";
             CORE_DUAL_MICROBLAZEV_RV32:  return "CORE_DUAL_MICROBLAZEV_RV32";
-            default:           return $sformatf("UNKNOWN_CORE_%0d", core_sel);
+            CORE_CV64A6:                 return "CORE_CV64A6";
+            CORE_CV64A6_ARA:             return "CORE_CV64A6_ARA";
+            default:                     return $sformatf("UNKNOWN_CORE_%0d", core_sel);
         endcase
     endfunction
 
