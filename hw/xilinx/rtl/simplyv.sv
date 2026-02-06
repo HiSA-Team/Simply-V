@@ -112,9 +112,6 @@ module simplyv (
     /////////////////////
     // Local variables //
     /////////////////////
-
-    localparam unsigned peripherals_interrupts_num = 4;
-    localparam unsigned HBUS_AXI_DATAWIDTH = 512;
     localparam logic [MBUS_DATA_WIDTH-1 : 0] RV_SOCKET_BOOT_ADDRESS = 0;
 
     ///////////////////
@@ -144,7 +141,7 @@ module simplyv (
     logic [31:0] rv_socket_interrupt_line;
 
     // Peripheral bus interrupts
-    logic [peripherals_interrupts_num-1:0] pbus_int_line;
+    logic [PBUS_NUM_INTERRUPTS-1:0] pbus_int_line;
 
     // Platform-Level Interrupt Controller (PLIC)
     logic [31:0] plic_int_lines;

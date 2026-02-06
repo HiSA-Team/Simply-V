@@ -88,6 +88,8 @@ package simplyv_pkg;
     localparam int unsigned PBUS_TIM0_INTERRUPT = 1;        // Timer 0
     localparam int unsigned PBUS_TIM1_INTERRUPT = 2;        // Timer 1
     localparam int unsigned PBUS_UART_INTERRUPT = 3;        // UART
+    // Total number of interrupts
+    localparam int unsigned PBUS_NUM_INTERRUPTS = 4;
 
     // PLIC Interrupts mapping
     // We support 32 possible sources of platform interrupts, which are statically mapped
