@@ -17,7 +17,6 @@ set_property CONFIG.Write_Width_A $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP
 set_property CONFIG.Read_Width_A  $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
 set_property CONFIG.Write_Width_B $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
 set_property CONFIG.Read_Width_B  $::env(MBUS_DATA_WIDTH)     [get_ips $::env(IP_NAME)]
-set_property CONFIG.AXI_ID_Width  $::env(MBUS_ID_WIDTH)       [get_ips $::env(IP_NAME)]
 
 # Configure IP
 set_property -dict [list CONFIG.Interface_Type {AXI4} \
@@ -41,3 +40,6 @@ set_property -dict [list CONFIG.Interface_Type {AXI4} \
                         CONFIG.Fill_Remaining_Memory_Locations {true} \
                         CONFIG.Write_Depth_A $bram_depth \
                 ] [get_ips $::env(IP_NAME)]
+
+# Set these after list
+set_property CONFIG.AXI_ID_Width  $::env(MBUS_ID_WIDTH)       [get_ips $::env(IP_NAME)]

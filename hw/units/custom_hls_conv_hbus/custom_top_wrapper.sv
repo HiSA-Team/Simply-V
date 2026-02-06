@@ -14,11 +14,10 @@ module custom_top_wrapper # (
     // AXI master parameters
     localparam LOCAL_AXI_DATA_WIDTH     = 512,
     localparam LOCAL_AXI_ADDR_WIDTH     = 32,
-    localparam LOCAL_AXI_ID_WIDTH       = 4,
+    localparam LOCAL_AXI_ID_WIDTH       = 5,
     // AXI-lite slave parameters
     localparam LOCAL_AXILITE_DATA_WIDTH = 32,
-    localparam LOCAL_AXILITE_ADDR_WIDTH = 32,
-    localparam LOCAL_AXILITE_ID_WIDTH   = 4
+    localparam LOCAL_AXILITE_ADDR_WIDTH = 32
 
 ) (
 
@@ -38,7 +37,7 @@ module custom_top_wrapper # (
     `DEFINE_AXI_MASTER_PORTS(gmem0, LOCAL_AXI_DATA_WIDTH, LOCAL_AXI_ADDR_WIDTH, LOCAL_AXI_ID_WIDTH),
 
     // AXI Slave Interfaces
-    `DEFINE_AXILITE_SLAVE_PORTS(control, LOCAL_AXILITE_DATA_WIDTH, LOCAL_AXILITE_ADDR_WIDTH, LOCAL_AXILITE_ID_WIDTH)
+    `DEFINE_AXILITE_SLAVE_PORTS(control, LOCAL_AXILITE_DATA_WIDTH, LOCAL_AXILITE_ADDR_WIDTH)
 
 );
 
