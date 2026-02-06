@@ -69,10 +69,8 @@ The `VIO_RESETN_DEFAULT` parameter controls the programming-time value of core r
 | PROTOCOL              | AXI PROTOCOL                                              | (AXI4, AXI4LITE, AXI3)                           
 | LOOPBACK     | [`Full description here`](./doc/loopback.md) (NonLeafBus only)                           | [0,1] 
 | ID_WIDTH              | AXI ID Width                                              | (4..32)                                                   
-| NUM_MI                | Number of Master Interfaces (number of slaves)            | (0..16)                                                   
-| NUM_SI                | Number of Slave Interfaces (number of masters)            | (0..16)                                                   
-| MASTER_NAMES          | Names of masters connected to the bus                     | [NUM_SI] Strings 
-| RANGE_NAMES           | Names of slave memory ranges                                               | [NUM_MI] Strings                                          
+| MASTER_NAMES          | Names of masters connected to the bus                     | (0..16) Strings 
+| RANGE_NAMES           | Names of slave memory ranges                                               | (0..16) Strings                                          
 | RANGE_CLOCK_DOMAINS         | Clock domains of the slaves (RANGE_NAMES) of the MBUS | [NUM_MI] (10, 20, 50, 100, 250 hpc only)| Note: the BRAM, DM_mem, PLIC clock domain must be the same as MAIN_CLOCK_DOMAIN, while the DDR clock domain must have the same frequency of the DDR board clock (i.e. 300MHz)
 | ADDR_RANGES           | Number of ranges for master interfaces                    | (1..16)                                                   
 | BASE_ADDR             | The Base Addresses for each range of each Master          | [NUM_MI*ADDR_RANGES] 64 bits hex                          

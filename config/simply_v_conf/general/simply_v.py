@@ -11,7 +11,7 @@
 #	 flows
 #
 # all the targets of the makefile in the "config root" are compatible with the simply_v methods
-# through the "main.py" file that launches the correct methods based on the makefile target that
+# through the "simply_conf.py" file that launches the correct methods based on the makefile target that
 # launched the whole configuration
 
 import re
@@ -30,18 +30,19 @@ from peripherals.peripheral import Peripheral
 from peripherals.uart import Uart
 from .singleton import Singleton
 from buses.mbus import MBus
+from general.node import Node
 from .logger import Logger
 from .env import Env
 
 class SimplyV(metaclass=Singleton):
-	buses_factory = Buses_Factory.get_instance()
-	logger = Logger.get_instance()
-	env = Env.get_instance()
 	SUPPORTED_CORES = ("CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", \
 										"CORE_MICROBLAZEV_RV64", "CORE_DUAL_MICROBLAZEV_RV32", \
 										"CORE_CV64A6", "CORE_CV64A6_ARA")
 
 	def __init__(self, system_data: dict):
+		self.buses_factory = Buses_Factory.get_instance()
+		self.logger = Logger.get_instance()
+		self.env = Env.get_instance()
 		self.CORE_SELECTOR: str = system_data["CORE_SELECTOR"]
 		self.MAIN_CLOCK_DOMAIN: str = system_data["MAIN_CLOCK_DOMAIN"]
 		self.VIO_RESETN_DEFAULT: int = system_data["VIO_RESETN_DEFAULT"]
@@ -110,7 +111,11 @@ class SimplyV(metaclass=Singleton):
 	
 	# Create HAL header used from the "sw" flow
 	def create_hal_header(self, hal_hdr_file_name: str) -> None:
-		template = HALheader_Template(self.peripherals, self.devices, hal_hdr_file_name)
+		nodes: list[Node] = []
+		nodes.extend(self.buses)
+		nodes.extend(self.peripherals)
+
+		template = HALheader_Template(self.peripherals, self.devices, nodes, hal_hdr_file_name)
 		template.write_to_file(hal_hdr_file_name)
 		
 

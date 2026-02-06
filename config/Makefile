@@ -94,7 +94,7 @@ CONFIG_DUMP_ARGS = \
 ###########################
 
 all: 
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_MBUS_ARGS) $(CONFIG_PBUS_ARGS)\
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/simply_conf.py $(INPUT_ARGS) $(CONFIG_MBUS_ARGS) $(CONFIG_PBUS_ARGS)\
 			   $(CONFIG_HBUS_ARGS) $(CONFIG_SW_ARGS) $(CONFIG_HW_ARGS) $(CONFIG_DUMP_ARGS)
 
 
@@ -102,7 +102,7 @@ all:
 # any output files, isn't needed as "prerequisite" for any other target
 # because validation of configuration is implicit in the generation of files
 config_check:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS)
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/simply_conf.py $(INPUT_ARGS)
 
 
 ############################################################
@@ -114,14 +114,14 @@ config_pbus: CONFIG_BUS_ARGS := $(CONFIG_PBUS_ARGS)
 config_hbus: CONFIG_BUS_ARGS := $(CONFIG_HBUS_ARGS)
 
 config_%bus:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_BUS_ARGS)
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/simply_conf.py $(INPUT_ARGS) $(CONFIG_BUS_ARGS)
 
 ############################################################
 ###					 SOFTWARE TARGETS					 ###
 ############################################################
 
 config_sw:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_SW_ARGS) 
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/simply_conf.py $(INPUT_ARGS) $(CONFIG_SW_ARGS) 
 
 
 ############################################################
@@ -129,7 +129,7 @@ config_sw:
 ############################################################
 
 config_xilinx:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_HW_ARGS) 
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/simply_conf.py $(INPUT_ARGS) $(CONFIG_HW_ARGS) 
 
 
 ############################################################
@@ -137,7 +137,7 @@ config_xilinx:
 ############################################################
 
 config_dump:
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py $(INPUT_ARGS) $(CONFIG_DUMP_ARGS) 
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/simply_conf.py $(INPUT_ARGS) $(CONFIG_DUMP_ARGS) 
 
 
 ############################################################
@@ -162,4 +162,4 @@ help:
 	@echo ""
 	@echo "Python application help:"
 	@echo "------------------------------------------------------------"
-	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/main.py --help
+	@$(PYTHON) $(CONFIG_ROOT)/simply_v_conf/simply_conf.py --help

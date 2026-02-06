@@ -14,8 +14,6 @@ from general.singleton import SingletonABCMeta
 
 #Only one MBUS should be created
 class MBus(NonLeafBus, metaclass=SingletonABCMeta):
-	# Env is the class that manages all the "settings.sh" related values (project's paths and profile configuration)
-	env_global = Env.get_instance()
 
 	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("BRAM", "DMMEM", "PLIC", "CDMA")
 	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("PBUS",)
@@ -23,17 +21,18 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 
 	DDR4_LEGAL_CHANNELS = (1,)
 
-	if env_global.get_soc_profile()=="hpc":
-		LEGAL_PERIPHERALS = LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL")
-		LEGAL_BUSES = LEGAL_BUSES + ("HBUS",)
-
-
 	def __init__(self, base_name:str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, clock_domain: str, 
 				clock_frequency: int, axi_addr_width: int, axi_data_width: int):
 
 		# init NonLeafBus object
 		super().__init__(base_name, data_dict, assigned_addr_ranges, axi_addr_width, 
 				axi_data_width, clock_domain, clock_frequency, None)
+		# Env is the class that manages all the "settings.sh" related values (project's paths and profile configuration)
+		self.env_global = Env.get_instance()
+
+		if self.env_global.get_soc_profile()=="hpc":
+			self.LEGAL_PERIPHERALS = self.LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL")
+			self.LEGAL_BUSES = self.LEGAL_BUSES + ("HBUS",)
 
 		# Parameters used to assert that the bus/peripheral tree is generated and correctly connected
 		# (in the case of buses activating the loopback functionality) before doing any check and sanitizaion

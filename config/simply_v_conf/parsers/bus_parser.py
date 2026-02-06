@@ -10,46 +10,36 @@ class Bus_Parser(Parser, metaclass=Singleton):
 
 	# Expand "Parser" properties to check
 
-	mandatory_properties = Parser.mandatory_properties + ("PROTOCOL", "NUM_MI", "NUM_SI", 
+	mandatory_properties = Parser.mandatory_properties + ("PROTOCOL",
 						"MASTER_NAMES", "RANGE_NAMES",
 						"RANGE_BASE_ADDR", "RANGE_ADDR_WIDTH",
 						"ID_WIDTH", "ADDR_RANGES")
 
 	type_parsers: dict[str, Callable[[str], Any]]= Parser.type_parsers | {
 						 "ID_WIDTH": int,
-						 "NUM_MI": int,
-						 "NUM_SI": int, 
 						 "ADDR_RANGES": int,
-						 "MASTER_NAMES": lambda s: s.split(" "),
-						 "RANGE_NAMES": lambda s: s.split(" "),
-						 "RANGE_BASE_ADDR": lambda s: [int(x, 16) for x in s.split(" ")],
-						 "RANGE_ADDR_WIDTH": lambda s: [int(x) for x in s.split(" ")],
+						 "MASTER_NAMES": lambda s: s.split(),
+						 "RANGE_NAMES": lambda s: s.split(),
+						 "RANGE_BASE_ADDR": lambda s: [int(x, 16) for x in s.split()],
+						 "RANGE_ADDR_WIDTH": lambda s: [int(x) for x in s.split()],
 						}
 	
 	range_validators: dict[str, Callable[[Any], bool]] = Parser.range_validators | {
 						 "ID_WIDTH":			lambda v: Parser._check_range(v, 4, 32),
-						 "NUM_SI":				lambda v: Parser._check_range(v, 1, 16),
-						 "NUM_MI":				lambda v: Parser._check_range(v, 1, 16),
 						 "ADDR_RANGES":			lambda v: Parser._check_range(v, 1, 16),
 						 "RANGE_ADDR_WIDTH":	lambda vls: all([Parser._check_range(v, 1, 64) for v in vls]),
+						 "RANGE_NAMES":			lambda names: Parser._check_range(len(names), 1, 16),
+						 "MASTER_NAMES":		lambda names: Parser._check_range(len(names), 1, 16)
 						}
 
 	intra_rules: list[Callable[[dict], tuple[bool, str]]] = Parser.intra_rules + [
 		lambda d: (
-			d["NUM_MI"] != len(d["RANGE_NAMES"]),
-			f"The NUM_MI value {d['NUM_MI']} does not match RANGE_NAMES len"
+			(len(d["RANGE_NAMES"]) * d["ADDR_RANGES"]) != len(d["RANGE_BASE_ADDR"]),
+			f"RANGE_NAMES len * ADDR_RANGES does not match RANGE_BASE_ADDR len"
 		),
 		lambda d: (
-			(d["NUM_MI"] * d["ADDR_RANGES"]) != len(d["RANGE_BASE_ADDR"]),
-			f"NUM_MI * ADDR_RANGES does not match RANGE_BASE_ADDR len"
-		),
-		lambda d: (
-			(d["NUM_MI"] * d["ADDR_RANGES"]) != len(d["RANGE_ADDR_WIDTH"]),
-			f"NUM_MI * ADDR_RANGES does not match RANGE_ADDR_WIDTH len"
-		),
-		lambda d: (
-			d["NUM_SI"] != len(d["MASTER_NAMES"]),
-			f"NUM_SI does not match MASTER_NAMES len"
+			(len(d["RANGE_NAMES"]) * d["ADDR_RANGES"]) != len(d["RANGE_ADDR_WIDTH"]),
+			f"RANGE_NAMES len * ADDR_RANGES does not match RANGE_ADDR_WIDTH len"
 		),
 	]
 

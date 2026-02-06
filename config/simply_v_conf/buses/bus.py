@@ -17,7 +17,6 @@ from abc import abstractmethod
 
 class Bus(Node):
 	#General class parameters common to all the "Bus" istances
-	peripherals_factory = Peripherals_Factory.get_instance()
 
 	#These params are empty because they are defined by children classes.
 	#Based on the bus type a children class must initialize them with the 
@@ -31,11 +30,12 @@ class Bus(Node):
 					axi_data_width: int, clock_domain: str, clock_frequency: int):
 		#Create Node object
 		super().__init__(base_name, assigned_addr_ranges, clock_domain, clock_frequency)
+		self.peripherals_factory = Peripherals_Factory.get_instance()
 
         #General configuration parameters
 		self.ID_WIDTH			 : int = data_dict["ID_WIDTH"]
-		self.NUM_MI				 : int = data_dict["NUM_MI"]
-		self.NUM_SI				 : int = data_dict["NUM_SI"]
+		self.NUM_MI				 : int = len(data_dict["RANGE_NAMES"])
+		self.NUM_SI				 : int = len(data_dict["MASTER_NAMES"])
 		self.MASTER_NAMES        : list[str] = data_dict["MASTER_NAMES"].copy()
 		self.PROTOCOL			 : str = data_dict["PROTOCOL"]
         #Axi widths

@@ -16,7 +16,6 @@ from general.logger import Logger
 from general.singleton import SingletonABCMeta
 
 class Parser(metaclass=SingletonABCMeta):
-	logger = Logger.get_instance()
 
 	# Children classes expand these and implicitly use them (in _validate_values)
 	# when parsing a file
@@ -35,6 +34,8 @@ class Parser(metaclass=SingletonABCMeta):
 	# they MUST return True in case of FAIL of the check
 	intra_rules: list[Callable[[dict], tuple[bool, str]]] = []
 
+	def __init__(self):
+		self.logger = Logger.get_instance()
 	
 	# Defined as static to be used from child classes to check integer ranges values
 	@staticmethod
@@ -61,6 +62,7 @@ class Parser(metaclass=SingletonABCMeta):
 		for rule in self.intra_rules:
 			cond, msg = rule(data)
 			if cond:
+				print(data)
 				raise ValueError(msg)
 
 	def _validate_values(self, data: dict) -> None:

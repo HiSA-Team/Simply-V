@@ -11,13 +11,13 @@ from parsers.leafbus_parser import LeafBus_Parser
 from buses.bus import Bus
 
 class Buses_Factory(Factory):
-	mbus_parser = MBUS_Parser.get_instance()
-	nonleafbus_parser = NonLeafBus_Parser.get_instance()
-	leafbus_parser = LeafBus_Parser.get_instance()
-	logger = Logger.get_instance()
 
 	# Buses Factory constructor
 	def __init__(self):
+		self.mbus_parser = MBUS_Parser.get_instance()
+		self.nonleafbus_parser = NonLeafBus_Parser.get_instance()
+		self.leafbus_parser = LeafBus_Parser.get_instance()
+		self.logger = Logger.get_instance()
 		super().__init__()
 
 	# Create buses extracting base name from full name and

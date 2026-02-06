@@ -22,10 +22,10 @@ from general.singleton import SingletonABCMeta
 from general.env import Env
 
 class Factory(metaclass=SingletonABCMeta):
-	env = Env.get_instance()
 	
 	# Factory constructor
 	def __init__(self):
+		self.env = Env.get_instance()
 		# used to enforce no duplicate nodes
 		self.ALREADY_CREATED = set()
 

@@ -9,7 +9,7 @@ This document describes the steps required to integrate a new bus into the syste
 To add a new bus, you must:
 
 1. Add a new configuration `.csv` file
-2. Adapt the configuration Makefile and main.py file with new INPUT and OUTPUT files related to the new bus
+2. Adapt the configuration Makefile and simply_conf.py file with new INPUT and OUTPUT files related to the new bus
 3. Implement a new Python bus class (for example ['pbus.py'](../simply_v_conf/buses/pbus.py))
 4. Register the new bus in the ['buses_factory'](../simply_v_conf/factories/buses_factory.py)
 5. (Optional) Extend the parser hierarchy for complex buses
@@ -59,7 +59,7 @@ The Makefile of the {CONFIG_ROOT} must be extended to:
 - Declare the OUTPUT_{BUSNAME}\_CROSSBAR, OUTPUT_{BUSNAME}\_INTERCONNECT and OUTPUT_{BUSNAME}\_CLK_ASSIGNMENTS (NonLeafBus only) variables containing the paths of the new bus configuration files to generate
 - Add the corresponding build target in the form "config_{BUSNAME}" with its specific CONFIG_{BUSNAME}_ARGS
 used to propagate the new INPUT and OUPUT files to the configuration flow
-- Also adapt ["main.py"](../simply_v_conf/main.py) to accept the new args from the Makefile
+- Also adapt ["simply_conf.py"](../simply_v_conf/simply_conf.py) to accept the new args from the Makefile
 
 All names must follow the `FULL_NAME` semantic.
 

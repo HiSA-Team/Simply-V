@@ -36,7 +36,8 @@ class Ld_Template {
 class HALheader_Template {
     -_init_peripheral_block_str(peripherals: list[Peripheral]): str
     -_init_device_block_str(devices: list[Peripheral]): str
-    +__init__(peripherals: list[Peripheral], devices: list[Peripheral], file_name: str)
+	-_init_clocks_str(self, nodes: list[Node]): str
+    +__init__(peripherals: list[Peripheral], devices: list[Peripheral], nodes: list[Node] file_name: str)
     +get_params(): dict[str, str]
 }
 

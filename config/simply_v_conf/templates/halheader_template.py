@@ -8,6 +8,7 @@ import textwrap
 import os
 from .template import Template
 from peripherals.peripheral import Peripheral
+from general.node import Node
 
 class HALheader_Template(Template):
 	# using "dedent" to ignore leading spaces
@@ -24,6 +25,9 @@ class HALheader_Template(Template):
 
 	// Enabled devices
 	{device_block_str}
+	
+	// Clock Frequencies in Hz
+	{clocks_str}
 
 	#endif // {include_guard}
 	""")
@@ -62,10 +66,19 @@ class HALheader_Template(Template):
 
 		return "\n".join(lines)
 
-	def __init__(self, peripherals: list[Peripheral], devices: list[Peripheral], file_name: str):
+	def _init_clocks_str(self, nodes: list[Node]) -> str:
+		lines = []
+		for n in nodes:
+			# compute the frequency from MHz in Hz
+			freq = n.CLOCK_FREQUENCY * (10**6)
+			lines.append(f"#define {n.FULL_NAME}_FREQ {freq}u")
+		return "\n".join(lines)
+
+	def __init__(self, peripherals: list[Peripheral], devices: list[Peripheral], nodes: list[Node], file_name: str):
 		self.peripheral_block_str = self._init_peripheral_block_str(peripherals)
 		self.device_block_str = self._init_device_block_str(devices)
 		base_filename = os.path.basename(file_name).replace(".", "_").upper()
+		self.clocks_str = self._init_clocks_str(nodes)
 		self.include_guard = f"__{base_filename}__"
 
 	# Used by template.py in the write_to_file implementation
@@ -74,5 +87,6 @@ class HALheader_Template(Template):
 				"this_file": os.path.basename(__file__),
 				"peripheral_block_str": self.peripheral_block_str,
 				"device_block_str": self.device_block_str,
+				"clocks_str": self.clocks_str,
 				"include_guard": self.include_guard
 		}

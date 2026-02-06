@@ -17,9 +17,6 @@ from peripherals.peripheral import Peripheral
 from factories.buses_factory import Buses_Factory
 
 class NonLeafBus(Bus):
-	env = Env.get_instance()
-	buses_factory = Buses_Factory.get_instance()
-	logger = Logger.get_instance()
 	#These params are empty because they are defined by children classes.
 	#Based on the bus type a children class must initialize them with the 
 	#adequate values, they're specified here so that "NonLeafBus" class can expose
@@ -33,6 +30,9 @@ class NonLeafBus(Bus):
 		# init Bus object
 		super().__init__(base_name, data_dict, assigned_addr_ranges, axi_addr_width, 
 							axi_data_width, clock_domain, clock_frequency)
+		self.env = Env.get_instance()
+		self.buses_factory = Buses_Factory.get_instance()
+		self.logger = Logger.get_instance()
 
 		self.father = father 
 		self._children_buses: list[Bus] = []

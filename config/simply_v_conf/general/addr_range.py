@@ -16,6 +16,17 @@
 # It is incorrect to say that the NonLeafBus addresses the peripheral “FULL_NAME”; 
 # instead, it may address specific “RANGE_NAME(s)” of that peripheral. 
 
+# At the moment the configuration flow assumes that the user needs to specify all the address ranges
+# necessary to fulfill the "ADDR_RANGES" constraints, for each Slave Node specified in the configuration files.
+# So for example if in the MBUS configuration file "ADDR_RANGES" is specified with the value "2"
+# then the user needs to supply the system with a number of VALID RANGE_BASE_ADDR and RANGE_ADDR_WIDTH equal to
+# ADDR_RANGES * len(RANGE_NAMES)
+# so the system is purposely avoiding to let the user specify the values used to disable ranges defined by
+# the Axi Interconnect User Guide (https://docs.amd.com/r/en-US/pg059-axi-interconnect)
+# that are:
+# RANGE_BASE_ADDR = 0xFFFFFFFFFFFFFFFF
+# RANGE_ADDR_WIDTH = 0
+
 import re
 
 class Addr_Range():
