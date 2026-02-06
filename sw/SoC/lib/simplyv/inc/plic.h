@@ -35,6 +35,10 @@
 #define PLIC_HLS_INTERRUPT       5 // HLS     (From HLS core) [HPC only]
 #define PLIC_CDMA_INTERRUPT      6 // CDMA    (From DMA IP)
 
+// TODO: import from config
+// Maximum number of interrupt sources, including reserved line 0
+#define PLIC_MAX_SOURCES 6
+
 // Initialize PLIC peripheral
 int plic_init();
 

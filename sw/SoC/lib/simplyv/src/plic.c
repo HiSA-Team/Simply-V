@@ -10,12 +10,9 @@
 #include "io.h"
 #include <stdint.h>
 
-// TODO: import from config
-#define MAX_SOURCES 6
-
 // In this example, only 4 interrupts sources are supported in the SoC
 
-static size_t sources = MAX_SOURCES;
+static size_t sources = PLIC_MAX_SOURCES;
 
 int plic_init()
 {
@@ -46,7 +43,7 @@ void plic_configure_set_one(uint32_t priority, size_t source){
 // Configure a contiguous set of interrupt sources
 void plic_configure_set_array(uint32_t* priorities, size_t source_num){
 
-    if(source_num < MAX_SOURCES)
+    if(source_num < PLIC_MAX_SOURCES)
         sources = source_num;
 
     //Set interrupt priorities

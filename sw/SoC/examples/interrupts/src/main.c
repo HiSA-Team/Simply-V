@@ -59,6 +59,12 @@ void _timer_handler(void)
     // Unused for this example
 }
 
+// Maximum number of interrupts before exiting
+#define MAX_INTERRUPTS 10
+
+// Global interrupts count
+int interrupt_count;
+
 void _ext_handler(void)
 {
     // Interrupts are automatically disabled by the microarchitecture.
@@ -70,10 +76,15 @@ void _ext_handler(void)
     // Therefore, we need to access the PLIC claim/complete register 1 (base_addr + 0x200004).
     // The interrupt source ID is obtained from the claim register.
 
+    // Increment counter
+    // NOTE: this is not thread-safe
+    interrupt_count++;
+
+    // Get interrupt ID
     uint32_t interrupt_id = plic_claim();
     switch (interrupt_id) {
     case PLIC_GPIOIN_INTERRUPT:
-        printf("Handiling GPIO_IN interrupt!\r\n");
+        printf("[_ext_handler] Handiling GPIO_IN interrupt, count %d\r\n", interrupt_count);
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_0);
         #endif // GPIO_OUT_IS_ENABLED
@@ -83,18 +94,28 @@ void _ext_handler(void)
         break;
     case PLIC_TIM0_INTERRUPT:
         // Timer interrupt
-        printf("Handiling TIM0 interrupt!\r\n");
+        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", interrupt_count);
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
         #endif // GPIO_OUT_IS_ENABLED
         xlnx_tim_clear_int(&timer0);
         break;
     default:
+        // Skip this interrupt
         break;
     }
 
     // To notify the handler completion, a write-back on the claim/complete register is required.
     plic_complete(interrupt_id);
+
+    // Check interrupt count
+    if ( interrupt_count >= MAX_INTERRUPTS ) {
+        // Clean up
+        printf("[_ext_handler] All expected interrupts handled, stopping timer0\r\n");
+        if (xlnx_tim_stop(&timer0) != SIMPLYV_OK)
+            printf("ERROR TIMER stop\r\n");
+    }
+
 }
 
 
@@ -104,12 +125,16 @@ int main()
     // Initialize HAL
     simplyv_init();
 
+    // Reset global counter
+    interrupt_count = 0;
+
     printf("Interrupts Example\r\n");
 
-    // Configure the PLIC
-    uint32_t priorities[SOURCES_NUM] = { 1, 1, 1 };
+    // Configure the PLIC for GPIOIN and TIM0, same priority
+    uint32_t priority = 1;
     plic_init();
-    plic_configure_set_array(priorities, SOURCES_NUM);
+    plic_configure_set_one(priority, PLIC_GPIOIN_INTERRUPT);
+    plic_configure_set_one(priority, PLIC_TIM0_INTERRUPT);
     plic_enable_all();
 
     #ifdef GPIO_IN_IS_ENABLED
@@ -138,7 +163,12 @@ int main()
         printf("ERROR TIMER start\r\n");
 
     // Hot-loop, waiting for interrupts to occur
-    while (1);
+    // NOTE: this is not a safe way to synchronize with the _ext_handler,
+    //       rather a simple way to terminate the program
+    while ( interrupt_count < MAX_INTERRUPTS );
 
-    return 0;
+    // Info
+    printf("Returning from main\r\n");
+
+    return SIMPLYV_OK;
 }

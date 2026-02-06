@@ -105,6 +105,7 @@ int xlnx_tim_start(xlnx_tim_t* timer)
         return SIMPLYV_ERROR;
     }
 
+    // Read CSR
     uintptr_t tim_csr = (uintptr_t)(timer->base_addr + TIM_CSR);
     uint32_t csr_value = ioread32(tim_csr);
     // Lower LOAD0 (necessary to start the timer correctly)
@@ -112,6 +113,20 @@ int xlnx_tim_start(xlnx_tim_t* timer)
     csr_value |= TIM_CSR_ENABLE;
     iowrite32(tim_csr, csr_value);
     return SIMPLYV_OK;
+}
+
+
+int xlnx_tim_stop(xlnx_tim_t* timer)
+{
+    // Read CSR
+    uintptr_t tim_csr = (uintptr_t)(timer->base_addr + TIM_CSR);
+    uint32_t csr_value = ioread32(tim_csr);
+    // Reset enable bit
+    csr_value &= ~TIM_CSR_ENABLE;
+    // Stopre value
+    iowrite32(tim_csr, csr_value);
+    return SIMPLYV_OK;
+
 }
 
 #endif
