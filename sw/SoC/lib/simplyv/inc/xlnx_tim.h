@@ -54,4 +54,7 @@ int xlnx_tim_clear_int(xlnx_tim_t* timer);
 // Start configured timer
 int xlnx_tim_start(xlnx_tim_t* timer);
 
+// Stop running timer
+int xlnx_tim_stop(xlnx_tim_t* timer);
+
 #endif
