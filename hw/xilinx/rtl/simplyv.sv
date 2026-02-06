@@ -645,7 +645,7 @@ module simplyv (
         plic_int_lines[PLIC_CDMA_INTERRUPT     ] = irq_cdma_to_plic;
 
         // Map platform interrupt pin to socket ext interrupts
-        rv_socket_interrupt_line[CORE_EXT_INTERRUPT] = plic_int_irq_o;
+        rv_socket_interrupt_line[RVSOCKET_EXT_INTERRUPT] = plic_int_irq_o;
 
     end : system_interrupts
 

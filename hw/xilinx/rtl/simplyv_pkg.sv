@@ -79,9 +79,9 @@ package simplyv_pkg;
     // The PLIC forwards interrupts to the Masters (e.g. the Socket)
 
     // RISC-V cores standard interrupts
-    localparam int unsigned CORE_SW_INTERRUPT = 3;      // Inter Processor Interrupts
-    localparam int unsigned CORE_TIM_INTERRUPT = 7;     // Real-time Clock Timer
-    localparam int unsigned CORE_EXT_INTERRUPT = 11;    // PLIC-to-hart interrupts
+    localparam int unsigned RVSOCKET_SW_INTERRUPT = 3;      // Inter Processor Interrupts
+    localparam int unsigned RVSOCKET_TIM_INTERRUPT = 7;     // Real-time Clock Timer
+    localparam int unsigned RVSOCKET_EXT_INTERRUPT = 11;    // PLIC-to-hart interrupts
 
     // Peripheral Bus interrupts
     localparam int unsigned PBUS_GPIOIN_INTERRUPT = 0;      // GPIO In [embedded only]

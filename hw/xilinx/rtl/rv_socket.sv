@@ -267,9 +267,9 @@ module rv_socket # (
                 .data_mem_rdata         ( core_data_mem_rdata       ),
                 .data_mem_error         ( core_data_mem_error       ), // Although unused
 
-                .irq_software_i         ( irq_i[CORE_SW_INTERRUPT] ),
-                .irq_timer_i            ( irq_i[CORE_TIM_INTERRUPT] ),
-                .irq_external_i         ( irq_i[CORE_EXT_INTERRUPT] ),
+                .irq_software_i         ( irq_i[RVSOCKET_SW_INTERRUPT] ),
+                .irq_timer_i            ( irq_i[RVSOCKET_TIM_INTERRUPT] ),
+                .irq_external_i         ( irq_i[RVSOCKET_EXT_INTERRUPT] ),
                 .irq_fast_i             ( '0 ),
                 .irq_nm_i               ( '0 ),
 
@@ -330,10 +330,10 @@ module rv_socket # (
                 .Clk                ( clk_i       ), // input wire Clk
                 .Reset              ( dbg_sys_rst ), // input wire Reset
                 // Interrupts
-                // Ublaze can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
-                .Interrupt          ( irq_i[CORE_EXT_INTERRUPT] ), // input wire Interrupt
-                .Interrupt_Address  ('0                         ), // input wire [0 : 31] Interrupt_Address
-                .Interrupt_Ack      (                           ), // output wire [0 : 1] Interrupt_Ack
+                // Microblaze-V can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
+                .Interrupt          ( irq_i[RVSOCKET_EXT_INTERRUPT] ), // input wire Interrupt
+                .Interrupt_Address  ('0                             ), // input wire [0 : 31] Interrupt_Address
+                .Interrupt_Ack      (                               ), // output wire [0 : 1] Interrupt_Ack
                 // Debug port to MDMV
                 .Dbg_Clk            ( Dbg_Clk     ), // input wire Dbg_Clk
                 .Dbg_TDI            ( Dbg_TDI     ), // input wire Dbg_TDI
@@ -517,10 +517,10 @@ module rv_socket # (
                 .Clk                ( clk_i       ), // input wire Clk
                 .Reset              ( dbg_sys_rst ), // input wire Reset
                 // Interrupts
-                // Ublaze can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
-                .Interrupt          ( irq_i[CORE_EXT_INTERRUPT] ), // input wire Interrupt
-                .Interrupt_Address  ('0                         ), // input wire [0 : 31] Interrupt_Address
-                .Interrupt_Ack      (                           ), // output wire [0 : 1] Interrupt_Ack
+                // Microblaze-V can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
+                .Interrupt          ( irq_i[RVSOCKET_EXT_INTERRUPT] ), // input wire Interrupt
+                .Interrupt_Address  ('0                             ), // input wire [0 : 31] Interrupt_Address
+                .Interrupt_Ack      (                               ), // output wire [0 : 1] Interrupt_Ack
                 // Debug port to MDMV (core 0)
                 .Dbg_Clk            ( Dbg_Clk     [0] ), // input wire Dbg_Clk
                 .Dbg_TDI            ( Dbg_TDI     [0] ), // input wire Dbg_TDI
@@ -592,9 +592,9 @@ module rv_socket # (
                 .Clk                ( clk_i       ), // input wire Clk
                 .Reset              ( dbg_sys_rst ), // input wire Reset
                 // Interrupts
-                .Interrupt          ( irq_i[CORE_EXT_INTERRUPT] ), // input wire Interrupt
-                .Interrupt_Address  ('0                         ), // input wire [0 : 31] Interrupt_Address
-                .Interrupt_Ack      (                           ), // output wire [0 : 1] Interrupt_Ack
+                .Interrupt          ( irq_i[RVSOCKET_EXT_INTERRUPT] ), // input wire Interrupt
+                .Interrupt_Address  ('0                             ), // input wire [0 : 31] Interrupt_Address
+                .Interrupt_Ack      (                               ), // output wire [0 : 1] Interrupt_Ack
                 // Debug port to MDMV (core 1)
                 .Dbg_Clk            ( Dbg_Clk     [1] ), // input wire Dbg_Clk
                 .Dbg_TDI            ( Dbg_TDI     [1] ), // input wire Dbg_TDI
@@ -890,10 +890,10 @@ module rv_socket # (
                 .Clk                ( clk_i       ), // input wire Clk
                 .Reset              ( dbg_sys_rst ), // input wire Reset
                 // Interrupts
-                // Ublaze can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
-                .Interrupt          ( irq_i[CORE_EXT_INTERRUPT] ), // input wire Interrupt
-                .Interrupt_Address  ('0                         ), // input wire [0 : 31] Interrupt_Address
-                .Interrupt_Ack      (                           ), // output wire [0 : 1] Interrupt_Ack
+                // Microblaze-V can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
+                .Interrupt          ( irq_i[RVSOCKET_EXT_INTERRUPT] ), // input wire Interrupt
+                .Interrupt_Address  ('0                             ), // input wire [0 : 31] Interrupt_Address
+                .Interrupt_Ack      (                               ), // output wire [0 : 1] Interrupt_Ack
                 // Debug port to MDMV
                 .Dbg_Clk            ( Dbg_Clk     ), // input wire Dbg_Clk
                 .Dbg_TDI            ( Dbg_TDI     ), // input wire Dbg_TDI
@@ -1219,9 +1219,9 @@ module rv_socket # (
                 .rst_ni          ( core_resetn_internal             ),
                 .boot_addr_i     ( extended_a64_boot_addr           ),
                 .hart_id_i       ( hart_id                          ),
-                .irq_i           ( {0,irq_i[CORE_EXT_INTERRUPT]}    ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
-                .ipi_i           ( irq_i[CORE_SW_INTERRUPT]         ), // Shoult be SW interrupt
-                .time_irq_i      ( irq_i[CORE_TIM_INTERRUPT]        ), // Should be TIM interrupt
+                .irq_i           ( {0,irq_i[RVSOCKET_EXT_INTERRUPT]}    ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
+                .ipi_i           ( irq_i[RVSOCKET_SW_INTERRUPT]         ), // Shoult be SW interrupt
+                .time_irq_i      ( irq_i[RVSOCKET_TIM_INTERRUPT]        ), // Should be TIM interrupt
                 .debug_req_i     ( debug_req_core                   ),
 
                 .m_axi_awaddr   ( cv64a6_axi_awaddr                 ), // output wire [31 : 0] m_axi_awaddr
@@ -1291,9 +1291,9 @@ module rv_socket # (
                 .boot_addr_i       ( extended_a64_boot_addr        ),
                 .hart_id_i         ( hart_id                       ),
                 // Interrupts
-                .irq_i             ( {1'b0,irq_i[CORE_EXT_INTERRUPT]} ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
-                .ipi_i             ( irq_i[CORE_SW_INTERRUPT]         ), // Shoult be SW interrupt
-                .time_irq_i        ( irq_i[CORE_TIM_INTERRUPT]        ), // Should be TIM interrupt
+                .irq_i             ( {1'b0,irq_i[RVSOCKET_EXT_INTERRUPT]} ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
+                .ipi_i             ( irq_i[RVSOCKET_SW_INTERRUPT]         ), // Shoult be SW interrupt
+                .time_irq_i        ( irq_i[RVSOCKET_TIM_INTERRUPT]        ), // Should be TIM interrupt
                 .debug_req_i       ( debug_req_core                   ),
                 // CVA6 AXI master
                 .cva6_axi_awaddr   ( cv64a6_axi_awaddr   ),
