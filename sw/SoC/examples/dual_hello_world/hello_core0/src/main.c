@@ -11,7 +11,7 @@ int main()
   printf("Hello World from CORE 0 !\n\r");
 
   // Return to caller
-  return 0;
+  return SIMPLYV_OK;
 
 }
 

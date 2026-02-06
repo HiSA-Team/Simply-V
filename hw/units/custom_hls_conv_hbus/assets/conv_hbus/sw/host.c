@@ -178,12 +178,12 @@ int main() {
     bool result = check_values(O, expected);
     if ( !result ) {
         printf("[ERROR] Check failed!\n\r");
-        return 1;
+        return SIMPLYV_ERROR;
     }
     else {
         printf("[INFO] Check successful!\n\r");
     }
 
-    return 0;
+    return SIMPLYV_OK;
 
 }

@@ -24,7 +24,7 @@
 #include "tinyIO.h"
 
 enum{
-    SIMPLYV_OK,
+    SIMPLYV_OK = 0,
     SIMPLYV_ERROR
 };
 

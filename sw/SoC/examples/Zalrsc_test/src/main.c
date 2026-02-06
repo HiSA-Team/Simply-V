@@ -1210,5 +1210,5 @@ int main(int argc, char* argv[]) {
     } // end loop
 
     printf("=== ALL TESTS DONE ===\n\r");
-    return 0;
+    return SIMPLYV_OK;
 }

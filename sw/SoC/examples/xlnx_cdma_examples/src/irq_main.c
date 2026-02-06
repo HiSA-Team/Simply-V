@@ -86,7 +86,7 @@ int main(void) {
     // Init CDMA
     if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CdmaCfg.BaseAddress) != 0) {
         printf("[CDMA IRQ] XAxiCdma_CfgInitialize failed\n");
-        return -1;
+        return SIMPLYV_ERROR;
     }
 
     // Reset CDMA
@@ -162,6 +162,6 @@ int main(void) {
 
     printf("[CDMA IRQ] All %u rounds completed\n\r", NUM_ROUNDS);
 
-    return 0;
+    return SIMPLYV_OK;
 }
 

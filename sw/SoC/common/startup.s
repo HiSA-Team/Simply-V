@@ -4,6 +4,10 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: Startup code and vector table definition for Simply-V
 
+# Exit status
+.equ SIMPLYV_OK   , 0
+.equ SIMPLYV_ERROR, 1
+
 ################
 # Vector table #
 ################
@@ -145,16 +149,27 @@ _start:
   # jump to main program entry point (argc = argv = 0)
   mv a0, zero
   mv a1, zero
-
   jal ra, main
 
-# Hold program execution
-_exit_wfi:
-  wfi
+  # Check exit status in a0
+  # if SIMPLYV_OK
+  li t0, SIMPLYV_OK
+  beq a0, t0, _exit_wfi_ok
+  # if SIMPLYV_ERROR
+  li t0, SIMPLYV_ERROR
+  beq a0, t0, _exit_wfi_error
 
 # Spin in place
 _exit_spin:
   j _exit_spin
+
+# Hold program execution
+_exit_wfi_error:
+  wfi
+
+# Hold program execution
+_exit_wfi_ok:
+  wfi
 
 
 

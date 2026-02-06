@@ -20,7 +20,7 @@ int main()
   }
 
   // Return to caller
-  return 0;
+  return SIMPLYV_OK;
 
 }
 
