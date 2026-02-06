@@ -29,3 +29,6 @@ class NonLeafBus_Parser(Bus_Parser):
 				"the loopback configuration"	
 				)
 			]
+
+	def __init__(self):
+		super().__init__()

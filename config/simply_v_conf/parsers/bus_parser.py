@@ -60,3 +60,5 @@ class Bus_Parser(Parser, metaclass=Singleton):
 		if any(w < min_width for w in data["RANGE_ADDR_WIDTH"]):
 			raise ValueError(f"RANGE_ADDR_WIDTH is less than {min_width}")	
 
+	def __init__(self):
+		super().__init__()

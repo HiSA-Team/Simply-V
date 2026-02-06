@@ -16,3 +16,6 @@ class MBUS_Parser(NonLeafBus_Parser):
 				f"RANGE_NAMES len does not match RANGE_CLOCK_DOMAINS len"
 				)
 			]
+
+	def __init__(self):
+		super().__init__()

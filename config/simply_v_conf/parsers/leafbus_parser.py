@@ -6,6 +6,5 @@ from .bus_parser import Bus_Parser
 
 class LeafBus_Parser(Bus_Parser):
 	#extend the father defined data structs used for parsing/validation
-
 	def __init__(self):
-		pass
+		super().__init__()

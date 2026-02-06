@@ -40,8 +40,8 @@ class Bus_Interconnect_Template(Template):
 	# Get the correct bus suffix depending on bus name
 	def _get_width_params(self, bus: Bus) -> str:
 		return bus.FULL_NAME + "_DATA_WIDTH, " \
-			+ bus.FULL_NAME + "_ADDR_WIDTH, " \
-			+ bus.FULL_NAME + "_ID_WIDTH"
+			+ bus.FULL_NAME + "_ADDR_WIDTH"
+
 
 	def _get_masters_to_bus(self, bus: Bus) -> list[str]:
 		master_names = bus.MASTER_NAMES
@@ -73,7 +73,7 @@ class Bus_Interconnect_Template(Template):
 		return "\n".join(declarations) + "\n"
 
 	def _get_concatenated_str(self, names_str: list[str], bus: Bus, master: bool, \
-								declare_prefix: str, concat_prefix:str) -> str:
+			declare_prefix: str, concat_prefix:str, width_params_str: str) -> str:
 		name = bus.FULL_NAME
 
 		if(master):
@@ -92,7 +92,7 @@ class Bus_Interconnect_Template(Template):
 		declare_array_str: str = declare_prefix + "_ARRAY" + \
 							"(" + signals_name + ", " + \
 							name + interfaces_suffix + ", " + \
-							self._get_width_params(bus) + \
+							width_params_str + \
 							")"
 		
 		concat_array_str: str = concat_prefix + array_prefix + \
@@ -103,23 +103,28 @@ class Bus_Interconnect_Template(Template):
 
 
 	def __init__(self, bus: Bus):
+		width_params_str: str = self._get_width_params(bus)
+
 		if (bus.PROTOCOL == "AXI4LITE"):
 			declare_prefix: str =  "`DECLARE_AXILITE_BUS"
 			concat_prefix: str = "`CONCAT_AXILITE"
 		else:
 			declare_prefix: str = "`DECLARE_AXI_BUS"
 			concat_prefix: str = "`CONCAT_AXI"
+			# add ID_WIDTH if not AXI4LITE
+			width_params_str += f", {bus.FULL_NAME}_ID_WIDTH"
 
 		# get these to reuse them in declare and concat implementations
-		width_params_str: str = self._get_width_params(bus)
 		masters_to_bus_str: list[str] = self._get_masters_to_bus(bus)
 		bus_to_slaves_str: list[str] = self._get_bus_to_slaves(bus)
 
 		# initialize all the strings needed in the template
 		self.declare_masters_str = self._get_declaration_str(masters_to_bus_str, declare_prefix, width_params_str)
 		self.declare_slaves_str = self._get_declaration_str(bus_to_slaves_str, declare_prefix, width_params_str)
-		self.concat_masters_str: str = self._get_concatenated_str(masters_to_bus_str, bus, True, declare_prefix, concat_prefix)
-		self.concat_slaves_str: str = self._get_concatenated_str(bus_to_slaves_str, bus, False, declare_prefix, concat_prefix)
+		self.concat_masters_str: str = self._get_concatenated_str(masters_to_bus_str, bus, True, \
+														declare_prefix, concat_prefix, width_params_str)
+		self.concat_slaves_str: str = self._get_concatenated_str(bus_to_slaves_str, bus, False, \
+														declare_prefix, concat_prefix, width_params_str)
 
 
 	# Used by template.py in the write_to_file implementation

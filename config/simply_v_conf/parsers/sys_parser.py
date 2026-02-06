@@ -45,3 +45,6 @@ class Sys_Parser(Parser):
 				f"CORE_PICORV32 only supports VIO_RESETN_DEFAULT == 0!"
 				)
 		]
+
+	def __init__(self):
+		super().__init__()
