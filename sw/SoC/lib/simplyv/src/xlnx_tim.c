@@ -123,7 +123,7 @@ int xlnx_tim_stop(xlnx_tim_t* timer)
     uint32_t csr_value = ioread32(tim_csr);
     // Reset enable bit
     csr_value &= ~TIM_CSR_ENABLE;
-    // Stopre value
+    // Store value
     iowrite32(tim_csr, csr_value);
     return SIMPLYV_OK;
 
