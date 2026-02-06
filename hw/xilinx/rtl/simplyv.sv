@@ -168,7 +168,6 @@ module simplyv (
     /////////////
 
     // Virtual I/O
-
     xlnx_vio vio_inst (
       .clk        ( main_clk        ),
       .probe_out0 ( vio_resetn      ),
@@ -176,7 +175,7 @@ module simplyv (
       .probe_in0  (                 )
     );
 
-    // Axi Crossbar
+    // MBUS AXI crossbar
     xlnx_main_crossbar main_xbar_u (
         .aclk           ( main_clk                  ), // input
         .aresetn        ( main_rstn                 ), // input
@@ -258,20 +257,15 @@ module simplyv (
         .m_axi_rready   ( MBUS_slaves_axi_rready    )  // output
     );
 
-    /////////////////
-    // AXI masters //
-    /////////////////
-
+    // Sys Master
     sys_master # (
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
     ) sys_master_u (
-
         // EMBEDDED ONLY
         .sys_clock_i(sys_clock_i),
         .sys_reset_i(sys_reset_i),
-
         // HPC ONLY
         .pcie_refclk_p_i(pcie_refclk_p_i),
         .pcie_refclk_n_i(pcie_refclk_n_i),
@@ -281,21 +275,18 @@ module simplyv (
         .pci_exp_rxp_i(pci_exp_rxp_i),
         .pci_exp_txn_o(pci_exp_txn_o),
         .pci_exp_txp_o(pci_exp_txp_o),
-
         // Output clocks
         .clk_10MHz_o(clk_10MHz),
         .clk_20MHz_o(clk_20MHz),
         .clk_50MHz_o(clk_50MHz),
         .clk_100MHz_o(clk_100MHz),
         .clk_250MHz_o(clk_250MHz),      // HPC ONLY
-
         // Output resets
         .rstn_10MHz_o(rstn_10MHz),
         .rstn_20MHz_o(rstn_20MHz),
         .rstn_50MHz_o(rstn_50MHz),
         .rstn_100MHz_o(rstn_100MHz),
         .rstn_250MHz_o(rstn_250MHz),      // HPC ONLY
-
         // AXI Master
         .m_axi_awid     ( SYS_MASTER_to_MBUS_axi_awid     ),
         .m_axi_awaddr   ( SYS_MASTER_to_MBUS_axi_awaddr   ),
@@ -598,11 +589,7 @@ module simplyv (
         .rv_socket_dbg_slave_axi_rready      ( MBUS_to_DM_mem_axi_rready   )
     );
 
-    ////////////////
-    // AXI slaves //
-    ////////////////
-
-    // Main memory
+    // BlockRAM
     xlnx_blk_mem_gen_0 bram_u (
         .rsta_busy      ( /* open */                ), // output wire rsta_busy
         .rstb_busy      ( /* open */                ), // output wire rstb_busy
@@ -639,6 +626,7 @@ module simplyv (
         .s_axi_rready   ( MBUS_to_BRAM_axi_rready   )  // input wire s_axi_rready
     );
 
+    // Interrupt mappings
     always_comb begin : system_interrupts
 
         // Default non-assigned lines
@@ -661,6 +649,7 @@ module simplyv (
 
     end : system_interrupts
 
+    // PLIC
     plic_wrapper #(
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
@@ -712,10 +701,7 @@ module simplyv (
         .s_axi_rready   ( MBUS_to_PLIC_axi_rready       )
     );
 
-    ////////////////////
-    // PERIPHERAL BUS //
-    ////////////////////
-
+    // Peripheral bus (PBUS)
     peripheral_bus # (
         .LOCAL_DATA_WIDTH   ( PBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( PBUS_ADDR_WIDTH ),
