@@ -146,7 +146,7 @@ module simplyv (
     // Platform-Level Interrupt Controller (PLIC)
     logic [31:0] plic_int_lines;
     logic plic_int_irq_o;
-    logic hls_interrupt_to_plic;
+    logic irq_hls_to_plic;
     logic irq_cdma_to_plic;
 
     /////////////////////////////////////////
@@ -641,7 +641,7 @@ module simplyv (
         plic_int_lines[PLIC_TIM0_INTERRUPT     ] = pbus_int_line[PBUS_TIM0_INTERRUPT];
         plic_int_lines[PLIC_TIM1_INTERRUPT     ] = pbus_int_line[PBUS_TIM1_INTERRUPT];
         plic_int_lines[PLIC_UART_INTERRUPT     ] = pbus_int_line[PBUS_UART_INTERRUPT];
-        plic_int_lines[PLIC_HLS_INTERRUPT      ] = hls_interrupt_to_plic;
+        plic_int_lines[PLIC_HLS_INTERRUPT      ] = irq_hls_to_plic;
         plic_int_lines[PLIC_CDMA_INTERRUPT     ] = irq_cdma_to_plic;
 
         // Map platform interrupt pin to socket ext interrupts
@@ -1113,7 +1113,7 @@ module simplyv (
         .m_HLS_gmem0_d512_axi_rvalid    ( HLS_gmem0_d512_axi_rvalid   ),
         .m_HLS_gmem0_d512_axi_rready    ( HLS_gmem0_d512_axi_rready   ),
         // Interrupt
-        .hls_interrupt_o                ( hls_interrupt_to_plic       )
+        .hls_interrupt_o                ( irq_hls_to_plic             )
     );
 
     //////////
@@ -1302,7 +1302,7 @@ module simplyv (
     );
 `else // HPC not defined
     // Tie-off HLS interrupt line
-    assign hls_interrupt_to_plic = '0;
+    assign irq_hls_to_plic = '0;
 `endif // HPC not defined
 
 
