@@ -28,11 +28,11 @@ GIT_TAG=v5.3.0
 CLONE_DIR=$(pwd)/cva6
 FLIST=${ASSETS_DIR}/flist
 
-# printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository${NC}\n"
-# git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
-# cd ${CLONE_DIR};
-# git submodule update --init --recursive
-# cd ..;
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository${NC}\n"
+git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
+cd ${CLONE_DIR};
+git submodule update --init --recursive
+cd ..;
 
 ######################
 # Prepare file lists #
