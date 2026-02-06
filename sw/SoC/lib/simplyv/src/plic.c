@@ -46,7 +46,8 @@ void plic_configure_set_array(uint32_t* priorities, size_t source_num){
     if(source_num < PLIC_MAX_SOURCES)
         sources = source_num;
 
-    //Set interrupt priorities
+    // Set interrupt priorities
+    // Skip reserved line zero
     for (int i = 1; i <= sources; i++) {
         plic_configure_set_one(priorities[i], i);
     }

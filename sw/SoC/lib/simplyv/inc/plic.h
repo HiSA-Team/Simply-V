@@ -36,7 +36,7 @@
 #define PLIC_CDMA_INTERRUPT      6 // CDMA    (From DMA IP)
 
 // TODO: import from config
-// Maximum number of interrupt sources, including reserved line 0
+// Maximum number of interrupt sources
 #define PLIC_MAX_SOURCES 6
 
 // Initialize PLIC peripheral
