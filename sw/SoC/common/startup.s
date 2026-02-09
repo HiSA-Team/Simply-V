@@ -13,12 +13,6 @@
 ################
 .section .vector_table, "ax"
 .option norvc;
-.weak _sw_handler
-.weak _timer_handler
-.weak _ext_handler
-.extern _sw_handler;
-.extern _timer_handler;
-.extern _ext_handler;
 
   # According to RISC-V Specification, all entries are jumps to the specific handler.
   # Only the reset handler is defined in this file, while all other handlers points to
@@ -138,6 +132,27 @@ _reset_handler:
   # Jump to start function
   j _start
 
+#################
+# Weak handlers #
+#################
+
+# RISC-V SW interrupt
+.weak _sw_handler
+_sw_handler:
+  j _sw_handler
+
+# RISC-V TIM interrupt
+.weak _timer_handler
+_timer_handler:
+  j _timer_handler
+
+# RISC-V EXT interrupt
+.weak _ext_handler
+_ext_handler:
+  j _ext_handler
+
+# Default handler
+.weak _default_handler
 _default_handler:
   j _default_handler
 
