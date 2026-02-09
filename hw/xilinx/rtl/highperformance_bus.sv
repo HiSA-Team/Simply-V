@@ -37,11 +37,11 @@
 //
 
 // Import packages
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_ddr4.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_ddr4.svh"
 
 module highperformance_bus #(
     // HBUS AXI parameters
@@ -617,7 +617,7 @@ module highperformance_bus #(
     // assign m_MBUS_dwidth_conv_to_clock_conv_axi_awregion = '0;
 
     // DDR4 Channel 0
-    xlnx_ddr4 ddr4_u (
+    xlnx_ddr4_mig ddr4_mig_u (
         .c0_sys_clk_n                ( clk_300mhz_x_n_i ),
         .c0_sys_clk_p                ( clk_300mhz_x_p_i ),
 

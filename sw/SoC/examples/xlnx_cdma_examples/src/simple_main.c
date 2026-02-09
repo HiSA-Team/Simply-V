@@ -12,7 +12,7 @@
 //   This example is useful to validate CDMA behavior across different
 //   transfer sizes and to stress-test basic DMA functionality.
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
 
 // CDMA Base Address (from linker script)
@@ -68,7 +68,7 @@ uint32_t cdma_do_one_round (
         printf("[CDMA SIMPLE] Transfer start failed (error=%d)\n\r", st);
         printf("[CDMA SIMPLE] CDMA Status after failure:");
         XAxiCdma_DumpRegisters(CdmaHandle);
-        return -1;
+        return SIMPLYV_ERROR;
     }
 
     // Poll for completion with a simple timeout guard
@@ -79,7 +79,7 @@ uint32_t cdma_do_one_round (
                 printf("[CDMA SIMPLE] Timeout while waiting for completion\n\r");
                 printf("[CDMA SIMPLE] CDMA Status on timeout:");
                 XAxiCdma_DumpRegisters(CdmaHandle);
-                return -2;
+                return SIMPLYV_ERROR;
             }
         }
     }
@@ -128,14 +128,14 @@ int main(void) {
     };
 
     // Initialize platform
-    uninasoc_init();
+    simplyv_init();
 
     printf("\n[CDMA SIMPLE] CDMA multi-round transfer test start\n\r");
 
     // Initialize CDMA core
     if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CDMA_BASEADDR) != 0) {
         printf("[CDMA SIMPLE] Initialization failed\n\r");
-        return -1;
+        return SIMPLYV_ERROR;
     }
 
     // Initial reset
@@ -166,6 +166,6 @@ int main(void) {
 
     printf("[CDMA SIMPLE] All %u rounds completed\n\r", NUM_ROUNDS);
 
-    return 0;
+    return SIMPLYV_OK;
 }
 

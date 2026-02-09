@@ -2,9 +2,9 @@
 PYTHON ?= python3.10 # Requires >= 3.10
 
 # Configurations
-CONFIG_MBUS_CSV ?= ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_main_bus.csv
-CONFIG_PBUS_CSV ?= ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_peripheral_bus.csv
-CONFIG_HBUS_CSV ?= ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_highperformance_bus.csv
+CONFIG_MBUS_CSV ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_main_bus.csv
+CONFIG_PBUS_CSV ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_peripheral_bus.csv
+CONFIG_HBUS_CSV ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_highperformance_bus.csv
 # csv for system-level configuration
 CONFIG_SYSTEM_CSV ?= ${CONFIG_ROOT}/configs/common/config_system.csv
 # CSVs list
@@ -17,7 +17,7 @@ all: config_main_bus config_peripheral_bus config_highperformance_bus config_ld 
 config_main_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_main_crossbar/config.tcl
 config_peripheral_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_peripheral_crossbar/config.tcl
 config_highperformance_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/hpc/xlnx_highperformance_crossbar/config.tcl
-config_%_bus: CONFIG_BUS_CSV = ${CONFIG_ROOT}/configs/${SOC_CONFIG}/config_$*_bus.csv
+config_%_bus: CONFIG_BUS_CSV = ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_$*_bus.csv
 config_%_bus:
 config_%_bus: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_crossbar_config.py \
@@ -28,9 +28,9 @@ config_%_bus: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/declare_and_assign_clocks_rtl.py ${CONFIG_BUS_CSV}
 
 
-OUTPUT_LD_FILE ?= ${SW_ROOT}/SoC/common/UninaSoC.ld
+OUTPUT_LD_FILE ?= ${SW_ROOT}/SoC/common/simplyv.ld
 # Generate HAL configuration file
-OUTPUT_HAL_CONF_FILE ?= ${SW_ROOT}/SoC/lib/uninasoc/inc/uninasoc_conf.h
+OUTPUT_HAL_CONF_FILE ?= ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
 
 config_ld: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_linker_script.py \
@@ -52,6 +52,6 @@ config_xilinx:
 
 config_sw: config_check
 	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_uninasoc_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
+	${PYTHON} ${CONFIG_ROOT}/scripts/create_simplyv_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
 
 

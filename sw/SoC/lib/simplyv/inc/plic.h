@@ -10,7 +10,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "uninasoc_conf.h"
+#include "simplyv_conf.h"
 
 // Base address
 #define PLIC_BASEADDR ((uintptr_t)_peripheral_PLIC_start)
@@ -24,6 +24,20 @@
 
 // Functions
 #define PLIC_PRIO_SRC(n)      (PLIC_BASEADDR + 4u * (n))
+
+// Intrrupt IDs
+// TODO154: this is static for now, must generate by config
+#define PLIC_RESERVED_INTERRUPT  0 // PLIC line 0 is reserved
+#define PLIC_GPIOIN_INTERRUPT    1 // GPIO In (From PBUS)[embedded only]
+#define PLIC_TIM0_INTERRUPT      2 // Timer 0 (From PBUS)
+#define PLIC_TIM1_INTERRUPT      3 // Timer 1 (From PBUS)
+#define PLIC_UART_INTERRUPT      4 // UART    (From PBUS)
+#define PLIC_HLS_INTERRUPT       5 // HLS     (From HLS core) [HPC only]
+#define PLIC_CDMA_INTERRUPT      6 // CDMA    (From DMA IP)
+
+// TODO: import from config
+// Maximum number of interrupt sources
+#define PLIC_MAX_SOURCES 6
 
 // Initialize PLIC peripheral
 int plic_init();

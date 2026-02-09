@@ -10,7 +10,7 @@
 //   This example is intended for validating proper CDMA+PLIC
 //   integration on the Simply-V SoC.
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
 
 // Test Parameters
@@ -79,14 +79,14 @@ int main(void) {
     uint32_t errors = 0;
 
     // Initialize platform
-    uninasoc_init();
+    simplyv_init();
 
     printf("\n\r[CDMA IRQ] CDMA Interrupt Test\n\r");
 
     // Init CDMA
     if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CdmaCfg.BaseAddress) != 0) {
         printf("[CDMA IRQ] XAxiCdma_CfgInitialize failed\n");
-        return -1;
+        return SIMPLYV_ERROR;
     }
 
     // Reset CDMA
@@ -162,6 +162,6 @@ int main(void) {
 
     printf("[CDMA IRQ] All %u rounds completed\n\r", NUM_ROUNDS);
 
-    return 0;
+    return SIMPLYV_OK;
 }
 

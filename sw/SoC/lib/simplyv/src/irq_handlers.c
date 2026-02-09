@@ -5,7 +5,7 @@
 //  Basic "placeholder" implementations of interrupt handlers, supposed
 //  to be redefined by the user
 
-#include "uninasoc.h"
+#include "simplyv.h"
 
 void _sw_handler(void) {
     // Unused for this example

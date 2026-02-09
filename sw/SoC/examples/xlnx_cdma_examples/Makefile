@@ -24,12 +24,10 @@ PROGRAM_NAME = $(shell basename $$PWD)_$(CDMA_EXAMPLE)
 # Paths and Folders #
 #####################
 
-SOC_SW_ROOT_DIR = $(SW_ROOT)/SoC
-
-SRC_DIR        = src
-OBJ_DIR        = obj
+SRC_DIR     = src
+OBJ_DIR     = obj
 INC_DIR     = inc
-STARTUP_DIR = $(SOC_SW_ROOT_DIR)/common
+STARTUP_DIR = $(SW_SOC_ROOT)/common
 
 LD_SCRIPT     = ld/user.ld
 
@@ -40,17 +38,22 @@ LD_SCRIPT     = ld/user.ld
 LIB_OBJ_TINYIO    = $(LIB_DIR)/tinyio/lib/tinyio.a
 LIB_INC_TINYIO    = -I$(LIB_DIR)/tinyio/inc
 
-LIB_OBJ_UNINASOC  = $(LIB_DIR)/uninasoc/lib/libuninasoc.a
-LIB_INC_UNINASOC   = -I$(LIB_DIR)/uninasoc/inc
+LIB_OBJ_SIMPLYV  = $(LIB_DIR)/simplyv/lib/libsimplyv.a
+LIB_INC_SIMPLYV   = -I$(LIB_DIR)/simplyv/inc
 
-LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO) $(LIB_OBJ_UNINASOC)
-LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_UNINASOC)
+LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO) $(LIB_OBJ_SIMPLYV)
+LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
 
 #############
 # Toolchain #
 #############
 
 include $(SW_ROOT)/SoC/common/config.mk
+
+# This example only works at 32 bits for now
+ifeq (${XLEN},64)
+$(error "Trying to build ${PROGRAM_NAME} with RV64, but it only supportx RV32 for now)
+endif
 
 ###########
 # Targets #

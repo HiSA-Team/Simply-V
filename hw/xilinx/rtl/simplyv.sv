@@ -25,15 +25,19 @@
 //                                                    |          |                   |              |-----------/
 //                                                    |          |------------------>|  HLS CONV2D  |
 //                                                    |          |                   |______________|-----------\
+//                                                    |          |                    ____________              |
+//                                                    |          |------------------>|            |             |
+//                                                    |          |                   |    CDMA    |             v
+//                                                    |          |<------------------|____________|-------------\
 //                                                    |          |                    ________________          |
 //                                                    |          |                   |                |         v
 //                                                    |          |------------------>| Peripheral bus |---------\
 //                                                    |          |                   |     (PBUS)     |         |
 //                                                    |          |                   |________________|         | peripheral
 //   _________              ____________              |          |                    ________________          | interrupts
-//  |         |            |            |             |          |                   |                |         |
-//  |   vio   |----------->| rv_socket  |------------>|          |------------------>|      PLIC      |<--------/
-//  |_________|            |____________|             |          |                   |________________|
+//  |         |            |            |------------>|          |                   |                |         |
+//  |   vio   |----------->| rv_socket  |             |          |------------------>|      PLIC      |<--------/
+//  |_________|            |____________|------------>|          |                   |________________|
 //                                ^                   |          |                            |
 //                                |                   |__________|                            |
 //                                |                                                           |
@@ -44,24 +48,24 @@
 // Import packages //
 /////////////////////
 
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 ////////////////////
 // Import headers //
 ////////////////////
 
-`include "uninasoc_axi.svh"
+`include "simplyv_axi.svh"
 
 `ifdef HPC
-    `include "uninasoc_pcie.svh"
-    `include "uninasoc_ddr4.svh"
+    `include "simplyv_pcie.svh"
+    `include "simplyv_ddr4.svh"
 `endif
 
 ///////////////////////
 // Module definition //
 ///////////////////////
 
-module uninasoc (
+module simplyv (
 
     `ifdef EMBEDDED
         // Clock and reset
@@ -108,9 +112,7 @@ module uninasoc (
     /////////////////////
     // Local variables //
     /////////////////////
-
-    localparam peripherals_interrupts_num = 4;
-    localparam HBUS_AXI_DATAWIDTH = 512;
+    localparam logic [MBUS_DATA_WIDTH-1 : 0] RV_SOCKET_BOOT_ADDRESS = 0;
 
     ///////////////////
     // Local Signals //
@@ -139,7 +141,13 @@ module uninasoc (
     logic [31:0] rv_socket_interrupt_line;
 
     // Peripheral bus interrupts
-    logic [peripherals_interrupts_num-1:0] pbus_int_line;
+    logic [PBUS_NUM_INTERRUPTS-1:0] pbus_int_line;
+
+    // Platform-Level Interrupt Controller (PLIC)
+    logic [31:0] plic_int_lines;
+    logic plic_int_irq_o;
+    logic irq_hls_to_plic;
+    logic irq_cdma_to_plic;
 
     /////////////////////////////////////////
     // Buses declaration and concatenation //
@@ -149,7 +157,7 @@ module uninasoc (
     ///////////////////////
     // Clock assignments //
     ///////////////////////
-    `include "uninasoc_clk_assignments.svinc"
+    `include "simplyv_clk_assignments.svinc"
 
     ///////////////////////
     // Local assignments //
@@ -160,7 +168,6 @@ module uninasoc (
     /////////////
 
     // Virtual I/O
-
     xlnx_vio vio_inst (
       .clk        ( main_clk        ),
       .probe_out0 ( vio_resetn      ),
@@ -168,7 +175,7 @@ module uninasoc (
       .probe_in0  (                 )
     );
 
-    // Axi Crossbar
+    // MBUS AXI crossbar
     xlnx_main_crossbar main_xbar_u (
         .aclk           ( main_clk                  ), // input
         .aresetn        ( main_rstn                 ), // input
@@ -250,20 +257,15 @@ module uninasoc (
         .m_axi_rready   ( MBUS_slaves_axi_rready    )  // output
     );
 
-    /////////////////
-    // AXI masters //
-    /////////////////
-
+    // Sys Master
     sys_master # (
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
     ) sys_master_u (
-
         // EMBEDDED ONLY
         .sys_clock_i(sys_clock_i),
         .sys_reset_i(sys_reset_i),
-
         // HPC ONLY
         .pcie_refclk_p_i(pcie_refclk_p_i),
         .pcie_refclk_n_i(pcie_refclk_n_i),
@@ -273,21 +275,18 @@ module uninasoc (
         .pci_exp_rxp_i(pci_exp_rxp_i),
         .pci_exp_txn_o(pci_exp_txn_o),
         .pci_exp_txp_o(pci_exp_txp_o),
-
         // Output clocks
         .clk_10MHz_o(clk_10MHz),
         .clk_20MHz_o(clk_20MHz),
         .clk_50MHz_o(clk_50MHz),
         .clk_100MHz_o(clk_100MHz),
         .clk_250MHz_o(clk_250MHz),      // HPC ONLY
-
         // Output resets
         .rstn_10MHz_o(rstn_10MHz),
         .rstn_20MHz_o(rstn_20MHz),
         .rstn_50MHz_o(rstn_50MHz),
         .rstn_100MHz_o(rstn_100MHz),
         .rstn_250MHz_o(rstn_250MHz),      // HPC ONLY
-
         // AXI Master
         .m_axi_awid     ( SYS_MASTER_to_MBUS_axi_awid     ),
         .m_axi_awaddr   ( SYS_MASTER_to_MBUS_axi_awaddr   ),
@@ -332,19 +331,16 @@ module uninasoc (
 
     // RV Socket
     rv_socket # (
-
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH    ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH    ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH      ),
         .CORE_SELECTOR      ( CORE_SELECTOR      )
-
     ) rv_socket_u (
         .clk_i          ( main_clk   ),
         .rst_ni         ( main_rstn  ),
         .core_resetn_i  ( vio_resetn ),
-        .bootaddr_i     ( '0         ),
+        .bootaddr_i     ( RV_SOCKET_BOOT_ADDRESS   ),
         .irq_i          ( rv_socket_interrupt_line ),
-
         // Instruction AXI Port
         .rv_socket_instr_axi_awid      ( RV_SOCKET_INSTR_to_MBUS_axi_awid     ),
         .rv_socket_instr_axi_awaddr    ( RV_SOCKET_INSTR_to_MBUS_axi_awaddr   ),
@@ -593,11 +589,7 @@ module uninasoc (
         .rv_socket_dbg_slave_axi_rready      ( MBUS_to_DM_mem_axi_rready   )
     );
 
-    ////////////////
-    // AXI slaves //
-    ////////////////
-
-    // Main memory
+    // BlockRAM
     xlnx_blk_mem_gen_0 bram_u (
         .rsta_busy      ( /* open */                ), // output wire rsta_busy
         .rstb_busy      ( /* open */                ), // output wire rstb_busy
@@ -634,42 +626,39 @@ module uninasoc (
         .s_axi_rready   ( MBUS_to_BRAM_axi_rready   )  // input wire s_axi_rready
     );
 
-    // Platform-Level Interrupt Controller (PLIC)
-    logic [31:0] plic_int_line;
-    logic plic_int_irq_o;
-    logic hls_interrupt_to_plic;
-    logic irq_cdma_to_plic;
-
+    // Interrupt mappings
     always_comb begin : system_interrupts
 
         // Default non-assigned lines
-        plic_int_line = '0;
+        plic_int_lines = '0;
         rv_socket_interrupt_line = '0;
 
         // Mapping PLIC input interrupts (only from pbus at the moment)
-        // Mapping is static (refer to uninasoc_pkg.sv)
+        // Mapping is static (refer to simplyv_pkg.sv)
         // TODO154: generate by config
-        plic_int_line[PLIC_RESERVED_INTERRUPT]  = 1'b0;
-        plic_int_line[PLIC_GPIOIN_INTERRUPT]    = pbus_int_line[PBUS_GPIOIN_INTERRUPT];
-        plic_int_line[PLIC_TIM0_INTERRUPT]      = pbus_int_line[PBUS_TIM0_INTERRUPT];
-        plic_int_line[PLIC_TIM1_INTERRUPT]      = pbus_int_line[PBUS_TIM1_INTERRUPT];
-        plic_int_line[PLIC_UART_INTERRUPT]      = pbus_int_line[PBUS_UART_INTERRUPT];
-        plic_int_line[PLIC_HLS_INTERRUPT]       = hls_interrupt_to_plic;
-        plic_int_line[PLIC_CDMA_INTERRUPT]      = irq_cdma_to_plic;
-        // Map system-interrupts pins to socket interrupts
-        rv_socket_interrupt_line[CORE_EXT_INTERRUPT] = plic_int_irq_o;
+        plic_int_lines[PLIC_RESERVED_INTERRUPT ] = 1'b0;
+        plic_int_lines[PLIC_GPIOIN_INTERRUPT   ] = pbus_int_line[PBUS_GPIOIN_INTERRUPT];
+        plic_int_lines[PLIC_TIM0_INTERRUPT     ] = pbus_int_line[PBUS_TIM0_INTERRUPT];
+        plic_int_lines[PLIC_TIM1_INTERRUPT     ] = pbus_int_line[PBUS_TIM1_INTERRUPT];
+        plic_int_lines[PLIC_UART_INTERRUPT     ] = pbus_int_line[PBUS_UART_INTERRUPT];
+        plic_int_lines[PLIC_HLS_INTERRUPT      ] = irq_hls_to_plic;
+        plic_int_lines[PLIC_CDMA_INTERRUPT     ] = irq_cdma_to_plic;
+
+        // Map platform interrupt pin to socket ext interrupts
+        rv_socket_interrupt_line[RVSOCKET_EXT_INTERRUPT] = plic_int_irq_o;
 
     end : system_interrupts
 
+    // PLIC
     plic_wrapper #(
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
     ) plic_wrapper_u (
-        .clk_i          ( main_clk                      ), // input wire s_axi_aclk
-        .rst_ni         ( main_rstn                     ), // input wire s_axi_aresetn
+        .clk_i          ( PLIC_clk                      ), // input wire s_axi_aclk
+        .rst_ni         ( PLIC_rstn                     ), // input wire s_axi_aresetn
         // AXI4 slave port (from xbar)
-        .intr_src_i     ( plic_int_line                 ), // Input interrupt lines (Sources)
+        .intr_src_i     ( plic_int_lines                ), // Input interrupt lines (Sources)
         .irq_o          ( plic_int_irq_o                ), // Output Interrupts (Targets -> Socket)
         .s_axi_awid     ( MBUS_to_PLIC_axi_awid         ), // input wire [1 : 0] s_axi_awid
         .s_axi_awaddr   ( MBUS_to_PLIC_axi_awaddr       ), // input wire [25 : 0] s_axi_awaddr
@@ -712,31 +701,25 @@ module uninasoc (
         .s_axi_rready   ( MBUS_to_PLIC_axi_rready       )
     );
 
-    ////////////////////
-    // PERIPHERAL BUS //
-    ////////////////////
-
+    // Peripheral bus (PBUS)
     peripheral_bus # (
-
         .LOCAL_DATA_WIDTH   ( PBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( PBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( PBUS_ID_WIDTH   )
-
-        ) peripheral_bus_u (
-
+    ) peripheral_bus_u (
+        // Clocks and resets
         .main_clock_i   ( main_clk    ),
         .main_reset_ni  ( main_rstn   ),
         .PBUS_clock_i   ( PBUS_clk    ),
         .PBUS_reset_ni  ( PBUS_rstn   ),
-
         // EMBEDDED ONLY
         .uart_rx_i      ( uart_rx_i      ),
         .uart_tx_o      ( uart_tx_o      ),
         .gpio_out_o     ( gpio_out_o     ),
         .gpio_in_i      ( gpio_in_i      ),
-
+        // Interrupts
         .int_o          ( pbus_int_line  ),
-
+        // AXI slave
         .s_axi_awid     ( MBUS_to_PBUS_axi_awid     ),
         .s_axi_awaddr   ( MBUS_to_PBUS_axi_awaddr   ),
         .s_axi_awlen    ( MBUS_to_PBUS_axi_awlen    ),
@@ -945,11 +928,9 @@ module uninasoc (
         // DDR4 differential clock
         .clk_300mhz_x_p_i     ( clk_300mhz_1_p_i  ),
         .clk_300mhz_x_n_i     ( clk_300mhz_1_n_i  ),
-
         // Output clock and reset
         .ddr_clk_o            ( ddr4ch1_clk300MHz ),
         .ddr_rst_o            ( ddr4ch1_rst300MHz ),
-
         // Connect DDR4 channel 1
         .cx_ddr4_adr          ( c1_ddr4_adr       ),
         .cx_ddr4_ba           ( c1_ddr4_ba        ),
@@ -965,7 +946,6 @@ module uninasoc (
         .cx_ddr4_reset_n      ( c1_ddr4_reset_n   ),
         .cx_ddr4_ck_t         ( c1_ddr4_ck_t      ),
         .cx_ddr4_ck_c         ( c1_ddr4_ck_c      ),
-
         // AXILITE interface - for ECC status and control - not connected
         .s_ctrl_axilite_awvalid  ( 1'b0  ),
         .s_ctrl_axilite_awready  (       ),
@@ -983,7 +963,6 @@ module uninasoc (
         .s_ctrl_axilite_rready   ( 1'b1  ),
         .s_ctrl_axilite_rdata    (       ),
         .s_ctrl_axilite_rresp    (       ),
-
         // Slave interface
         .s_axi_awid           ( MBUS_to_DDR4CH1_axi_awid     ),
         .s_axi_awaddr         ( MBUS_to_DDR4CH1_axi_awaddr   ),
@@ -1134,7 +1113,7 @@ module uninasoc (
         .m_HLS_gmem0_d512_axi_rvalid    ( HLS_gmem0_d512_axi_rvalid   ),
         .m_HLS_gmem0_d512_axi_rready    ( HLS_gmem0_d512_axi_rready   ),
         // Interrupt
-        .hls_interrupt_o                ( hls_interrupt_to_plic       )
+        .hls_interrupt_o                ( irq_hls_to_plic             )
     );
 
     //////////
@@ -1278,7 +1257,6 @@ module uninasoc (
         .s_acc_axi_rlast    ( s_acc_HBUS_axi_rlast    ),
         .s_acc_axi_rvalid   ( s_acc_HBUS_axi_rvalid   ),
         .s_acc_axi_rready   ( s_acc_HBUS_axi_rready   ),
-
         // DDR channel 0 on MBUS
         // DDR4 differential clock
         .clk_300mhz_x_p_i     ( clk_300mhz_0_p_i  ),
@@ -1301,7 +1279,6 @@ module uninasoc (
         .cx_ddr4_reset_n      ( c0_ddr4_reset_n   ),
         .cx_ddr4_ck_t         ( c0_ddr4_ck_t      ),
         .cx_ddr4_ck_c         ( c0_ddr4_ck_c      ),
-
         // AXILITE interface - for ECC status and control - not connected
         .s_ctrl_axilite_awvalid  ( 1'b0  ),
         .s_ctrl_axilite_awready  (       ),
@@ -1323,8 +1300,10 @@ module uninasoc (
         .s_ctrl_axilite_wstrb    ( '0    ),
         .s_ctrl_axilite_awprot   ( '0    )
     );
+`else // HPC not defined
+    // Tie-off HLS interrupt line
+    assign irq_hls_to_plic = '0;
+`endif // HPC not defined
 
-`endif // HPC
 
-
-endmodule : uninasoc
+endmodule : simplyv

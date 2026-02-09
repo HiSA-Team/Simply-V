@@ -1,6 +1,6 @@
 // Author: Michele Giugliano <michele.giugliano2@studenti.unina.it>
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
-// Description: AXI CDMA baremetal driver. Simplified & adapted for UninaSoC.
+// Description: AXI CDMA baremetal driver. Simplified & adapted for Simply-V.
 //  Original Copyright (C) Xilinx, Inc. / AMD
 //  SPDX-License-Identifier: MIT
 

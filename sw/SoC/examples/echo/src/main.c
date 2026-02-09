@@ -1,4 +1,4 @@
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
 
 int main()
@@ -7,7 +7,7 @@ int main()
   char str[128];
 
   // Initialize HAL
-  uninasoc_init();
+  simplyv_init();
 
   // Spin indefinetly
   while(1){
@@ -20,7 +20,7 @@ int main()
   }
 
   // Return to caller
-  return 0;
+  return SIMPLYV_OK;
 
 }
 

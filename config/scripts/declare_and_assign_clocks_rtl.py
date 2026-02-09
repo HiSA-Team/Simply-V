@@ -15,7 +15,7 @@ from utils import *
 
 # RTL files to edit
 RTL_FILES = {
-    "UNINASOC": f"{os.environ.get('XILINX_ROOT')}/rtl/uninasoc_clk_assignments.svinc",
+    "simplyv": f"{os.environ.get('XILINX_ROOT')}/rtl/simplyv_clk_assignments.svinc",
 }
 
 # Template string
@@ -98,5 +98,5 @@ if __name__ == "__main__":
         main_clock_domain=config.MAIN_CLOCK_DOMAIN,
     )
 
-    with open(RTL_FILES["UNINASOC"], "w") as f:
+    with open(RTL_FILES["simplyv"], "w") as f:
         f.write(rendered)

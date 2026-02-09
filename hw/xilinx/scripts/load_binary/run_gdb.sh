@@ -34,10 +34,12 @@ echo "Connecting to $BACKEND_IP_PORT";
 
 # Run GDB
 riscv$XLEN-unknown-elf-gdb $ELF_NAME \
+    -ex 'set confirm off' \
     -ex 'set architecture riscv:rv'$XLEN \
     -ex 'target extended-remote '$BACKEND_IP_PORT \
     -ex "file $ELF_NAME" \
     -ex 'load ' \
-    -ex "b _exit_wfi" \
+    -ex "b _exit_wfi_ok" \
+    -ex "b _exit_wfi_error" \
     -ex "c" \
     -ex "quit"

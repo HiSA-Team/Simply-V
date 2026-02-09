@@ -6,16 +6,13 @@
 //  configure and handle external interrupts
 
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include "io.h"
 #include <stdint.h>
 
-// TODO: import from config
-#define MAX_SOURCES 6
-
 // In this example, only 4 interrupts sources are supported in the SoC
 
-static size_t sources = MAX_SOURCES;
+static size_t sources = PLIC_MAX_SOURCES;
 
 int plic_init()
 {
@@ -35,7 +32,7 @@ int plic_init()
     iowrite32(PLIC_THRESHOLD_CTX0, 0u);
     iowrite32(PLIC_INT_ENABLE_CTX0, 0x00000000u);
 
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 // Configure a single line
@@ -46,10 +43,11 @@ void plic_configure_set_one(uint32_t priority, size_t source){
 // Configure a contiguous set of interrupt sources
 void plic_configure_set_array(uint32_t* priorities, size_t source_num){
 
-    if(source_num < MAX_SOURCES)
+    if(source_num < PLIC_MAX_SOURCES)
         sources = source_num;
 
-    //Set interrupt priorities
+    // Set interrupt priorities
+    // Skip reserved line zero
     for (int i = 1; i <= sources; i++) {
         plic_configure_set_one(priorities[i], i);
     }

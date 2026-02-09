@@ -3,9 +3,9 @@
 // Description: Top level wrapper module for PULP DTM and AXI adapters, 32-bit version.
 
 
-// Import UninaSoC headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+// Import Simply-V headers
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 // From axi/include
 `include "typedef.svh"
 

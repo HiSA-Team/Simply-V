@@ -3,7 +3,7 @@
 // Description:
 //  This file implements all the Timer's related functions
 
-#include "uninasoc.h"
+#include "simplyv.h"
 
 #ifdef TIM_IS_ENABLED
 
@@ -30,22 +30,22 @@
 static inline int xlnx_tim_assert(xlnx_tim_t* timer)
 {
     if ((timer->base_addr != TIM0_BASEADDR) && (timer->base_addr != TIM1_BASEADDR)) {
-        return UNINASOC_ERROR;
+        return SIMPLYV_ERROR;
     }
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 
 int xlnx_tim_init(xlnx_tim_t* timer)
 {
     // No-op
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 int xlnx_tim_configure(xlnx_tim_t* timer)
 {
-    if (xlnx_tim_assert(timer) != UNINASOC_OK) {
-        return UNINASOC_ERROR;
+    if (xlnx_tim_assert(timer) != SIMPLYV_OK) {
+        return SIMPLYV_ERROR;
     }
 
     uintptr_t tim_tlr = (uintptr_t)(timer->base_addr + TIM_TLR);
@@ -69,26 +69,26 @@ int xlnx_tim_configure(xlnx_tim_t* timer)
     // finally configure the peripheral
     iowrite32(tim_tlr, timer->counter);
     iowrite32(tim_csr, config);
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 int xlnx_tim_enable_int(xlnx_tim_t* timer)
 {
-    if (xlnx_tim_assert(timer) != UNINASOC_OK) {
-        return UNINASOC_ERROR;
+    if (xlnx_tim_assert(timer) != SIMPLYV_OK) {
+        return SIMPLYV_ERROR;
     }
 
     uintptr_t tim_csr = (uintptr_t)(timer->base_addr + TIM_CSR);
     uint32_t csr_value = ioread32(tim_csr);
     csr_value |= TIM_CSR_ENABLE_INTERRUPT;
     iowrite32(tim_csr, csr_value);
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 int xlnx_tim_clear_int(xlnx_tim_t* timer)
 {
-    if (xlnx_tim_assert(timer) != UNINASOC_OK) {
-        return UNINASOC_ERROR;
+    if (xlnx_tim_assert(timer) != SIMPLYV_OK) {
+        return SIMPLYV_ERROR;
     }
 
     // Clear timer interrupt by setting TCSR0.T0INT
@@ -96,22 +96,37 @@ int xlnx_tim_clear_int(xlnx_tim_t* timer)
     uint32_t csr_value = ioread32(tim_csr);
     csr_value |= TIM_CSR_INTERRUPT;
     iowrite32(tim_csr, csr_value);
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
 }
 
 int xlnx_tim_start(xlnx_tim_t* timer)
 {
-    if (xlnx_tim_assert(timer) != UNINASOC_OK) {
-        return UNINASOC_ERROR;
+    if (xlnx_tim_assert(timer) != SIMPLYV_OK) {
+        return SIMPLYV_ERROR;
     }
 
+    // Read CSR
     uintptr_t tim_csr = (uintptr_t)(timer->base_addr + TIM_CSR);
     uint32_t csr_value = ioread32(tim_csr);
     // Lower LOAD0 (necessary to start the timer correctly)
     csr_value &= ~TIM_CSR_LOAD;
     csr_value |= TIM_CSR_ENABLE;
     iowrite32(tim_csr, csr_value);
-    return UNINASOC_OK;
+    return SIMPLYV_OK;
+}
+
+
+int xlnx_tim_stop(xlnx_tim_t* timer)
+{
+    // Read CSR
+    uintptr_t tim_csr = (uintptr_t)(timer->base_addr + TIM_CSR);
+    uint32_t csr_value = ioread32(tim_csr);
+    // Reset enable bit
+    csr_value &= ~TIM_CSR_ENABLE;
+    // Store value
+    iowrite32(tim_csr, csr_value);
+    return SIMPLYV_OK;
+
 }
 
 #endif

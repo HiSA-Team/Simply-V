@@ -25,8 +25,8 @@
 //                                                 |_____________|
 
 
-`include "uninasoc_pcie.svh"
-`include "uninasoc_ddr4.svh"
+`include "simplyv_pcie.svh"
+`include "simplyv_ddr4.svh"
 
 module ddr4_channel_wrapper # (
     parameter int unsigned    ENABLE_CACHE      = 0,
@@ -373,7 +373,7 @@ module ddr4_channel_wrapper # (
     assign ddr4_axi_awaddr = (LOCAL_ADDR_WIDTH == 32) ? { 2'b00, clk_conv_to_ddr4_axi_awaddr } : clk_conv_to_ddr4_axi_awaddr[DDR4_CHANNEL_ADDRESS_WIDTH-1:0];
     assign ddr4_axi_araddr = (LOCAL_ADDR_WIDTH == 32) ? { 2'b00, clk_conv_to_ddr4_axi_araddr } : clk_conv_to_ddr4_axi_araddr[DDR4_CHANNEL_ADDRESS_WIDTH-1:0];
 
-    xlnx_ddr4 ddr4_u (
+    xlnx_ddr4_mig ddr4_mig_u (
         .c0_sys_clk_n                ( clk_300mhz_x_n_i ),
         .c0_sys_clk_p                ( clk_300mhz_x_p_i ),
 

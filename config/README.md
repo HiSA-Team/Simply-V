@@ -5,7 +5,7 @@ This tree allows for the automatic generation of the AXI crossbar IP and linker 
 This tree has been verified with the following tools and versions
 * Vivado 2022.2 - 2024.2
 * AXI Interconnect v2.1
-* Pyhton >= 3.10
+* Python >= 3.10
 * Pandas >= 2.2.3
 
 ##  Configuration file format
@@ -38,8 +38,9 @@ The following table details the supported properties.
 | CORE_SELECTOR         | Select target RV core       | CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA | None (**mandatory value**)
 | VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1] | 1
 | XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                 | 32
-| PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
+| PHYSICAL_ADDR_WIDTH $^1$| Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
 | BOOT_MEMORY_BLOCK     | Select memory device to use for boot | [BRAM, DDR4CH\<n\>] | BRAM
+> $^1$ For `embedded` profile, due to limitations in the JTAG to AXI Master IP [PG174](https://docs.amd.com/v/u/en-US/pg174-jtag-axi), PHYSICAL_ADDR_WIDTH allowed values are only [32,64].
 
 ### Notes for CORE_SELECTOR
 **XLEN** configuration must match the selected `CORE_SELECTOR`:
@@ -132,7 +133,7 @@ The directory `scripts/` holds multiple scripts, acting in the following scripti
 The multiple scripts generate outputs from common inputs:
 1. The Xilinx-related environment configuration in [`config.mk`](../hw/xilinx/make/config.mk) is handled by [`config_xilinx.sh`](scripts/config_xilinx.sh).
 1. The software-related environment (including toolchain and compilation flags) configuration in [`config.mk`](../sw/SoC/common/config.mk) is handled by [`config_sw.sh`](scripts/config_sw.sh).
-1. [Linker script](../sw/SoC/common/UninaSoC.ld) generation is handled solely by [`create_linker_script.py`](scripts/create_linker_script.py) source.
+1. [Linker script](../sw/SoC/common/simplyv.ld) generation is handled solely by [`create_linker_script.py`](scripts/create_linker_script.py) source.
 1. Configuration TCL files (for [MBUS](../hw/xilinx/ips/common/xlnx_main_crossbar/config.tcl) and [PBUS](../hw/xilinx/ips/common/xlnx_peripheral_crossbar/config.tcl)) for the platform crossbars are generated with [`create_crossbar_config.py`](scripts/create_crossbar_config.py) as master script.
 
 ### How to add a new property

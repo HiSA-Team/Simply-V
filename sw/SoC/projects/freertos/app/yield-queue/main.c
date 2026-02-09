@@ -10,7 +10,7 @@
 #include "queue.h"
 #include "task.h"
 
-#include "uninasoc.h"
+#include "simplyv.h"
 
 #define mainQUEUE_PRODUCER_TASK_PRIORITY (tskIDLE_PRIORITY + 1)
 #define mainQUEUE_CONSUMER_TASK_PRIORITY (tskIDLE_PRIORITY + 1)
@@ -95,7 +95,7 @@ void vApplicationMallocFailedHook(void) {
 
 int main() {
 
-  uninasoc_init();
+  simplyv_init();
   printf("================= Simply-V Producer - Consumer with Yield =================\n\r");
 
   xQueue = xQueueCreate(mainQUEUE_LENGTH, sizeof(unsigned long));
@@ -123,5 +123,5 @@ int main() {
 
   while (1);
 
-  return 0;
+  return SIMPLYV_OK;
 }
