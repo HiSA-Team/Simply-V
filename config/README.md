@@ -5,7 +5,7 @@ This tree allows for the automatic generation of the AXI crossbar IP and linker 
 This tree has been verified with the following tools and versions
 * Vivado 2022.2 - 2024.2
 * AXI Interconnect v2.1
-* Pyhton >= 3.10
+* Python >= 3.10
 * Pandas >= 2.2.3
 
 ##  Configuration file format
