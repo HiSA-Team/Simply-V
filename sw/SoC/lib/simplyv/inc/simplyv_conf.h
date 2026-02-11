@@ -10,8 +10,10 @@
 #define _peripheral_BRAM_end    0x0000000000010000u
 #define _peripheral_DM_mem_start  0x0000000000010000u
 #define _peripheral_DM_mem_end    0x0000000000020000u
-#define _peripheral_CDMA_start  0x0000000000030000u
-#define _peripheral_CDMA_end    0x0000000000040000u
+#define _peripheral_CLINT_start  0x0000000000030000u
+#define _peripheral_CLINT_end    0x0000000000040000u
+#define _peripheral_CDMA_start  0x0000000000040000u
+#define _peripheral_CDMA_end    0x0000000000050000u
 #define _peripheral_PLIC_start  0x0000000004000000u
 #define _peripheral_PLIC_end    0x0000000008000000u
 #define _peripheral_UART_start  0x0000000000020000u

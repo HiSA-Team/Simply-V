@@ -49,6 +49,10 @@ void _sw_handler() __irq_handler__;
 void _timer_handler() __irq_handler__;
 void _ext_handler() __irq_handler__;
 
+// Global interrupts count
+int ext_interrupt_count;
+int timer_interrupt_count;
+
 void _sw_handler(void)
 {
     // Unused for this example
@@ -56,17 +60,23 @@ void _sw_handler(void)
 
 void _timer_handler(void)
 {
-    // Unused for this example
+    // Toggle
+    #ifdef GPIO_OUT_IS_ENABLED
+    xlnx_gpio_out_toggle(&gpio_out, PIN_2);
+    #endif // GPIO_OUT_IS_ENABLED
+
+    // Count up
+    timer_interrupt_count++;
+    printf("[_timer_handler] Handiling timer interrupt, count %d\r\n", timer_interrupt_count);
+
 }
 
 // Maximum number of interrupts before exiting
 #define MAX_INTERRUPTS 10
 
-// Global interrupts count
-int interrupt_count;
-
 void _ext_handler(void)
 {
+
     // Interrupts are automatically disabled by the microarchitecture.
     // Nested interrupts can be enabled manually by setting the IE bit in the mstatus register,
     // but this requires careful handling of registers.
@@ -78,13 +88,13 @@ void _ext_handler(void)
 
     // Increment counter
     // NOTE: this is not thread-safe
-    interrupt_count++;
+    ext_interrupt_count++;
 
     // Get interrupt ID
     uint32_t interrupt_id = plic_claim();
     switch (interrupt_id) {
     case PLIC_GPIOIN_INTERRUPT:
-        printf("[_ext_handler] Handiling GPIO_IN interrupt, count %d\r\n", interrupt_count);
+        printf("[_ext_handler] Handiling GPIO_IN interrupt, count %d\r\n", ext_interrupt_count);
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_0);
         #endif // GPIO_OUT_IS_ENABLED
@@ -94,7 +104,7 @@ void _ext_handler(void)
         break;
     case PLIC_TIM0_INTERRUPT:
         // Timer interrupt
-        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", interrupt_count);
+        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", ext_interrupt_count);
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
         #endif // GPIO_OUT_IS_ENABLED
@@ -109,7 +119,7 @@ void _ext_handler(void)
     plic_complete(interrupt_id);
 
     // Check interrupt count
-    if ( interrupt_count >= MAX_INTERRUPTS ) {
+    if ( ext_interrupt_count >= MAX_INTERRUPTS ) {
         // Clean up
         printf("[_ext_handler] All expected interrupts handled, stopping timer0\r\n");
         if (xlnx_tim_stop(&timer0) != SIMPLYV_OK)
@@ -125,8 +135,11 @@ int main()
     // Initialize HAL
     simplyv_init();
 
-    // Reset global counter
-    interrupt_count = 0;
+    // clint_clean();
+
+    // Reset global counters
+    ext_interrupt_count = 0;
+    timer_interrupt_count = 0;
 
     printf("Interrupts Example\r\n");
 
@@ -165,10 +178,12 @@ int main()
     // Hot-loop, waiting for interrupts to occur
     // NOTE: this is not a safe way to synchronize with the _ext_handler,
     //       rather a simple way to terminate the program
-    while ( interrupt_count < MAX_INTERRUPTS );
+    while ( ext_interrupt_count < MAX_INTERRUPTS );
 
     // Info
-    printf("Returning from main\r\n");
+    printf("Returning from main, interrupt count:\r\n");
+    printf("\text_interrupt: %d\n\r", ext_interrupt_count);
+    printf("\ttimer_interrupt: %d\n\r", timer_interrupt_count);
 
     return SIMPLYV_OK;
 }

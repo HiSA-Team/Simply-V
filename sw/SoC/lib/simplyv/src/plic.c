@@ -1,6 +1,7 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 // Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
 // Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+// Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Description:
 //  Very simple implementations of PLIC functions used to correctly
 //  configure and handle external interrupts
@@ -10,12 +11,18 @@
 #include "io.h"
 #include <stdint.h>
 
-// In this example, only 4 interrupts sources are supported in the SoC
-
+// Number of configured sources
 static size_t sources = PLIC_MAX_SOURCES;
+
+// MIE.MEIE CSR mask
+#define MIE_MEIE_MASK (0x0800u)
 
 int plic_init()
 {
+    // Enable MIE.MEIE (Machine External Interrupt)
+    asm volatile("li    t0 ,  %0" :: "i"(MIE_MEIE_MASK));
+    asm volatile("csrs  mie, t1");
+
     // Reset priorities
     for (unsigned id = 1; id <= 31; ++id){
         iowrite32(PLIC_PRIO_SRC(id), 0u);
@@ -35,22 +42,33 @@ int plic_init()
     return SIMPLYV_OK;
 }
 
+int plic_clean ()
+{
+    // Clear MIE.MEIE (Machine External Interrupt)
+    asm volatile("li    t0 ,  %0" :: "i"(MIE_MEIE_MASK));
+    asm volatile("csrc  mie, t1");
+
+    return SIMPLYV_OK;
+}
+
 // Configure a single line
 void plic_configure_set_one(uint32_t priority, size_t source){
     iowrite32(PLIC_BASEADDR + (0x4 * source) , priority);
 }
 
 // Configure a contiguous set of interrupt sources
-void plic_configure_set_array(uint32_t* priorities, size_t source_num){
+int plic_configure_set_array(uint32_t* priorities, size_t source_num){
 
-    if(source_num < PLIC_MAX_SOURCES)
-        sources = source_num;
+    if(source_num > PLIC_MAX_SOURCES)
+        return SIMPLYV_ERROR;
 
     // Set interrupt priorities
     // Skip reserved line zero
-    for (int i = 1; i <= sources; i++) {
+    for (int i = 1; i <= source_num; i++) {
         plic_configure_set_one(priorities[i], i);
     }
+
+    return SIMPLYV_OK;
 
 }
 
@@ -58,7 +76,7 @@ void plic_enable_all(){
 
     uint32_t enable = 0;
 
-    for (int i = 1; i <= sources; i++) {
+    for (int i = 1; i <= PLIC_MAX_SOURCES; i++) {
         // bits 0-31 represent sources 0-31, so
         // for example to enable the peripherals from 1 to 3
         // must write powers of 2 with exponents from 1 to 3

@@ -117,10 +117,16 @@ _reset_handler:
   # Enable global interrupts
   csrs mstatus, 0x8           # Enable MIE in mstatus
 
-  # Enable local interrupt lines
-  # MEI (External Interrupt), MSI (Software Interrupt) e MTI (Timer Interrupt) in mie register
-  li a1, 0x0888
-  csrs mie, a1
+  # Enable local interrupt lines in mie register
+  # MSIE (Machine Software Interrupt)
+  # li t0, 0x0008
+  # csrs mie, t0
+  # MTIE (Machine Timer Interrupt)
+  # li t2, 0x0080
+  # csrs mie, t2
+  # MEIE (Machine External Interrupt)
+  # li t1, 0x0800
+  # csrs mie, t1
 
   ########
   # Tail #
