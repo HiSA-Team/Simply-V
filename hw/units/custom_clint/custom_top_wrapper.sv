@@ -1,5 +1,5 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
-// Description: Top level wrapper module for PULP CLINT and AXI adapter
+// Description: Top level wrapper module for 32-bit PULP CLINT and AXI to register_interface adapter.
 
 
 // Import headers
@@ -19,7 +19,7 @@ module custom_top_wrapper # (
 
     // TODO121: Automatically align with config
     // AXI-related paraamters
-    parameter                           LOCAL_AXI_DATA_WIDTH   = 64, // Assume Clint is used with 64 bit cores
+    parameter                           LOCAL_AXI_DATA_WIDTH   = 32,
     parameter                           LOCAL_AXI_ADDR_WIDTH   = 32,
     parameter                           LOCAL_AXI_STRB_WIDTH   = LOCAL_AXI_ADDR_WIDTH / 8,
     parameter                           LOCAL_AXI_ID_WIDTH     = 5,
@@ -106,7 +106,7 @@ module custom_top_wrapper # (
        .testmode_i  ( '0          ),
        .reg_req_i   ( reg_req     ),
        .reg_rsp_o   ( reg_rsp     ),
-       .rtc_i       ( clk_i       ),    // Real-time clock in (usually 32.768 kHz)
+       .rtc_i       ( rtc_i       ),    // Real-time clock in (usually 32.768 kHz)
        .timer_irq_o ( timer_irq_o ),    // Timer interrupts
        .ipi_o       ( ipi_o       )     // software interrupt (a.k.a inter-process-interrupt)
     );

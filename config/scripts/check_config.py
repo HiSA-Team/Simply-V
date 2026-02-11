@@ -44,7 +44,7 @@ SUPPORTED_CLOCK_DOMAINS = {
     "hpc"      : SUPPORTED_CLOCK_DOMAINS_HPC
 }
 # These slaves reside statically in the MAIN_CLOCK_DOMAIN
-MAIN_CLOCK_DOMAIN_SLAVES = ["BRAM", "DM_mem", "PLIC"]
+MAIN_CLOCK_DOMAIN_SLAVES = ["BRAM", "DM_mem", "PLIC", "CLINT"]
 # The DDR clock must have the same frequency of the DDR board clock
 DDR_FREQUENCY = 300
 
