@@ -1,14 +1,13 @@
-// Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
-// Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description: Top level wrapper module for PULP PLIC and AXI adapters, 32-bit version.
+// Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+// Description: Top level wrapper module for PULP CLINT and AXI adapter
 
 
 // Import headers
 `include "simplyv_axi.svh"
 `include "simplyv_mem.svh"
 `include "axi_typedef.svh"
-`include "reg_typedef.svh"
-`include "assertions.svh"
+`include "register_interface_assign.svh"
+`include "register_interface_typedef.svh"
 
 import axi_pkg::*;
 
@@ -18,17 +17,9 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
-    // Sources are the number of possible interrupts
-    // Targets are the number of harts receiving interrupts
-    parameter int unsigned              SOURCE_NUM          = 32,
-    parameter int unsigned              TARGET_NUM          = 1,
-    // 0 means level interrupts. 1 should be Edge Trigger, but it is not supported
-    parameter logic [SOURCE_NUM-1:0]    LEVEL_EDGE_TRIGGER  = '0,
-    parameter int                       SRCW                = $clog2(SOURCE_NUM),
-
     // TODO121: Automatically align with config
     // AXI-related paraamters
-    parameter                           LOCAL_AXI_DATA_WIDTH   = 32,
+    parameter                           LOCAL_AXI_DATA_WIDTH   = 64, // Assume Clint is used with 64 bit cores
     parameter                           LOCAL_AXI_ADDR_WIDTH   = 32,
     parameter                           LOCAL_AXI_STRB_WIDTH   = LOCAL_AXI_ADDR_WIDTH / 8,
     parameter                           LOCAL_AXI_ID_WIDTH     = 5,
@@ -58,16 +49,12 @@ module custom_top_wrapper # (
     //  Add here IP-related signals  //
     ///////////////////////////////////
 
-    input  logic    clk_i,
-    input  logic    rst_ni,
-
-    // Interrupt Sources
-    input  [SOURCE_NUM-1:0]             intr_src_i,
-
-    // Interrupt notification to targets
-    output [TARGET_NUM-1:0]             irq_o,
-    output [TARGET_NUM-1:0][SRCW-1:0]   irq_id_o,
-    output logic [TARGET_NUM-1:0]       msip_o,
+    input  logic       clk_i,
+    input  logic       rst_ni,
+    input  logic       rtc_i,       // Real-time clock in (usually 32.768 kHz)
+    // For CLINTCORES=1
+    output logic [0:0] timer_irq_o, // Timer interrupts
+    output logic [0:0] ipi_o,       // software interrupt (a.k.a inter-process-interrupt)
 
     ////////////////////////////
     //  Bus Array Interfaces  //
@@ -109,62 +96,51 @@ module custom_top_wrapper # (
     // Instantiate Units //
     ///////////////////////
 
-    logic [SRCW-1:0]   irq_id_int[TARGET_NUM];
-
-    rv_plic #(
-    	.reg_req_t			( reg_req_t             ),
-    	.reg_rsp_t			( reg_rsp_t             ),
-    	.LevelEdgeTrig 		( LEVEL_EDGE_TRIGGER    )
-
-    ) rv_plic_u (
-    	// Clock and Reset
-    	.clk_i				( clk_i                 ),
-    	.rst_ni				( rst_ni                ),
-    	.reg_req_i          ( reg_req               ),
-    	.reg_rsp_o			( reg_rsp               ),
-
-    	// Interrupt Sources
-    	.intr_src_i			( intr_src_i            ),
-
-    	// Interrupt notification to targets
-    	.irq_o				( irq_o                 ),
-    	.irq_id_o			( irq_id_int            ),
-    	.msip_o				( msip_o                )
-
+    // CLINT
+    clint #(
+        .reg_req_t ( reg_req_t ),
+        .reg_rsp_t ( reg_rsp_t )
+    ) clint_u (
+       .clk_i       ( clk_i       ),    // Clock
+       .rst_ni      ( rst_ni      ),    // Asynchronous reset active low
+       .testmode_i  ( '0          ),
+       .reg_req_i   ( reg_req     ),
+       .reg_rsp_o   ( reg_rsp     ),
+       .rtc_i       ( clk_i       ),    // Real-time clock in (usually 32.768 kHz)
+       .timer_irq_o ( timer_irq_o ),    // Timer interrupts
+       .ipi_o       ( ipi_o       )     // software interrupt (a.k.a inter-process-interrupt)
     );
 
+
+    // AXI/reg converter
     axi_to_reg_v2 #(
-        .AxiAddrWidth       ( LOCAL_AXI_ADDR_WIDTH ),
-        .AxiDataWidth       ( LOCAL_AXI_DATA_WIDTH ),
-        .AxiIdWidth         ( LOCAL_AXI_ID_WIDTH ),
-        .AxiUserWidth       ( LOCAL_AXI_USER_WIDTH ),
-        .RegDataWidth       ( REG_DATA_WIDTH ) ,
-        .CutMemReqs         ( CUT_MEM_REQS ) ,
-        .CutMemRsps         ( CUT_MEM_RSPS ) ,
-        .axi_req_t          ( axi_req_t),
-        .axi_rsp_t          ( axi_resp_t),
-        .reg_req_t          ( reg_req_t),
-        .reg_rsp_t          ( reg_rsp_t),
+        .AxiAddrWidth       ( LOCAL_AXI_ADDR_WIDTH          ),
+        .AxiDataWidth       ( LOCAL_AXI_DATA_WIDTH          ),
+        .AxiIdWidth         ( LOCAL_AXI_ID_WIDTH            ),
+        .AxiUserWidth       ( LOCAL_AXI_USER_WIDTH          ),
+        .RegDataWidth       ( REG_DATA_WIDTH                ),
+        .CutMemReqs         ( CUT_MEM_REQS                  ),
+        .CutMemRsps         ( CUT_MEM_RSPS                  ),
+        .axi_req_t          ( axi_req_t                     ),
+        .axi_rsp_t          ( axi_resp_t                    ),
+        .reg_req_t          ( reg_req_t                     ),
+        .reg_rsp_t          ( reg_rsp_t                     ),
         .id_t               ( logic[LOCAL_AXI_ID_WIDTH-1:0] )
-    )axi_to_reg_v2_u (
-        .clk_i              (clk_i),
-        .rst_ni             (rst_ni),
-        .axi_req_i          (axi_req),
-        .axi_rsp_o          (axi_rsp),
-        .reg_req_o          (reg_req),
-        .reg_rsp_i          (reg_rsp),
-        .reg_id_o           ( ),
-        .busy_o             ( )
+    ) axi_to_reg_v2_u (
+        .clk_i              ( clk_i    ),
+        .rst_ni             ( rst_ni   ),
+        .axi_req_i          ( axi_req  ),
+        .axi_rsp_o          ( axi_rsp  ),
+        .reg_req_o          ( reg_req  ),
+        .reg_rsp_i          ( reg_rsp  ),
+        .reg_id_o           (          ), // Open
+        .busy_o             (          )  // Open
     );
 
-
-    // Map interrupt ports
-    for(genvar i = 0; i < TARGET_NUM; i++)
-        assign irq_id_o[i][SRCW-1:0] = irq_id_int[i];
 
     // Map input/output AXI port
     assign   axi_req.aw.id        = s_axi_awid;
-    assign   axi_req.aw.addr      = {'0, s_axi_awaddr[25:0]};
+    assign   axi_req.aw.addr      = s_axi_awaddr;
     assign   axi_req.aw.len       = s_axi_awlen;
     assign   axi_req.aw.size      = s_axi_awsize;
     assign   axi_req.aw.burst     = s_axi_awburst;
@@ -179,7 +155,7 @@ module custom_top_wrapper # (
     assign   axi_req.w.last       = s_axi_wlast;
     assign   axi_req.w_valid      = s_axi_wvalid;
     assign   axi_req.b_ready      = s_axi_bready;
-    assign   axi_req.ar.addr      = {'0, s_axi_araddr[25:0]};
+    assign   axi_req.ar.addr      = s_axi_araddr;
     assign   axi_req.ar.len       = s_axi_arlen;
     assign   axi_req.ar.size      = s_axi_arsize;
     assign   axi_req.ar.burst     = s_axi_arburst;
