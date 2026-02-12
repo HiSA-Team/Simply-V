@@ -12,6 +12,7 @@ NC='\033[0m' # No Color
 THIS_DIR=$(pwd)
 ASSETS_DIR=${THIS_DIR}/assets
 RTL_DIR=${THIS_DIR}/rtl
+IP_NAME=$( basename $(dirname $( realpath ${BASH_SOURCE[0]} ) ))
 
 ##################################
 # Fetch sources and depencencies #
@@ -23,19 +24,19 @@ GIT_BRANCH=main
 # 28/11/2025
 GIT_COMMIT=e970f7736cde544eb2a44c6a44ad7eb0f8789f1a
 CLONE_DIR=${THIS_DIR}/ara
-printf "${YELLOW}[FETCH_SOURCES] Cloning source repository${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository${NC}\n"
 git clone ${GIT_URL} -b ${GIT_BRANCH} ${CLONE_DIR}
 cd ${CLONE_DIR};
 git checkout ${GIT_COMMIT}
 
 # Download Bender
-printf "${YELLOW}[FETCH_SOURCES] Download Bender${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Download Bender${NC}\n"
 # Version from Ara repo
 BENDER_VERSION=0.27.3
 curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh	-s -- ${BENDER_VERSION}
 
 # Download dependencies (specify Target RTL and FPGA)
-printf "${YELLOW}[FETCH_SOURCES] Resolve dependencies with Bender${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Resolve dependencies with Bender${NC}\n"
 ./bender checkout
 # CVA6_BENDER_TARGET=cv64a6_imafdchsclic_sv39_wb # from cheshire/mp/ara-pulp-v2
 CVA6_BENDER_TARGET=cv64a6_imafdcv_sv39 # from MaistoV/cheshire_fork
@@ -52,7 +53,7 @@ BENDER_DEFINES=$(realpath ${BENDER_DEFINES})
 # Patches #
 ###########
 
-printf "${YELLOW}[FETCH_SOURCES] Patching Bender-generated file list${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Patching Bender-generated file list${NC}\n"
 
 # Remove include directives
 sed -i "/+incdir+/d" ${BENDER_RTL_LIST}
@@ -104,11 +105,11 @@ mapfile -t headers < ${ASSETS_DIR}/headers.flist
 for i in "${!headers[@]}"; do headers[$i]="${headers[$i]//\$\{DIR\}/${CLONE_DIR}}"; done
 
 # Copy into new dir
-printf "${YELLOW}[FETCH_SOURCES] Copy headers into RTL dir ${RTL_DIR}${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Copy headers into RTL dir ${RTL_DIR}${NC}\n"
 cp ${headers[*]} ${RTL_DIR}/
 
 # Copy all files from bender flist
-printf "${YELLOW}[FETCH_SOURCES] Copy sources into RTL dir ${RTL_DIR}${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Copy sources into RTL dir ${RTL_DIR}${NC}\n"
 cp $(cat ${BENDER_RTL_LIST}) ${RTL_DIR}
 
 # Loop through all files in the rtl directory
@@ -124,4 +125,4 @@ done
 # Exit #
 ########
 # Info print
-printf "${GREEN}[FETCH_SOURCES] Completed${NC}\n"
+printf "${GREEN}[FETCH_SOURCES $IP_NAME] Completed${NC}\n"

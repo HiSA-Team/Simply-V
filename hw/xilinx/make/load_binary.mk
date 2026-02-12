@@ -25,8 +25,8 @@ BASE_ADDRESS ?= 0x00000000
 LOAD_BINARY_READBACK ?= false
 
 # Load the binary into SoC memory (BRAM for now)
-# Call the specific load script based on the SOC_CONFIG (HPC or EMBEDDED)
-load_binary: load_binary_${SOC_CONFIG}
+# Call the specific load script based on the SIMPLYV_PROFILE (HPC or EMBEDDED)
+load_binary: load_binary_${SIMPLYV_PROFILE}
 
 # Write the binary to BRAM through jtag2axi
 load_binary_embedded: ${BIN_PATH}
@@ -52,18 +52,10 @@ ELF_PATH ?= ${SW_ROOT}/SoC/examples/${EXAMPLE}/bin/${EXAMPLE}.elf
 
 # Use XSDB as a backend
 XSDB ?= xsdb
-# For MicroblazeV, Vivado HW Server exposes ports:
-# - 3004 for 32-bit,
-# - 3005 for 64-bit
-# Although if one of the port has already been used, hw_server will not switch and use the active one for either 32 or 64 bits.
-# If using OpenOCD, we always connect to port 3004
-GDB_HOST ?= localhost
-GDB_PORT ?= 3004
-
 xsdb_run:
 	${XSDB} -interactive ${XILINX_SCRIPTS_LOAD_ROOT}/xsdb_backend.tcl
 
-# Use openOCD as a backed
+# Use OpenOCD as a backend
 OPENOCD ?= openocd
 OPENOCD_SCRIPT ?= ${XILINX_SCRIPTS_LOAD_ROOT}/openocd.cfg
 
@@ -75,8 +67,17 @@ openocd_run:
 # Load ELF - Debugger and Loader #
 ##################################
 
-# Use GDB to load the ELF and run (open the backend in a shell before)
+# For MicroblazeV, Vivado HW Server exposes ports:
+# - 3004 for 32-bit,
+# - 3005 for 64-bit
+# If using OpenOCD, we always connect to port 3004
+GDB_HOST ?= localhost
+GDB_PORT ?= 3004
+ifeq (${CORE_SELECTOR},CORE_MICROBLAZEV_RV64)
+	GDB_PORT = 3005
+endif
 
+# Use GDB to load the ELF and run (open the backend in a shell before)
 gdb_run:
 	${XILINX_SCRIPTS_LOAD_ROOT}/run_gdb.sh ${ELF_PATH} ${GDB_HOST}:${GDB_PORT} ${XLEN}
 

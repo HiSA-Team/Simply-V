@@ -33,10 +33,10 @@
 //
 
 // Import packages
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 // Import headers
-`include "uninasoc_axi.svh"
+`include "simplyv_axi.svh"
 
 module peripheral_bus #(
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32,
@@ -191,8 +191,8 @@ module peripheral_bus #(
         always_comb begin
             cdc_src_in = '0;
             cdc_src_in[PBUS_GPIOIN_INTERRUPT] = gpio_in_int;
-            cdc_src_in[PBUS_TIM0_INTERRUPT]   = tim0_int;
-            cdc_src_in[PBUS_TIM1_INTERRUPT]   = tim1_int;
+            cdc_src_in[PBUS_TIM_0_INTERRUPT]   = tim0_int;
+            cdc_src_in[PBUS_TIM_1_INTERRUPT]   = tim1_int;
             cdc_src_in[PBUS_UART_INTERRUPT]   = uart_int;
         end
 
@@ -219,8 +219,8 @@ module peripheral_bus #(
         always_comb begin
             int_o = '0;
             int_o[PBUS_GPIOIN_INTERRUPT] = gpio_in_int;
-            int_o[PBUS_TIM0_INTERRUPT]   = tim0_int;
-            int_o[PBUS_TIM1_INTERRUPT]   = tim1_int;
+            int_o[PBUS_TIM_0_INTERRUPT]   = tim0_int;
+            int_o[PBUS_TIM_1_INTERRUPT]   = tim1_int;
             int_o[PBUS_UART_INTERRUPT]   = uart_int;
         end
     `endif

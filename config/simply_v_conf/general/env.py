@@ -17,7 +17,7 @@ class Env(metaclass=Singleton):
 		self.bus_input_files: dict[str, str]
 		self._board = os.environ["BOARD"]
 		# SoC Profile
-		self._soc_profile = os.environ["SOC_CONFIG"]
+		self._SIMPLYV_PROFILE = os.environ["SIMPLYV_PROFILE"]
 			
 	def set_inputs(self, bus_input_files: dict[str,str]):
 		self.bus_input_files = bus_input_files
@@ -25,8 +25,8 @@ class Env(metaclass=Singleton):
 	def get_config_path(self, bus_name: str) -> str:
 		return self.bus_input_files[bus_name]
 
-	def get_soc_profile(self):
-		return self._soc_profile
+	def get_simply_v_profile(self):
+		return self._SIMPLYV_PROFILE
 
 	def get_board(self):
 		return self._board
@@ -61,7 +61,7 @@ class Env(metaclass=Singleton):
 				raise ValueError("Unsupported Board configuration")
 
 	def get_def_clock_domains(self) -> list[str]:
-		match self._soc_profile:
+		match self._SIMPLYV_PROFILE:
 			case "embedded":
 				return ["MBUS_10", "MBUS_20", "MBUS_50", "MBUS_100"]
 			case "hpc":

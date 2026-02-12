@@ -7,7 +7,7 @@
 //                  - Vector permutations (vmv.v.i)
 //                  - Vector integer arithmetic (vadd.vv)
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
 
 // Application Vector Length
@@ -69,7 +69,7 @@ int main() {
     uint64_t csr_value = 0;
 
     // Initialize HAL
-    uninasoc_init();
+    simplyv_init();
 
     // Print
     printf("[RVV] Hi, let's play with some vectors :)\n\r");
@@ -81,7 +81,7 @@ int main() {
     printf("[RVV] MISA.V: 0x%016x\n\r", csr_value & MISA_V);
     if ( !(csr_value & MISA_V) ) {
         printf("[RVV][ERROR] RVV not available in MISA!\n\r");
-        return 1;
+        return SIMPLYV_ERROR;
     }
 
     // Read MSTATUS.VS
@@ -100,7 +100,7 @@ int main() {
     printf("[RVV] MSTATUS.VS: 0x%016x\n\r", csr_value & MSTATUS_VS);
     if ( !(csr_value & MSTATUS_VS) ) {
         printf("[RVV][ERROR] RVV not available in MSTATUS!\n\r");
-        return 1;
+        return SIMPLYV_ERROR;
     }
 
     // Dump before vector configuration

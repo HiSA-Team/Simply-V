@@ -1,9 +1,9 @@
 /*
- *  This example shows basic how to configure the System Timer in FreeRTOS using the Simply-V timer 
- *  peripheral. The Simply-V timer peripheral is behind a PLIC. To enable and configure  the Timer 
+ *  This example shows basic how to configure the System Timer in FreeRTOS using the Simply-V timer
+ *  peripheral. The Simply-V timer peripheral is behind a PLIC. To enable and configure  the Timer
  *  we need to implement the `vPortSetupTimerInterrupt` (defined as weak and callend by the OS during initialization).
- *  Finally, we need to provide `void freertos_risc_v_application_interrupt_handler` (defined as weak) and handle 
- *  the timer interrupt. The handler routine should call the `vExternalTickIncrement` function to 
+ *  Finally, we need to provide `void freertos_risc_v_application_interrupt_handler` (defined as weak) and handle
+ *  the timer interrupt. The handler routine should call the `vExternalTickIncrement` function to
  *  increment the System Tick (it will also call the context switch).
  *
  * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
@@ -11,7 +11,7 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
-#include "uninasoc.h"
+#include "simplyv.h"
 
 static xlnx_tim_t timer = {.base_addr = TIM0_BASEADDR,
                            .counter = 200000,
@@ -44,7 +44,7 @@ static void Task(void *pvParameters) {
 
 /*
  * Increment the SystemTick. If the increment unblocks a task, `xTaskIncrementTick` returns True.
- * The task can be scheduled using `portYIELD_FROM_ISR` (*_FROM_ISR procedures are ok to call within 
+ * The task can be scheduled using `portYIELD_FROM_ISR` (*_FROM_ISR procedures are ok to call within
  * an ISR).
  *
  * https://rcc.freertos.org/Documentation/02-Kernel/05-RTOS-implementation-tutorial/02-Building-blocks/03-The-RTOS-tick
@@ -122,19 +122,19 @@ void vPortSetupTimerInterrupt(void) {
   xlnx_tim_init(&timer);
 
   ret = xlnx_tim_configure(&timer);
-  if (ret != UNINASOC_OK) {
+  if (ret != SIMPLYV_OK) {
     printf("Cannot configure timer\r\n");
     return;
   }
 
   ret = xlnx_tim_enable_int(&timer);
-  if (ret != UNINASOC_OK) {
+  if (ret != SIMPLYV_OK) {
     printf("Cannot enable timer\r\n");
     return;
   }
 
   ret = xlnx_tim_start(&timer);
-  if (ret != UNINASOC_OK) {
+  if (ret != SIMPLYV_OK) {
     printf("Cannot start timer\r\n");
     return;
   }
@@ -146,7 +146,7 @@ void vPortSetupTimerInterrupt(void) {
 
 int main() {
 
-  uninasoc_init();
+  simplyv_init();
   printf("================= Simply-V Timer Example ""==================\n\r");
 
   // Create FreeRTOS Task
@@ -165,5 +165,5 @@ int main() {
 
   while (1);
 
-  return 0;
+  return SIMPLYV_OK;
 }

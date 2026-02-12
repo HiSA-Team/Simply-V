@@ -33,14 +33,14 @@ EMBEDDED_IP_LIST = $(call find_ip_dirs, ${XILINX_IPS_ROOT}/embedded)
 # Profile-independent IP lists
 IP_LIST     = ${COMMON_IP_LIST}
 # Selecting profile: HPC or EMBEDDED
-ifeq (${SOC_CONFIG}, hpc)
+ifeq (${SIMPLYV_PROFILE}, hpc)
 #   Append HPC IPs
     IP_LIST += ${HPC_IP_LIST}
-else ifeq (${SOC_CONFIG}, embedded)
+else ifeq (${SIMPLYV_PROFILE}, embedded)
 #   Append embedded IPs
     IP_LIST += ${EMBEDDED_IP_LIST}
 else
-$(error "Unsupported config ${SOC_CONFIG}")
+$(error "Unsupported config ${SIMPLYV_PROFILE}")
 endif
 
 # Remove Microblaze-V and Microblaze Debug Module V when building with Vivado < 2024
@@ -106,7 +106,7 @@ XILINX_VIVADO_ENV =                                 \
     IMPL_STRATEGY=${IMPL_STRATEGY}                  \
     XILINX_PART_NUMBER=${XILINX_PART_NUMBER}        \
     XILINX_PROJECT_NAME=${XILINX_PROJECT_NAME}      \
-    SOC_CONFIG=${SOC_CONFIG}                        \
+    SIMPLYV_PROFILE=${SIMPLYV_PROFILE}              \
     XILINX_BOARD_PART=${XILINX_BOARD_PART}          \
     XILINX_HW_SERVER_HOST=${XILINX_HW_SERVER_HOST}  \
     XILINX_HW_SERVER_PORT=${XILINX_HW_SERVER_PORT}  \

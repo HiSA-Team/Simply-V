@@ -9,7 +9,7 @@
 
 
 #include <stdint.h>
-#include "uninasoc_conf.h"
+#include "simplyv_conf.h"
 
 // https://docs.amd.com/v/u/en-US/pg144-axi-gpio
 
@@ -51,7 +51,7 @@ typedef struct {
 } xlnx_gpio_out_t;
 
 
-//All the Functions return UNINASOC_ERROR in case of error and UNINASOC_OK otherwise
+//All the Functions return SIMPLYV_ERROR in case of error and SIMPLYV_OK otherwise
 
 // Initializes the gpio out peripheral
 int xlnx_gpio_out_init(xlnx_gpio_out_t* gpio);

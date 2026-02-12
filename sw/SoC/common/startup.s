@@ -2,19 +2,17 @@
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
-# Description: Startup code and vector table definition for uninasoc
+# Description: Startup code and vector table definition for Simply-V
+
+# Exit status
+.equ SIMPLYV_OK   , 0
+.equ SIMPLYV_ERROR, 1
 
 ################
 # Vector table #
 ################
 .section .vector_table, "ax"
 .option norvc;
-.weak _sw_handler
-.weak _timer_handler
-.weak _ext_handler
-.extern _sw_handler;
-.extern _timer_handler;
-.extern _ext_handler;
 
   # According to RISC-V Specification, all entries are jumps to the specific handler.
   # Only the reset handler is defined in this file, while all other handlers points to
@@ -134,6 +132,27 @@ _reset_handler:
   # Jump to start function
   j _start
 
+#################
+# Weak handlers #
+#################
+
+# RISC-V SW interrupt
+.weak _sw_handler
+_sw_handler:
+  j _sw_handler
+
+# RISC-V TIM interrupt
+.weak _timer_handler
+_timer_handler:
+  j _timer_handler
+
+# RISC-V EXT interrupt
+.weak _ext_handler
+_ext_handler:
+  j _ext_handler
+
+# Default handler
+.weak _default_handler
 _default_handler:
   j _default_handler
 
@@ -145,16 +164,27 @@ _start:
   # jump to main program entry point (argc = argv = 0)
   mv a0, zero
   mv a1, zero
-
   jal ra, main
 
-# Hold program execution
-_exit_wfi:
-  wfi
+  # Check exit status in a0
+  # if SIMPLYV_OK
+  li t0, SIMPLYV_OK
+  beq a0, t0, _exit_wfi_ok
+  # if SIMPLYV_ERROR
+  li t0, SIMPLYV_ERROR
+  beq a0, t0, _exit_wfi_error
 
 # Spin in place
 _exit_spin:
   j _exit_spin
+
+# Hold program execution
+_exit_wfi_error:
+  wfi
+
+# Hold program execution
+_exit_wfi_ok:
+  wfi
 
 
 

@@ -1,21 +1,21 @@
 /*
- * This is the linkerscript for FreeRTOS application. This includes the UninaSoC.ld and defines 
+ * This is the linkerscript for FreeRTOS application. This includes the simplyv.ld and defines
  * the BSS and DATA section where FreeRTOS Heap and static variables will be allocated. Also it defines
  * the symbols for the stack and performs some checks.
  *
  * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
  */
 
-INCLUDE ../../../../common/UninaSoC.ld
+INCLUDE ../../../../common/simplyv.ld
 
-/* 
+/*
 
-vector_table_start,defined in uninasoc.ld,is the address of reset handler
+vector_table_start,defined in simplyv.ld,is the address of reset handler
 trap_vector_start is the base address for the interrupt handlers
 
 */
 
-/* let's assume this memory block is defined in UninaSoC.ld */
+/* let's assume this memory block is defined in simplyv.ld */
 __bram_end        = ORIGIN(BRAM_0) + LENGTH(BRAM_0);
 __stack_size      = 0x1000; /* 4k */
 __stack_bottom    = _stack_start - __stack_size;

@@ -8,6 +8,7 @@ RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+IP_NAME=$( basename $(dirname $( realpath ${BASH_SOURCE[0]} ) ))
 
 WORK_DIR=$(pwd -P)
 # Creating build/ dir
@@ -21,4 +22,4 @@ source rebuild_hls.sh
 # Back to top
 cd ${WORK_DIR}
 
-printf "\n${GREEN}[FETCH_SOURCES] Completed${NC}\n"
+printf "\n${GREEN}[FETCH_SOURCES $IP_NAME] Completed${NC}\n"

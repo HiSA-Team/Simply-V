@@ -36,8 +36,8 @@ OFFSET	?= 0x00000
 NUM_BYTES ?= 16
 
 # Load the binary into SoC memory (BRAM for now)
-# Call the specific load script based on the SOC_CONFIG (HPC or EMBEDDED)
-readback: readback_${SOC_CONFIG}
+# Call the specific load script based on the SIMPLYV_PROFILE (HPC or EMBEDDED)
+readback: readback_${SIMPLYV_PROFILE}
 
 # Embedded profile
 readback_embedded:
@@ -58,7 +58,7 @@ vio_%:
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/vio_reset.tcl -tclargs $@
 
 # Program the bitstream based on the SoC profile
-program_bitstream: program_bitstream_${SOC_CONFIG}
+program_bitstream: program_bitstream_${SIMPLYV_PROFILE}
 
 # Program bitstream for embedded profile
 program_bitstream_embedded:

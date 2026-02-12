@@ -112,8 +112,8 @@ wait_on_run synth_1
 # Open synthesized design
 open_run synth_1 -name synth_1
 # Genate reports
-check_timing -verbose                                       -file $report_dir/$::env(XILINX_PROJECT_NAME).post_synth.check_timing.rpt
-report_utilization -hierarchical -hierarchical_percentage   -file $report_dir/$::env(XILINX_PROJECT_NAME).post_synth.utilization.rpt
+check_timing -verbose                                       -file $report_dir/post_synth.check_timing.rpt
+report_utilization -hierarchical -hierarchical_percentage   -file $report_dir/post_synth.utilization.rpt
 
 ############
 # Add ILAs #
@@ -149,11 +149,11 @@ wait_on_run impl_1
 open_run impl_1
 
 # Generate reports
-check_timing                                                              -file $report_dir/$::env(XILINX_PROJECT_NAME).post_impl.check_timing.rpt
-report_timing -max_paths 100 -nworst 100 -delay_type max -sort_by slack   -file $report_dir/$::env(XILINX_PROJECT_NAME).post_impl.timing_WORST_100.rpt
-report_timing -nworst 1 -delay_type max -sort_by group                    -file $report_dir/$::env(XILINX_PROJECT_NAME).post_impl.timing.rpt
-report_utilization -hierarchical -hierarchical_percentage                 -file $report_dir/$::env(XILINX_PROJECT_NAME).post_impl.utilization.rpt
-report_timing_summary                                                     -file $report_dir/$::env(XILINX_PROJECT_NAME).post_impl.timing_summary.rpt
+check_timing                                                              -file $report_dir/post_impl.check_timing.rpt
+report_timing -max_paths 100 -nworst 100 -delay_type max -sort_by slack   -file $report_dir/post_impl.timing_WORST_100.rpt
+report_timing -nworst 1 -delay_type max -sort_by group                    -file $report_dir/post_impl.timing.rpt
+report_utilization -hierarchical -hierarchical_percentage                 -file $report_dir/post_impl.utilization.rpt
+report_timing_summary                                                     -file $report_dir/post_impl.timing_summary.rpt
 
 # Print info
 puts "    \[REPORT\] prj         [current_project]
@@ -162,7 +162,7 @@ puts "    \[REPORT\] prj         [current_project]
     \[REPORT\] elapsed     [get_property stats.elapsed  [get_runs]]
     \[REPORT\] wns         [get_property stats.wns      [get_runs impl_1]]
     \[REPORT\] whs         [get_property stats.whs      [get_runs impl_1]]
-    \[PARAMETERS\] SOC_CONFIG          = $::env(SOC_CONFIG)
+    \[PARAMETERS\] SIMPLYV_PROFILE     = $::env(SIMPLYV_PROFILE)
     \[PARAMETERS\] XILINX_BOARD_PART   = $::env(XILINX_BOARD_PART)
     \[PARAMETERS\] VIO_RESETN_DEFAULT  = $::env(VIO_RESETN_DEFAULT)
     \[PARAMETERS\] CORE_SELECTOR       = $::env(CORE_SELECTOR)

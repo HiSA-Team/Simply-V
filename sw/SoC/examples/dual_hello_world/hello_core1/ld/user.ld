@@ -1,8 +1,8 @@
 /*
     *** User-defined linker script ***
 
-    If you want to extend the UninaSoC.ld script, place here your code.
-    If you want to redefine your own linker script, remove the UninaSoC include.
+    If you want to extend the simplyv.ld script, place here your code.
+    If you want to redefine your own linker script, remove the simplyv include.
 
 */
 
@@ -12,4 +12,4 @@ _vector_table_start = _default_base_offset + 0x0000000000000000;
 _vector_table_end   = _default_base_offset + 0x0000000000000080;
 
 /* Inlcude common linker script */
-INCLUDE ../../../common/UninaSoC.ld
+INCLUDE ../../../common/simplyv.ld

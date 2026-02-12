@@ -10,6 +10,7 @@ RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+IP_NAME=$( basename $(dirname $( realpath ${BASH_SOURCE[0]} ) ))
 
 # Directories
 RTL_DIR=$(pwd)/rtl
@@ -27,7 +28,7 @@ GIT_TAG=v5.3.0
 CLONE_DIR=$(pwd)/cva6
 FLIST=${ASSETS_DIR}/flist
 
-printf "${YELLOW}[FETCH_SOURCES] Cloning source repository${NC}\n"
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository${NC}\n"
 git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
 cd ${CLONE_DIR};
 git submodule update --init --recursive
@@ -49,7 +50,7 @@ for i in "${!headers[@]}"; do headers[$i]="${headers[$i]//\$\{DIR\}/${CLONE_DIR}
 # Move source files to RTL dir #
 ################################
 
-printf "${YELLOW}[FETCH_SOURCES] Copy all sources into rtl${NC}\n" s
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Copy all sources into rtl${NC}\n" s
 for rtl_file in "${sources[@]}" ; do
     cp $rtl_file ${RTL_DIR}
 done;
@@ -58,18 +59,23 @@ done;
 # Move header files to RTL dir #
 ################################
 
-printf "${YELLOW}[FETCH_SOURCES] Copy all headers into rtl${NC}\n" s
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Copy all headers into rtl${NC}\n" s
 for rtl_file in "${headers[@]}" ; do
 
     filename=$(basename "$rtl_file")
 
-    if [[ "$rtl_file" == *"axi"* ]]; then
+    # Remove $SIMPLY_ROOT_DIR/ prefix if present
+    relative_rtl_file="${rtl_file/#\$SIMPLY_ROOT_DIR\//}"
+
+    # Rename headers for flat build
+    if [[ "$relative_rtl_file" == *"axi"* ]]; then
         filename="axi_${filename}"
-    elif [[ "$rtl_file" == *"register_interface"* ]]; then
+    elif [[ "$relative_rtl_file" == *"register_interface"* ]]; then
         filename="register_interface_${filename}"
     fi
 
-    cp "$rtl_file" "${RTL_DIR}/${filename}"
+    # Copy in rtl dir
+    cp "$relative_rtl_file" "${RTL_DIR}/${filename}"
 
 done;
 
@@ -102,4 +108,4 @@ cp ${ASSETS_DIR}/unread.sv ${RTL_DIR}
 ln -s ${ASSETS_DIR}/cv64a6_config_pkg.sv ${RTL_DIR}
 
 # Info
-echo -e "${GREEN}[FETCH_SOURCES] Completed${NC}"
+echo -e "${GREEN}[FETCH_SOURCES $IP_NAME] Completed${NC}"

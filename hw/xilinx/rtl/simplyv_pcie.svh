@@ -1,8 +1,8 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 // Description: Utility variables and macros for PCIe interface
 
-`ifndef UNINASOC_PCIE_SVH__
-`define UNINASOC_PCIE_SVH__
+`ifndef SIMPLYV_PCIE_SVH__
+`define SIMPLYV_PCIE_SVH__
 
 //////////////////
 // PCIe defines //

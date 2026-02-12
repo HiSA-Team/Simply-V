@@ -1,17 +1,17 @@
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
 
 int main()
 {
 
   // Initialize HAL
-  uninasoc_init();
+  simplyv_init();
 
   // Print
   printf("Hello World!\n\r");
 
   // Return to caller
-  return 0;
+  return SIMPLYV_OK;
 
 }
 

@@ -3,8 +3,8 @@
 
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 
 module custom_top_wrapper # (
 

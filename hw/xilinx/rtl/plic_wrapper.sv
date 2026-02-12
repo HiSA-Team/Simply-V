@@ -4,7 +4,7 @@
 //      Data width converter. It is required as RISC-V PLIC is a 32-bits IP by default.
 //      Therefore, if the MBUS is 64-bits wide, a converter is required.
 
-`include "uninasoc_axi.svh"
+`include "simplyv_axi.svh"
 
 module plic_wrapper # (
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32,

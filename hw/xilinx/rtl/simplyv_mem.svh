@@ -3,8 +3,8 @@
 // Note: The main rationale behind this macro is to avoid the usage of structs and
 //       macros for the widest possible syntax compatibility.
 
-`ifndef UNINASOC_MEM_SVH__
-`define UNINASOC_MEM_SVH__
+`ifndef SIMPLYV_MEM_SVH__
+`define SIMPLYV_MEM_SVH__
 
 //////////////////////////////////////////////////////
 //    ___                         _                 //
@@ -144,4 +144,4 @@
     assign ``bus_name``_mem_we      = '0;   \
     assign ``bus_name``_mem_be      = '0;
 
-`endif // UNINASOC_MEM_SVH__
+`endif // SIMPLYV_MEM_SVH__

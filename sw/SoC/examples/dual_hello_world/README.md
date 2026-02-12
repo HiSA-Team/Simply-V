@@ -108,31 +108,45 @@ Among other targets, you should see:
 7  Hart #1 (Running)
 ```
 
-### Run program on Core 0
+### Load program on Core 0
 
 ```tcl
 targets -set -filter {name =~ "Hart #0*"}
 rst -processor
 dow /path/to/hello_core0.elf
-con
 ```
 
-### Run program on Core 1
+### Load program on Core 1
 
 ```tcl
 targets -set -filter {name =~ "Hart #1*"}
 rst -processor
 dow /path/to/hello_core1.elf
+```
+
+### Start cores
+Start cores one after the other, since no synchronization is performed on the UART for now.
+
+```tcl
+targets -set -filter {name =~ "Hart #0*"}
+con
+targets -set -filter {name =~ "Hart #1*"}
 con
 ```
 
 ### Expected UART output:
+
+Both cores use the same UART, displayed in one TTY window.
 
 ```
 Hello from CORE 0!
 Hello from CORE 1!
 ```
 
-Both via the same UART, displayed in one TTY window.
+### Scripting
+Alternatively, after programming the bitstream, launch a single XSDB script from this directory:
 
+```tcl
+source dual_hello_world.tcl
+```
 
