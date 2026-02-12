@@ -3,16 +3,17 @@
 // Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Description:
-//      This code demonstrates the usage of CLINT, PLIC and interrupts.
+//      This code demonstrates the usage interrupts with CLINT and PLIC.
 //      This example assumes:
 //          - two interrupt lines connected to the PLIC: GPIO_IN and TIM0
+//          - PLIC interrupt line connected to the CPU external interrupt port
 //          - CLINT interrupt line connected to the CPU timer interrupt port
 //      Behaviour:
 //          - Until MAX_INTERRUPTS interrupts are served:
 //             - GPIO_IN interrupts trigger a toggle on led 0 (overriding default _ext_handler)
 //             - TIM0 timer interrupts trigger a toggle on led 1 (overriding default _ext_handler)
 //             - CLINT timer interrupts trigger a toggle on led 2 (overriding default _timer_handler)
-//          - Interrupt count is printed
+//          - Interrupt count is printed before exit
 //
 
 #include "simplyv.h"
