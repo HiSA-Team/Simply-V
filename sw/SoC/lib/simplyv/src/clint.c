@@ -10,12 +10,17 @@
 
 // Define CLINT frequency in MHz
 // TODO: import from config
+//       for now we use the default frequency of the MBUS
 #ifdef IS_EMBEDDED
     #define CLINT_FREQ_MHz (20u)
 #else
     #define CLINT_FREQ_MHz (100u)
 #endif
 
+// Divide factor for RTC w.r.t. MBUS clock
+#define RTC_MBUS_CLOCK_DIVIDE (10u)
+// Frequecy of real-time clock in MHz
+#define RTC_FREQ_MHz (CLINT_FREQ_MHz / RTC_MBUS_CLOCK_DIVIDE)
 
 // MIE.MTIE CSR mask
 #define MIE_MTIE_MASK (0x0080u)
@@ -84,25 +89,20 @@ int clint_sleep_ticks( uint32_t ticks )
     uint32_t time_read_value = clint_get_mtime();
     uint32_t mtimecmp_write_value = time_read_value + ticks;
 
-    // DEBUG
-    printf("%s:%d ticks                %u\n\r", __FILE__, __LINE__, ticks);
-    printf("%s:%d mtime_read_value     %u\n\r", __FILE__, __LINE__, time_read_value);
-    printf("%s:%d mtimecmp_write_value %u\n\r", __FILE__, __LINE__, mtimecmp_write_value);
-
     // Enable CLINT
     retval = clint_enable( mtimecmp_write_value );
     if ( retval != SIMPLYV_OK ) {
         return retval;
     }
 
-    // Wait for interrupt
-    asm volatile("wfi");
+    // Wait for timer interrupt
+    // NOTE: This breaks in case of other interrupts, e.g. from PLIC or ebreak (GDB)
+    // asm volatile("wfi");
 
-    // Disable CLINT
-    retval = clint_disable();
-    if ( retval != SIMPLYV_OK ) {
-        return retval;
-    }
+    // Spin on flag
+    // NOTE: this is a simple solution, used for demonstration
+    _timer_handler_flag = 0;
+    while ( _timer_handler_flag != 1 );
 
     return SIMPLYV_OK;
 }
@@ -110,7 +110,6 @@ int clint_sleep_ticks( uint32_t ticks )
 // Sleep for milliseconds
 int clint_sleep_us( uint32_t usec )
 {
-
     // Compute number of ticks based on frequency
-    return clint_sleep_ticks ( usec / CLINT_FREQ_MHz );
+    return clint_sleep_ticks ( usec / RTC_FREQ_MHz );
 }

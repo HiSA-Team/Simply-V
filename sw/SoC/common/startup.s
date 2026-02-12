@@ -8,6 +8,12 @@
 .equ SIMPLYV_OK   , 0
 .equ SIMPLYV_ERROR, 1
 
+# Simple flag to sync _timer_handler and clint_sleep_ticks()
+.section .bss
+.global _timer_handler_flag
+_timer_handler_flag:
+  .space 4
+
 ################
 # Vector table #
 ################
@@ -117,16 +123,8 @@ _reset_handler:
   # Enable global interrupts
   csrs mstatus, 0x8           # Enable MIE in mstatus
 
-  # Enable local interrupt lines in mie register
-  # MSIE (Machine Software Interrupt)
-  # li t0, 0x0008
-  # csrs mie, t0
-  # MTIE (Machine Timer Interrupt)
-  # li t2, 0x0080
-  # csrs mie, t2
-  # MEIE (Machine External Interrupt)
-  # li t1, 0x0800
-  # csrs mie, t1
+  # Disable all interrupt lines in mie register
+  csrs mie, zero
 
   ########
   # Tail #
@@ -150,7 +148,15 @@ _sw_handler:
 # RISC-V TIM interrupt
 .weak _timer_handler
 _timer_handler:
-  j _timer_handler
+  # Clear MTIE (Machine Timer Interrupt Enable)
+  li t0, 0x0080
+  csrc mie, t0
+  # Set _timer_handler_flag = 1
+  li t1, 1
+  la t2, _timer_handler_flag
+  sw t1, 0(t2)
+  # Return
+  mret
 
 # RISC-V EXT interrupt
 .weak _ext_handler

@@ -14,11 +14,9 @@
 #define CLINT_MSIP           (CLINT_BASEADDR +    0x0u) // Machine mode software interrupt (IPI)
 #define CLINT_MTIMECMP       (CLINT_BASEADDR + 0x4000u) // Machine mode timer compare register for Hart 0
 #define CLINT_MTIME          (CLINT_BASEADDR + 0xBFF8u) // Timer register
-// 32-bit addresses
-#define CLINT_MTIMECMP_LOW   (CLINT_BASEADDR + 0x4000u) // Machine mode timer compare register for Hart 0 (low 32 bits)
-#define CLINT_MTIMECMP_HIGH  (CLINT_BASEADDR + 0x4004u) // Machine mode timer compare register for Hart 0 (high 32 bits)
-#define CLINT_MTIME_LOW      (CLINT_BASEADDR + 0xBFF8u) // Timer register (low 32 bits)
-#define CLINT_MTIME_HIGH     (CLINT_BASEADDR + 0xBFFCu) // Timer register (high 32 bits)
+
+// Simple flag to sync _timer_handler and clint_sleep_ticks()
+extern uint32_t _timer_handler_flag;
 
 // Initialize CLINT
 int clint_init();
