@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 // Define CLINT frequency in MHz
-// TODO: import from config
+// TODO198: import from config
 //       for now we use the default frequency of the MBUS
 #ifdef IS_EMBEDDED
     #define CLINT_FREQ_MHz (20u)
@@ -18,6 +18,7 @@
 #endif
 
 // Divide factor for RTC w.r.t. MBUS clock
+// TODO198: import from config
 #define RTC_MBUS_CLOCK_DIVIDE (10u)
 // Frequecy of real-time clock in MHz
 #define RTC_FREQ_MHz (CLINT_FREQ_MHz / RTC_MBUS_CLOCK_DIVIDE)
