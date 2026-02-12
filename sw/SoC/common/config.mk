@@ -72,3 +72,7 @@ DFLAG ?= -g -O0
 CFLAGS ?= -march=${ARCH} -mabi=${ABI} $(DFLAG) -c
 LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib -T$(LD_SCRIPT)
 
+MACRO_LIST =
+ifeq ($(SIMPLYV_PROFILE), embedded)
+	MACRO_LIST += -DIS_EMBEDDED
+endif

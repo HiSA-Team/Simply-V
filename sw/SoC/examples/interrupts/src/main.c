@@ -72,7 +72,7 @@ void _timer_handler(void)
 }
 
 // Maximum number of interrupts before exiting
-#define MAX_INTERRUPTS 10
+#define MAX_PLIC_INTERRUPTS 10
 
 void _ext_handler(void)
 {
@@ -108,7 +108,7 @@ void _ext_handler(void)
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
         #endif // GPIO_OUT_IS_ENABLED
-        xlnx_tim_clear_int(&timer0);
+        xlnx_tim_clear_int( &timer0 );
         break;
     default:
         // Skip this interrupt
@@ -119,11 +119,11 @@ void _ext_handler(void)
     plic_complete(interrupt_id);
 
     // Check interrupt count
-    if ( ext_interrupt_count >= MAX_INTERRUPTS ) {
+    if ( ext_interrupt_count >= MAX_PLIC_INTERRUPTS ) {
         // Clean up
         printf("[_ext_handler] All expected interrupts handled, stopping timer0\r\n");
-        if (xlnx_tim_stop(&timer0) != SIMPLYV_OK)
-            printf("ERROR TIMER stop\r\n");
+        if (xlnx_tim_stop( &timer0 ) != SIMPLYV_OK)
+            printf("[ERROR] TIMER stop\r\n");
     }
 
 }
@@ -132,10 +132,13 @@ void _ext_handler(void)
 // Main function
 int main()
 {
+    int retval;
+
+    // Two seconds sleep
+    uint32_t sleep_usec = 1000000u;
+
     // Initialize HAL
     simplyv_init();
-
-    // clint_clean();
 
     // Reset global counters
     ext_interrupt_count = 0;
@@ -143,47 +146,88 @@ int main()
 
     printf("Interrupts Example\r\n");
 
+    // Init PLIC
+    retval = plic_init();
+    if ( retval != SIMPLYV_OK ) {
+        printf("[ERROR] PLIC init\r\n");
+        return retval;
+    }
     // Configure the PLIC for GPIOIN and TIM0, same priority
     uint32_t priority = 1;
-    plic_init();
     plic_configure_set_one(priority, PLIC_GPIOIN_INTERRUPT);
     plic_configure_set_one(priority, PLIC_TIM0_INTERRUPT);
-    plic_enable_all();
+    // plic_enable_all(); // DEBUG
 
     #ifdef GPIO_IN_IS_ENABLED
-    if (xlnx_gpio_in_init(&gpio_in) != SIMPLYV_OK)
-        printf("ERROR GPIOIN interrupt init\r\n");
+    retval = retval = xlnx_gpio_in_init(&gpio_in);
+    if ( retval != SIMPLYV_OK ) {
+        printf("[ERROR] GPIOIN interrupt init\r\n");
+        return retval;
+    }
     #endif // GPIO_IN_IS_ENABLED
 
     #ifdef GPIO_OUT_IS_ENABLED
-    if (xlnx_gpio_out_init(&gpio_out) != SIMPLYV_OK)
-        printf("ERROR GPIOOUT\r\n");
+    retval = xlnx_gpio_out_init(&gpio_out);
+    if ( retval != SIMPLYV_OK ) {
+        printf("[ERROR] GPIOOUT\r\n");
+        return retval;
+    }
     #endif // GPIO_OUT_IS_ENABLED
 
     // Configure timer0
-    if (xlnx_tim_init(&timer0) != SIMPLYV_OK)
-        printf("ERROR TIMER INIT\r\n");
+    retval = xlnx_tim_init( &timer0 );
+    if ( retval != SIMPLYV_OK ) {
+        printf("[ERROR] TIMER INIT\r\n");
+        return retval;
+    }
 
-    if (xlnx_tim_configure(&timer0) != SIMPLYV_OK)
-        printf("ERROR TIMER CONFIG\r\n");
+    retval = xlnx_tim_configure( &timer0 );
+    if ( retval != SIMPLYV_OK ) {
+        printf("[ERROR] TIMER CONFIG\r\n");
+        return retval;
+    }
 
     // Enable interrupts
-    if (xlnx_tim_enable_int(&timer0) != SIMPLYV_OK)
-        printf("ERROR TIMER interrupt enable\r\n");
+    retval = xlnx_tim_enable_int( &timer0 );
+    if ( retval != SIMPLYV_OK ) {
+        printf("[ERROR] TIMER interrupt enable\r\n");
+        return retval;
+    }
 
     // Start timer0
-    if (xlnx_tim_start(&timer0) != SIMPLYV_OK)
-        printf("ERROR TIMER start\r\n");
+    retval = xlnx_tim_start( &timer0 );
+    if ( retval != SIMPLYV_OK ) {
+        printf("[ERROR] TIMER start\r\n");
+        return retval;
+    }
 
     // Hot-loop, waiting for interrupts to occur
     // NOTE: this is not a safe way to synchronize with the _ext_handler,
     //       rather a simple way to terminate the program
-    while ( ext_interrupt_count < MAX_INTERRUPTS );
+    // while ( ext_interrupt_count < MAX_PLIC_INTERRUPTS ) {
+    while ( timer_interrupt_count < MAX_PLIC_INTERRUPTS ) {
+        // Sleep with CLINT
+        // retval = clint_sleep_us( sleep_usec );
+        // if ( retval != SIMPLYV_OK ) {
+        //     printf("[ERROR] CLINT\r\n");
+        //     return retval;
+        // }
+
+        // DEBUG
+        printf("%s:%d clint_get_mtime()    %u\n\r", __FILE__, __LINE__, clint_get_mtime());
+        printf("%s:%d clint_get_mtimecmp() %u\n\r", __FILE__, __LINE__, clint_get_mtimecmp());
+
+
+        // #define SLEEP_TICKS 20000000u
+        #define SLEEP_TICKS 1
+        printf("%s:%d Calling clint_sleep_ticks for %u ticks\n\r", __FILE__, __LINE__, SLEEP_TICKS);
+        retval = clint_sleep_ticks ( SLEEP_TICKS );
+    }
 
     // Info
     printf("Returning from main, interrupt count:\r\n");
-    printf("\text_interrupt: %d\n\r", ext_interrupt_count);
-    printf("\ttimer_interrupt: %d\n\r", timer_interrupt_count);
+    printf("\text_interrupt   = %d\n\r", ext_interrupt_count);
+    printf("\ttimer_interrupt = %d\n\r", timer_interrupt_count);
 
     return SIMPLYV_OK;
 }

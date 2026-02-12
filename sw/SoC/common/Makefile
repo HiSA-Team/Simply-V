@@ -19,11 +19,6 @@ MKDIR   = @mkdir -p $(@D)			 # Creates folders if not present
 # MACROS #
 ##########
 
-MACRO_LIST =
-ifeq ($(SIMPLYV_PROFILE), embedded)
-	MACRO_LIST += -DIS_EMBEDDED
-endif
-
 ###############################################################################
 
 ###########

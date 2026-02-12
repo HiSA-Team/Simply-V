@@ -20,8 +20,8 @@ static size_t sources = PLIC_MAX_SOURCES;
 int plic_init()
 {
     // Enable MIE.MEIE (Machine External Interrupt)
-    asm volatile("li    t0 ,  %0" :: "i"(MIE_MEIE_MASK));
-    asm volatile("csrs  mie, t1");
+    uint32_t mask = MIE_MEIE_MASK;
+    asm volatile("csrs  mie, %0": "=r" (mask));
 
     // Reset priorities
     for (unsigned id = 1; id <= 31; ++id){
@@ -45,8 +45,8 @@ int plic_init()
 int plic_clean ()
 {
     // Clear MIE.MEIE (Machine External Interrupt)
-    asm volatile("li    t0 ,  %0" :: "i"(MIE_MEIE_MASK));
-    asm volatile("csrc  mie, t1");
+    uint32_t mask = MIE_MEIE_MASK;
+    asm volatile("csrc  mie, %0": "=r" (mask));
 
     return SIMPLYV_OK;
 }
