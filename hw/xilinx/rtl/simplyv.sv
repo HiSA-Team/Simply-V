@@ -114,6 +114,7 @@ module simplyv (
     /////////////////////
     localparam logic [MBUS_DATA_WIDTH-1 : 0] RV_SOCKET_BOOT_ADDRESS = 0;
     localparam int unsigned                  RV_SOCKET_NUM_CPU = 1;
+    localparam int unsigned                  RTC_CLOCK_DIVIDE = 10;
 
     ///////////////////
     // Local Signals //
@@ -169,8 +170,38 @@ module simplyv (
     // Local assignments //
     ///////////////////////
 
-    // Set real-time clock to MBUS clock
-    assign clint_rtc = main_clk;
+    /////////////////////////
+    // "RTC" Clock Divider //
+    /////////////////////////
+
+    // FFs nets
+    logic rtc_clk_d, rtc_clk_q;
+    logic [$clog2(RTC_CLOCK_DIVIDE)-1 : 0] counter_d, counter_q;
+
+    // Divide main_clk by RTC_CLOCK_DIVIDE
+    always_comb begin : rtc_div_comb
+        rtc_clk_d = rtc_clk_q;
+        counter_d = counter_q + 1;
+        // Reset
+        if ( counter_q == RTC_CLOCK_DIVIDE ) begin
+            counter_d = '0;
+            rtc_clk_d = ~rtc_clk_q;
+        end
+    end : rtc_div_comb
+
+    // Sequential process
+    always_ff @(posedge main_clk, negedge main_rstn) begin : rtc_div_ff
+        if( ~main_rstn ) begin
+            counter_q <= '0;
+            rtc_clk_q <= 0;
+        end else begin
+            counter_q <= counter_d;
+            rtc_clk_q <= rtc_clk_d;
+        end
+    end : rtc_div_ff
+
+    // Use RTC for CLIC
+    assign clint_rtc = rtc_clk_q;
 
     /////////////
     // Modules //
