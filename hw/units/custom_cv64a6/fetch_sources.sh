@@ -31,7 +31,29 @@ FLIST=${ASSETS_DIR}/flist
 printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository${NC}\n"
 git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
 cd ${CLONE_DIR};
-git submodule update --init --recursive
+# Pull only the necessary submodules
+SELECTED_SUBMODULES_list=(
+    "core/cache_subsystem/hpdcache"
+    "core/cvfpu"
+    "corev_apu/axi_mem_if"
+    # "corev_apu/fpga/src/apb"
+    # "corev_apu/fpga/src/apb_node"
+    # "corev_apu/fpga/src/apb_timer" #
+    # "corev_apu/fpga/src/apb_uart"
+    # "corev_apu/fpga/src/ariane-ethernet" #
+    # "corev_apu/fpga/src/axi2apb"
+    "corev_apu/fpga/src/axi_slice"
+    # "corev_apu/fpga/src/gpio"
+    "corev_apu/register_interface"
+    # "corev_apu/riscv-dbg" #
+    # "corev_apu/rv_plic" #
+    "corev_apu/src/axi_riscv_atomics"
+    # "corev_apu/tb/common_verification"
+    # "docs/riscv-isa/riscv-isa-manual"
+    # "verif/core-v-verif"
+    # "verif/sim/dv"
+)
+git submodule update --init --recursive --depth 1 ${SELECTED_SUBMODULES_list[*]}
 cd ..;
 
 ######################
