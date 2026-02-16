@@ -5,26 +5,9 @@
 
 
 #include "simplyv.h"
+#include "irq_handlers.h"
 #include "io.h"
 #include <stdint.h>
-
-// Define CLINT frequency in MHz
-// TODO198: import from config
-//       for now we use the default frequency of the MBUS
-#ifdef IS_EMBEDDED
-    #define CLINT_FREQ_MHz (20u)
-#else
-    #define CLINT_FREQ_MHz (100u)
-#endif
-
-// Divide factor for RTC w.r.t. MBUS clock
-// TODO198: import from config
-#define RTC_MBUS_CLOCK_DIVIDE (10u)
-// Frequecy of real-time clock in MHz
-#define RTC_FREQ_MHz (CLINT_FREQ_MHz / RTC_MBUS_CLOCK_DIVIDE)
-
-// MIE.MTIE CSR mask
-#define MIE_MTIE_MASK (0x0080u)
 
 int clint_init()
 {
@@ -96,14 +79,16 @@ int clint_sleep_ticks( uint32_t ticks )
         return retval;
     }
 
+#ifdef CLINT_USE_WFI
     // Wait for timer interrupt
-    // NOTE: This breaks in case of other interrupts, e.g. from PLIC or ebreak (GDB)
-    // asm volatile("wfi");
-
+    asm volatile("wfi");
+#else // ! defined(CLINT_USE_WFI)
     // Spin on flag
     // NOTE: this is a simple solution, used for demonstration
+    // TODO: use atomics to sync with _timer_handler
     _timer_handler_flag = 0;
     while ( _timer_handler_flag != 1 );
+#endif // ! defined(CLINT_USE_WFI)
 
     return SIMPLYV_OK;
 }
@@ -111,6 +96,6 @@ int clint_sleep_ticks( uint32_t ticks )
 // Sleep for milliseconds
 int clint_sleep_us( uint32_t usec )
 {
-    // Compute number of ticks based on frequency
+    // Compute number of ticks based on RTC frequency
     return clint_sleep_ticks ( usec / RTC_FREQ_MHz );
 }

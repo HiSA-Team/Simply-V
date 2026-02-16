@@ -14,9 +14,6 @@
 // Number of configured sources
 static size_t sources = PLIC_MAX_SOURCES;
 
-// MIE.MEIE CSR mask
-#define MIE_MEIE_MASK (0x0800u)
-
 int plic_init()
 {
     // Enable MIE.MEIE (Machine External Interrupt)

@@ -1,7 +1,8 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 // Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
 // Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
-// Description: 
+// Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
+// Description:
 //  This file defines weak interrupt handlers with a default behaviour (irq_handlers.c)
 //  that are supposed to be redefined by the user in order to create custom interrupt handlers
 //  (use the __irq_handler__ as seen below to when redefining the functions)
@@ -9,7 +10,10 @@
 #ifndef INTERRUPTS_H
 #define INTERRUPTS_H
 
-#include <stdint.h>
+// MIE interrupt enable masks
+#define MIE_MSIE_MASK (0x0008u) // MIE.MSIE mask, enable machine-level software interrupts
+#define MIE_MTIE_MASK (0x0080u) // MIE.MTIE mask, enable machine-level timer interrupts
+#define MIE_MEIE_MASK (0x0800u) // MIE.MEIE mask, enable machine-level external interrupts
 
 // Interrupt Handlers
 // Unlike conventional functions, handlers must have a distinct compiler-generated prologue

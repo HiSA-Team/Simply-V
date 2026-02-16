@@ -16,7 +16,8 @@ module clint_wrapper # (
     input  logic       rst_ni,
 
     // CLINT ports
-    input  logic       rtc_i,       // Real-time clock in
+    output logic      rtc_o,       // Output divided real-time clock
+
     // Interrupt outputs
     output logic [CLINTCORES-1 :0] timer_irq_o, // Timer interrupts
     output logic [CLINTCORES-1 :0] ipi_o,       // software interrupt (a.k.a inter-process-interrupt)
@@ -140,7 +141,7 @@ module clint_wrapper # (
     custom_clint clint_u (
         .clk_i          ( clk_i       ),
         .rst_ni         ( rst_ni      ),
-        .rtc_i          ( rtc_i       ), // Real-time clock in (usually 32.768 kHz)
+        .rtc_o          ( rtc_o       ),
         .timer_irq_o    ( timer_irq_o ), // Timer interrupts
         .ipi_o          ( ipi_o       ), // software interrupt (a.k.a inter-process-interrupt)
         // AXI slave interface

@@ -7,6 +7,11 @@
 #include <stdint.h>
 #include "simplyv_conf.h"
 
+// Use wfi instruction to sychronize
+// NOTE: This breaks in case of other interrupts, e.g. from PLIC or ebreak (GDB)
+// NOTE: if not defined, use global synchronization flag
+// #define CLINT_USE_WFI
+
 // Clint base address
 #define CLINT_BASEADDR ((uintptr_t)_peripheral_CLINT_start)
 
@@ -14,6 +19,21 @@
 #define CLINT_MSIP           (CLINT_BASEADDR +    0x0u) // Machine mode software interrupt (IPI)
 #define CLINT_MTIMECMP       (CLINT_BASEADDR + 0x4000u) // Machine mode timer compare register for Hart 0
 #define CLINT_MTIME          (CLINT_BASEADDR + 0xBFF8u) // Timer register
+
+// Define CLINT frequency in MHz
+// TODO198: import from config
+//       for now we use the default frequency of the MBUS
+#ifdef IS_EMBEDDED
+    #define CLINT_FREQ_MHz (20u)
+#else
+    #define CLINT_FREQ_MHz (100u)
+#endif
+
+// Divide factor for RTC w.r.t. MBUS clock
+// NOTE: this must be aligned with clint custom_top_wrapper.sv
+#define RTC_CLOCK_DIVIDE (20u)
+// Frequecy of real-time clock in MHz
+#define RTC_FREQ_MHz (CLINT_FREQ_MHz / RTC_CLOCK_DIVIDE)
 
 // Simple flag to sync _timer_handler and clint_sleep_ticks()
 extern uint32_t _timer_handler_flag;

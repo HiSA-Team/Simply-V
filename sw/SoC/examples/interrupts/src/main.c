@@ -200,7 +200,7 @@ int main()
     //       rather a simple way to terminate the program
     while ( (timer_interrupt_count + ext_interrupt_count) < MAX_INTERRUPTS ) {
         // Sleep with CLINT
-        uint32_t sleep_usec = 5000000u;
+        uint32_t sleep_usec = 3000000u;
         printf("[main] Interrupts are not done, sleeping for %u us...\r\n", sleep_usec);
         retval = clint_sleep_us( sleep_usec );
         if ( retval != SIMPLYV_OK ) {

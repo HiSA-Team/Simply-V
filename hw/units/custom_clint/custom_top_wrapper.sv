@@ -1,5 +1,8 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
-// Description: Top level wrapper module for 32-bit PULP CLINT and AXI to register_interface adapter.
+// Description: Top level wrapper module for:
+//              - Clock divider for real-time clock generation
+//              - 32-bit PULP CLINT
+//              - AXI to register_interface adapter
 
 
 // Import headers
@@ -38,10 +41,12 @@ module custom_top_wrapper # (
     parameter                           LOCAL_AXI_RESP_WIDTH   = 2,
 
     // REG-related parameters
-    parameter int unsigned              REG_DATA_WIDTH      = 32,
-    parameter bit                       CUT_MEM_REQS        = 1'b0,
-    parameter bit                       CUT_MEM_RSPS        = 1'b0
+    parameter int unsigned              REG_DATA_WIDTH         = 32,
+    parameter bit                       CUT_MEM_REQS           = 1'b0,
+    parameter bit                       CUT_MEM_RSPS           = 1'b0,
 
+    // Division factor for real-time clock (RTC)
+    localparam int unsigned             RTC_CLOCK_DIVIDE = 20
 
 ) (
 
@@ -49,9 +54,10 @@ module custom_top_wrapper # (
     //  Add here IP-related signals  //
     ///////////////////////////////////
 
-    input  logic       clk_i,
-    input  logic       rst_ni,
-    input  logic       rtc_i,       // Real-time clock in (usually 32.768 kHz)
+    input  logic       clk_i,       // Input clock, also divided to generate RTC
+    input  logic       rst_ni,      // Input resetn
+    output logic       rtc_o,       // Output divided RTC
+
     // For CLINTCORES=1
     output logic [0:0] timer_irq_o, // Timer interrupts
     output logic [0:0] ipi_o,       // software interrupt (a.k.a inter-process-interrupt)
@@ -67,6 +73,9 @@ module custom_top_wrapper # (
     ////////////////////////
     // Signals Definition //
     ////////////////////////
+
+    // RTC to CLINT
+    logic clint_rtc;
 
     // First, we need to redefine the pulp axi types and reg types.
     // Define the req_t and resp_t type using axi_typedef.svh macro
@@ -92,9 +101,28 @@ module custom_top_wrapper # (
     reg_req_t reg_req;
     reg_rsp_t reg_rsp;
 
+    /////////////////
+    // Assignments //
+    /////////////////
+
+    // Also output RTC
+    assign rtc_o = clint_rtc;
+
     ///////////////////////
     // Instantiate Units //
     ///////////////////////
+
+    // RTC clock divider
+    clk_int_div_static #(
+        .DIV_VALUE             ( RTC_CLOCK_DIVIDE ),
+        .ENABLE_CLOCK_IN_RESET ( 1'b1             )
+    ) rtc_clk_div_u (
+        .clk_i          ( clk_i     ),
+        .rst_ni         ( rst_ni    ),
+        .en_i           ( 1'b1      ),
+        .test_mode_en_i ( 1'b0      ),
+        .clk_o          ( clint_rtc )
+    );
 
     // CLINT
     clint #(
@@ -106,11 +134,10 @@ module custom_top_wrapper # (
        .testmode_i  ( '0          ),
        .reg_req_i   ( reg_req     ),
        .reg_rsp_o   ( reg_rsp     ),
-       .rtc_i       ( rtc_i       ),    // Real-time clock in (usually 32.768 kHz)
+       .rtc_i       ( clint_rtc   ),    // Real-time clock in (usually 32.768 kHz)
        .timer_irq_o ( timer_irq_o ),    // Timer interrupts
        .ipi_o       ( ipi_o       )     // software interrupt (a.k.a inter-process-interrupt)
     );
-
 
     // AXI/reg converter
     axi_to_reg_v2 #(
