@@ -21,9 +21,10 @@ printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Cloning source repository at ${GIT_TAG
 git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
 cd ${CLONE_DIR};
 
-# Clone Bender
-printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Download Bender${NC}\n"
-curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh
+# Download Bender
+BENDER_VERSION=0.29.1
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Download Bender ${BENDER_VERSION}${NC}\n"
+curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh	-s -- ${BENDER_VERSION}
 
 # Download dependencies (specify Target RTL and FPGA)
 printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Resolve dependencies with Bender${NC}\n"

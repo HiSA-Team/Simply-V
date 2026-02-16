@@ -30,9 +30,8 @@ cd ${CLONE_DIR};
 git checkout ${GIT_COMMIT}
 
 # Download Bender
-printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Download Bender${NC}\n"
-# Version from Ara repo
-BENDER_VERSION=0.27.3
+BENDER_VERSION=0.27.3 # Version from Ara repo
+printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Download Bender ${BENDER_VERSION}${NC}\n"
 curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh	-s -- ${BENDER_VERSION}
 
 # Download dependencies (specify Target RTL and FPGA)
