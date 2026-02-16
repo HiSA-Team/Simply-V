@@ -46,8 +46,9 @@ module clint_wrapper # (
     if ( LOCAL_DATA_WIDTH == 64 ) begin : gen_axi_32_dwidth_conv
         // Downsizer
         xlnx_axi_dwidth_64_to_32_converter axi_dwidth_conv_u (
-            .s_axi_aclk     ( clk_i      ),
-            .s_axi_aresetn  ( rst_ni     ),
+            // Common clock and reset
+            .s_axi_aclk     ( clk_i  ),
+            .s_axi_aresetn  ( rst_ni ),
             // Slave from MBUS
             .s_axi_awid     ( s_axi_awid     ),
             .s_axi_awaddr   ( s_axi_awaddr   ),
