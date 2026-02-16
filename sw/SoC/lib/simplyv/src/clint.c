@@ -60,9 +60,9 @@ void clint_set_mtimecmp( uint64_t value )
     #ifdef __LP64__
         return iowrite64(CLINT_MTIMECMP, value);
     #else
-        // We can't just use iowrite64()
-        // We use the RV32 sample code from RISC-V spec to avoid
-        // spurious timer interrupts during mtimecmp setup.
+        // For RV32, we can't just use iowrite64().
+        // We use the RV32 sample code from RISC-V spec (3.2.1. Machine Timer Registers (mtime and mtimecmp))
+        // to avoid spurious timer interrupts during mtimecmp setup.
         iowrite32(CLINT_MTIMECMP   , -1);                      // No smaller than old value.
         iowrite32(CLINT_MTIMECMP +4, (uint32_t)(value >> 32)); // No smaller than new value
         iowrite32(CLINT_MTIMECMP   , (uint32_t)value);         // New value
@@ -86,7 +86,8 @@ int clint_sleep_ticks( uint64_t ticks )
     asm volatile("wfi");
 #else // ! defined(CLINT_USE_WFI)
     // Spin on flag
-    // NOTE: this is a simple solution, used for demonstration
+    // NOTE: this is a simple solution, used for demonstration with
+    //       those cores that do not support the A extention
     // TODO: use atomics to sync with _timer_handler
     _timer_handler_flag = 0;
     while ( _timer_handler_flag != 1 );

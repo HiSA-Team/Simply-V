@@ -7,7 +7,7 @@
 //      This example assumes:
 //          - two interrupt lines connected to the PLIC: GPIO_IN and TIM0
 //          - PLIC interrupt line connected to the CPU external interrupt port
-//          - CLINT interrupt line connected to the CPU timer interrupt port
+//          - CLINT timer interrupt line connected to the CPU timer interrupt port
 //      Behaviour:
 //          - Until MAX_INTERRUPTS interrupts are served:
 //             - GPIO_IN interrupts trigger a toggle on led 0 (overriding default _ext_handler)
@@ -82,7 +82,6 @@ void _timer_handler(void)
 
 void _ext_handler(void)
 {
-
     // Interrupts are automatically disabled by the microarchitecture.
     // Nested interrupts can be enabled manually by setting the IE bit in the mstatus register,
     // but this requires careful handling of registers.

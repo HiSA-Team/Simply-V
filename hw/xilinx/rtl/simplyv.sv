@@ -169,7 +169,6 @@ module simplyv (
     // Local assignments //
     ///////////////////////
 
-
     /////////////
     // Modules //
     /////////////

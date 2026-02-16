@@ -152,6 +152,9 @@ _timer_handler:
   li t0, 0x0080
   csrc mie, t0
   # Set _timer_handler_flag = 1
+  # NOTE: this is just for demonstration, avoiding to
+  #       use atomics for those cores that do not support
+  #       the A extention
   li t1, 1
   la t2, _timer_handler_flag
   sw t1, 0(t2)
