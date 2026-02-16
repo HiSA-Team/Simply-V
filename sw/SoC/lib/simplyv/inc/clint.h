@@ -12,6 +12,11 @@
 // NOTE: if not defined, use global synchronization flag
 // #define CLINT_USE_WFI
 
+#ifndef CLINT_USE_WFI
+    // Simple flag to sync _timer_handler and clint_sleep_ticks()
+    extern uint32_t _timer_handler_flag;
+#endif // CLINT_USE_WFI
+
 // Clint base address
 #define CLINT_BASEADDR ((uintptr_t)_peripheral_CLINT_start)
 
@@ -34,9 +39,6 @@
 #define RTC_CLOCK_DIVIDE (20u)
 // Frequecy of real-time clock in MHz
 #define RTC_FREQ_MHz (CLINT_FREQ_MHz / RTC_CLOCK_DIVIDE)
-
-// Simple flag to sync _timer_handler and clint_sleep_ticks()
-extern uint32_t _timer_handler_flag;
 
 // Initialize CLINT
 int clint_init();

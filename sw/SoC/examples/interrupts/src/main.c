@@ -198,6 +198,7 @@ int main()
     printf("[main] Wait for interrupts\r\n");
     // NOTE: this is not a safe way to synchronize with the handlers,
     //       rather a simple way to terminate the program
+    // TODO: use atomics to sync with handlers
     while ( (timer_interrupt_count + ext_interrupt_count) < MAX_INTERRUPTS ) {
         // Sleep with CLINT
         uint32_t sleep_usec = 3000000u;

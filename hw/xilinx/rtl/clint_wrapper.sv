@@ -16,7 +16,7 @@ module clint_wrapper # (
     input  logic       rst_ni,
 
     // CLINT ports
-    output logic      rtc_o,       // Output divided real-time clock
+    output logic       rtc_o,       // Output divided real-time clock
 
     // Interrupt outputs
     output logic [CLINTCORES-1 :0] timer_irq_o, // Timer interrupts

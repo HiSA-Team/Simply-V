@@ -5,7 +5,6 @@
 
 
 #include "simplyv.h"
-#include "irq_handlers.h"
 #include "io.h"
 #include <stdint.h>
 
@@ -80,7 +79,7 @@ int clint_sleep_ticks( uint32_t ticks )
     }
 
 #ifdef CLINT_USE_WFI
-    // Wait for timer interrupt
+    // Wait for interrupt (wait for any other interrupts, not only timer's, e.g. PLIC or ebreak (GDB))
     asm volatile("wfi");
 #else // ! defined(CLINT_USE_WFI)
     // Spin on flag
