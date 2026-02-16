@@ -2,8 +2,8 @@
 // Description:
 //  Simple wrapper functions for direct memory I/O
 
-#ifndef IO_H
-#define IO_H
+#ifndef __IO_H
+#define __IO_H
 
 #include <stdint.h>
 
@@ -13,10 +13,16 @@ static inline void iowrite32(uintptr_t addr, uint32_t val)
     *LocalAddr = val;
 }
 
+
 static inline void iowrite64(uintptr_t addr, uint64_t val)
 {
-	iowrite32(val >> 32, addr + sizeof(uint32_t));
-	iowrite32(val, addr);
+    #ifdef __LP64__
+        volatile uint32_t* LocalAddr = (volatile uint32_t*)addr;
+        *LocalAddr = val;
+    #else
+        iowrite32(val >> 32, addr + sizeof(uint32_t));
+        iowrite32((uint32_t)val, addr);
+    #endif
 }
 
 static inline void iowrite16(uintptr_t addr, uint16_t val)
@@ -46,15 +52,17 @@ static inline uint8_t ioread8(uintptr_t addr)
     return *(volatile uint8_t*)addr;
 }
 
-
 static inline uint64_t ioread64(uintptr_t addr)
 {
-	uint32_t low, high;
-
-	high = ioread32(addr + sizeof(uint32_t));
-	low  = ioread32(addr);
-
-	return (uint64_t)(low | (((uint64_t)high) << 32));
+    #ifdef __LP64__
+        return *(volatile uint64_t*)addr;
+    #else
+        uint32_t low, high;
+        high = ioread32(addr + sizeof(uint32_t));
+        low  = ioread32(addr);
+        return (uint64_t)(low | (((uint64_t)high) << 32));
+    #endif
 }
 
-#endif
+#endif // __IO_H
+

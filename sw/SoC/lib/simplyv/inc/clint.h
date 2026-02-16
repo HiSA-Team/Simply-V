@@ -47,19 +47,19 @@ int clint_init();
 int clint_disable();
 
 // Enable CLINT with mtimecmp value
-int clint_enable( uint32_t mtimecmp );
+void clint_enable( uint64_t mtimecmp );
 
 // Read the mtime CSR
-uint32_t clint_get_mtime();
+uint64_t clint_get_mtime();
 
 // Get the mtimecmp CSR
-uint32_t clint_get_mtimecmp();
+uint64_t clint_get_mtimecmp();
 
 // Set the mtimecmp CSR
-int clint_set_mtimecmp( uint32_t value );
+void clint_set_mtimecmp( uint64_t value );
 
 // Sleep for a num_ticks number of ticks
-int clint_sleep_ticks( uint32_t ticks );
+int clint_sleep_ticks( uint64_t ticks );
 
 // Sleep for microseconds
 int clint_sleep_us( uint32_t millisec );

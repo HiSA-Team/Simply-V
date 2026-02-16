@@ -148,6 +148,7 @@ int main()
     timer_interrupt_count = 0;
 
     printf("Interrupts Example\r\n");
+    printf("[main] TIM0 interrupt period = %u us\r\n", TIM0_COUNT_US);
 
     // Init PLIC
     retval = plic_init();
@@ -159,7 +160,7 @@ int main()
     uint32_t priority = 1;
     plic_configure_set_one(priority, PLIC_GPIOIN_INTERRUPT);
     plic_configure_set_one(priority, PLIC_TIM0_INTERRUPT);
-    // plic_enable_all();
+    plic_enable_all();
 
     #ifdef GPIO_IN_IS_ENABLED
     retval = retval = xlnx_gpio_in_init(&gpio_in);
@@ -211,11 +212,11 @@ int main()
     // TODO: use atomics to sync with handlers
     while ( (timer_interrupt_count + ext_interrupt_count) < MAX_INTERRUPTS ) {
         // Sleep with CLINT
-        uint32_t sleep_us = 1000000u;
+        uint32_t sleep_us = 3000000u;
         printf("[main] Interrupts are not done, sleeping for %u us...\r\n", sleep_us);
         retval = clint_sleep_us( sleep_us );
         if ( retval != SIMPLYV_OK ) {
-            printf("[main][ERROR] CLINT\r\n");
+            printf("[main][ERROR] CLINT sleep\r\n");
             return retval;
         }
     }
