@@ -32,12 +32,23 @@ xlnx_gpio_out_t gpio_out = {
 };
 #endif // IS_EMBEDDED
 
-// Reset counter value for one interrupt each second (assuming a 10MHz clock)
-#define COUNT_VALUE 10000000
+// Define CLINT frequency in MHz
+// TODO198: import from config
+//       for now we use the default frequency of the MBUS
+#ifdef IS_EMBEDDED
+    #define PBUS_FREQ_MHz (10u)
+#else
+    #define PBUS_FREQ_MHz (200u)
+#endif
+
+// Timer0 count in microseconds
+#define TIM0_COUNT_US (500000u)
+// Reset counter value for one interrupt each 0.5 seconds
+#define TIM0_COUNT_TICKS (TIM0_COUNT_US * PBUS_FREQ_MHz)
 
 xlnx_tim_t timer0 = {
     .base_addr       = TIM0_BASEADDR,
-    .counter         = COUNT_VALUE,
+    .counter         = TIM0_COUNT_TICKS,
     .reload_mode     = TIM_RELOAD_AUTO,
     .count_direction = TIM_COUNT_DOWN
 };
@@ -48,6 +59,8 @@ int timer_interrupt_count;
 
 // Maximum number of interrupts before exiting
 #define MAX_INTERRUPTS 10
+// Maximum number of external (PLIC) interrupts before exiting
+#define MAX_PLIC_INTERRUPTS 10
 
 void _timer_handler(void)
 {
@@ -66,9 +79,6 @@ void _timer_handler(void)
     // Disable CLINT
     clint_disable();
 }
-
-// Maximum number of interrupts before exiting
-#define MAX_PLIC_INTERRUPTS 10
 
 void _ext_handler(void)
 {
@@ -149,7 +159,7 @@ int main()
     uint32_t priority = 1;
     plic_configure_set_one(priority, PLIC_GPIOIN_INTERRUPT);
     plic_configure_set_one(priority, PLIC_TIM0_INTERRUPT);
-    plic_enable_all();
+    // plic_enable_all();
 
     #ifdef GPIO_IN_IS_ENABLED
     retval = retval = xlnx_gpio_in_init(&gpio_in);
@@ -201,9 +211,9 @@ int main()
     // TODO: use atomics to sync with handlers
     while ( (timer_interrupt_count + ext_interrupt_count) < MAX_INTERRUPTS ) {
         // Sleep with CLINT
-        uint32_t sleep_usec = 3000000u;
-        printf("[main] Interrupts are not done, sleeping for %u us...\r\n", sleep_usec);
-        retval = clint_sleep_us( sleep_usec );
+        uint32_t sleep_us = 1000000u;
+        printf("[main] Interrupts are not done, sleeping for %u us...\r\n", sleep_us);
+        retval = clint_sleep_us( sleep_us );
         if ( retval != SIMPLYV_OK ) {
             printf("[main][ERROR] CLINT\r\n");
             return retval;

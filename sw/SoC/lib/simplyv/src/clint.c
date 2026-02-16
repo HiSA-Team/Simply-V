@@ -68,6 +68,8 @@ int clint_sleep_ticks( uint32_t ticks )
 {
     int retval;
 
+    printf("***** ticks %u\n\r", ticks);
+
     // Prepare mtimecmp value
     uint32_t time_read_value = clint_get_mtime();
     uint32_t mtimecmp_write_value = time_read_value + ticks;
@@ -92,9 +94,9 @@ int clint_sleep_ticks( uint32_t ticks )
     return SIMPLYV_OK;
 }
 
-// Sleep for milliseconds
+// Sleep for microseconds
 int clint_sleep_us( uint32_t usec )
 {
     // Compute number of ticks based on RTC frequency
-    return clint_sleep_ticks ( usec / RTC_FREQ_MHz );
+    return clint_sleep_ticks ( usec * RTC_FREQ_MHz );
 }
