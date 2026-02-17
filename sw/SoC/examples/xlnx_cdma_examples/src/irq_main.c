@@ -27,6 +27,7 @@
 static volatile int cdma_done = 0;
 // Global CDMA Struct and config
 XAxiCdma cdma_handle;
+// NOTE: this only works for RV32
 XAxiCdma_Config CdmaCfg = {
     .DeviceId    = 0,
     .BaseAddress = _peripheral_CDMA_start,
