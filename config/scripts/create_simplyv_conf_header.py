@@ -33,9 +33,9 @@ for fname in config_file_names:
             continue
 
         # read the rows we need
-        names = utils.get_value_by_property(reader, "RANGE_NAMES").split(" ")
-        base_addr = utils.get_value_by_property(reader, "RANGE_BASE_ADDR").split(" ")
-        addr_width = utils.get_value_by_property(reader, "RANGE_ADDR_WIDTH").split(" ")
+        names = utils.get_value_by_property(reader, "RANGE_NAMES").split()
+        base_addr = utils.get_value_by_property(reader, "RANGE_BASE_ADDR").split()
+        addr_width = utils.get_value_by_property(reader, "RANGE_ADDR_WIDTH").split()
 
         # take peripherals and add them to the devices set
         if "peripheral" in fname:

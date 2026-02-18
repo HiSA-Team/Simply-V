@@ -59,9 +59,9 @@ for fname in config_bus_file_names:
         if protocol == "DISABLE":
             continue
 
-        range_names += utils.get_value_by_property(reader, "RANGE_NAMES").split(" ")
-        range_base_addr += utils.get_value_by_property(reader, "RANGE_BASE_ADDR").split(" ")
-        range_addr_width += utils.get_value_by_property(reader, "RANGE_ADDR_WIDTH").split(" ")
+        range_names += utils.get_value_by_property(reader, "RANGE_NAMES").split()
+        range_base_addr += utils.get_value_by_property(reader, "RANGE_BASE_ADDR").split()
+        range_addr_width += utils.get_value_by_property(reader, "RANGE_ADDR_WIDTH").split()
 
 # Make sure BOOT_MEMORY_BLOCK is enabled
 assert( BOOT_MEMORY_BLOCK in range_names )
