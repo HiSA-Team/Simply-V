@@ -17,9 +17,9 @@ OBJCOPY     = $(RV_PREFIX)objcopy
 AR          = $(RV_PREFIX)ar
 
 # RISC-V Extensions
-C_EXTENSION 	?= Y
+C_EXTENSION	?= Y
 F_EXTENSION	?= N
-A_EXTENSION 	?= N
+A_EXTENSION	?= N
 V_EXTENSION	?= N
 
 #########
@@ -67,10 +67,6 @@ endif
 
 # Always add Zicsr and Zifence
 ARCH := $(addsuffix _zicsr_zifencei,$(ARCH))
-
-DFLAG ?= -g -O0
-CFLAGS ?= -march=${ARCH} -mabi=${ABI} $(DFLAG) -c
-LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib -T$(LD_SCRIPT)
 
 DFLAG   ?= -g -O0
 CFLAGS  ?= -march=${ARCH} -mabi=${ABI} $(DFLAG) -c

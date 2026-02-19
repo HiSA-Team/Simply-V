@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# This file indicates standard configuration for Simply-V and is used to generate targets and
+# integrate with OpenSBI build system.
+#
+# Implemented by HiSA-Team University of Naples Federico II
+#
+# Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
+
+config PLATFORM_SIMPLYV
+    bool "Support for HiSA Simply-V Platform"
+    default y
+    help
+      Enable support for the SimplV RISC-V platform (University of Naples Federico II).
+
+if PLATFORM_SIMPLV
+
+config SIMPLVY_USE_XILINX_SERIAL
+    bool "Enable Xilinx UARTLite Serial Support directly from OpenSBI"
+    default n
+    select SERIAL_XILINX_UARTLITE
+    help
+      Enable support for the SimplV RISC-V platform using the built-in
+      OpenSBI Xilinx UARTLite driver.
+
+      If disabled, the build will fall back to the internal tinyIO
+      implementation in platform.c.
+
+endif
