@@ -1,25 +1,21 @@
-/*
- * This is the linkerscript for FreeRTOS application. This includes the simplyv.ld and defines
- * the BSS and DATA section where FreeRTOS Heap and static variables will be allocated. Also it defines
- * the symbols for the stack and performs some checks.
- *
- * Author: Giusppe Capasso <giuseppe.capasso17@studenti.unina.it>
- */
-
-/*
-vector_table_start,defined in simplyv.ld,is the address of reset handler
-trap_vector_start is the base address for the interrupt handlers
-*/
-
-/* let's assume this memory block is defined in simplyv.ld */
-__bram_end        = ORIGIN(BRAM) + LENGTH(BRAM);
-__stack_size      = 0x1000; /* 4k */
-__stack_bottom    = _stack_start - __stack_size;
-
-/* https://www.freertos.org/Using-FreeRTOS-on-RISC-V#interrupt-system-stack-setup */
-__freertos_irq_stack_top = _stack_start;
-
 SECTIONS {
+
+    .vector_table _vector_table_start :
+    {
+        KEEP(*(.vector_table))
+    }> BRAM
+
+    .text :
+    {
+        . = ALIGN(32);
+        _text_start = .;
+        *(.text.handlers)
+        *(.text.start)
+        *(.text)
+        *(.text*)
+        . = ALIGN(32);
+        _text_end = .;
+    }> BRAM
 
    .bss : ALIGN(0x20)
    {
