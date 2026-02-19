@@ -1,5 +1,5 @@
 # Variables
-PYTHON ?= python3.10 # Requires >= 3.10
+PYTHON          ?= python3.10 # Requires >= 3.10
 
 # Configurations
 CONFIG_MBUS_CSV ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_main_bus.csv
@@ -28,18 +28,21 @@ config_%_bus: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/declare_and_assign_clocks_rtl.py ${CONFIG_BUS_CSV}
 
 
-OUTPUT_LD_FILE ?= ${SW_ROOT}/SoC/common/simplyv.ld
+OUTPUT_MEM_LD_FILE    ?= ${SW_ROOT}/SoC/common/memory.ld
+OUTPUT_SEC_LD_FILE    ?= ${SW_ROOT}/SoC/common/sections.ld
+OUTPUT_VAR_LD_FILE    ?= ${SW_ROOT}/SoC/common/variables.ld
 # Generate HAL configuration file
-OUTPUT_HAL_CONF_FILE ?= ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
+OUTPUT_HAL_CONF_FILE  ?= ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
 
 config_ld: config_check
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_linker_script.py \
+	${PYTHON} ${CONFIG_ROOT}/scripts/create_linkerscript_fragments.py \
 		${CONFIG_SYSTEM_CSV} \
 		${CONFIG_MBUS_CSV} \
 		${CONFIG_HBUS_CSV} \
-		${OUTPUT_LD_FILE}
-	@echo "[CONFIG] Output file is at ${OUTPUT_LD_FILE}"
-
+		${OUTPUT_MEM_LD_FILE} \
+		${OUTPUT_SEC_LD_FILE} \
+		${OUTPUT_VAR_LD_FILE}
+	@echo "[CONFIG] Output file are at ${OUTPUT_MEM_LD_FILE} ${OUTPUT_SEC_LD_FILE} ${OUTPUT_VAR_LD_FILE}"
 
 config_check:
 	${PYTHON} ${CONFIG_ROOT}/scripts/check_config.py ${CONFIG_SYSTEM_CSV} ${CONFIG_BUS_CSVS}
@@ -53,5 +56,3 @@ config_xilinx:
 config_sw: config_check
 	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_simplyv_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
-
-

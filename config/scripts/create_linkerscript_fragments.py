@@ -3,13 +3,18 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 # Description:
-#   Generate a linker script file from the CSV configuration.
+#   Generate linkerscript fragments:
+#     - memory.ld: contains the memory blocks
+#     - sections.ld: contains sections
+#     - variables.ld: contains variables to be used in fragments
+#   Note: linkerscript fragments must be included in correct order. Refer to `common/config.mk`
+#         for an example
 # Note:
 #   Addresses overlaps are not sanitized.
 # Args:
 #   1: Input configuration file for system
 #   2: Input configuration files for buses
-#   3: Output generated ld script
+#   ..: Output generated segments
 
 ####################
 # Import libraries #
@@ -25,14 +30,21 @@ import utils # Utils function
 ##############
 
 # CSV configuration file path
-if len(sys.argv) != 5:
-    print("Usage: <CONFIG_SYSTEM_CSV> <CONFIG_MAIN_BUS_CSV> <CONFIG_HIGH_PERFORMANCE_BUS_CSV> <OUTPUT_LD_FILE>")
+if len(sys.argv) != (1 + 6):
+    print(f"""Usage: {sys.argv[0]}
+          <CONFIG_SYSTEM_CSV> <CONFIG_MAIN_BUS_CSV> <CONFIG_HIGH_PERFORMANCE_BUS_CSV>
+          <OUTPUT_MEM_LD_FILE> <OUTPUT_SEC_LD_FILE> <OUTPUT_VAR_LD_FILE>""")
     sys.exit(1)
-
-# The last argument must be the output file
-config_system_file_name = sys.argv[1]
-config_bus_file_names = sys.argv[2:-1]
-ld_file_name = sys.argv[-1]
+(
+    _,                   # The script name (unused)
+    config_system_file_name,
+    bus_main,
+    bus_high_perf,
+    mem_ld_file_name,
+    sec_ld_file_name,
+    var_ld_file_name
+) = sys.argv
+config_bus_file_names = [bus_main, bus_high_perf]
 
 ###############
 # Read config #
@@ -134,20 +146,19 @@ lines = []
 for s in device_dict["global_symbols"]:
     name = s[0]
     value = s[1]
-    lines.append(f"PROVIDE({name} = 0x{value:016x});")
+    lines.append(f"{name} = 0x{value:016x};")
 globals_block = "\n".join(lines)
 
 # Template string
-ld_template_str = """/* Auto-generated with {current_file_path} */
+memory_template_str = """/* Auto-generated with {current_file_path} */
 
 /* Memory blocks */
 MEMORY
 {{
 {memory_block}
-}}
+}}"""
 
-/* Global symbols */
-{globals_block}
+sections_template_str = """/* Auto-generated with {current_file_path} */
 
 SECTIONS
 {{
@@ -167,18 +178,61 @@ SECTIONS
         . = ALIGN(32);
         _text_end = .;
     }}> {initial_memory_name}
-}}
-"""
+}}"""
 
-# The ld_template_str is a string which can be formatted (same as f-string). Provide {variable}
+supervisor_template_str = """/* Auto-generated with {current_file_path} */
+SECTIONS
+{{
+    . = __payload_start;
+
+    .text : {{
+        KEEP(*(.text._start))
+        *(.text*)
+    }}> {supervisor_boot_memory_block}
+
+    .rodata : ALIGN(32) {{
+        *(.rodata*)
+    }}> {supervisor_boot_memory_block}
+
+    .data : {{
+        *(.data*)
+    }}> {supervisor_boot_memory_block}
+
+    .bss (NOLOAD) : ALIGN(32) {{
+        *(.bss*)
+        *(COMMON)
+    }}> {supervisor_boot_memory_block}
+}}"""
+
+variables_template_str = """/* Auto-generated with {current_file_path} */
+/* Global symbols */
+{globals_block}"""
+
+# Generate fragments by rendering the template strings  writing to output file
+
+# The *_template_str is a string which can be formatted (same as f-string). Provide {variable}
 # as strings.
-rendered = ld_template_str.format(
+rendered = memory_template_str.format(
     current_file_path=os.path.basename(__file__),
     memory_block=memory_block,
-    globals_block=globals_block,
-    initial_memory_name=boot_memory_device["device"],
 )
 
 # Write the output
-with open(ld_file_name, "w") as f:
+with open(mem_ld_file_name, "w") as f:
+    f.write(rendered)
+
+rendered = sections_template_str.format(
+    current_file_path=os.path.basename(__file__),
+    initial_memory_name=boot_memory_device["device"],
+)
+
+with open(sec_ld_file_name, "w") as f:
+    f.write(rendered)
+
+rendered = variables_template_str.format(
+    current_file_path=os.path.basename(__file__),
+    globals_block=globals_block
+)
+
+with open(var_ld_file_name, "w") as f:
     f.write(rendered)
