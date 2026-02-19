@@ -63,12 +63,12 @@ CFLAGS  += $(INCLUDES)
 # Linker flags
 ###############################################################################################
 LDFLAGS  = -nostdlib -nostartfiles \
-	   $(SW_SOC_ROOT)/lib/simplyv/lib/libsimplyv.a \
-	   $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a \
-	   -T$(SW_SOC_ROOT)/common/memory.ld \
-	   -T$(SW_SOC_ROOT)/common/variables.ld \
-	   -T$(FREERTOS_COMMON)/config.ld \
-	   -T$(FREERTOS_COMMON)/sections.ld
+           $(SW_SOC_ROOT)/lib/simplyv/lib/libsimplyv.a \
+           $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a \
+           -T$(SW_SOC_ROOT)/common/memory.ld \
+           -T$(SW_SOC_ROOT)/common/variables.ld \
+           -T$(FREERTOS_COMMON)/config.ld \
+           -T$(FREERTOS_COMMON)/sections.ld
 
 ###############################################################################################
 # Application sources

@@ -23,8 +23,6 @@ OBJ_DIR     = obj
 INC_DIR     = inc
 STARTUP_DIR = $(SW_SOC_ROOT)/common
 
-LD_SCRIPT     = ld/user.ld
-
 #############
 # Libraries #
 #############
