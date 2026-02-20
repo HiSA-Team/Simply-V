@@ -1,17 +1,19 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 // Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
 // Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+// Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Description:
-//      This code demonstrates the usage of PLIC and interrupts.
-//      Physically, three interrupt lines are connected (in addition to line 0, which is reserved).
-//      Logically, two interrupt sources are utilized: a timer0 and gpio_in (embedded only).
-//          - GPIO_IN interrupts trigger a toggle on led 0.
-//          - TIM0 timer0 interrupts trigger a toggle on led 1.
-//
-//      Note 1: The PLIC is connected to the core via the EXT line. Both the timer0 and gpio_in are expected
-//      to be connected to the PLIC. The timer0 must NOT be connected directly to the core's TIM line in this example.
-//
-//      Note 2: The IS_EMBEDDED macro is automatically defined depending on SoC profile
+//      This code demonstrates the usage interrupts with CLINT and PLIC.
+//      This example assumes:
+//          - two interrupt lines connected to the PLIC: GPIO_IN and TIM0
+//          - PLIC interrupt line connected to the CPU external interrupt port
+//          - CLINT timer interrupt line connected to the CPU timer interrupt port
+//      Behaviour:
+//          - Until MAX_INTERRUPTS interrupts are served:
+//             - GPIO_IN interrupts trigger a toggle on led 0 (overriding default _ext_handler)
+//             - TIM0 timer interrupts trigger a toggle on led 1 (overriding default _ext_handler)
+//             - CLINT timer interrupts trigger a toggle on led 2 (overriding default _timer_handler)
+//          - Interrupt count is printed before exit
 //
 
 #include "simplyv.h"
@@ -30,40 +32,53 @@ xlnx_gpio_out_t gpio_out = {
 };
 #endif // IS_EMBEDDED
 
-// Reset counter value for one interrupt each second (assuming a 10MHz clock)
-#define COUNT_VALUE 10000000
+// Define CLINT frequency in MHz
+// TODO198: import from config
+//       for now we use the default frequency of the MBUS
+#ifdef IS_EMBEDDED
+    #define PBUS_FREQ_MHz (10u)
+#else
+    #define PBUS_FREQ_MHz (200u)
+#endif
+
+// Timer0 count in microseconds
+#define TIM0_COUNT_US (500000u)
+// Reset counter value for one interrupt each 0.5 seconds
+#define TIM0_COUNT_TICKS (TIM0_COUNT_US * PBUS_FREQ_MHz)
 
 xlnx_tim_t timer0 = {
     .base_addr       = TIM0_BASEADDR,
-    .counter         = COUNT_VALUE,
+    .counter         = TIM0_COUNT_TICKS,
     .reload_mode     = TIM_RELOAD_AUTO,
     .count_direction = TIM_COUNT_DOWN
 };
 
-// IMPORTANT:
-// when defining custom handlers always use the "__irq_handler__" symbol
-// this symbol is crucial, omitting it would make the compiler treat them like normal functions
-// creating wrong epilogue and prologue
-
-void _sw_handler() __irq_handler__;
-void _timer_handler() __irq_handler__;
-void _ext_handler() __irq_handler__;
-
-void _sw_handler(void)
-{
-    // Unused for this example
-}
-
-void _timer_handler(void)
-{
-    // Unused for this example
-}
+// Global interrupts count
+int ext_interrupt_count;
+int timer_interrupt_count;
 
 // Maximum number of interrupts before exiting
 #define MAX_INTERRUPTS 10
+// Maximum number of external (PLIC) interrupts before exiting
+#define MAX_PLIC_INTERRUPTS 10
 
-// Global interrupts count
-int interrupt_count;
+void _timer_handler(void)
+{
+    // Toggle
+    #ifdef GPIO_OUT_IS_ENABLED
+    xlnx_gpio_out_toggle(&gpio_out, PIN_2);
+    #endif // GPIO_OUT_IS_ENABLED
+
+    // Count up
+    timer_interrupt_count++;
+    printf("[_timer_handler] Handiling timer interrupt, count %d\r\n", timer_interrupt_count);
+
+    // Set flag
+    _timer_handler_flag = 1;
+
+    // Disable CLINT
+    clint_disable();
+}
 
 void _ext_handler(void)
 {
@@ -78,13 +93,13 @@ void _ext_handler(void)
 
     // Increment counter
     // NOTE: this is not thread-safe
-    interrupt_count++;
+    ext_interrupt_count++;
 
     // Get interrupt ID
     uint32_t interrupt_id = plic_claim();
     switch (interrupt_id) {
     case PLIC_GPIOIN_INTERRUPT:
-        printf("[_ext_handler] Handiling GPIO_IN interrupt, count %d\r\n", interrupt_count);
+        printf("[_ext_handler] Handiling GPIOIN interrupt, count %d\r\n", ext_interrupt_count);
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_0);
         #endif // GPIO_OUT_IS_ENABLED
@@ -94,11 +109,11 @@ void _ext_handler(void)
         break;
     case PLIC_TIM0_INTERRUPT:
         // Timer interrupt
-        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", interrupt_count);
+        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", ext_interrupt_count);
         #ifdef GPIO_OUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
         #endif // GPIO_OUT_IS_ENABLED
-        xlnx_tim_clear_int(&timer0);
+        xlnx_tim_clear_int( &timer0 );
         break;
     default:
         // Skip this interrupt
@@ -109,11 +124,11 @@ void _ext_handler(void)
     plic_complete(interrupt_id);
 
     // Check interrupt count
-    if ( interrupt_count >= MAX_INTERRUPTS ) {
+    if ( ext_interrupt_count >= MAX_PLIC_INTERRUPTS ) {
         // Clean up
         printf("[_ext_handler] All expected interrupts handled, stopping timer0\r\n");
-        if (xlnx_tim_stop(&timer0) != SIMPLYV_OK)
-            printf("ERROR TIMER stop\r\n");
+        if (xlnx_tim_stop( &timer0 ) != SIMPLYV_OK)
+            printf("[_ext_handler][ERROR] TIM0 stop\r\n");
     }
 
 }
@@ -122,53 +137,93 @@ void _ext_handler(void)
 // Main function
 int main()
 {
+    int retval;
+
     // Initialize HAL
     simplyv_init();
 
-    // Reset global counter
-    interrupt_count = 0;
+    // Reset global counters
+    ext_interrupt_count = 0;
+    timer_interrupt_count = 0;
 
     printf("Interrupts Example\r\n");
+    printf("[main] TIM0 interrupt period = %u us\r\n", TIM0_COUNT_US);
 
+    // Init PLIC
+    retval = plic_init();
+    if ( retval != SIMPLYV_OK ) {
+        printf("[main][ERROR] PLIC init\r\n");
+        return retval;
+    }
     // Configure the PLIC for GPIOIN and TIM0, same priority
     uint32_t priority = 1;
-    plic_init();
     plic_configure_set_one(priority, PLIC_GPIOIN_INTERRUPT);
     plic_configure_set_one(priority, PLIC_TIM0_INTERRUPT);
     plic_enable_all();
 
     #ifdef GPIO_IN_IS_ENABLED
-    if (xlnx_gpio_in_init(&gpio_in) != SIMPLYV_OK)
-        printf("ERROR GPIOIN interrupt init\r\n");
+    retval = retval = xlnx_gpio_in_init(&gpio_in);
+    if ( retval != SIMPLYV_OK ) {
+        printf("[main][ERROR] GPIOIN interrupt init\r\n");
+        return retval;
+    }
     #endif // GPIO_IN_IS_ENABLED
 
     #ifdef GPIO_OUT_IS_ENABLED
-    if (xlnx_gpio_out_init(&gpio_out) != SIMPLYV_OK)
-        printf("ERROR GPIOOUT\r\n");
+    retval = xlnx_gpio_out_init(&gpio_out);
+    if ( retval != SIMPLYV_OK ) {
+        printf("[main][ERROR] GPIOOUT\r\n");
+        return retval;
+    }
     #endif // GPIO_OUT_IS_ENABLED
 
     // Configure timer0
-    if (xlnx_tim_init(&timer0) != SIMPLYV_OK)
-        printf("ERROR TIMER INIT\r\n");
+    retval = xlnx_tim_init( &timer0 );
+    if ( retval != SIMPLYV_OK ) {
+        printf("[main][ERROR] TIMER INIT\r\n");
+        return retval;
+    }
 
-    if (xlnx_tim_configure(&timer0) != SIMPLYV_OK)
-        printf("ERROR TIMER CONFIG\r\n");
+    retval = xlnx_tim_configure( &timer0 );
+    if ( retval != SIMPLYV_OK ) {
+        printf("[main][ERROR] TIMER CONFIG\r\n");
+        return retval;
+    }
 
     // Enable interrupts
-    if (xlnx_tim_enable_int(&timer0) != SIMPLYV_OK)
-        printf("ERROR TIMER interrupt enable\r\n");
+    retval = xlnx_tim_enable_int( &timer0 );
+    if ( retval != SIMPLYV_OK ) {
+        printf("[main][ERROR] TIMER interrupt enable\r\n");
+        return retval;
+    }
 
     // Start timer0
-    if (xlnx_tim_start(&timer0) != SIMPLYV_OK)
-        printf("ERROR TIMER start\r\n");
+    retval = xlnx_tim_start( &timer0 );
+    if ( retval != SIMPLYV_OK ) {
+        printf("[main][ERROR] TIMER start\r\n");
+        return retval;
+    }
 
     // Hot-loop, waiting for interrupts to occur
-    // NOTE: this is not a safe way to synchronize with the _ext_handler,
+    printf("[main] Wait for interrupts\r\n");
+    // NOTE: this is not a safe way to synchronize with the handlers,
     //       rather a simple way to terminate the program
-    while ( interrupt_count < MAX_INTERRUPTS );
+    // TODO: use atomics to sync with handlers
+    while ( (timer_interrupt_count + ext_interrupt_count) < MAX_INTERRUPTS ) {
+        // Sleep with CLINT
+        uint32_t sleep_us = 3000000u;
+        printf("[main] Interrupts are not done, sleeping for %u us...\r\n", sleep_us);
+        retval = clint_sleep_us( sleep_us );
+        if ( retval != SIMPLYV_OK ) {
+            printf("[main][ERROR] CLINT sleep\r\n");
+            return retval;
+        }
+    }
 
     // Info
-    printf("Returning from main\r\n");
+    printf("[main] Returning from main, interrupt count:\r\n");
+    printf("[main] \text_interrupt   = %d\n\r", ext_interrupt_count);
+    printf("[main] \ttimer_interrupt = %d\n\r", timer_interrupt_count);
 
     return SIMPLYV_OK;
 }

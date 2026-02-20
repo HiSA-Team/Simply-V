@@ -15,7 +15,7 @@
 #include "simplyv.h"
 #include <stdint.h>
 
-// CDMA Base Address (from linker script)
+// CDMA Base Address
 #define CDMA_BASEADDR   ((uintptr_t)_peripheral_CDMA_start)
 
 // Multi-Round Test Parameters
@@ -117,6 +117,7 @@ int main(void) {
 
     // CDMA Struct and config
     XAxiCdma cdma_handle;
+    // NOTE: this only works for RV32
     XAxiCdma_Config CdmaCfg = {
         .DeviceId    = 0,
         .BaseAddress = CDMA_BASEADDR,

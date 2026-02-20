@@ -45,7 +45,7 @@ int plic_init();
 // This function configures the priorities associated to each peripheral
 // "priorities" is an array of size "source_num" containing
 // the priority values to assign to each peripherals in order
-void plic_configure_set_array(uint32_t* priorities, size_t source_num);
+int plic_configure_set_array(uint32_t* priorities, size_t source_num);
 // Configure a single line
 void plic_configure_set_one(uint32_t priority, size_t source);
 

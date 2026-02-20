@@ -113,10 +113,11 @@ module simplyv (
     // Local variables //
     /////////////////////
     localparam logic [MBUS_DATA_WIDTH-1 : 0] RV_SOCKET_BOOT_ADDRESS = 0;
+    localparam int unsigned                  RV_SOCKET_NUM_CPU = 1;
 
     ///////////////////
     // Local Signals //
-    //////////////////
+    ///////////////////
 
     // CLOCKS
     logic main_clk;
@@ -125,6 +126,8 @@ module simplyv (
     logic clk_50MHz;
     logic clk_100MHz;
     logic clk_250MHz;      // HPC ONLY
+    // Clint real-time clock
+    logic clint_rtc;
 
     // RESETS
     logic main_rstn;
@@ -148,6 +151,9 @@ module simplyv (
     logic plic_int_irq_o;
     logic irq_hls_to_plic;
     logic irq_cdma_to_plic;
+    // Core Local Interrutpt Controller
+    logic [RV_SOCKET_NUM_CPU -1 : 0] clint_ipi;
+    logic [RV_SOCKET_NUM_CPU -1 : 0] clint_timer_irq;
 
     /////////////////////////////////////////
     // Buses declaration and concatenation //
@@ -646,6 +652,9 @@ module simplyv (
 
         // Map platform interrupt pin to socket ext interrupts
         rv_socket_interrupt_line[RVSOCKET_EXT_INTERRUPT] = plic_int_irq_o;
+        // Map CLINT interrupts to socket
+        rv_socket_interrupt_line[RVSOCKET_SW_INTERRUPT ] = clint_ipi;
+        rv_socket_interrupt_line[RVSOCKET_TIM_INTERRUPT] = clint_timer_irq;
 
     end : system_interrupts
 
@@ -699,6 +708,62 @@ module simplyv (
         .s_axi_rlast    ( MBUS_to_PLIC_axi_rlast        ), // output wire s_axi_rlast
         .s_axi_rvalid   ( MBUS_to_PLIC_axi_rvalid       ), // output wire s_axi_rvalid
         .s_axi_rready   ( MBUS_to_PLIC_axi_rready       )
+    );
+
+    // CLINT
+    clint_wrapper #(
+        .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH   ),
+        .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH   ),
+        .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH     ),
+        .CLINTCORES         ( RV_SOCKET_NUM_CPU )
+    ) clint_wrapper_u (
+        // Clocks and resets
+        .clk_i          ( main_clk  ),
+        .rst_ni         ( main_rstn ),
+        .rtc_o          (  ), // Unused
+        // Interupt outputs
+        .timer_irq_o    ( clint_timer_irq ), // Timer interrupts
+        .ipi_o          ( clint_ipi       ), // software interrupt (a.k.a inter-process-interrupt)
+        // AXI Slave Interface
+        .s_axi_awid     ( MBUS_to_CLINT_axi_awid     ),
+        .s_axi_awaddr   ( MBUS_to_CLINT_axi_awaddr   ),
+        .s_axi_awlen    ( MBUS_to_CLINT_axi_awlen    ),
+        .s_axi_awsize   ( MBUS_to_CLINT_axi_awsize   ),
+        .s_axi_awburst  ( MBUS_to_CLINT_axi_awburst  ),
+        .s_axi_awlock   ( MBUS_to_CLINT_axi_awlock   ),
+        .s_axi_awcache  ( MBUS_to_CLINT_axi_awcache  ),
+        .s_axi_awprot   ( MBUS_to_CLINT_axi_awprot   ),
+        .s_axi_awregion ( MBUS_to_CLINT_axi_awregion ),
+        .s_axi_awqos    ( MBUS_to_CLINT_axi_awqos    ),
+        .s_axi_awvalid  ( MBUS_to_CLINT_axi_awvalid  ),
+        .s_axi_awready  ( MBUS_to_CLINT_axi_awready  ),
+        .s_axi_wdata    ( MBUS_to_CLINT_axi_wdata    ),
+        .s_axi_wstrb    ( MBUS_to_CLINT_axi_wstrb    ),
+        .s_axi_wlast    ( MBUS_to_CLINT_axi_wlast    ),
+        .s_axi_wvalid   ( MBUS_to_CLINT_axi_wvalid   ),
+        .s_axi_wready   ( MBUS_to_CLINT_axi_wready   ),
+        .s_axi_bid      ( MBUS_to_CLINT_axi_bid      ),
+        .s_axi_bresp    ( MBUS_to_CLINT_axi_bresp    ),
+        .s_axi_bvalid   ( MBUS_to_CLINT_axi_bvalid   ),
+        .s_axi_bready   ( MBUS_to_CLINT_axi_bready   ),
+        .s_axi_arid     ( MBUS_to_CLINT_axi_arid     ),
+        .s_axi_araddr   ( MBUS_to_CLINT_axi_araddr   ),
+        .s_axi_arlen    ( MBUS_to_CLINT_axi_arlen    ),
+        .s_axi_arsize   ( MBUS_to_CLINT_axi_arsize   ),
+        .s_axi_arburst  ( MBUS_to_CLINT_axi_arburst  ),
+        .s_axi_arlock   ( MBUS_to_CLINT_axi_arlock   ),
+        .s_axi_arcache  ( MBUS_to_CLINT_axi_arcache  ),
+        .s_axi_arprot   ( MBUS_to_CLINT_axi_arprot   ),
+        .s_axi_arregion ( MBUS_to_CLINT_axi_arregion ),
+        .s_axi_arqos    ( MBUS_to_CLINT_axi_arqos    ),
+        .s_axi_arvalid  ( MBUS_to_CLINT_axi_arvalid  ),
+        .s_axi_arready  ( MBUS_to_CLINT_axi_arready  ),
+        .s_axi_rid      ( MBUS_to_CLINT_axi_rid      ),
+        .s_axi_rdata    ( MBUS_to_CLINT_axi_rdata    ),
+        .s_axi_rresp    ( MBUS_to_CLINT_axi_rresp    ),
+        .s_axi_rlast    ( MBUS_to_CLINT_axi_rlast    ),
+        .s_axi_rvalid   ( MBUS_to_CLINT_axi_rvalid   ),
+        .s_axi_rready   ( MBUS_to_CLINT_axi_rready   )
     );
 
     // Peripheral bus (PBUS)
@@ -842,6 +907,7 @@ module simplyv (
     assign CDMA_to_MBUS_axi_arlock = '0;
     assign CDMA_to_MBUS_axi_arqos  = '0;
     assign CDMA_to_MBUS_axi_awregion   = '0;
+    assign CDMA_to_MBUS_axi_arregion   = '0;
 
     // AXI CDMA
     xlnx_axi_cdma cdma_u (
