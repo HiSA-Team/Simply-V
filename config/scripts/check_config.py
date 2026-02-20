@@ -25,6 +25,7 @@
 ####################
 # Parse args
 import sys
+import math
 # Get env
 import os
 # Sub-scripts
@@ -119,6 +120,13 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
         if config.PROTOCOL == "AXI4LITE" and addr_width < MIN_AXI4LITE_ADDR_WIDTH:
             print_error(f"RANGE_ADDR_WIDTH is less than {MIN_AXI4LITE_ADDR_WIDTH} in {config_file_name}")
             return False
+
+    # Check ID_WIDTH
+    THREAD_ID_WIDTH = 2 # CVA6 requires this for atomics
+    min_ID_WIDTH = math.ceil(math.log2(config.NUM_SI +1)) + THREAD_ID_WIDTH
+    if config.ID_WIDTH < min_ID_WIDTH:
+        print_error(f"ID_WIDTH ({config.ID_WIDTH}) must be at least than {min_ID_WIDTH} in {config_file_name}")
+        return False
 
     # Check the address range
     # List of base and end addresses for each slave (e.g. with range_width=12 -> base_addr: 0x0, end_add: 0xfff)
