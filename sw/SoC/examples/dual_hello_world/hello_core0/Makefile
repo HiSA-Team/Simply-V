@@ -24,17 +24,15 @@ OBJ_DIR     = obj
 INC_DIR     = inc
 STARTUP_DIR = $(SW_SOC_ROOT)/common
 
-LD_SCRIPT     = ld/user.ld
-
 #############
 # Libraries #
 #############
 
-LIB_OBJ_TINYIO    = $(LIB_DIR)/tinyio/lib/tinyio.a
-LIB_INC_TINYIO    = -I$(LIB_DIR)/tinyio/inc
+LIB_OBJ_TINYIO    = $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a
+LIB_INC_TINYIO    = -I$(SW_SOC_ROOT)/lib/tinyio/inc
 
-LIB_OBJ_SIMPLYV  = $(LIB_DIR)/simplyv/lib/libsimplyv.a
-LIB_INC_SIMPLYV   = -I$(LIB_DIR)/simplyv/inc
+LIB_OBJ_SIMPLYV  = $(SW_SOC_ROOT)/lib/simplyv/lib/libsimplyv.a
+LIB_INC_SIMPLYV   = -I$(SW_SOC_ROOT)/lib/simplyv/inc
 
 LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO) $(LIB_OBJ_SIMPLYV)
 LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
@@ -46,6 +44,11 @@ LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
 
 include $(SW_ROOT)/SoC/common/config.mk
 
+LDFLAGS := $(LIB_OBJ_LIST) -nostdlib \
+           -T$(SW_SOC_ROOT)/common/variables.ld \
+           -T$(SW_SOC_ROOT)/common/memory.ld \
+           -Tld/config.ld \
+           -T$(SW_SOC_ROOT)/common/sections.ld
 ###########
 # Targets #
 ###########
