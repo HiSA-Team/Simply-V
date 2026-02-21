@@ -10,6 +10,3 @@
 _default_base_offset = 0x8000;
 _vector_table_start = _default_base_offset + 0x0000000000000000;
 _vector_table_end   = _default_base_offset + 0x0000000000000080;
-
-/* Inlcude common linker script */
-INCLUDE ../../../common/simplyv.ld
