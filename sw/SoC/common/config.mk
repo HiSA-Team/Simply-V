@@ -7,9 +7,11 @@
 # Toolchain #
 #############
 
-XLEN        ?= 32
-RV_PREFIX   ?= riscv${XLEN}-unknown-elf-
+# Don't touch this line, since it is a target of the config flow
+XLEN ?= 32
 
+# Toolchain
+RV_PREFIX   ?= riscv${XLEN}-unknown-elf-
 CC          = $(RV_PREFIX)gcc
 LD          = $(RV_PREFIX)ld
 OBJDUMP     = $(RV_PREFIX)objdump
