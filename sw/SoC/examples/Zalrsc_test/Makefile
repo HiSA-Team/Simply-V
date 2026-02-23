@@ -19,10 +19,10 @@ PROGRAM_NAME = $(shell basename $$PWD)
 # Paths and Folders #
 #####################
 
-SRC_DIR       = src
-OBJ_DIR       = obj
-INC_DIR       = inc
-STARTUP_DIR   = $(SW_SOC_ROOT)/common
+SRC_DIR     = src
+OBJ_DIR     = obj
+INC_DIR     = inc
+STARTUP_DIR = $(SW_SOC_ROOT)/common
 
 #############
 # Libraries #
@@ -34,8 +34,9 @@ LIB_INC_TINYIO    = -I$(LIB_DIR)/tinyio/inc
 LIB_OBJ_SIMPLYV  = $(LIB_DIR)/simplyv/lib/libsimplyv.a
 LIB_INC_SIMPLYV   = -I$(LIB_DIR)/simplyv/inc
 
-LIB_OBJ_LIST      = $(LIB_OBJ_TINYIO) $(LIB_OBJ_SIMPLYV)
-LIB_INC_LIST      = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
+LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO) $(LIB_OBJ_SIMPLYV)
+LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
+
 
 #############
 # Toolchain #
