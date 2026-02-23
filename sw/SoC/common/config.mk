@@ -17,10 +17,10 @@ OBJCOPY     = $(RV_PREFIX)objcopy
 AR          = $(RV_PREFIX)ar
 
 # RISC-V Extensions
-C_EXTENSION	?= Y
-F_EXTENSION	?= N
-A_EXTENSION	?= N
-V_EXTENSION	?= N
+C_EXTENSION     ?= Y
+F_EXTENSION     ?= N
+A_EXTENSION     ?= N
+V_EXTENSION     ?= N
 
 #########
 # Flags #
