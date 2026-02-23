@@ -28,9 +28,9 @@ config_%_bus: config_check
 	${PYTHON} ${CONFIG_ROOT}/scripts/declare_and_assign_clocks_rtl.py ${CONFIG_BUS_CSV}
 
 
-OUTPUT_MEM_LD_FILE    ?= ${SW_ROOT}/SoC/common/memory.ld
-OUTPUT_SEC_LD_FILE    ?= ${SW_ROOT}/SoC/common/sections.ld
-OUTPUT_VAR_LD_FILE    ?= ${SW_ROOT}/SoC/common/variables.ld
+OUTPUT_MEM_LD_FILE    ?= ${SW_ROOT}/SoC/common/ld/memory.ld
+OUTPUT_SEC_LD_FILE    ?= ${SW_ROOT}/SoC/common/ld/sections.ld
+OUTPUT_VAR_LD_FILE    ?= ${SW_ROOT}/SoC/common/ld/variables.ld
 # Generate HAL configuration file
 OUTPUT_HAL_CONF_FILE  ?= ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
 

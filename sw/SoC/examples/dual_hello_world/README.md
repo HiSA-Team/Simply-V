@@ -76,8 +76,8 @@ The on-chip BRAM is split into two 32 KB regions:
 Custom linker scripts:
 
 ```
-sw/SoC/common/dual_hello_wolrd/hello_core0/config.ld
-sw/SoC/common/dual_hello_wolrd/hello_core1/config.ld
+sw/SoC/common/dual_hello_wolrd/hello_core0/ld/config.ld
+sw/SoC/common/dual_hello_wolrd/hello_core1/ld/config.ld
 ```
 
 ## Building
