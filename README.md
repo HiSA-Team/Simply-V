@@ -4,8 +4,8 @@ Simply-V is a flexible and extensible soft-SoC generator platform for Xilinx FPG
 
 Designed for rapid prototyping and open hardware research, Simply-V enables plug-and-play support for multiple CPUs, IPs and accelerators, offers structured configurability across embedded and high-performance profiles, and supports the integration of both RTL and HLS-based components, alongside automatic clock-domain crossing and frequency scaling.
 
-## Environment and Tools Version
-This project was verified on Ubuntu 22.04 and the following tools version:
+### Verified Environment and Tools' Versions
+This project was verified on Ubuntu 22.04 and the following Vivado versions:
 | Tool            | Verified version |
 |-----------------|------------------|
 | Vivado          | 2024.2           |
@@ -13,8 +13,22 @@ This project was verified on Ubuntu 22.04 and the following tools version:
 | Vivado          | 2022.2           |
 > `CORE_MICROBLAZEV*` are supported only in Vivado >= 2024.2.
 
+## Documentation Index
+
+Fine-grained documentation and insights to control the building flow, can be found below:
+1. [SoC architecture](doc/README.md): interconnectio n and available peripherals.
+2. [Configuration flow](config/README.md): re-configure Simply-V.
+3. Hardware build:
+   - [Hardware units](hw/units/README.md): prepare external custom IPs.
+   - [Xilinx FPGA](hw/xilinx/README.md): package IPs, build bitstream, program device and debug platform.
+4. [Software build](sw/README.md): build software for Simply-V.
+   - [Run software](hw/xilinx/doc/PROGRAM_LOADING.md): additional doc for loading and running programs.
+5. [TODO152](https://github.com/HiSA-Team/Simply-V/issues/152) SoC-level Simulation:
+      * Requires license and support for Xilinx IPs
+      * Students can access a licensed host for simulator access
+
 ## SoC Profiles
-The SoC comes in two flavors, `hpc` and `embedded` profiles, and support for multiple boards.
+Simply-V SoC comes in two flavors, `hpc` and `embedded` profiles, and support for multiple boards.
 
 Supported boards and associated profiles are:
 
@@ -25,13 +39,26 @@ Supported boards and associated profiles are:
 | `hpc`                    | [Alveo U250](https://www.amd.com/en/products/accelerators/alveo/u250/a-u250-a64g-pq-g.html) (Default)
 | `hpc`                    | [Alveo U280](https://docs.amd.com/r/en-US/ug1314-alveo-u280-reconfig-accel)
 
-> **NOTE:** To use the Alveo U280, Vivado <= 2023.1 is needed because the Alveo U280 is EOL (end of life)
+> **NOTE:** To use the Alveo U280, Vivado <= 2023.1 is needed because the Alveo U280 is EOL (end of life).
 
-Further support is coming soon for:
-- [Zybo](https://digilent.com/reference/programmable-logic/zybo/reference-manual)
-- [ZCU102](https://www.xilinx.com/products/boards-and-kits/ek-u1-zcu102-g.html)
-- [Alveo U50](https://docs.amd.com/r/en-US/ug1371-u50-reconfig-accel)
+> Further support is coming soon for:
+[Zybo](https://digilent.com/reference/programmable-logic/zybo/reference-manual),
+[ZCU102](https://www.xilinx.com/products/boards-and-kits/ek-u1-zcu102-g.html),
+[Alveo U50](https://docs.amd.com/r/en-US/ug1371-u50-reconfig-accel).
 
+### Configuration Defaults:
+
+For the default supported boards and pre-configured CSVs, the platform offers:
+- Profile `embedded` on Nexys-A7-100T:
+   - UART: physical peripheral requires a [physical FTDI connection](hw/xilinx/doc/UART_CONNECTION.md)
+   - Memory: 64 KB BRAM
+   - `Sys Master`: through JTAG Xilinx `hw_server`
+- Profile `hpc` on Alveo U250:
+   - UART: virtualized over PCIe.
+   - Memory: 64 KB BRAM + 2x 16 GB DDR4 channels
+   - `Sys Master`: through PCIe BAR addres space.
+
+Additional details on SoC architecture and peripherals are available [here](doc/README.md).
 
 ## Quick Start:
 The top-level `Makefile` can be used to build the platform for the specific target board.
@@ -99,45 +126,6 @@ In a new shell, start GDB frontend and run example until completion:
 ``` bash
 make -C hw/xilinx gdb_run EXAMPLE=hello_world
 ```
-
-### Documentation Index
-
-Fine-grained documentation and insights to control the building flow, can be found below:
-1. [Configuration flow](config/README.md): re-configure Simply-V.
-2. Hardware build:
-   - [Hardware units](hw/units/README.md): prepare external custom IPs.
-   - [Xilinx FPGA](hw/xilinx/README.md): package IPs, build bitstream, program device and debug platform.
-3. [Software build](sw/README.md): build software for Simply-V.
-   - [Run software](hw/xilinx/doc/PROGRAM_LOADING.md): additional doc for loading programs.
-4. Simulation (TBD):
-   * Unit tests: Verilator
-      * Royalty-free, good for students
-      * No support for Xilin IPs
-   * SoC-level tests, QuestaSim:
-      * Requires license
-      * Supports Xilinx IPs
-      * Students can access a licensed host for simulator access
-
-## Architecture
-
-In both `hpc` and `embedded` profiles, the SoC architecture and host connection is depicted below:
-
-![SoC Architecture](./Base_SoC_layout.png)
-
-The host connects to a RISC-V debug module through JTAG and a `Sys Master` AXI master module, allowing for direct control and read-back over the main bus.
-
-### Profiles:
-Simply-V supports the following profiles `embedded` and `hpc`.
-
-Physical resources depend on the target board and part number. W.r.t. the default supported boards and pre-configured CSVs, the platform offers:
-- Profile `embedded` on Nexys-A7-100T:
-   - UART: physical peripheral requires a [physical FTDI connection](hw/xilinx/doc/UART_CONNECTION.md)
-   - Memory: 64 KB BRAM
-   - `Sys Master`: through JTAG Xilinx `hw_server`
-- Profile `hpc` on Alveo U250:
-   - UART: virtualized over PCIe.
-   - Memory: 64 KB BRAM + 2x 16 GB DDR4
-   - `Sys Master`: through PCIe BAR addres space.
 
 ## Citation
 When using or referencing Simply-V in your work, please use the following:

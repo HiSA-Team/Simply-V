@@ -2,11 +2,10 @@
 This tree allows for the automatic generation of the AXI crossbar IP and linker script for software development.
 
 ## Prerequisites and Tools versions
-This tree has been verified with the following tools and versions
+This tree has been verified with the following tools and versions:
 * Vivado 2022.2 - 2024.2
 * AXI Interconnect v2.1
 * Python >= 3.10
-* Pandas >= 2.2.3
 
 ##  Configuration file format
 The input configuration files are CSV files. These files are under the configs directory structured as follows:
