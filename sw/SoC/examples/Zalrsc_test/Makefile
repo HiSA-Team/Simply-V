@@ -29,9 +29,9 @@ STARTUP_DIR   = $(SW_SOC_ROOT)/common
 #############
 
 LIB_OBJ_TINYIO    = $(LIB_DIR)/tinyio/lib/tinyio.a
-LIB_INC_TINYIO    = -I$(SW_SOC_ROOT)/lib//tinyio/inc
+LIB_INC_TINYIO    = -I$(LIB_DIR)/tinyio/inc
 
-LIB_OBJ_SIMPLYV   = $(LIB_DIR)/simplyv/lib/libsimplyv.a
+LIB_OBJ_SIMPLYV  = $(LIB_DIR)/simplyv/lib/libsimplyv.a
 LIB_INC_SIMPLYV   = -I$(LIB_DIR)/simplyv/inc
 
 LIB_OBJ_LIST      = $(LIB_OBJ_TINYIO) $(LIB_OBJ_SIMPLYV)
