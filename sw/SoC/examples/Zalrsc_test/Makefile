@@ -46,11 +46,6 @@ A_EXTENSION = Y
 
 include $(SW_ROOT)/SoC/common/config.mk
 
-LDFLAGS := $(LIB_OBJ_LIST) -nostdlib \
-           -T$(SW_SOC_ROOT)/common/variables.ld \
-           -T$(SW_SOC_ROOT)/common/memory.ld \
-           -Tld/config.ld \
-           -T$(SW_SOC_ROOT)/common/sections.ld
 ###########
 # Targets #
 ###########
