@@ -50,8 +50,8 @@ INCLUDES := -I$(APP_DIR) \
             -I$(KERNEL_DIR)/include \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V \
             -I$(KERNEL_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RISCV_no_extensions \
-            -I$(LIB_DIR)/simplyv/inc \
-            -I$(LIB_DIR)/tinyio/inc
+            -I$(SW_SOC_ROOT)/lib/simplyv/inc \
+            -I$(SW_SOC_ROOT)/lib/tinyio/inc
 
 ifeq ($(DEBUG), 1)
 CFLAGS  += -g
@@ -63,8 +63,8 @@ CFLAGS  += $(INCLUDES)
 # Linker flags
 ###############################################################################################
 LDFLAGS  = -nostdlib -nostartfiles \
-           $(LIB_DIR)/simplyv/lib/libsimplyv.a \
-           $(LIB_DIR)/tinyio/lib/tinyio.a \
+           $(SW_SOC_ROOT)/lib/simplyv/lib/libsimplyv.a \
+           $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a \
            -T$(SW_SOC_ROOT)/common/memory.ld \
            -T$(SW_SOC_ROOT)/common/variables.ld \
            -T$(FREERTOS_COMMON)/config.ld \
