@@ -23,8 +23,7 @@ SRC_DIR     = src
 OBJ_DIR     = obj
 INC_DIR     = inc
 STARTUP_DIR = $(SW_SOC_ROOT)/common
-
-LD_SCRIPT     = ld/user.ld
+LIB_DIR	    = $(SW_SOC_ROOT)/lib
 
 #############
 # Libraries #

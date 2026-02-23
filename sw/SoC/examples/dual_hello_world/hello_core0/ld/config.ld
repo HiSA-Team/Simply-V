@@ -8,7 +8,3 @@
 
 /* Override default _stack_start */
 _stack_start = 0x0000000000007ff8;
-
-/* Inlcude common linker script */
-INCLUDE ../../../common/simplyv.ld
-

@@ -1,4 +1,5 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Description:
 # 	It assigns the correct toolchain size depending on XLEN config parameter.
 #	XLEN is overwritten by `config/scripts/config_sw.sh`
@@ -7,9 +8,11 @@
 # Toolchain #
 #############
 
+# Don't touch this line, since it is a target of the config flow
 XLEN ?= 32
-RV_PREFIX ?= riscv${XLEN}-unknown-elf-
 
+# Toolchain
+RV_PREFIX   ?= riscv${XLEN}-unknown-elf-
 CC          = $(RV_PREFIX)gcc
 LD          = $(RV_PREFIX)ld
 OBJDUMP     = $(RV_PREFIX)objdump
@@ -17,10 +20,10 @@ OBJCOPY     = $(RV_PREFIX)objcopy
 AR          = $(RV_PREFIX)ar
 
 # RISC-V Extensions
-C_EXTENSION 	?= Y
-F_EXTENSION		?= N
-A_EXTENSION 	?= N
-V_EXTENSION		?= N
+C_EXTENSION ?= Y
+F_EXTENSION	?= N
+A_EXTENSION ?= N
+V_EXTENSION	?= N
 
 #########
 # Flags #
@@ -68,10 +71,14 @@ endif
 # Always add Zicsr and Zifence
 ARCH := $(addsuffix _zicsr_zifencei,$(ARCH))
 
-DFLAG ?= -g -O0
-CFLAGS ?= -march=${ARCH} -mabi=${ABI} $(DFLAG) -c
-LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib -T$(LD_SCRIPT)
+DFLAG   ?= -g -O0
+CFLAGS  ?= -march=${ARCH} -mabi=${ABI} $(DFLAG) -c
+LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib \
+           -T$(SW_SOC_ROOT)/common/ld/variables.ld \
+           -T$(SW_SOC_ROOT)/common/ld/memory.ld \
+           -T$(SW_SOC_ROOT)/common/ld/sections.ld
 
+# Define IS_EMBEDDED macro
 MACRO_LIST =
 ifeq ($(SIMPLYV_PROFILE), embedded)
 	MACRO_LIST += -DIS_EMBEDDED
