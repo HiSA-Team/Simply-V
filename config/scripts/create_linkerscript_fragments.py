@@ -14,7 +14,9 @@
 # Args:
 #   1: Input configuration file for system
 #   2: Input configuration files for buses
-#   ..: Output generated segments
+#   3: Memory segment
+#   4: Section segment
+#   5: Variable segment
 
 ####################
 # Import libraries #
@@ -178,30 +180,6 @@ SECTIONS
         . = ALIGN(32);
         _text_end = .;
     }}> {initial_memory_name}
-}}"""
-
-supervisor_template_str = """/* Auto-generated with {current_file_path} */
-SECTIONS
-{{
-    . = __payload_start;
-
-    .text : {{
-        KEEP(*(.text._start))
-        *(.text*)
-    }}> {supervisor_boot_memory_block}
-
-    .rodata : ALIGN(32) {{
-        *(.rodata*)
-    }}> {supervisor_boot_memory_block}
-
-    .data : {{
-        *(.data*)
-    }}> {supervisor_boot_memory_block}
-
-    .bss (NOLOAD) : ALIGN(32) {{
-        *(.bss*)
-        *(COMMON)
-    }}> {supervisor_boot_memory_block}
 }}"""
 
 variables_template_str = """/* Auto-generated with {current_file_path} */
