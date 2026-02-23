@@ -1,4 +1,5 @@
 # Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+# Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 # Description:
 # 	It assigns the correct toolchain size depending on XLEN config parameter.
 #	XLEN is overwritten by `config/scripts/config_sw.sh`
