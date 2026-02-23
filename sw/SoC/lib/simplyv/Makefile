@@ -5,7 +5,7 @@ SIMPLYV_OBJS := $(patsubst $(SIMPLYV_DIR)/src/%.c, %.o, $(wildcard $(SIMPLYV_DIR
 SIMPLYV_SRCS_DIR := $(SIMPLYV_DIR)/src
 SIMPLYV_LIB := $(SIMPLYV_DIR)/lib/libsimplyv.a
 SIMPLYV_INC := $(SIMPLYV_DIR)/inc
-TINY_IO := $(SW_SOC_ROOT)/lib/tinyio/inc
+TINY_IO := $(LIB_DIR)/tinyio/inc
 
 include $(SW_ROOT)/SoC/common/config.mk
 

@@ -17,9 +17,9 @@ OBJCOPY     = $(RV_PREFIX)objcopy
 AR          = $(RV_PREFIX)ar
 
 # RISC-V Extensions
-C_EXTENSION 	?= Y
+C_EXTENSION ?= Y
 F_EXTENSION	?= N
-A_EXTENSION 	?= N
+A_EXTENSION ?= N
 V_EXTENSION	?= N
 
 #########
@@ -77,7 +77,9 @@ CFLAGS  ?= -march=${ARCH} -mabi=${ABI} $(DFLAG) -c
 LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib \
            -T$(SW_SOC_ROOT)/common/variables.ld \
            -T$(SW_SOC_ROOT)/common/memory.ld \
-           -T$(SW_SOC_ROOT)/common/sections.ld 
+           -T$(SW_SOC_ROOT)/common/sections.ld
+
+# Define IS_EMBEDDED macro
 MACRO_LIST =
 ifeq ($(SIMPLYV_PROFILE), embedded)
 	MACRO_LIST += -DIS_EMBEDDED

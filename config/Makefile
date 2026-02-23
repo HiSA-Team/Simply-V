@@ -1,5 +1,5 @@
 # Variables
-PYTHON          ?= python3.10 # Requires >= 3.10
+PYTHON ?= python3.10 # Requires >= 3.10
 
 # Configurations
 CONFIG_MBUS_CSV ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_main_bus.csv
@@ -42,7 +42,7 @@ config_ld: config_check
 		${OUTPUT_MEM_LD_FILE} \
 		${OUTPUT_SEC_LD_FILE} \
 		${OUTPUT_VAR_LD_FILE}
-	@echo "[CONFIG] Output file are at ${OUTPUT_MEM_LD_FILE} ${OUTPUT_SEC_LD_FILE} ${OUTPUT_VAR_LD_FILE}"
+	@echo "[CONFIG] Output files are at ${OUTPUT_MEM_LD_FILE} ${OUTPUT_SEC_LD_FILE} ${OUTPUT_VAR_LD_FILE}"
 
 config_check:
 	${PYTHON} ${CONFIG_ROOT}/scripts/check_config.py ${CONFIG_SYSTEM_CSV} ${CONFIG_BUS_CSVS}
@@ -56,3 +56,5 @@ config_xilinx:
 config_sw: config_check
 	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_simplyv_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
+
+
