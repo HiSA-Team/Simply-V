@@ -20,6 +20,7 @@
 from typing import NoReturn
 from general.singleton import SingletonABCMeta
 from general.env import Env
+from general.error import Naming_Convention_Error, Conflict_Error
 
 class Factory(metaclass=SingletonABCMeta):
 	
@@ -33,10 +34,12 @@ class Factory(metaclass=SingletonABCMeta):
 	
 	# Register the creation of every node so that duplicate "FULL_NAMEs" can be spotted
 	def _register_creation(self, full_name: str) -> None:
-		if(full_name in self.ALREADY_CREATED):
-			raise ValueError(f"There are multiple nodes with the same full name ({full_name})")
+		# Saving and checking forcing UPPERCASE, so that the same name
+		# but with different format is correctly detected for example: HlsControl and hlscontrol
+		if(full_name.upper() in self.ALREADY_CREATED):
+			raise Conflict_Error("FULL_NAME", "FULL_NAME", f"multiple nodes named {full_name}")
 
-		self.ALREADY_CREATED.add(full_name)
+		self.ALREADY_CREATED.add(full_name.upper())
 
 	# Extract the BASENAME from a FULLNAME enforcing the same naming convention for each node
 	def _extract_base_name(self, full_name: str) -> str:
@@ -53,7 +56,7 @@ class Factory(metaclass=SingletonABCMeta):
 			if (len(tmp_name) > 2):
 				raise Exception
 		except:
-			raise ValueError(f"There is something wrong with {full_name} format name (BASENAME_id format enforced)")
+			raise Naming_Convention_Error("FULL_NAME", full_name, "BASENAME_id")
 		
 		return id
 
@@ -63,4 +66,4 @@ class Factory(metaclass=SingletonABCMeta):
 		try:
 			return int(clock_domain.split("_")[-1])
 		except ValueError:
-			raise ValueError(f"There is something wrong with {clock_domain} format name")
+			raise Naming_Convention_Error("CLOCK_DOMAIN", clock_domain, "DOMAIN_FREQUENCY")

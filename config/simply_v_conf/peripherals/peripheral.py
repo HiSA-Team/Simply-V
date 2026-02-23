@@ -1,6 +1,7 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This file defines the "Peripheral" base class, used from all the peripherals hierarchy
 
+from general.error import Unsupported_Value_Error
 from general.addr_range import Addr_Ranges
 from general.node import Node
 
@@ -30,9 +31,8 @@ class Peripheral(Node):
 			ranges_length += value[2]
 
 		if (ranges_length < self.min_addr_space):
-			raise ValueError(f"Device {self.FULL_NAME} has an address space of {ranges_length} Bytes "
-							 f"(Minimum needed for MMIO is {self.min_addr_space} Bytes)")
-
+			details = "Minimum space needed for MMIO isn't respected."
+			raise Unsupported_Value_Error(self.FULL_NAME, ranges_length, [self.min_addr_space], details)
 	
 	#this is a concrete method for those peripherals that perform no configuration
 	#since making it abstract would force them to implement it as empty anyway

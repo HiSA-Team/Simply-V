@@ -2,6 +2,7 @@
 # Description: The class "MBUS_Parser" inherits from the "NonLeafBus_Parser" class, extending the checked
 # properties with the "MBUS" specific ones (RANGE_CLOCK_DOMAINS)
 
+from general.error import Conflict_Error
 from .nonleafbus_parser import NonLeafBus_Parser
 
 class MBUS_Parser(NonLeafBus_Parser):
@@ -13,7 +14,7 @@ class MBUS_Parser(NonLeafBus_Parser):
 	intra_rules = NonLeafBus_Parser.intra_rules + [
 			lambda d: (
 				len(d["RANGE_NAMES"]) != len(d["RANGE_CLOCK_DOMAINS"]),
-				f"RANGE_NAMES len does not match RANGE_CLOCK_DOMAINS len"
+				Conflict_Error("RANGE_NAMES", "RANGE_CLOCK_DOMAINS", "len does not match")
 				)
 			]
 

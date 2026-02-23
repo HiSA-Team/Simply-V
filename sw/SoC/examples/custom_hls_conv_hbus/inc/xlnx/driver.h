@@ -2,7 +2,7 @@
 #define __DRIVER_H_
 
 #include "xil_io.h"
-#include "uninasoc.h"
+#include "simplyv.h"
 #include "xkrnl_conv_hbus_hw.h"
 
 // Offsets

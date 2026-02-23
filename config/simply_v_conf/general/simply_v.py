@@ -16,6 +16,7 @@
 
 import re
 from buses.nonleafbus import NonLeafBus
+from .error import Conflict_Error, Unsupported_Value_Error
 from templates.dump_template import Dump_Template
 from templates.halheader_template import HALheader_Template
 from templates.crossbar_template import Crossbar_Template
@@ -53,18 +54,20 @@ class SimplyV(metaclass=Singleton):
 
 		main_clock_frqz = self.buses_factory.extract_clock_frequency(self.MAIN_CLOCK_DOMAIN)
 
+		if (self.XLEN != 32) and (self.XLEN != 64):
+			raise Unsupported_Value_Error("XLEN", self.XLEN, [32, 64])
+
 		# CV64A6_ARA needs this particular check
 		if ((main_clock_frqz > 50) and (self.CORE_SELECTOR == "CORE_CV64A6_ARA")):
-			raise ValueError("CORE_CV64A6_ARA supports a maximum MAIN_CLOCK_DOMAIN frequency of 50 MHz." 
-							 f"(configured with {self.MAIN_CLOCK_DOMAIN})")
+			raise Conflict_Error("MAIN_CLOCK_DOMAIN", "CORE_SELECTOR", "CORE_CV64A6_ARA supports a maximum MAIN_CLOCK_DOMAIN frequency of 50 MHz.")
 
 		if (self.CORE_SELECTOR not in self.SUPPORTED_CORES):
-			raise ValueError("CORE_SELECTOR unsupported")
+			raise Unsupported_Value_Error("CORE_SELECTOR", self.CORE_SELECTOR, self.SUPPORTED_CORES)
 
 		# MICROBLAZE needs this particular check
 		if ("CORE_MICROBLAZEV" in self.CORE_SELECTOR):
 			if (self.env.get_board() == "au280"):
-				raise ValueError(f"CORE_MICROBLAZEV is not allowed when building for au280")
+				raise Conflict_Error("CORE_SELECTOR", "BOARD", "CORE_CV64A6_ARA CORE_MICROBLAZEV is not allowed when building for au280")
 
 		# Create root node (MBUS)
 		assigned_base_addr = [0]
@@ -93,8 +96,9 @@ class SimplyV(metaclass=Singleton):
 				self.devices.append(p)
 
 		# Check BOOT_MEMORY
-		if (not any(m.FULL_NAME == self.BOOT_MEMORY_BLOCK for m in self.memories)):
-			raise ValueError("BOOT_MEMORY_BLOCK specified not supported")
+		m_names = [m.FULL_NAME for m in self.memories]
+		if (self.BOOT_MEMORY_BLOCK not in m_names):
+			raise Unsupported_Value_Error("BOOT_MEMORY_BLOCK", self.BOOT_MEMORY_BLOCK, m_names)
 		
 	# Create linker script used from the "sw" flow
 	def create_linker_script(self, ld_file_name: str):

@@ -8,6 +8,7 @@
 # that are attached to the "father" bus
 
 from typing import Optional, cast
+from general.error import Conflict_Error, Unsupported_Value_Error
 from general.node import Node
 from general.addr_range import Addr_Ranges
 from general.env import Env
@@ -53,9 +54,8 @@ class NonLeafBus(Bus):
 
 			# Force base addr to power of 2
 			if(not (base_addr & (base_addr -1) == 0)):
-				raise ValueError(f"Activated LOOPBACK in {self.FULL_NAME} with a BASE_ADDR"
-											" that isn't a power of 2 or 0.")
-	
+				raise Conflict_Error("LOOPBACK", "BASE_ADDR", 
+										f"{self.FULL_NAME} BASE_ADDR must be a power of 2 or 0 when using LOOPBACK.")
 
 	
 	def _father_enable_loopback(self, child_name: str):
@@ -65,8 +65,9 @@ class NonLeafBus(Bus):
 		self.NUM_SI += 1
 
 	def _child_enable_loopback(self):
-		if(not self.father):
-			raise ValueError(f"Can't enable loopback on {self.FULL_NAME} without a father")
+		if not self.father:
+			raise Unsupported_Value_Error("LOOPBACK", self.LOOPBACK, 
+									details =f"Can't enable loopback on {self.FULL_NAME} without a father")
 
 		#NonLeaf buses that have "LOOPBACK" activated will call this function
 		#to modify themselves to support the LOOPBACK
@@ -123,7 +124,7 @@ class NonLeafBus(Bus):
 	def _check_legal_buses(self):
 		for b in self._children_buses:
 			if b.BASE_NAME not in self.LEGAL_BUSES:
-				raise ValueError(f"Unsupported bus {b.FULL_NAME} for this bus")
+				raise Unsupported_Value_Error("FULL_NAME", b.FULL_NAME, self.LEGAL_BUSES)
 
 	
 	# Return bus and peripherals children address ranges (taking into account LOOPBACK ranges also)
@@ -180,8 +181,9 @@ class NonLeafBus(Bus):
 		#NonLeaf buses need to activate the loopback, we assume to call this function from a "child"
 		#and activate the loopback for both child an father
 		if (self.LOOPBACK):
-			if(not self.father):
-				raise ValueError(f"Can't enable loopback on {self.FULL_NAME} without a father")
+			if not self.father:
+				raise Unsupported_Value_Error("LOOPBACK", self.LOOPBACK, 
+									details =f"Can't enable loopback on {self.FULL_NAME} without a father")
 
 			self.father._father_enable_loopback(self.FULL_NAME)
 			self._child_enable_loopback()
@@ -216,23 +218,18 @@ class NonLeafBus(Bus):
 		#children buses, they also need to modify the reachability of all the addr_ranges
 		#reachable with the "LOOPBACK" configuration
 
-		#add reachability of peripherals
-		super()._add_peripherals_reachability()
-		reaching_buses = self.assigned_addr_ranges.get_reachable_from(explicit=False)
+		nodes = self.get_nodes()
+		#add reachability of nodes
+		super()._add_reachability(nodes)
 		
-		#add reachability of buses
-		for bus in self._children_buses:
-			for addr_range in bus.assigned_addr_ranges:
-				if addr_range in self.assigned_addr_ranges:
-					addr_range.add_list_to_reachable(reaching_buses[self.FULL_NAME])
-					addr_range.add_to_reachable(self.FULL_NAME)
-
 		if(self.LOOPBACK):
-			if(not self.father):
-				raise ValueError(f"Can't enable loopback on {self.FULL_NAME} without a father")
+			if not self.father:
+				raise Unsupported_Value_Error("LOOPBACK", self.LOOPBACK, 
+									details =f"Can't enable loopback on {self.FULL_NAME} without a father")
 			#get all the peripherals and buses from the "father" bus
 			#and check if this Nonleafbus can reach them
 
+			reaching_buses = self.assigned_addr_ranges.get_reachable_from(explicit=False)
 			nodes: list[Node] = []
 			peripherals = self.father.get_peripherals(recursive=True)
 			nodes += cast(list[Node], peripherals)
@@ -301,12 +298,15 @@ class NonLeafBus(Bus):
 
 		for node in children_nodes:
 			if node.CLOCK_DOMAIN not in clock_domains:
-				raise ValueError(f"Node {node.FULL_NAME} on {self.FULL_NAME}"
-								 f" is clocked with a non existing clock domain ({node.CLOCK_DOMAIN})")
+				raise Conflict_Error("NODE", "CLOCK_DOMAIN", 
+								  f"Node {node.FULL_NAME} on {self.FULL_NAME} "
+								  f"is clocked with a non existing clock domain ({node.CLOCK_DOMAIN})")
 
 		# Now check that the bus itself is clocked from a default ("MBUS") or local clock domain
 		if self.CLOCK_DOMAIN not in clock_domains:
-			raise ValueError(f"{self.FULL_NAME} is clocked with a non existing clock domain({self.CLOCK_DOMAIN})")
+				raise Conflict_Error("BUS", "CLOCK_DOMAIN", 
+								  f"Bus {self.FULL_NAME} "
+								  f"is clocked with a non existing clock domain ({self.CLOCK_DOMAIN})")
 
 		#Recursive call on all the buses
 		for bus in self._children_buses:

@@ -6,6 +6,7 @@
 import os
 from pathlib import Path
 import re
+from general.error import Unsupported_Value_Error
 from general.addr_range import Addr_Ranges
 from .peripheral import Peripheral
 
@@ -31,7 +32,8 @@ class Bram(Peripheral):
 		try:
 			content = bram_path.read_text()
 		except:
-			raise ValueError(f"BRAM peripheral {self.FULL_NAME} not found (id not supported)")
+			raise Unsupported_Value_Error("FULL_NAME", self.FULL_NAME,
+								 details="ID not supported (config.tcl of IP wasn't found)")
 
 		pattern = r"(set\s+bram_depth)\s*\{[^}]+\}"
 		replacement = rf"\1 {{{bram_depth}}}"

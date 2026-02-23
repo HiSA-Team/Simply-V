@@ -57,8 +57,7 @@ class Clocks_Template(Template):
 		# This bus doesn't generate clock but it takes it from the father bus
 		if(not bus.IS_CLOCK_GENERATOR):
 			# Buses that aren't generating a clock, need to have a father bus
-			if (not bus.father):
-				raise ValueError(f"Bus {bus.FULL_NAME} doesn't have a father bus for the clock generation")
+			assert bus.father, f"Bus {bus.FULL_NAME} doesn't have a father bus for the clock generation"
 
 			# take the clock from "_i" signal since the father bus will propagate it there
 			self.bus_clock_domain = f"{bus.father.FULL_NAME}_clk_i"

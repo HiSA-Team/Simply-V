@@ -11,6 +11,7 @@ from .bus import Bus
 from general.env import Env
 from .nonleafbus import NonLeafBus
 from general.singleton import SingletonABCMeta
+from general.error import Conflict_Error
 
 #Only one MBUS should be created
 class MBus(NonLeafBus, metaclass=SingletonABCMeta):
@@ -73,38 +74,35 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 
 	# check constraint and then call the actual implementation
 	def sanitize_addr_ranges(self):
-		if (not self.tree_generated) or (not self.loopback_activated):
-			raise ValueError(
-					"sanitize_addr_ranges() failed executon on MBUS since it was "
-					"called before generate_children() or activate_loopback()"
-					)
+		assert self.tree_generated and self.loopback_activated, (
+			"sanitize_addr_ranges() failed execution on MBUS since it was "
+			"called before generate_children() or activate_loopback()"
+		)
 		super().sanitize_addr_ranges()
 
 	# check constraint and then call the actual implementation
 	def check_legals(self):
-		if (not self.tree_generated) or (not self.loopback_activated):
-			raise ValueError(
-					"check_legals() failed execution on MBUS since it was "
-					"called before generate_children() or activate_loopback()"
-					)
+		assert self.tree_generated and self.loopback_activated, (
+			"check_legals() failed execution on MBUS since it was "
+			"called before generate_children() or activate_loopback()"
+		)
 		super().check_legals()
 
 	# check constraint and then call the actual implementation
 	def add_reachability(self):
-		if (not self.tree_generated) or (not self.loopback_activated):
-			raise ValueError(
-					"add_reachability() failed execution on MBUS since it was "
-					"called before generate_children() or activate_loopback()"
-					)
+		assert self.tree_generated and self.loopback_activated, (
+			"add_reachability() failed execution on MBUS since it was "
+			"called before generate_children() or activate_loopback()"
+		)
 		super().add_reachability()
 
 	# check constraint and then call the actual implementation
 	def check_clock_domains(self):
-		if (not self.tree_generated) or (not self.loopback_activated):
-			raise ValueError(
-					"check_clock_domains() failed execution on MBUS since it was "
-					"called before generate_children() or activate_loopback()"
-					)
+		assert self.tree_generated and self.loopback_activated, (
+			"check_clock_domains() failed execution on MBUS since it was "
+			"called before generate_children() or activate_loopback()"
+		)
+
 		super().check_clock_domains()
 		# extend default clocks checks with custom ones
 		failed_checks = []
@@ -115,5 +113,7 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 					failed_checks.append(children.FULL_NAME)
 
 		if (len(failed_checks) != 0):
-			raise ValueError(f"{', '.join(failed_checks)} need to be configured with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN})")
+			raise Conflict_Error("PERIPHERAL", "CLOCK_DOMAIN",
+								 f"{', '.join(failed_checks)} need to be configured"
+								 f"with MAIN CLOCK DOMAIN ({self.CLOCK_DOMAIN}")
 

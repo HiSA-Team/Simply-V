@@ -5,6 +5,7 @@
 from typing import Any, Callable
 from general.singleton import Singleton
 from .parser import Parser
+from general.error import Unsupported_Value_Error, Conflict_Error
 
 class Bus_Parser(Parser, metaclass=Singleton):
 
@@ -24,22 +25,24 @@ class Bus_Parser(Parser, metaclass=Singleton):
 						 "RANGE_ADDR_WIDTH": lambda s: [int(x) for x in s.split()],
 						}
 	
-	range_validators: dict[str, Callable[[Any], bool]] = Parser.range_validators | {
-						 "ID_WIDTH":			lambda v: Parser._check_range(v, 4, 32),
-						 "ADDR_RANGES":			lambda v: Parser._check_range(v, 1, 16),
-						 "RANGE_ADDR_WIDTH":	lambda vls: all([Parser._check_range(v, 1, 64) for v in vls]),
-						 "RANGE_NAMES":			lambda names: Parser._check_range(len(names), 1, 16),
-						 "MASTER_NAMES":		lambda names: Parser._check_range(len(names), 1, 16)
+	range_validators: dict[str, Callable[[str, int], None]] = Parser.range_validators | {
+						 "ID_WIDTH":			lambda n, v: Parser._check_range(n, v, 4, 32),
+						 "ADDR_RANGES":			lambda n, v: Parser._check_range(n, v, 1, 16),
+						 "RANGE_ADDR_WIDTH":	lambda n, vls: all([Parser._check_range(n, v, 1, 64) for v in vls]),
+						 "RANGE_NAMES":			lambda n, names: Parser._check_range(n, len(names), 1, 16),
+						 "MASTER_NAMES":		lambda n, names: Parser._check_range(n, len(names), 1, 16)
 						}
 
-	intra_rules: list[Callable[[dict], tuple[bool, str]]] = Parser.intra_rules + [
+	intra_rules: list[Callable[[dict], tuple[bool, Exception]]] = Parser.intra_rules + [
 		lambda d: (
 			(len(d["RANGE_NAMES"]) * d["ADDR_RANGES"]) != len(d["RANGE_BASE_ADDR"]),
-			f"RANGE_NAMES len * ADDR_RANGES does not match RANGE_BASE_ADDR len"
+			Conflict_Error("RANGE_NAMES", "ADDR_RANGES", \
+					"RANGE_NAMES len * ADDR_RANGES does not match RANGE_BASE_ADDR len")
 		),
 		lambda d: (
 			(len(d["RANGE_NAMES"]) * d["ADDR_RANGES"]) != len(d["RANGE_ADDR_WIDTH"]),
-			f"RANGE_NAMES len * ADDR_RANGES does not match RANGE_ADDR_WIDTH len"
+			Conflict_Error("RANGE_NAMES", "ADDR_RANGES", \
+					"RANGE_NAMES len * ADDR_RANGES does not match RANGE_ADDR_WIDTH len")
 		),
 	]
 
@@ -55,10 +58,10 @@ class Bus_Parser(Parser, metaclass=Singleton):
 		# protocol-dependent rule
 		min_width = self.protocol_min_width.get(data["PROTOCOL"])
 		if min_width is None:
-			raise ValueError(f"Unsupported PROTOCOL: {data['PROTOCOL']}")
+			raise Unsupported_Value_Error("PROTOCOL", data["PROTOCOL"], list(self.protocol_min_width.keys()))
 
 		if any(w < min_width for w in data["RANGE_ADDR_WIDTH"]):
-			raise ValueError(f"RANGE_ADDR_WIDTH is less than {min_width}")	
+			raise Conflict_Error("PROTOCOL", "RANGE_ADDR_WIDTH", f"Value is less than {min_width}")
 
 	def __init__(self):
 		super().__init__()

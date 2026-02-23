@@ -9,7 +9,7 @@ class Parser  <<Singleton>> {
   {static} type_parsers
   {static} range_validators
   {static} intra_rules
-  {static} _check_range(value, min_value, max_value) : bool
+  {static} _check_range(name, value, min_value, max_value)
   
   - _validate_mandatory(data : dict)
   - _cast_and_validate(data : dict)

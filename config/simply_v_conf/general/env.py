@@ -7,17 +7,31 @@
 
 
 import os
+
+from general.error import Unsupported_Value_Error
 from .singleton import Singleton
 
 class Env(metaclass=Singleton):
 	# init Env
 	def __init__(self):
+		self.SUPPORTED_PROFILES = ["hpc", "embedded"]
+		self.SUPPORTED_BOARDS = ["Nexys-A7-100T-Master", "Nexys-A7-50T-Master", "au250", "au280", "au50"]
 		# Private variables never touch them, use the getters
-
 		self.bus_input_files: dict[str, str]
 		self._board = os.environ["BOARD"]
 		# SoC Profile
 		self._SIMPLYV_PROFILE = os.environ["SIMPLYV_PROFILE"]
+
+		if (self._board not in self.SUPPORTED_BOARDS):
+			raise Unsupported_Value_Error("BOARD", self._board, self.SUPPORTED_BOARDS, 
+													"Probably settings.sh script wasn't sourced")
+
+
+		if(self._SIMPLYV_PROFILE not in self.SUPPORTED_PROFILES):
+			raise Unsupported_Value_Error("SIMPLYV_PROFILE", self._SIMPLYV_PROFILE, self.SUPPORTED_PROFILES, 
+								  "Probably settings.sh script wasn't sourced")
+
+
 			
 	def set_inputs(self, bus_input_files: dict[str,str]):
 		self.bus_input_files = bus_input_files
@@ -48,8 +62,8 @@ class Env(metaclass=Singleton):
 			case "Nexys-A7-100T-Master" | "Nexys-A7-50T-Master":
 				return [0]
 			case _:
-				raise ValueError("Unsupported Board configuration")
-
+				assert False, f"BOARD CONFIGURATION CHANGED DURING EXECUTION: {self._board}"
+				
 
 	def get_supp_hbm(self) -> bool | None:
 		match self._board:
@@ -58,7 +72,8 @@ class Env(metaclass=Singleton):
 			case "au280" | "au50":
 				return True
 			case _:
-				raise ValueError("Unsupported Board configuration")
+				assert False, f"BOARD CONFIGURATION CHANGED DURING EXECUTION: {self._board}"
+
 
 	def get_def_clock_domains(self) -> list[str]:
 		match self._SIMPLYV_PROFILE:
@@ -67,4 +82,4 @@ class Env(metaclass=Singleton):
 			case "hpc":
 				return ["MBUS_10", "MBUS_20", "MBUS_50", "MBUS_100", "MBUS_250"]
 			case _:
-				raise ValueError("Unsupported profile configuration")
+				assert False, f"SIMPLYV_PROFILE CONFIGURATION CHANGED DURING EXECUTION: {self._SIMPLYV_PROFILE}"

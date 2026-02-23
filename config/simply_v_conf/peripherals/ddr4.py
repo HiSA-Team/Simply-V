@@ -4,6 +4,7 @@
 # Description: This file defines the DDR4 peripheral
 
 from general.addr_range import Addr_Ranges
+from general.error import Unsupported_Value_Error
 from .peripheral import Peripheral
 import re
 import os
@@ -28,9 +29,9 @@ class DDR4(Peripheral):
 		# MBUS will propagate the clock domain from its .csv file (RANGE_CLOCK_DOMAINS)
 		# so we need to enforce the correct value
 		if(father_bus_name == "MBUS") and (clock_domain != static_domain):
-			raise ValueError(f"DDR4CH_{channel} was configured by MBUS with CLOCK_DOMAIN: "
-							 f"{clock_domain}, the only acceptable value is {static_domain}")
-
+			raise Unsupported_Value_Error("CLOCK_DOMAIN", clock_domain, [static_domain],
+										  f"DDR4CH_{channel} was configured by MBUS with erroneous clock domain"
+										  )
 
 	def config_ip(self, root_path: str, **kwargs) -> None:
 		# use channel number to find corresponding cache

@@ -5,6 +5,7 @@
 from .leafbus import LeafBus
 from .bus import Bus
 from general.addr_range import Addr_Ranges
+from general.error import Unsupported_Value_Error
 
 class PBus(LeafBus):
 	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("UART", "GPIOOUT", "GPIOIN", "TIM")
@@ -21,5 +22,6 @@ class PBus(LeafBus):
 		super().__init__(base_name, data_dict, assigned_addr_ranges, axi_addr_width, axi_data_width, clock_domain, clock_frequency)
 
 		#check NUM_SI
-		if self.NUM_SI != 1:
-			raise ValueError(f"Invalid number of NUM_SI ({self.NUM_SI}) in {self.FULL_NAME}")
+		if len(self.MASTER_NAMES) != 1:
+			raise Unsupported_Value_Error(f"LENGTH OF MASTER_NAMES", len(self.MASTER_NAMES), [1],
+										  "PBUS supports only 1 MASTER")

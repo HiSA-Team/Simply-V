@@ -57,6 +57,7 @@ class Addr_Ranges {
     +split_addr_ranges()
     +get_reachable_from(explicit: bool) : dict
     +get_range_dimensions(explicit: bool) : dict
+	+get_common_reachable_from() : list[str]
     +get_base_addr() : int
     +get_end_addr() : int
 
@@ -110,8 +111,7 @@ abstract class Bus {
     -_generate_peripherals()
     -_sanitize_addr_ranges(nodes : list[Node]) : None
     -_check_legal_peripherals()
-    -_add_peripherals_reachability()
-    -_get_peripherals() : list[Peripheral]
+    -_add_reachability()
 }
 
 ' ===== Bus Hierarchy =====

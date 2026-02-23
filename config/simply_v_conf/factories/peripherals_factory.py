@@ -18,6 +18,7 @@ from peripherals.hls import HLS
 from peripherals.plic import PLIC
 from peripherals.cdma import CDMA
 from general.addr_range import Addr_Ranges
+from general.error import Unsupported_Value_Error, Conflict_Error
 
 class Peripherals_Factory(Factory):
 	
@@ -29,6 +30,20 @@ class Peripherals_Factory(Factory):
 		self.HBM_SUPPORTED: bool = self.env.get_supp_hbm()
 		self.MBUS_DDR4_LEGAL_CHANNELS: tuple
 		self.HBUS_DDR4_LEGAL_CHANNELS: tuple
+		# Base name to Class object MAPPING
+		self.SUPPORTED_PERIPHERALS = {
+			"TIM":        Timer,
+			"DDR4CH":     DDR4,
+			"GPIOOUT":    GPIO_out,
+			"GPIOIN":     GPIO_in,
+			"UART":       Uart,
+			"BRAM":       Bram,
+			"DMMEM":      Debug_Module,
+			"PLIC":       PLIC,
+			"HLSCONTROL": HLS,
+			"CDMA":       CDMA,
+			"HBM":        HBM,
+		}
 
 	# Extract DDR4 channel number (assuming the format is something like DDR4_CH_0)
 	def _extract_ddr4_channel(self, full_name: str) -> int:
@@ -40,14 +55,13 @@ class Peripherals_Factory(Factory):
 		elif(bus_name == "HBUS"):
 			self.HBUS_DDR4_LEGAL_CHANNELS = legal_channels
 		else:
-			raise ValueError(f"Bus {bus_name} doesn't support ddr4 channels {legal_channels}")
+			assert False, f"Bus {bus_name} doesn't support ddr4 channels {legal_channels}" 
 
 	# Create peripherals extracting base name from full name and clock frequency from clock domain.
 	# In case of DDR4 or HBM also enforces checks based on the board.
 	# This function checks for duplicated peripherals creation
 	def create_peripheral(self, full_name: str, base_addr: list[int], addr_width: list[int], 
 					   clock_domain: str, bus_name: str) -> Peripheral:
-
 		
 		# register creation to check for duplicates
 		self._register_creation(full_name)
@@ -58,43 +72,33 @@ class Peripherals_Factory(Factory):
 		id = self._extract_id(full_name)
 		addr_ranges = Addr_Ranges(full_name, base_addr, addr_width)
 
-		# Create concrete peripheral
-		match base_name:
-			case "TIM":
-				return Timer(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "DDR4CH":
-				# for ddr the id is the channel number
-				channel = id
-				if channel not in self.DDR_CHANNELS:
-					raise ValueError("Unsupported DDR4 channel for the current board configuration")
-				# MBUS and HBUS only support particular DDR4 channels, so enforce the check
-				if(bus_name == "MBUS") and (channel not in self.MBUS_DDR4_LEGAL_CHANNELS):
-					raise ValueError(f"DDR4CH_{channel} was configured on MBUS that only supports "
-									 f"channels {self.MBUS_DDR4_LEGAL_CHANNELS}")
+		# Check if peripheral is supported
+		if(base_name not in self.SUPPORTED_PERIPHERALS):
+			raise Unsupported_Value_Error("BASE_NAME", base_name, list(self.SUPPORTED_PERIPHERALS.keys()))
 
-				if(bus_name == "HBUS") and (channel not in self.HBUS_DDR4_LEGAL_CHANNELS):
-					raise ValueError(f"DDR4CH_{channel} was configured on HBUS that only supports "
-									 f"channels {self.HBUS_DDR4_LEGAL_CHANNELS}")
-				return DDR4(base_name, addr_ranges, clock_domain, channel, bus_name)
-			case "GPIOOUT":
-				return GPIO_out(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "GPIOIN":
-				return GPIO_in(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "UART":
-				return Uart(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "BRAM":
-				return Bram(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "DMMEM":
-				return Debug_Module(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "PLIC":
-				return PLIC(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "HLSCONTROL":
-				return HLS(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "CDMA":
-				return CDMA(base_name, addr_ranges, clock_domain, clock_frequency)
-			case "HBM":
-				if not self.HBM_SUPPORTED:
-					raise ValueError("Unsupported HBM for the current board configuration")
-				return HBM(base_name, addr_ranges, clock_domain, clock_frequency)
-			case _:
-				raise ValueError(f"Unsupported peripheral {full_name}")
+		cls = self.SUPPORTED_PERIPHERALS[base_name]
+
+		# Specialized validation logic
+		if base_name == "DDR4CH":
+			# for ddr the id is the channel number
+			channel = id
+
+			if channel not in self.DDR_CHANNELS:
+				raise Conflict_Error("DDR4CH", "BOARD", f"Channels supported {self.DDR_CHANNELS}")
+
+			# MBUS and HBUS only support particular DDR4 channels, so enforce the check
+			if bus_name == "MBUS" and channel not in self.MBUS_DDR4_LEGAL_CHANNELS:
+				raise Unsupported_Value_Error("MBUS DDR4CH", channel, self.MBUS_DDR4_LEGAL_CHANNELS)
+
+			if bus_name == "HBUS" and channel not in self.HBUS_DDR4_LEGAL_CHANNELS:
+				raise Unsupported_Value_Error("HBUS DDR4CH", channel, self.HBUS_DDR4_LEGAL_CHANNELS)
+
+			return cls(base_name, addr_ranges, clock_domain, channel, bus_name)
+
+		if base_name == "HBM":
+			if not self.HBM_SUPPORTED:
+				raise Conflict_Error("HBM", "BOARD", f"HBM supported = {self.HBM_SUPPORTED}")
+
+		# Default construction path
+		return cls(base_name, addr_ranges, clock_domain, clock_frequency)
+

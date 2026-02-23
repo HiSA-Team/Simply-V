@@ -88,9 +88,7 @@ class Ld_Template(Template):
 				# making the value aligned to 16
 				self.stack_start = (dimensions[1] - 1) & ~(15)
 				return
-
-		# boot memory not found
-		raise ValueError(f"Unable to find a memory suited for booting (Selected boot memory is {boot_memory_name})")
+		assert False, "Simply-V should already validated correctness of boot_memory"
 
 
 	def __init__(self, memories: list[Peripheral], boot_memory_name: str):

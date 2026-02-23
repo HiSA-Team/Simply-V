@@ -4,6 +4,7 @@
 # to the actual python config implementation, creating the "Simply_V" object (the root of all the configurations)
 # and using it to generate/modify the configuration files
 
+from general.error import Simply_V_Error
 from parsers.sys_parser import Sys_Parser
 from general.env import Env
 from general.logger import Logger
@@ -270,8 +271,10 @@ if __name__ == "__main__":
 	logger = Logger.get_instance()
 	try:
 		main(logger)
-	except ValueError as e:
-		logger.simply_v_crash(f"Value error: {e.args[0]}")
+	# Normal System Failure, we just need to show the custom error message
+	except Simply_V_Error as e:
+		logger.simply_v_crash(str(e))
+	# Unexpected error we show the stack trace for debugging purposes
 	except Exception:
 		logger.simply_v_crash(
 			"Unexpected error:\n" + traceback.format_exc()

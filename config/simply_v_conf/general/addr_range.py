@@ -28,6 +28,7 @@
 # RANGE_ADDR_WIDTH = 0
 
 import re
+from general.error import Conflict_Error
 
 class Addr_Range():
 
@@ -40,13 +41,15 @@ class Addr_Range():
 		# compute the number of consecutive least significant bits equal to 0 that we
 		# get from the number obtained considering "RANGE_ADDR_WIDTH" as a power of 2 exponent
 		# ex. RANGE_ADDR_WIDTH == 3 -> 2**3 = 8 -> least_significant_zeroes of 8 = 3
-		least_significant_zeroes = ~(~ 1 << (self.RANGE_ADDR_WIDTH - 1) )
+		least_significant_zeroes = (1 << self.RANGE_ADDR_WIDTH) - 1
 
 		#RANGE_BASE_ADDR need to have "n" consecutive least significant bits equal to 0
 		if (self.RANGE_BASE_ADDR & least_significant_zeroes) != 0:
-			raise ValueError(f"BASE_ADDR not compatible with RANGE_ADDR_WIDTH in {self.RANGE_NAME}, "
-							  "RANGE_ADDR_WIDTH must match the number of consecutive least significant bits "
-							  "equal to 0 in BASE_ADDR")
+			raise Conflict_Error("RANGE_BASE_ADDR", "RANGE_ADDR_WIDTH",
+							f"{self.RANGE_NAME} RANGE_ADDR_WIDTH must match "
+				            "the number of consecutive least significant bits "
+							"equal to 0 in RANGE_BASE_ADDR"
+						   )
 
 		# RANGE_END_ADDR is the first address outside the addressable range
 		self.RANGE_END_ADDR = self._compute_end_addr(self.RANGE_BASE_ADDR, self.RANGE_ADDR_WIDTH)
@@ -227,19 +230,41 @@ class Addr_Ranges():
 	# Returns a key, value dict, each entry represents an addr range with:
 	# key = RANGE_NAME
 	# value = copy of REACHABLE_FROM
-	# if the ranges are contiguous and explicit is set to "False"
+	# if the ranges have the same REACHABLE_FROM and explicit is set to "False"
 	# returns a dict with a single entry with:
 	# key = FULL_NAME
 	# value = copy of REACHABLE_FROM
 	def get_reachable_from(self, explicit: bool) -> dict[str, list[str]]:
 		ret_dict = {}
-		
-		if(self.contiguous and not explicit):
+		equals = True;
+
+		# Check if all the ranges are reachable from the same buses
+		for i in range(1, len(self.addr_ranges)):
+			if self.addr_ranges[i].REACHABLE_FROM != self.addr_ranges[i-1].REACHABLE_FROM:
+				equals = False
+				break
+
+		if(equals and not explicit):
 			ret_dict = {self.FULL_NAME: list(self.addr_ranges[0].REACHABLE_FROM.copy()) }
 		else:
 			ret_dict = {addr_range.RANGE_NAME: list(addr_range.REACHABLE_FROM.copy()) for addr_range in self.addr_ranges}
 
 		return ret_dict
+	
+	# returns a list of the REACHABLE_FROM values common to all ranges
+	# for example assume this configuration in which a LOOPBACKING bus has this effect on the address space
+	# { Node_range_0, REACHABLE_FROM = [MBUS, PBUS, HBUS]
+	#   Node_range_1, REACHABLE_FROM = [MBUS, PBUS]
+	# the function returns [MBUS, PBUS]
+	def get_common_reachable_from(self) -> list[str]:
+		common = set(self.addr_ranges[0].REACHABLE_FROM)
+
+		# compute intersection of sets
+		for addr_range in self.addr_ranges[1:]:
+			common &= addr_range.REACHABLE_FROM
+
+		return list(common)
+
 
 	# If explicit is set to "True"
 	# Returns a key, value dict, each entry represents an addr range with:

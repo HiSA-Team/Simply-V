@@ -2,6 +2,7 @@
 # Description: This is the Factory specialization class used to create buses, 
 # it uses the parsers objects to extract the buses data 
 
+from general.error import Unsupported_Value_Error
 from parsers.mbus_parser import MBUS_Parser
 from general.addr_range import Addr_Ranges
 from general.logger import Logger
@@ -44,7 +45,6 @@ class Buses_Factory(Factory):
 		# Assuming the bus file name is for example "config_pbus_0.csv" if full_name is "PBUS_0"
 		file_name = self.env.get_config_path(full_name)
 
-
 		# Create concrete bus
 		match base_name:
 			case "MBUS":
@@ -57,7 +57,7 @@ class Buses_Factory(Factory):
 				data_dict = self.nonleafbus_parser.parse_csv(file_name)
 				bus =  HBus(base_name, data_dict, addr_ranges, clock_domain, clock_frequency, **kwargs)
 			case _:
-				raise ValueError(f"Unsupported Bus {full_name}\n")
+				raise Unsupported_Value_Error("BASE_NAME", base_name, ["MBUS", "HBUS", "PBUS"])
 
 		self.logger.simply_v_info(f"Created BUS {full_name} parsing file: {file_name}")
 		return bus

@@ -42,7 +42,7 @@ class LeafBus(Bus):
 
 	#Leaf buses just need to modify the reachability params of children peripherals
 	def add_reachability(self):
-		self._add_peripherals_reachability()
+		self._add_reachability(cast(list[Node], self._children_peripherals))
 
 	#Leaf bus don't support clock_domains object so just return
 	def check_clock_domains(self):

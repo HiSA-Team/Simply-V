@@ -11,6 +11,7 @@ from typing import cast
 from factories import peripherals_factory
 from general.addr_range import Addr_Ranges
 from general.node import Node
+from general.error import Unsupported_Value_Error, Conflict_Error
 from peripherals.peripheral import Peripheral
 from factories.peripherals_factory import Peripherals_Factory
 from abc import abstractmethod
@@ -56,6 +57,7 @@ class Bus(Node):
 		#List of children peripherals generated in "generate_children"
 		self._children_peripherals : list[Peripheral] = []
 
+		#TODO: check if this is redundant
 		#check on addr_width
 		if any(addr_width > self.ADDR_WIDTH for addr_width in self._RANGE_ADDR_WIDTH):
 			raise ValueError(
@@ -64,9 +66,7 @@ class Bus(Node):
 
 		#check protocol
 		if self.PROTOCOL not in self.LEGAL_PROTOCOLS:
-			raise ValueError(
-					f"Unsupported protocol '{self.PROTOCOL}' in {self.FULL_NAME} (supported: {self.LEGAL_PROTOCOLS})"
-			)
+			raise Unsupported_Value_Error("PROTOCOL", self.PROTOCOL, self.LEGAL_PROTOCOLS, f"for {self.FULL_NAME}")
 
 
 	# functions used from children classes to implement the "COMPOSITE INTERFACE" functions
@@ -93,45 +93,53 @@ class Bus(Node):
 			#check that nodes address ranges dont overlap
 			for node2 in nodes:
 				if (node1 != node2 and node1.assigned_addr_ranges.overlaps(node2.assigned_addr_ranges)):
-					raise ValueError(
-						f"Address ranges of {node1.FULL_NAME} overlap with {node2.FULL_NAME} in {self.FULL_NAME}"
-					)
+					raise Conflict_Error("ADDR_RANGE", "ADDR_RANGE",
+									f"{node1.FULL_NAME} overlaps with {node2.FULL_NAME} in {self.FULL_NAME}")
 
 			#check that all nodes address ranges are contained
 			#(using "__contains__" defined in addr_range.py)
 			for addr_range in node1.assigned_addr_ranges:
 				if addr_range not in self.assigned_addr_ranges:
-					raise ValueError(
-						f"Address ranges of {node1.FULL_NAME} are not fully contained in {self.FULL_NAME} address ranges"
-					)
+					raise Conflict_Error("ADDR_RANGE", "ADDR_RANGE",
+										f"{node1.FULL_NAME} is not "
+										f"fully contained in {self.FULL_NAME}"
+										)
 
 
 	# PRIVATE, used in "check_legals" implementation
 	def _check_legal_peripherals(self) -> None:
 		for p in self._children_peripherals:
 			if p.BASE_NAME not in self.LEGAL_PERIPHERALS:
-				raise ValueError(
-						f"Unsupported peripheral {p.FULL_NAME} for {self.FULL_NAME}"
-				)
+				raise Unsupported_Value_Error("FULL_NAME", p.FULL_NAME, self.LEGAL_PERIPHERALS, f"for {self.FULL_NAME}")
 	
 	# PRIVATE, used in "add_reachability" implementation
 	# iterate over each "children_peripheral" addr range, and
 	# if they are contained in at least 1 Bus addr range, then add
 	# reachability values to them
-	def _add_peripherals_reachability(self) -> None:
+	def _add_reachability(self, nodes: list[Node]) -> None:
+		# get the reachability values associated to each bus address range
 		reaching_buses = self.assigned_addr_ranges.get_reachable_from(explicit=False)
-		for peripheral in self._children_peripherals:
-			for addr_range in peripheral.assigned_addr_ranges:
-				if addr_range in self.assigned_addr_ranges:
-					# add bus name
-					addr_range.add_to_reachable(self.FULL_NAME)
-					# add the nodes that can reach the bus
-					addr_range.add_list_to_reachable(reaching_buses[self.FULL_NAME])
+		# buses that can reach all the address ranges of this bus
+		if(self.FULL_NAME not in reaching_buses):
+			common = self.assigned_addr_ranges.get_common_reachable_from()
+		else:
+			common = reaching_buses[self.FULL_NAME]
 
-		
-	# PRIVATE, used in "get_peripherals" implementation
-	def _get_peripherals(self) -> list[Peripheral]:
-		return self._children_peripherals
+		for node in nodes:
+			range_granularity = False
+			# this is the case in which all the ranges of the bus have the same reachables
+			# add to the each peripheral address range, the bus name and
+			# the buses that can already reach the bus address range
+			# in which the peripheral address range is contained
+			for addr_range in node.assigned_addr_ranges:
+				addr_range.add_list_to_reachable(common)
+				for self_range in self.assigned_addr_ranges:
+					if addr_range in self_range:
+						addr_range.add_to_reachable(self_range.RANGE_NAME)
+						range_granularity = True
+				if (not range_granularity):
+					addr_range.add_to_reachable(self.FULL_NAME)
+				
 
 
 	# Return children peripherals address ranges ordered by increasing base address
@@ -178,7 +186,7 @@ class Bus(Node):
 		pass
 
 	@abstractmethod
-	def sanitize_addr_ranges(self) -> None:
+	def sanitize_addr_ranges(self) -> None: 
 		pass
 
 	@abstractmethod
