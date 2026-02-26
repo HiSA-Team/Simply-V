@@ -42,7 +42,7 @@ config_ld: config_check
 		${OUTPUT_MEM_LD_FILE} \
 		${OUTPUT_SEC_LD_FILE} \
 		${OUTPUT_VAR_LD_FILE}
-	@echo "[CONFIG] Output files are at ${OUTPUT_MEM_LD_FILE} ${OUTPUT_SEC_LD_FILE} ${OUTPUT_VAR_LD_FILE}"
+	@echo "[CONFIG] Output file are at ${OUTPUT_MEM_LD_FILE} ${OUTPUT_SEC_LD_FILE} ${OUTPUT_VAR_LD_FILE}"
 
 config_check:
 	${PYTHON} ${CONFIG_ROOT}/scripts/check_config.py ${CONFIG_SYSTEM_CSV} ${CONFIG_BUS_CSVS}

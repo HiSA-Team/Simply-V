@@ -7,13 +7,16 @@
 #include <stdint.h>
 #include "zalrsc.h"
 
+extern unsigned int _DDR4CH1_start;
+extern unsigned int _DDR4CH1_end;
+
 int main(int argc, char* argv[]) {
 
     // Initialize HAL
     simplyv_init();
 
-    uintptr_t ddr_base = (uintptr_t)_peripheral_DDR4CH1_start;
-    uintptr_t ddr_end  = (uintptr_t)_peripheral_DDR4CH1_end;
+    uintptr_t ddr_base = (uintptr_t)&_DDR4CH1_start;
+    uintptr_t ddr_end  = (uintptr_t)&_DDR4CH1_end;
 
     printf("=== LR/SC TESTS WORD ===\n\r");
     printf("DDR range: 0x%08lx - 0x%08lx\n\n\r", ddr_base, ddr_end);
