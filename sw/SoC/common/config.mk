@@ -71,9 +71,10 @@ ARCH := $(addsuffix _zicsr_zifencei,$(ARCH))
 DFLAG   ?= -g -O0
 CFLAGS  ?= -march=${ARCH} -mabi=${ABI} $(DFLAG) -c
 LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib \
-           -T$(SW_SOC_ROOT)/common/variables.ld \
-           -T$(SW_SOC_ROOT)/common/memory.ld \
-           -T$(SW_SOC_ROOT)/common/sections.ld 
+           -T$(SW_SOC_ROOT)/common/ld/variables.ld \
+           -T$(SW_SOC_ROOT)/common/ld/memory.ld \
+           -T$(SW_SOC_ROOT)/common/ld/sections.ld 
+
 MACRO_LIST =
 ifeq ($(SIMPLYV_PROFILE), embedded)
 	MACRO_LIST += -DIS_EMBEDDED
