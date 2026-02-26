@@ -23,6 +23,7 @@ SRC_DIR     = src
 OBJ_DIR     = obj
 INC_DIR     = inc
 STARTUP_DIR = $(SW_SOC_ROOT)/common
+LIB_DIR	    = $(SW_SOC_ROOT)/lib
 
 #############
 # Libraries #
@@ -44,11 +45,12 @@ LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
 
 include $(SW_ROOT)/SoC/common/config.mk
 
+# Override to use ld/config.ld
 LDFLAGS := $(LIB_OBJ_LIST) -nostdlib \
-           -T$(SW_SOC_ROOT)/common/variables.ld \
-           -T$(SW_SOC_ROOT)/common/memory.ld \
+           -T$(SW_SOC_ROOT)/common/ld/variables.ld \
+           -T$(SW_SOC_ROOT)/common/ld/memory.ld \
            -Tld/config.ld \
-           -T$(SW_SOC_ROOT)/common/sections.ld
+           -T$(SW_SOC_ROOT)/common/ld/sections.ld
 
 ###########
 # Targets #

@@ -19,10 +19,11 @@ PROGRAM_NAME = $(shell basename $$PWD)
 # Paths and Folders #
 #####################
 
-SRC_DIR       = src
-OBJ_DIR       = obj
-INC_DIR       = inc
-STARTUP_DIR   = $(SW_SOC_ROOT)/common
+SRC_DIR     = src
+OBJ_DIR     = obj
+INC_DIR     = inc
+STARTUP_DIR = $(SW_SOC_ROOT)/common
+LIB_DIR	    = $(SW_SOC_ROOT)/lib
 
 #############
 # Libraries #
