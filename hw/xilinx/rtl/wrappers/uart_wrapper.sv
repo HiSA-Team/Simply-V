@@ -11,7 +11,7 @@ import simplyv_pkg::*;
 `include "simplyv_axi.svh"
 
 
-module axilite_uart # (
+module uart_wrapper # (
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32,
     parameter int unsigned    LOCAL_ADDR_WIDTH  = 32,
     parameter int unsigned    LOCAL_ID_WIDTH    = 2

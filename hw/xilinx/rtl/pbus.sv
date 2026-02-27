@@ -445,11 +445,11 @@ module peripheral_bus #(
     /////////////////////
 
     // AXI4 Lite UART
-    axilite_uart # (
+    uart_wrapper # (
         .LOCAL_DATA_WIDTH   ( LOCAL_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( LOCAL_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( LOCAL_ID_WIDTH   )
-    ) axilite_uart_u (
+    ) uart_wrapper_u (
         .clock_i        ( PBUS_clock_i              ), // input wire s_axi_aclk
         .reset_ni       ( PBUS_reset_ni             ), // input wire s_axi_aresetn
         .int_core_o     ( uart_int                  ), // Output interrupt

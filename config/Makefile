@@ -12,18 +12,18 @@ INPUT_SYSTEM_CSV ?= ${CONFIG_ROOT}/configs/common/config_system.csv
 ###########################
 
 # Generated from "config_mbus"
-OUTPUT_MBUS_CROSSBAR := ${XILINX_ROOT}/ips/common/xlnx_mbus_crossbar/config.tcl
-OUTPUT_MBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/mbus_buses.svinc
-OUTPUT_MBUS_CLK_ASSIGNMENTS := ${XILINX_ROOT}/rtl/simplyv_clk_assignments.svinc
+OUTPUT_MBUS_CROSSBAR        := ${XILINX_ROOT}/ips/common/xlnx_mbus_crossbar/config.tcl
+OUTPUT_MBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/mbus_interconnect.svinc
+OUTPUT_MBUS_CLK_ASSIGNMENTS := ${XILINX_ROOT}/rtl/generated/clk_assignments/mbus_clk_assignments.svinc
 
 # Generated from "config_pbus"
-OUTPUT_PBUS_CROSSBAR := ${XILINX_ROOT}/ips/common/xlnx_pbus_crossbar/config.tcl
-OUTPUT_PBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/pbus_buses.svinc
+OUTPUT_PBUS_CROSSBAR        := ${XILINX_ROOT}/ips/common/xlnx_pbus_crossbar/config.tcl
+OUTPUT_PBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/pbus_interconnect.svinc
 
 # Generated from "config_hbus"
-OUTPUT_HBUS_CROSSBAR := ${XILINX_ROOT}/ips/hpc/xlnx_hbus_crossbar/config.tcl
-OUTPUT_HBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/hbus_buses.svinc
-OUTPUT_HBUS_CLK_ASSIGNMENTS := ${XILINX_ROOT}/rtl/hbus_clk_assignments.svinc
+OUTPUT_HBUS_CROSSBAR        := ${XILINX_ROOT}/ips/hpc/xlnx_hbus_crossbar/config.tcl
+OUTPUT_HBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/hbus_interconnect.svinc
+OUTPUT_HBUS_CLK_ASSIGNMENTS := ${XILINX_ROOT}/rtl/generated/clk_assignments/hbus_clk_assignments.svinc
 
 # Generated from "config_sw"
 OUTPUT_HAL_CONF := ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
