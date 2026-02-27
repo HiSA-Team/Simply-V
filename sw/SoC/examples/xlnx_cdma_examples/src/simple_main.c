@@ -15,9 +15,6 @@
 #include "simplyv.h"
 #include <stdint.h>
 
-// CDMA Base Address
-#define CDMA_BASEADDR   ((uintptr_t)_peripheral_CDMA_start)
-
 // Multi-Round Test Parameters
 #define NUM_ROUNDS  3u
 #define BUFFER_SIZE 128u
@@ -120,7 +117,7 @@ int main(void) {
     // NOTE: this only works for RV32
     XAxiCdma_Config CdmaCfg = {
         .DeviceId    = 0,
-        .BaseAddress = CDMA_BASEADDR,
+        .BaseAddress = _peripheral_CDMA_start,
         .HasDRE      = 1,
         .IsLite      = 0,
         .DataWidth   = 32,
@@ -134,7 +131,7 @@ int main(void) {
     printf("\n[CDMA SIMPLE] CDMA multi-round transfer test start\n\r");
 
     // Initialize CDMA core
-    if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CDMA_BASEADDR) != 0) {
+    if (XAxiCdma_CfgInitialize(&cdma_handle, &CdmaCfg, CdmaCfg.BaseAddress) != 0) {
         printf("[CDMA SIMPLE] Initialization failed\n\r");
         return SIMPLYV_ERROR;
     }
