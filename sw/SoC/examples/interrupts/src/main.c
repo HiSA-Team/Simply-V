@@ -32,19 +32,10 @@ xlnx_gpio_out_t gpio_out = {
 };
 #endif // IS_EMBEDDED
 
-// Define CLINT frequency in MHz
-// TODO198: import from config
-//       for now we use the default frequency of the MBUS
-#ifdef IS_EMBEDDED
-    #define PBUS_FREQ_MHz (10u)
-#else
-    #define PBUS_FREQ_MHz (200u)
-#endif
-
 // Timer0 count in microseconds
 #define TIM0_COUNT_US (500000u)
 // Reset counter value for one interrupt each 0.5 seconds
-#define TIM0_COUNT_TICKS (TIM0_COUNT_US * PBUS_FREQ_MHz)
+#define TIM0_COUNT_TICKS (TIM0_COUNT_US * TIM_0_FREQ_MHz)
 
 xlnx_tim_t timer0 = {
     .base_addr       = TIM0_BASEADDR,
@@ -90,6 +81,7 @@ void _ext_handler(void)
     // In this example, the core is connected to PLIC target 1 line.
     // Therefore, we need to access the PLIC claim/complete register 1 (base_addr + 0x200004).
     // The interrupt source ID is obtained from the claim register.
+    //
 
     // Increment counter
     // NOTE: this is not thread-safe
@@ -98,22 +90,23 @@ void _ext_handler(void)
     // Get interrupt ID
     uint32_t interrupt_id = plic_claim();
     switch (interrupt_id) {
+
     case PLIC_GPIOIN_INTERRUPT:
-        printf("[_ext_handler] Handiling GPIOIN interrupt, count %d\r\n", ext_interrupt_count);
-        #ifdef GPIO_OUT_IS_ENABLED
+        printf("[_ext_handler] Handiling GPIO_IN interrupt, count %d\r\n", interrupt_count);
+        #ifdef GPIOOUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_0);
-        #endif // GPIO_OUT_IS_ENABLED
-        #ifdef GPIO_IN_IS_ENABLED
+        #endif // GPIOOUT_IS_ENABLED
+        #ifdef GPIOIN_IS_ENABLED
         xlnx_gpio_in_clear_int(&gpio_in);
-        #endif // GPIO_IN_IS_ENABLED
+        #endif // GPIOIN_IS_ENABLED
         break;
-    case PLIC_TIM0_INTERRUPT:
+    case PLIC_TIM_0_INTERRUPT:
         // Timer interrupt
-        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", ext_interrupt_count);
-        #ifdef GPIO_OUT_IS_ENABLED
+        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", interrupt_count);
+        #ifdef GPIOOUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
-        #endif // GPIO_OUT_IS_ENABLED
-        xlnx_tim_clear_int( &timer0 );
+        #endif // GPIOOUT_IS_ENABLED
+        xlnx_tim_clear_int(&timer0);
         break;
     default:
         // Skip this interrupt
@@ -158,24 +151,41 @@ int main()
     // Configure the PLIC for GPIOIN and TIM0, same priority
     uint32_t priority = 1;
     plic_configure_set_one(priority, PLIC_GPIOIN_INTERRUPT);
+<<<<<<< HEAD
     plic_configure_set_one(priority, PLIC_TIM0_INTERRUPT);
     plic_enable_all();
 
     #ifdef GPIO_IN_IS_ENABLED
+=======
+    plic_configure_set_one(priority, PLIC_TIM_0_INTERRUPT);
+    plic_enable_all();
+
+    #ifdef GPIOIN_IS_ENABLED
+>>>>>>> 8eca2db (squash for rebase preparation)
     retval = retval = xlnx_gpio_in_init(&gpio_in);
     if ( retval != SIMPLYV_OK ) {
         printf("[main][ERROR] GPIOIN interrupt init\r\n");
         return retval;
     }
+<<<<<<< HEAD
     #endif // GPIO_IN_IS_ENABLED
 
     #ifdef GPIO_OUT_IS_ENABLED
+=======
+    #endif // GPIOIN_IS_ENABLED
+
+    #ifdef GPIOOUT_IS_ENABLED
+>>>>>>> 8eca2db (squash for rebase preparation)
     retval = xlnx_gpio_out_init(&gpio_out);
     if ( retval != SIMPLYV_OK ) {
         printf("[main][ERROR] GPIOOUT\r\n");
         return retval;
     }
+<<<<<<< HEAD
     #endif // GPIO_OUT_IS_ENABLED
+=======
+    #endif // GPIOOUT_IS_ENABLED
+>>>>>>> 8eca2db (squash for rebase preparation)
 
     // Configure timer0
     retval = xlnx_tim_init( &timer0 );

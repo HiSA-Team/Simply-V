@@ -1,0 +1,36 @@
+# Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+# Description: The class "NonLeafBus_Parser" inherits from the "Bus_Parser" class, extending the checked
+# properties with the ones common to all NonLeafBuses
+
+from .bus_parser import Bus_Parser
+from general.error import Conflict_Error
+
+class NonLeafBus_Parser(Bus_Parser):
+	#extend the father defined data structs used for parsing/validation
+
+	mandatory_properties = Bus_Parser.mandatory_properties + ("LOOPBACK",)
+
+	#Converting first to int and then to bool since the string "0"
+	#directly converted to bool evaluates to True
+	type_parsers = Bus_Parser.type_parsers | {"LOOPBACK": lambda s: bool(int(s))}
+
+	intra_rules = Bus_Parser.intra_rules + [
+			lambda d:(
+				(d["LOOPBACK"] == 1) and (d["ADDR_RANGES"] != 1),
+				Conflict_Error("LOOPBACK", "ADDR_RANGES", "ADDR_RANGES must be 1 when activating LOOPBACK")
+				),
+			#error if LOOPBACK is enabled, the protocol is AXI4 and there is atleast 1 range with
+			#less than 13 addr_width value
+			lambda d:(
+				(d["LOOPBACK"] == 1) and (d["PROTOCOL"] == "AXI4") and any(x <= 12 for x in d["RANGE_ADDR_WIDTH"]),
+				Conflict_Error("LOOPBACK", "PROTOCOL",
+				   	f"When enabling LOOPBACK all the RANGE_ADDR_WIDTH "
+					"should be at least 13 when using AXI4 "
+					"the Bus uses internally this extra bit "
+					"to rearrange RANGES in order to accomodate "
+					"the loopback configuration")
+				),
+			]
+
+	def __init__(self):
+		super().__init__()

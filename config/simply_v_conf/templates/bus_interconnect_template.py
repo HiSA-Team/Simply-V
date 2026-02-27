@@ -1,0 +1,138 @@
+# Author: Salvatore Santoro				<sal.santoro@studenti.unina.it>
+# Description:
+#   Class that can generate the svinc files associated to each bus
+
+from buses.bus import Bus
+from .template import Template
+import os
+import textwrap
+
+class Bus_Interconnect_Template(Template):
+	# using "dedent" to ignore leading spaces
+	_str_template: str = textwrap.dedent("""\
+	// This file is auto-generated with {this_file}
+
+	/////////////////////////////////////////
+	// Buses declaration and concatenation //
+	/////////////////////////////////////////
+
+	/////////////////
+	// AXI Masters //
+	/////////////////
+	{masters_str}
+
+	/////////////////
+	// AXI Slaves  //
+	/////////////////
+	{slaves_str}
+
+	//////////////////////////////////
+	// Concatenate AXI master buses //
+	//////////////////////////////////
+	{concatenated_masters}
+
+	/////////////////////////////////
+	// Concatenate AXI slave buses //
+	/////////////////////////////////
+	{concatenated_slaves}
+	""")
+
+	# Get the correct bus suffix depending on bus name
+	def _get_width_params(self, bus: Bus) -> str:
+		return bus.FULL_NAME + "_DATA_WIDTH, " \
+			+ bus.FULL_NAME + "_ADDR_WIDTH"
+
+
+	def _get_masters_to_bus(self, bus: Bus) -> list[str]:
+		master_names = bus.MASTER_NAMES
+		ret_list = []
+		for name in master_names:
+			# in the original "declare_and_concat" script also the masters were
+			# reversed in order, so we keep the compatibility
+			# (see _init_bus_to_slaves)
+			ret_list.insert(0, f"{name}_to_{bus.FULL_NAME}")
+		return ret_list
+	
+	def _get_bus_to_slaves(self, bus: Bus) -> list[str]:
+		slaves_ranges = bus.get_ordered_children_ranges()
+		ret_list = []
+		for addr_range in slaves_ranges:
+			# we're effectively "prepending" the names 
+			# due to the order (which the RTL requires) is most to least significant array positions.
+			# This ensures compatibility with the crossbar generation code
+			# matching the correct "M" (slaves) ports order expected by the crossbar.
+			# (example slave in position 0 in the crossbar configuration file need to be the last
+			# in the concatenation order and so on)
+			ret_list.insert(0, f"{bus.FULL_NAME}_to_{addr_range.FULL_NAME}")
+		return ret_list
+
+	def _get_declaration_str(self, names_str: list[str], declare_prefix: str, width_params_str: str) -> str:
+		declarations = []
+		for name in names_str:
+			declarations.append(declare_prefix + "(" + name + ", " + width_params_str + ")")
+		return "\n".join(declarations) + "\n"
+
+	def _get_concatenated_str(self, names_str: list[str], bus: Bus, master: bool, \
+			declare_prefix: str, concat_prefix:str, width_params_str: str) -> str:
+		name = bus.FULL_NAME
+
+		if(master):
+			signals_name = name + "_masters"
+			array_prefix = "_MASTERS_ARRAY"
+			num_interfaces = bus.NUM_SI
+			interfaces_suffix = "_NUM_SI"
+		else:
+			signals_name = name + "_slaves"
+			array_prefix = "_SLAVES_ARRAY"
+			num_interfaces = bus.NUM_MI
+			interfaces_suffix = "_NUM_MI"
+
+		nodes_signals = names_str
+
+		declare_array_str: str = declare_prefix + "_ARRAY" + \
+							"(" + signals_name + ", " + \
+							name + interfaces_suffix + ", " + \
+							width_params_str + \
+							")"
+		
+		concat_array_str: str = concat_prefix + array_prefix + \
+							str(num_interfaces) + \
+							"(" + signals_name + ", " + ", ".join(nodes_signals) +")"
+
+		return declare_array_str + "\n" + concat_array_str + "\n"
+
+
+	def __init__(self, bus: Bus):
+		width_params_str: str = self._get_width_params(bus)
+
+		if (bus.PROTOCOL == "AXI4LITE"):
+			declare_prefix: str =  "`DECLARE_AXILITE_BUS"
+			concat_prefix: str = "`CONCAT_AXILITE"
+		else:
+			declare_prefix: str = "`DECLARE_AXI_BUS"
+			concat_prefix: str = "`CONCAT_AXI"
+			# add ID_WIDTH if not AXI4LITE
+			width_params_str += f", {bus.FULL_NAME}_ID_WIDTH"
+
+		# get these to reuse them in declare and concat implementations
+		masters_to_bus_str: list[str] = self._get_masters_to_bus(bus)
+		bus_to_slaves_str: list[str] = self._get_bus_to_slaves(bus)
+
+		# initialize all the strings needed in the template
+		self.declare_masters_str = self._get_declaration_str(masters_to_bus_str, declare_prefix, width_params_str)
+		self.declare_slaves_str = self._get_declaration_str(bus_to_slaves_str, declare_prefix, width_params_str)
+		self.concat_masters_str: str = self._get_concatenated_str(masters_to_bus_str, bus, True, \
+														declare_prefix, concat_prefix, width_params_str)
+		self.concat_slaves_str: str = self._get_concatenated_str(bus_to_slaves_str, bus, False, \
+														declare_prefix, concat_prefix, width_params_str)
+
+
+	# Used by template.py in the write_to_file implementation
+	def get_params(self) -> dict[str, str]:
+		return {
+				"this_file": os.path.basename(__file__),
+				"masters_str": self.declare_masters_str,
+				"slaves_str": self.declare_slaves_str,
+				"concatenated_masters": self.concat_masters_str,
+				"concatenated_slaves": self.concat_slaves_str
+				}

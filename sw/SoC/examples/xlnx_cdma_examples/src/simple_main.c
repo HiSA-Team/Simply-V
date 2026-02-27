@@ -22,7 +22,7 @@
 #define NUM_ROUNDS  3u
 #define BUFFER_SIZE 128u
 
-// Number of 32-bit num_words to transfer for each roun
+// Number of 32-bit num_words to transfer for each round
 static const uint32_t WORDS_ROUND[NUM_ROUNDS] = {
     8u,   // Round 0:  8 num_words  ( 32 bytes)
     16u,  // Round 1: 16 num_words  ( 64 bytes)

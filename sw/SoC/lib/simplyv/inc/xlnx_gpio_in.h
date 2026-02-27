@@ -12,7 +12,7 @@
 
 // https://docs.amd.com/v/u/en-US/pg144-axi-gpio
 
-#define GPIO_IN_BASEADDR ((uintptr_t)_peripheral_GPIO_in_start)
+#define GPIO_IN_BASEADDR ((uintptr_t)_peripheral_GPIOIN_start)
 
 // INTERRUPTS
 typedef enum {

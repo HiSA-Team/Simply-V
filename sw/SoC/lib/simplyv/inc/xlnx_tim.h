@@ -11,9 +11,10 @@
 #include "simplyv_conf.h"
 
 // https://docs.amd.com/v/u/en-US/pg079-axi-timer
+
 // Base address
-#define TIM0_BASEADDR ((uintptr_t)_peripheral_TIM0_start)
-#define TIM1_BASEADDR ((uintptr_t)_peripheral_TIM1_start)
+#define TIM0_BASEADDR ((uintptr_t)_peripheral_TIM_0_start)
+#define TIM1_BASEADDR ((uintptr_t)_peripheral_TIM_1_start)
 
 // Reload initial counter value
 #define TIM_RELOAD_AUTO 0

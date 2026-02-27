@@ -40,9 +40,9 @@ package simplyv_pkg;
     // AXI Lite peripheral bus //
     /////////////////////////////
 
-    // Always assume 1 master
     // Peripheral bus slaves
     localparam int unsigned PBUS_NUM_MI = `PBUS_NUM_MI;
+    localparam int unsigned PBUS_NUM_SI = `PBUS_NUM_SI;
 
     //////////////////////////
     // High-performance bus //
@@ -85,8 +85,8 @@ package simplyv_pkg;
 
     // Peripheral Bus interrupts
     localparam int unsigned PBUS_GPIOIN_INTERRUPT = 0;      // GPIO In [embedded only]
-    localparam int unsigned PBUS_TIM0_INTERRUPT = 1;        // Timer 0
-    localparam int unsigned PBUS_TIM1_INTERRUPT = 2;        // Timer 1
+    localparam int unsigned PBUS_TIM_0_INTERRUPT = 1;        // Timer 0
+    localparam int unsigned PBUS_TIM_1_INTERRUPT = 2;        // Timer 1
     localparam int unsigned PBUS_UART_INTERRUPT = 3;        // UART
     // Total number of interrupts
     localparam int unsigned PBUS_NUM_INTERRUPTS = 4;
@@ -97,8 +97,8 @@ package simplyv_pkg;
     // TODO154: this is static for now, must generate by config
     localparam int unsigned PLIC_RESERVED_INTERRUPT = 0;    // PLIC line 0 is reserved
     localparam int unsigned PLIC_GPIOIN_INTERRUPT = 1;      // GPIO In (From PBUS)[embedded only]
-    localparam int unsigned PLIC_TIM0_INTERRUPT = 2;        // Timer 0 (From PBUS)
-    localparam int unsigned PLIC_TIM1_INTERRUPT = 3;        // Timer 1 (From PBUS)
+    localparam int unsigned PLIC_TIM_0_INTERRUPT = 2;        // Timer 0 (From PBUS)
+    localparam int unsigned PLIC_TIM_1_INTERRUPT = 3;        // Timer 1 (From PBUS)
     localparam int unsigned PLIC_UART_INTERRUPT = 4;        // UART    (From PBUS)
     localparam int unsigned PLIC_HLS_INTERRUPT = 5;         // HLS     (From HLS core) [HPC only]
     localparam int unsigned PLIC_CDMA_INTERRUPT = 6;        // CDMA    (From DMA IP)
