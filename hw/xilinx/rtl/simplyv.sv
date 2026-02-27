@@ -13,7 +13,7 @@
 //  | sys_master |----------------------------------->|          |                   |________|
 //  |____________|                                    |          |                    ___________
 //   ______________                                   |          |                   |           |
-//  |              |--------------------------------->|          |------------------>|  DDR4CH1  |
+//  |              |--------------------------------->|          |------------------>|  DDR4CH_1  |
 //  | Debug Module |                                  |   Main   |                   |___________|
 //  |______________|<---------------------------------|   Bus    |                    __________________
 //                                                    |  (MBUS)  |                   |                  |
@@ -766,8 +766,8 @@ module simplyv (
         .CLINTCORES         ( RV_SOCKET_NUM_CPU )
     ) clint_wrapper_u (
         // Clocks and resets
-        .clk_i          ( MBUS_clk  ),
-        .rst_ni         ( MBUS_rstn ),
+        .clk_i          ( CLINT_clk  ),
+        .rst_ni         ( CLINT_rstn ),
         .rtc_o          (  ), // Unused
         // Interupt outputs
         .timer_irq_o    ( clint_timer_irq ), // Timer interrupts
@@ -1026,13 +1026,12 @@ module simplyv (
     // DDR4 Channel 1 //
     ////////////////////
 
-    // TODO127: export these to config
-    logic ddr4ch1_clk300MHz;
-    logic ddr4ch1_rst300MHz;
+    logic ddr4ch1_ddr_rst;
+    assign rstn_DDR4CH_1_300MHz = ~ddr4ch1_ddr_rst;
 
     // DDR channel 1 on MBUS
     ddr4_channel_wrapper # (
-        .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH1
+        .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH_1
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
@@ -1043,8 +1042,8 @@ module simplyv (
         .clk_300mhz_x_p_i     ( clk_300mhz_1_p_i  ),
         .clk_300mhz_x_n_i     ( clk_300mhz_1_n_i  ),
         // Output clock and reset
-        .ddr_clk_o            ( ddr4ch1_clk300MHz ),
-        .ddr_rst_o            ( ddr4ch1_rst300MHz ),
+        .ddr_clk_o            ( clk_DDR4CH_1_300MHz  ),
+        .ddr_rst_o            ( ddr4ch1_ddr_rst      ),
         // Connect DDR4 channel 1
         .cx_ddr4_adr          ( c1_ddr4_adr       ),
         .cx_ddr4_ba           ( c1_ddr4_ba        ),
@@ -1078,45 +1077,45 @@ module simplyv (
         .s_ctrl_axilite_rdata    (       ),
         .s_ctrl_axilite_rresp    (       ),
         // Slave interface
-        .s_axi_awid           ( MBUS_to_DDR4CH1_axi_awid     ),
-        .s_axi_awaddr         ( MBUS_to_DDR4CH1_axi_awaddr   ),
-        .s_axi_awlen          ( MBUS_to_DDR4CH1_axi_awlen    ),
-        .s_axi_awsize         ( MBUS_to_DDR4CH1_axi_awsize   ),
-        .s_axi_awburst        ( MBUS_to_DDR4CH1_axi_awburst  ),
-        .s_axi_awlock         ( MBUS_to_DDR4CH1_axi_awlock   ),
-        .s_axi_awcache        ( MBUS_to_DDR4CH1_axi_awcache  ),
-        .s_axi_awprot         ( MBUS_to_DDR4CH1_axi_awprot   ),
-        .s_axi_awregion       ( MBUS_to_DDR4CH1_axi_awregion ),
-        .s_axi_awqos          ( MBUS_to_DDR4CH1_axi_awqos    ),
-        .s_axi_awvalid        ( MBUS_to_DDR4CH1_axi_awvalid  ),
-        .s_axi_awready        ( MBUS_to_DDR4CH1_axi_awready  ),
-        .s_axi_wdata          ( MBUS_to_DDR4CH1_axi_wdata    ),
-        .s_axi_wstrb          ( MBUS_to_DDR4CH1_axi_wstrb    ),
-        .s_axi_wlast          ( MBUS_to_DDR4CH1_axi_wlast    ),
-        .s_axi_wvalid         ( MBUS_to_DDR4CH1_axi_wvalid   ),
-        .s_axi_wready         ( MBUS_to_DDR4CH1_axi_wready   ),
-        .s_axi_bid            ( MBUS_to_DDR4CH1_axi_bid      ),
-        .s_axi_bresp          ( MBUS_to_DDR4CH1_axi_bresp    ),
-        .s_axi_bvalid         ( MBUS_to_DDR4CH1_axi_bvalid   ),
-        .s_axi_bready         ( MBUS_to_DDR4CH1_axi_bready   ),
-        .s_axi_arid           ( MBUS_to_DDR4CH1_axi_arid     ),
-        .s_axi_araddr         ( MBUS_to_DDR4CH1_axi_araddr   ),
-        .s_axi_arlen          ( MBUS_to_DDR4CH1_axi_arlen    ),
-        .s_axi_arsize         ( MBUS_to_DDR4CH1_axi_arsize   ),
-        .s_axi_arburst        ( MBUS_to_DDR4CH1_axi_arburst  ),
-        .s_axi_arlock         ( MBUS_to_DDR4CH1_axi_arlock   ),
-        .s_axi_arcache        ( MBUS_to_DDR4CH1_axi_arcache  ),
-        .s_axi_arprot         ( MBUS_to_DDR4CH1_axi_arprot   ),
-        .s_axi_arregion       ( MBUS_to_DDR4CH1_axi_arregion ),
-        .s_axi_arqos          ( MBUS_to_DDR4CH1_axi_arqos    ),
-        .s_axi_arvalid        ( MBUS_to_DDR4CH1_axi_arvalid  ),
-        .s_axi_arready        ( MBUS_to_DDR4CH1_axi_arready  ),
-        .s_axi_rid            ( MBUS_to_DDR4CH1_axi_rid      ),
-        .s_axi_rdata          ( MBUS_to_DDR4CH1_axi_rdata    ),
-        .s_axi_rresp          ( MBUS_to_DDR4CH1_axi_rresp    ),
-        .s_axi_rlast          ( MBUS_to_DDR4CH1_axi_rlast    ),
-        .s_axi_rvalid         ( MBUS_to_DDR4CH1_axi_rvalid   ),
-        .s_axi_rready         ( MBUS_to_DDR4CH1_axi_rready   )
+        .s_axi_awid           ( MBUS_to_DDR4CH_1_axi_awid     ),
+        .s_axi_awaddr         ( MBUS_to_DDR4CH_1_axi_awaddr   ),
+        .s_axi_awlen          ( MBUS_to_DDR4CH_1_axi_awlen    ),
+        .s_axi_awsize         ( MBUS_to_DDR4CH_1_axi_awsize   ),
+        .s_axi_awburst        ( MBUS_to_DDR4CH_1_axi_awburst  ),
+        .s_axi_awlock         ( MBUS_to_DDR4CH_1_axi_awlock   ),
+        .s_axi_awcache        ( MBUS_to_DDR4CH_1_axi_awcache  ),
+        .s_axi_awprot         ( MBUS_to_DDR4CH_1_axi_awprot   ),
+        .s_axi_awregion       ( MBUS_to_DDR4CH_1_axi_awregion ),
+        .s_axi_awqos          ( MBUS_to_DDR4CH_1_axi_awqos    ),
+        .s_axi_awvalid        ( MBUS_to_DDR4CH_1_axi_awvalid  ),
+        .s_axi_awready        ( MBUS_to_DDR4CH_1_axi_awready  ),
+        .s_axi_wdata          ( MBUS_to_DDR4CH_1_axi_wdata    ),
+        .s_axi_wstrb          ( MBUS_to_DDR4CH_1_axi_wstrb    ),
+        .s_axi_wlast          ( MBUS_to_DDR4CH_1_axi_wlast    ),
+        .s_axi_wvalid         ( MBUS_to_DDR4CH_1_axi_wvalid   ),
+        .s_axi_wready         ( MBUS_to_DDR4CH_1_axi_wready   ),
+        .s_axi_bid            ( MBUS_to_DDR4CH_1_axi_bid      ),
+        .s_axi_bresp          ( MBUS_to_DDR4CH_1_axi_bresp    ),
+        .s_axi_bvalid         ( MBUS_to_DDR4CH_1_axi_bvalid   ),
+        .s_axi_bready         ( MBUS_to_DDR4CH_1_axi_bready   ),
+        .s_axi_arid           ( MBUS_to_DDR4CH_1_axi_arid     ),
+        .s_axi_araddr         ( MBUS_to_DDR4CH_1_axi_araddr   ),
+        .s_axi_arlen          ( MBUS_to_DDR4CH_1_axi_arlen    ),
+        .s_axi_arsize         ( MBUS_to_DDR4CH_1_axi_arsize   ),
+        .s_axi_arburst        ( MBUS_to_DDR4CH_1_axi_arburst  ),
+        .s_axi_arlock         ( MBUS_to_DDR4CH_1_axi_arlock   ),
+        .s_axi_arcache        ( MBUS_to_DDR4CH_1_axi_arcache  ),
+        .s_axi_arprot         ( MBUS_to_DDR4CH_1_axi_arprot   ),
+        .s_axi_arregion       ( MBUS_to_DDR4CH_1_axi_arregion ),
+        .s_axi_arqos          ( MBUS_to_DDR4CH_1_axi_arqos    ),
+        .s_axi_arvalid        ( MBUS_to_DDR4CH_1_axi_arvalid  ),
+        .s_axi_arready        ( MBUS_to_DDR4CH_1_axi_arready  ),
+        .s_axi_rid            ( MBUS_to_DDR4CH_1_axi_rid      ),
+        .s_axi_rdata          ( MBUS_to_DDR4CH_1_axi_rdata    ),
+        .s_axi_rresp          ( MBUS_to_DDR4CH_1_axi_rresp    ),
+        .s_axi_rlast          ( MBUS_to_DDR4CH_1_axi_rlast    ),
+        .s_axi_rvalid         ( MBUS_to_DDR4CH_1_axi_rvalid   ),
+        .s_axi_rready         ( MBUS_to_DDR4CH_1_axi_rready   )
     );
 
     ///////////////////
@@ -1144,48 +1143,48 @@ module simplyv (
         .main_clk_i                 ( MBUS_clk  ),
         .main_rstn_i                ( MBUS_rstn ),
         // HLS IP clock and reset (from HBUS)
-        .HLS_CONTROL_clk_i          ( HLS_CONTROL_clk  ),
-        .HLS_CONTROL_rstn_i         ( HLS_CONTROL_rstn ),
+        .HLSCONTROL_clk_i          ( HLSCONTROL_clk  ),
+        .HLSCONTROL_rstn_i         ( HLSCONTROL_rstn ),
         // Slave for control
-        .s_HLS_CONTROL_axi_awid     ( MBUS_to_HLS_CONTROL_axi_awid     ),
-        .s_HLS_CONTROL_axi_awaddr   ( MBUS_to_HLS_CONTROL_axi_awaddr   ),
-        .s_HLS_CONTROL_axi_awlen    ( MBUS_to_HLS_CONTROL_axi_awlen    ),
-        .s_HLS_CONTROL_axi_awsize   ( MBUS_to_HLS_CONTROL_axi_awsize   ),
-        .s_HLS_CONTROL_axi_awburst  ( MBUS_to_HLS_CONTROL_axi_awburst  ),
-        .s_HLS_CONTROL_axi_awlock   ( MBUS_to_HLS_CONTROL_axi_awlock   ),
-        .s_HLS_CONTROL_axi_awcache  ( MBUS_to_HLS_CONTROL_axi_awcache  ),
-        .s_HLS_CONTROL_axi_awprot   ( MBUS_to_HLS_CONTROL_axi_awprot   ),
-        .s_HLS_CONTROL_axi_awregion ( MBUS_to_HLS_CONTROL_axi_awregion ),
-        .s_HLS_CONTROL_axi_awqos    ( MBUS_to_HLS_CONTROL_axi_awqos    ),
-        .s_HLS_CONTROL_axi_awvalid  ( MBUS_to_HLS_CONTROL_axi_awvalid  ),
-        .s_HLS_CONTROL_axi_awready  ( MBUS_to_HLS_CONTROL_axi_awready  ),
-        .s_HLS_CONTROL_axi_wdata    ( MBUS_to_HLS_CONTROL_axi_wdata    ),
-        .s_HLS_CONTROL_axi_wstrb    ( MBUS_to_HLS_CONTROL_axi_wstrb    ),
-        .s_HLS_CONTROL_axi_wlast    ( MBUS_to_HLS_CONTROL_axi_wlast    ),
-        .s_HLS_CONTROL_axi_wvalid   ( MBUS_to_HLS_CONTROL_axi_wvalid   ),
-        .s_HLS_CONTROL_axi_wready   ( MBUS_to_HLS_CONTROL_axi_wready   ),
-        .s_HLS_CONTROL_axi_bid      ( MBUS_to_HLS_CONTROL_axi_bid      ),
-        .s_HLS_CONTROL_axi_bresp    ( MBUS_to_HLS_CONTROL_axi_bresp    ),
-        .s_HLS_CONTROL_axi_bvalid   ( MBUS_to_HLS_CONTROL_axi_bvalid   ),
-        .s_HLS_CONTROL_axi_bready   ( MBUS_to_HLS_CONTROL_axi_bready   ),
-        .s_HLS_CONTROL_axi_arid     ( MBUS_to_HLS_CONTROL_axi_arid     ),
-        .s_HLS_CONTROL_axi_araddr   ( MBUS_to_HLS_CONTROL_axi_araddr   ),
-        .s_HLS_CONTROL_axi_arlen    ( MBUS_to_HLS_CONTROL_axi_arlen    ),
-        .s_HLS_CONTROL_axi_arsize   ( MBUS_to_HLS_CONTROL_axi_arsize   ),
-        .s_HLS_CONTROL_axi_arburst  ( MBUS_to_HLS_CONTROL_axi_arburst  ),
-        .s_HLS_CONTROL_axi_arlock   ( MBUS_to_HLS_CONTROL_axi_arlock   ),
-        .s_HLS_CONTROL_axi_arcache  ( MBUS_to_HLS_CONTROL_axi_arcache  ),
-        .s_HLS_CONTROL_axi_arprot   ( MBUS_to_HLS_CONTROL_axi_arprot   ),
-        .s_HLS_CONTROL_axi_arregion ( MBUS_to_HLS_CONTROL_axi_arregion ),
-        .s_HLS_CONTROL_axi_arqos    ( MBUS_to_HLS_CONTROL_axi_arqos    ),
-        .s_HLS_CONTROL_axi_arvalid  ( MBUS_to_HLS_CONTROL_axi_arvalid  ),
-        .s_HLS_CONTROL_axi_arready  ( MBUS_to_HLS_CONTROL_axi_arready  ),
-        .s_HLS_CONTROL_axi_rid      ( MBUS_to_HLS_CONTROL_axi_rid      ),
-        .s_HLS_CONTROL_axi_rdata    ( MBUS_to_HLS_CONTROL_axi_rdata    ),
-        .s_HLS_CONTROL_axi_rresp    ( MBUS_to_HLS_CONTROL_axi_rresp    ),
-        .s_HLS_CONTROL_axi_rlast    ( MBUS_to_HLS_CONTROL_axi_rlast    ),
-        .s_HLS_CONTROL_axi_rvalid   ( MBUS_to_HLS_CONTROL_axi_rvalid   ),
-        .s_HLS_CONTROL_axi_rready   ( MBUS_to_HLS_CONTROL_axi_rready   ),
+        .s_HLSCONTROL_axi_awid     ( MBUS_to_HLSCONTROL_axi_awid     ),
+        .s_HLSCONTROL_axi_awaddr   ( MBUS_to_HLSCONTROL_axi_awaddr   ),
+        .s_HLSCONTROL_axi_awlen    ( MBUS_to_HLSCONTROL_axi_awlen    ),
+        .s_HLSCONTROL_axi_awsize   ( MBUS_to_HLSCONTROL_axi_awsize   ),
+        .s_HLSCONTROL_axi_awburst  ( MBUS_to_HLSCONTROL_axi_awburst  ),
+        .s_HLSCONTROL_axi_awlock   ( MBUS_to_HLSCONTROL_axi_awlock   ),
+        .s_HLSCONTROL_axi_awcache  ( MBUS_to_HLSCONTROL_axi_awcache  ),
+        .s_HLSCONTROL_axi_awprot   ( MBUS_to_HLSCONTROL_axi_awprot   ),
+        .s_HLSCONTROL_axi_awregion ( MBUS_to_HLSCONTROL_axi_awregion ),
+        .s_HLSCONTROL_axi_awqos    ( MBUS_to_HLSCONTROL_axi_awqos    ),
+        .s_HLSCONTROL_axi_awvalid  ( MBUS_to_HLSCONTROL_axi_awvalid  ),
+        .s_HLSCONTROL_axi_awready  ( MBUS_to_HLSCONTROL_axi_awready  ),
+        .s_HLSCONTROL_axi_wdata    ( MBUS_to_HLSCONTROL_axi_wdata    ),
+        .s_HLSCONTROL_axi_wstrb    ( MBUS_to_HLSCONTROL_axi_wstrb    ),
+        .s_HLSCONTROL_axi_wlast    ( MBUS_to_HLSCONTROL_axi_wlast    ),
+        .s_HLSCONTROL_axi_wvalid   ( MBUS_to_HLSCONTROL_axi_wvalid   ),
+        .s_HLSCONTROL_axi_wready   ( MBUS_to_HLSCONTROL_axi_wready   ),
+        .s_HLSCONTROL_axi_bid      ( MBUS_to_HLSCONTROL_axi_bid      ),
+        .s_HLSCONTROL_axi_bresp    ( MBUS_to_HLSCONTROL_axi_bresp    ),
+        .s_HLSCONTROL_axi_bvalid   ( MBUS_to_HLSCONTROL_axi_bvalid   ),
+        .s_HLSCONTROL_axi_bready   ( MBUS_to_HLSCONTROL_axi_bready   ),
+        .s_HLSCONTROL_axi_arid     ( MBUS_to_HLSCONTROL_axi_arid     ),
+        .s_HLSCONTROL_axi_araddr   ( MBUS_to_HLSCONTROL_axi_araddr   ),
+        .s_HLSCONTROL_axi_arlen    ( MBUS_to_HLSCONTROL_axi_arlen    ),
+        .s_HLSCONTROL_axi_arsize   ( MBUS_to_HLSCONTROL_axi_arsize   ),
+        .s_HLSCONTROL_axi_arburst  ( MBUS_to_HLSCONTROL_axi_arburst  ),
+        .s_HLSCONTROL_axi_arlock   ( MBUS_to_HLSCONTROL_axi_arlock   ),
+        .s_HLSCONTROL_axi_arcache  ( MBUS_to_HLSCONTROL_axi_arcache  ),
+        .s_HLSCONTROL_axi_arprot   ( MBUS_to_HLSCONTROL_axi_arprot   ),
+        .s_HLSCONTROL_axi_arregion ( MBUS_to_HLSCONTROL_axi_arregion ),
+        .s_HLSCONTROL_axi_arqos    ( MBUS_to_HLSCONTROL_axi_arqos    ),
+        .s_HLSCONTROL_axi_arvalid  ( MBUS_to_HLSCONTROL_axi_arvalid  ),
+        .s_HLSCONTROL_axi_arready  ( MBUS_to_HLSCONTROL_axi_arready  ),
+        .s_HLSCONTROL_axi_rid      ( MBUS_to_HLSCONTROL_axi_rid      ),
+        .s_HLSCONTROL_axi_rdata    ( MBUS_to_HLSCONTROL_axi_rdata    ),
+        .s_HLSCONTROL_axi_rresp    ( MBUS_to_HLSCONTROL_axi_rresp    ),
+        .s_HLSCONTROL_axi_rlast    ( MBUS_to_HLSCONTROL_axi_rlast    ),
+        .s_HLSCONTROL_axi_rvalid   ( MBUS_to_HLSCONTROL_axi_rvalid   ),
+        .s_HLSCONTROL_axi_rready   ( MBUS_to_HLSCONTROL_axi_rready   ),
         // Master to HBUS
         .m_HLS_gmem0_d512_axi_awid      ( HLS_gmem0_d512_axi_awid     ),
         .m_HLS_gmem0_d512_axi_awaddr    ( HLS_gmem0_d512_axi_awaddr   ),
@@ -1376,8 +1375,8 @@ module simplyv (
         .clk_300mhz_x_p_i     ( clk_300mhz_0_p_i  ),
         .clk_300mhz_x_n_i     ( clk_300mhz_0_n_i  ),
         // DDR4 user clock and reset
-        .clk_300MHz_o         ( clk_300MHz        ),
-        .rstn_300MHz_o        ( rstn_300MHz       ),
+        .clk_300MHz_o         ( clk_DDR4CH_0_300MHz  ),
+        .rstn_300MHz_o        ( rstn_DDR4CH_0_300MHz ),
         // Connect DDR4 channel 0
         .cx_ddr4_adr          ( c0_ddr4_adr       ),
         .cx_ddr4_ba           ( c0_ddr4_ba        ),
