@@ -82,7 +82,7 @@ if [[ ${SIMPLYV_PROFILE} == "hpc" ]]; then
     fi
 
     # Change default MAIN_CLOCK_DOMAIN
-    sed -i -E "s/MAIN_CLOCK_DOMAIN.+/MAIN_CLOCK_DOMAIN,MBUS_100" ${CONFIG_SYSTEM}
+    sed -i -E "s/MAIN_CLOCK_DOMAIN.+/MAIN_CLOCK_DOMAIN,MBUS_100/g" ${CONFIG_SYSTEM}
 
 else # Default
     # Set profile
