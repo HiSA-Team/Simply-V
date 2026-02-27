@@ -114,7 +114,7 @@ def parse_args():
 	# =====================
 	parser.add_argument("--hal_conf", help="Output HAL configuration header")
 	parser.add_argument("--sw_mk", help="Output software Makefile")
-	parser.add_argument("--ld_conf", help="Output linker script")
+	parser.add_argument("--ld_root", help="Output linker script")
 
 	# =====================
 	# Xilinx outputs
@@ -135,7 +135,7 @@ def parse_args():
 def main(logger):
 	args = parse_args()
 
-	# (INPUT_ARGS) from Makefile 
+	# (INPUT_ARGS) from Makefile
 	bus_input_files = {
 		"MBUS": args.mbus_csv,
 		"PBUS": args.pbus_csv,
@@ -191,7 +191,7 @@ def main(logger):
 			logger.simply_v_info("Generated PBUS configs")
 		else:
 			logger.simply_v_warning("PBUS configs NOT generated (bus disabled)")
-	
+
 
 	# Triggered by Makefile: config_hbus or all
 	# =====================
@@ -219,14 +219,14 @@ def main(logger):
 	# Software
 	# =====================
 	if args.config_sw:
-		if not all([args.hal_conf, args.sw_mk, args.ld_conf]):
+		if not all([args.hal_conf, args.sw_mk, args.ld_root]):
 			raise ValueError(
-				"config_sw requires --hal_conf, --sw_mk, and --ld_conf"
+				"config_sw requires --hal_conf, --sw_mk, and --ld_root"
 			)
 
 		system.create_hal_header(args.hal_conf)
 		system.update_sw_makefile(args.sw_mk)
-		system.create_linker_script(args.ld_conf)
+		system.create_linker_script(args.ld_root)
 		logger.simply_v_info("Generated software configs")
 
 	# Triggered by Makefile: config_xilinx or all
@@ -252,7 +252,7 @@ def main(logger):
 			args.uart_root,
 		])
 		logger.simply_v_info("Generated Xilinx configs")
-	
+
 	# Triggered by Makefile: config_dump or all
 	# =====================
 	# Dump

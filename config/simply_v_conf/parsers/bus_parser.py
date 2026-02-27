@@ -12,19 +12,23 @@ class Bus_Parser(Parser, metaclass=Singleton):
 	# Expand "Parser" properties to check
 
 	mandatory_properties = Parser.mandatory_properties + ("PROTOCOL",
-						"MASTER_NAMES", "RANGE_NAMES",
-						"RANGE_BASE_ADDR", "RANGE_ADDR_WIDTH",
-						"ID_WIDTH", "ADDR_RANGES")
+							"MASTER_NAMES",
+							"RANGE_NAMES",
+							"RANGE_BASE_ADDR",
+							"RANGE_ADDR_WIDTH",
+							"ID_WIDTH",
+							"ADDR_RANGES",
+						)
 
 	type_parsers: dict[str, Callable[[str], Any]]= Parser.type_parsers | {
-						 "ID_WIDTH": int,
-						 "ADDR_RANGES": int,
-						 "MASTER_NAMES": lambda s: s.split(),
-						 "RANGE_NAMES": lambda s: s.split(),
-						 "RANGE_BASE_ADDR": lambda s: [int(x, 16) for x in s.split()],
-						 "RANGE_ADDR_WIDTH": lambda s: [int(x) for x in s.split()],
+							"ID_WIDTH": int,
+							"ADDR_RANGES": int,
+							"MASTER_NAMES": lambda s: s.split(),
+							"RANGE_NAMES": lambda s: s.split(),
+							"RANGE_BASE_ADDR": lambda s: [int(x, 16) for x in s.split()],
+							"RANGE_ADDR_WIDTH": lambda s: [int(x) for x in s.split()],
 						}
-	
+
 	range_validators: dict[str, Callable[[str, int], None]] = Parser.range_validators | {
 						 "ID_WIDTH":			lambda n, v: Parser._check_range(n, v, 4, 32),
 						 "ADDR_RANGES":			lambda n, v: Parser._check_range(n, v, 1, 16),

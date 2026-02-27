@@ -40,7 +40,7 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		# of the configuration
 		self.tree_generated: bool = False
 		self.loopback_activated: bool = False
-		self.main_clock_domain_peripherals: list[str] = ["PLIC", "BRAM", "DMMEM"]
+		self.main_clock_domain_peripherals: list[str] = ["PLIC", "BRAM", "DMMEM", "CLINT"]
 
 		self._RANGE_CLOCK_DOMAINS = data_dict["RANGE_CLOCK_DOMAINS"].copy()
 

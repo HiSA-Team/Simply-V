@@ -36,9 +36,16 @@ from .logger import Logger
 from .env import Env
 
 class SimplyV(metaclass=Singleton):
-	SUPPORTED_CORES = ("CORE_PICORV32", "CORE_CV32E40P", "CORE_IBEX", "CORE_MICROBLAZEV_RV32", \
-										"CORE_MICROBLAZEV_RV64", "CORE_DUAL_MICROBLAZEV_RV32", \
-										"CORE_CV64A6", "CORE_CV64A6_ARA")
+	SUPPORTED_CORES = (
+			"CORE_PICORV32",
+			"CORE_CV32E40P",
+			"CORE_IBEX",
+			"CORE_MICROBLAZEV_RV32",
+			"CORE_MICROBLAZEV_RV64",
+			"CORE_DUAL_MICROBLAZEV_RV32",
+			"CORE_CV64A6",
+			"CORE_CV64A6_ARA"
+		)
 
 	def __init__(self, system_data: dict):
 		self.buses_factory = Buses_Factory.get_instance()
@@ -61,6 +68,7 @@ class SimplyV(metaclass=Singleton):
 		if ((main_clock_frqz > 50) and (self.CORE_SELECTOR == "CORE_CV64A6_ARA")):
 			raise Conflict_Error("MAIN_CLOCK_DOMAIN", "CORE_SELECTOR", "CORE_CV64A6_ARA supports a maximum MAIN_CLOCK_DOMAIN frequency of 50 MHz.")
 
+		# Check supported cores
 		if (self.CORE_SELECTOR not in self.SUPPORTED_CORES):
 			raise Unsupported_Value_Error("CORE_SELECTOR", self.CORE_SELECTOR, self.SUPPORTED_CORES)
 

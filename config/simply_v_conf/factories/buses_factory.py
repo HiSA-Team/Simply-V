@@ -1,6 +1,6 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
-# Description: This is the Factory specialization class used to create buses, 
-# it uses the parsers objects to extract the buses data 
+# Description: This is the Factory specialization class used to create buses,
+# it uses the parsers objects to extract the buses data
 
 from general.error import Unsupported_Value_Error
 from parsers.mbus_parser import MBUS_Parser
@@ -23,7 +23,7 @@ class Buses_Factory(Factory):
 
 	# Create buses extracting base name from full name and
 	# clock frequency from clock domain while checking for duplicated ones
-	def create_bus(self, full_name: str, base_addr: list[int], addr_width: list[int], 
+	def create_bus(self, full_name: str, base_addr: list[int], addr_width: list[int],
 						clock_domain: str, **kwargs) -> Bus:
 
 		# this can be avoided implementing the "full" factory method design

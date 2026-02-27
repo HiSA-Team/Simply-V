@@ -10,13 +10,13 @@ class Sys_Parser(Parser):
 	mandatory_properties = Parser.mandatory_properties + ("CORE_SELECTOR", "MAIN_CLOCK_DOMAIN", "PHYSICAL_ADDR_WIDTH",
 														  "VIO_RESETN_DEFAULT", "XLEN", "BOOT_MEMORY_BLOCK")
 
-	
+
 	type_parsers: dict[str, Callable[[str], Any]]= Parser.type_parsers | {
 			"XLEN": int,
 			"VIO_RESETN_DEFAULT": int,
 			"PHYSICAL_ADDR_WIDTH": int
 			}
-	
+
 	range_validators: dict[str, Callable[[str, int], None]] = Parser.range_validators | {
 			"PHYSICAL_ADDR_WIDTH": lambda p, v: Parser._check_range(p, v, 32, 64),
 			}

@@ -75,7 +75,7 @@ CONFIG_SW_ARGS = \
 	--config_sw \
 	--hal_conf $(OUTPUT_HAL_CONF) \
 	--sw_mk $(OUTPUT_SW_MK) \
-	--ld_conf $(OUTPUT_LD_ROOT)
+	--ld_root $(OUTPUT_LD_ROOT)
 
 CONFIG_HW_ARGS = \
 	--config_xilinx \

@@ -10,8 +10,8 @@
 #define _peripheral_BRAM_0_end    0x0000000000010000u
 #define _peripheral_DMmem_start  0x0000000000010000u
 #define _peripheral_DMmem_end    0x0000000000020000u
-#define _peripheral_CLINT_start  0x0000000000050000u
-#define _peripheral_CLINT_end    0x0000000000060000u
+#define _peripheral_CLINT_start  0x0000000000030000u
+#define _peripheral_CLINT_end    0x0000000000040000u
 #define _peripheral_CDMA_start  0x0000000000040000u
 #define _peripheral_CDMA_end    0x0000000000050000u
 #define _peripheral_PLIC_start  0x0000000004000000u
@@ -28,13 +28,13 @@
 #define _peripheral_TIM_1_end    0x0000000000020640u
 
 // Enabled devices
-#define GPIOIN_IS_ENABLED 1
-#define TIM_IS_ENABLED 1
-#define CDMA_IS_ENABLED 1
-#define GPIOOUT_IS_ENABLED 1
-#define CLINT_IS_ENABLED 1
 #define PLIC_IS_ENABLED 1
 #define UART_IS_ENABLED 1
+#define GPIOOUT_IS_ENABLED 1
+#define TIM_IS_ENABLED 1
+#define GPIOIN_IS_ENABLED 1
+#define CDMA_IS_ENABLED 1
+#define CLINT_IS_ENABLED 1
 
 // Clock Frequencies in Hz
 #define MBUS_FREQ_MHz 20u

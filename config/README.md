@@ -40,7 +40,7 @@ The following table details the supported properties.
 | XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]
 | PHYSICAL_ADDR_WIDTH $^1$| Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64)
 | BOOT_MEMORY_BLOCK     | Select memory device to use for boot | [BRAM_\<n\>, DDR4CH_\<n\>]
-| MAIN_CLOCK_DOMAIN     | Clock domain of the core + MBUS                           | (10, 20, 50, 100) for embedded. (10, 20, 50, 100, 250) for hpc | None
+| MAIN_CLOCK_DOMAIN     | Clock domain of the core + MBUS                           | (10, 20, 50, 100) for embedded. (10, 20, 50, 100, 250) for hpc
 > $^1$ For `embedded` profile, due to limitations in the JTAG to AXI Master IP [PG174](https://docs.amd.com/v/u/en-US/pg174-jtag-axi), PHYSICAL_ADDR_WIDTH allowed values are only [32,64].
 
 
@@ -70,11 +70,11 @@ The `VIO_RESETN_DEFAULT` parameter controls the programming-time value of core r
 | ID_WIDTH              | AXI ID Width                                              | (4..32)
 | MASTER_NAMES          | Names of masters connected to the bus                     | (0..16) Strings
 | RANGE_NAMES           | Names of slave memory ranges                                               | (0..16) Strings
-| RANGE_CLOCK_DOMAINS         | Clock domains of the slaves (RANGE_NAMES) of the MBUS | [NUM_MI] (10, 20, 50, 100, 250 hpc only)| Note: the BRAM, DM_mem, PLIC clock domain must be the same as MAIN_CLOCK_DOMAIN, while the DDR clock domain must have the same frequency of the DDR board clock (i.e. 300MHz)
+| RANGE_CLOCK_DOMAINS$^1$ | Clock domains of the slaves (RANGE_NAMES) of the MBUS | [NUM_MI] (10, 20, 50, 100, 250 (hpc only))|
 | ADDR_RANGES           | Number of ranges for master interfaces                    | (1..16)
 | BASE_ADDR             | The Base Addresses for each range of each Master          | [NUM_MI*ADDR_RANGES] 64 bits hex
 | RANGE_ADDR_WIDTH      | Number of bytes covered by each range of each Master      | [NUM_MI*ADDR_RANGES] (12..64) for AXI4 and AXI3, (1..64) for AXI4LITE
-
+> $^1$ BRAM, DM_mem, CLINT, PLIC clock domainS must be the same as MAIN_CLOCK_DOMAIN, while the DDR clock domain must have the same frequency of the DDR board clock (i.e. 300MHz)
 
 > \**: AXI Crossbar (PG059) uses an opaque THREAD_ID_WIDTH parameter to track transaction ordering alongside ID_WIDTH.
 Hence, the ID_WIDTH parameter requires to accommodate the Master ID plus the maximum THREAD_ID_WIDTH value, i.e. [ceil_log2(NUM_SI) + max(THREAD_ID_WIDTH)].
