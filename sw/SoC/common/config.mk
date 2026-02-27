@@ -9,7 +9,7 @@
 #############
 
 # Don't touch this line, since it is a target of the config flow
-XLEN ?= 64
+XLEN ?= 32
 
 # Toolchain
 RV_PREFIX   ?= riscv${XLEN}-unknown-elf-
