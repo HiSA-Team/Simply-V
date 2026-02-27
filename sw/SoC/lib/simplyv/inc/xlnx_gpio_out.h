@@ -2,22 +2,25 @@
 // Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
 // Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 // Description:
-//  This file defines the API to adoperate the Output GPIO
+//  This file defines the API to adoperate the Xilinx Output GPIO
+// Reference: https://docs.amd.com/v/u/en-US/pg144-axi-gpio
 
-#ifndef XLNX_GPIO_OUT_H
-#define XLNX_GPIO_OUT_H
+#ifndef _XLNX_GPIO_OUT_H
+#define _XLNX_GPIO_OUT_H
 
 
 #include <stdint.h>
 #include "simplyv_conf.h"
 
-// https://docs.amd.com/v/u/en-US/pg144-axi-gpio
-
-
+// Registers
 // GPIO is configured to use just one channel (so all the "2" registers like GPIO2_DATA are unused)
-
-// Base address
-#define GPIO_OUT_BASEADDR ((uintptr_t)_peripheral_GPIOOUT_start)
+#define GPIO_DATA  (0x0000u) // Data Register
+#define GPIO_TRI   (0x0004u) // Direction Register
+#define GPIO2_DATA (0x0008u) // Data register second channel
+#define GPIO2_TRI  (0x000Cu) // Data register second channel
+#define GIER       (0x011Cu) // Global Interrupt Enable Register
+#define IP_ISR     (0x0120u) // Interrupt Status Register
+#define IP_IER     (0x0128u) // Interrupt Enable Register
 
 // The GPIO OUT peripheral has 16 output pins
 // every bit in the "DATA" register controls the output of each pins
@@ -45,7 +48,7 @@ typedef enum {
     PIN_ALL = 0xFFFF // All pins bits
 } pin_t;
 
-// Need to be initialized with GPIO_OUT_BASEADDR
+// Need to be initialized with _peripheral_GPIOOUT_start
 typedef struct {
     uintptr_t base_addr;
 } xlnx_gpio_out_t;
@@ -65,4 +68,4 @@ int xlnx_gpio_out_read(xlnx_gpio_out_t* gpio, uint16_t* data);
 // Toggle the selected pin(s) switching 0 and 1 back and forth
 int xlnx_gpio_out_toggle(xlnx_gpio_out_t* gpio, pin_t pin);
 
-#endif
+#endif // _XLNX_GPIO_OUT_H

@@ -1,12 +1,12 @@
-#ifndef __DRIVER_H_
-#define __DRIVER_H_
+#ifndef __XLNX_HLS_DRIVER_H_
+#define __XLNX_HLS_DRIVER_H_
 
 #include "xil_io.h"
 #include "simplyv.h"
 #include "xkrnl_conv_hbus_hw.h"
 
 // Offsets
-#define Xkrnl_BASE             ((uintptr_t)(_peripheral_HLS_CONTROL_start))
+#define Xkrnl_BASE             ((uintptr_t)(_peripheral_HLSCONTROL_start))
 #define Xkrnl_Control          (Xkrnl_BASE + XKRNL_CONV_HBUS_CONTROL_ADDR_AP_CTRL)
 #define Xkrnl_GIE              (Xkrnl_BASE + XKRNL_CONV_HBUS_CONTROL_ADDR_GIE)
 #define Xkrnl_IER              (Xkrnl_BASE + XKRNL_CONV_HBUS_CONTROL_ADDR_IER)
@@ -83,4 +83,4 @@
 #define XKrnl_InterruptGetEnabled() \
     Xil_In32(Xkrnl_IER)
 
-#endif // __DRIVER_H
+#endif // __XLNX_HLS_DRIVER_H_

@@ -29,7 +29,7 @@
 // Extend this function implementation in case you add more peripherals
 static inline int xlnx_tim_assert(xlnx_tim_t* timer)
 {
-    if ((timer->base_addr != TIM0_BASEADDR) && (timer->base_addr != TIM1_BASEADDR)) {
+    if ((timer->base_addr != _peripheral_TIM_0_start) && (timer->base_addr != _peripheral_TIM_0_start)) {
         return SIMPLYV_ERROR;
     }
     return SIMPLYV_OK;

@@ -6,27 +6,15 @@
 
 #include "simplyv.h"
 
-// #ifdef IS_EMBEDDED // TODO47: placeholder to HAL
-
 #ifdef GPIOIN_IS_ENABLED
+
 #include "io.h"
 #include <stdint.h>
-
-// GPIO is configured to use just one channel (so all the "2" registers like GPIO2_DATA are unused)
-// Bits
-
-#define GPIO_IN_DATA 0x0000 // Data Register
-#define GPIO_IN_TRI 0x0004 // Direction Register
-#define GPIO2_IN_DATA 0x0008 // Data register second channel
-#define GPIO2_IN_TRI 0x000C // Data register second channel
-#define GPIO_IN_GIER 0x011C // Global Interrupt Enable Register
-#define GPIO_IN_ISR 0x0120 // Interrupt Status Register
-#define GPIO_IN_IER 0x0128 // Interrupt Enable Register
 
 // Extend this function implementation in case you add more peripherals
 static inline int assert_gpio_in(xlnx_gpio_in_t* gpio)
 {
-    if ((gpio->base_addr != GPIO_IN_BASEADDR)) {
+    if ((gpio->base_addr != _peripheral_GPIOIN_start)) {
         return SIMPLYV_ERROR;
     }
     return SIMPLYV_OK;

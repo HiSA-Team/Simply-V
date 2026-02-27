@@ -1,10 +1,11 @@
-#include <stdint.h>
-#include "simplyv.h"
+// Description: Fully self-contained example, merely writing to expected GPIOOUT.
 
+#include <stdint.h>
 
 int main(){
 
-    uint32_t * gpio_addr = (uint32_t *) GPIO_OUT_BASEADDR;
+    // Assumed position of GPIOOUT connected to leds
+    uint32_t * gpio_addr = (uint32_t *) 0x20000u;
 
     while(1){
         for(int i = 0; i < 100000; i++);

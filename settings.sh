@@ -55,6 +55,7 @@ export XILINX_PROJECT_NAME=simplyv
 
 SIMPLYV_PROFILE=$1
 BOARD_CONFIG=$2
+CONFIG_SYSTEM=${CONFIG_ROOT}/configs/common/config_system.csv
 
 if [[ ${SIMPLYV_PROFILE} == "hpc" ]]; then
 
@@ -80,6 +81,9 @@ if [[ ${SIMPLYV_PROFILE} == "hpc" ]]; then
         export BOARD=au250
     fi
 
+    # Change default MAIN_CLOCK_DOMAIN
+    sed -i -E "s/MAIN_CLOCK_DOMAIN.+/MAIN_CLOCK_DOMAIN,MBUS_100" ${CONFIG_SYSTEM}
+
 else # Default
     # Set profile
     export SIMPLYV_PROFILE=embedded
@@ -100,6 +104,9 @@ else # Default
         export XILINX_HW_DEVICE=xc7a100t_0
         export BOARD=Nexys-A7-100T-Master
     fi
+
+    # Change default MAIN_CLOCK_DOMAIN
+    sed -i -E "s/MAIN_CLOCK_DOMAIN.+/MAIN_CLOCK_DOMAIN,MBUS_20/g" ${CONFIG_SYSTEM}
 fi
 
 ###############

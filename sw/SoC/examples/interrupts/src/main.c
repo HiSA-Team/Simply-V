@@ -23,12 +23,12 @@
 
 #ifdef IS_EMBEDDED
 xlnx_gpio_in_t gpio_in = {
-    .base_addr = GPIO_IN_BASEADDR,
+    .base_addr = _peripheral_GPIOIN_start,
     .interrupt = ENABLE_INT
 };
 
 xlnx_gpio_out_t gpio_out = {
-    .base_addr = GPIO_OUT_BASEADDR
+    .base_addr = _peripheral_GPIOOUT_start
 };
 #endif // IS_EMBEDDED
 
@@ -38,7 +38,7 @@ xlnx_gpio_out_t gpio_out = {
 #define TIM0_COUNT_TICKS (TIM0_COUNT_US * TIM_0_FREQ_MHz)
 
 xlnx_tim_t timer0 = {
-    .base_addr       = TIM0_BASEADDR,
+    .base_addr       = _peripheral_TIM_0_start,
     .counter         = TIM0_COUNT_TICKS,
     .reload_mode     = TIM_RELOAD_AUTO,
     .count_direction = TIM_COUNT_DOWN
@@ -92,7 +92,7 @@ void _ext_handler(void)
     switch (interrupt_id) {
 
     case PLIC_GPIOIN_INTERRUPT:
-        printf("[_ext_handler] Handiling GPIO_IN interrupt, count %d\r\n", interrupt_count);
+        printf("[_ext_handler] Handiling GPIO_IN interrupt, count %d\r\n", ext_interrupt_count);
         #ifdef GPIOOUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_0);
         #endif // GPIOOUT_IS_ENABLED
@@ -102,7 +102,7 @@ void _ext_handler(void)
         break;
     case PLIC_TIM_0_INTERRUPT:
         // Timer interrupt
-        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", interrupt_count);
+        printf("[_ext_handler] Handiling TIM0 interrupt, count %d\r\n", ext_interrupt_count);
         #ifdef GPIOOUT_IS_ENABLED
         xlnx_gpio_out_toggle(&gpio_out, PIN_1);
         #endif // GPIOOUT_IS_ENABLED

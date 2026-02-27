@@ -2,19 +2,14 @@
 // Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
 // Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 // Description:
-//  This file defines the API to adoperate the Timer
+//  This file defines the API to adoperate the Xilinx Timer
+// Reference: https://docs.amd.com/v/u/en-US/pg079-axi-timer
 
-#ifndef TIM_H
-#define TIM_H
+#ifndef _XLNX_TIM_H
+#define _XLNX_TIM_H
 
 #include <stdint.h>
 #include "simplyv_conf.h"
-
-// https://docs.amd.com/v/u/en-US/pg079-axi-timer
-
-// Base address
-#define TIM0_BASEADDR ((uintptr_t)_peripheral_TIM_0_start)
-#define TIM1_BASEADDR ((uintptr_t)_peripheral_TIM_1_start)
 
 // Reload initial counter value
 #define TIM_RELOAD_AUTO 0
@@ -58,4 +53,4 @@ int xlnx_tim_start(xlnx_tim_t* timer);
 // Stop running timer
 int xlnx_tim_stop(xlnx_tim_t* timer);
 
-#endif
+#endif // _XLNX_TIM_H

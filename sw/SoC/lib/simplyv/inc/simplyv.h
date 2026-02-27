@@ -24,7 +24,7 @@
 #endif
 
 // PBUS peripherals
-#ifdef GPIO_IN_IS_ENABLED
+#ifdef GPIOIN_IS_ENABLED
     #include "xlnx_gpio_in.h"
 #endif
 

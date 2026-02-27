@@ -61,7 +61,7 @@ class HALheader_Template(Template):
 			if d.HAL_DRIVER:
 				names.add(d.BASE_NAME)
 
-		for name in names:
+		for name in sorted(names):
 			lines.append(f"#define {name}_IS_ENABLED 1")
 
 		return "\n".join(lines)
