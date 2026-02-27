@@ -114,7 +114,7 @@ def parse_args():
 	# =====================
 	parser.add_argument("--hal_conf", help="Output HAL configuration header")
 	parser.add_argument("--sw_mk", help="Output software Makefile")
-	parser.add_argument("--ld_root", help="Output linker script")
+	parser.add_argument("--ld_root", help="Output root for linker script fragments")
 
 	# =====================
 	# Xilinx outputs
