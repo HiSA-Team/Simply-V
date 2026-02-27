@@ -1,7 +1,6 @@
 # OpenSBI
 
-This document contains additional information on how to customize OpenSBI build and change the
-memory layout.
+This document contains additional information on how to customize OpenSBI build and change the memory layout.
 
 > [!WARNING]
 > Although supervisors can be built with the `newlib` toolchain, OpenSBI requires toolchains that are
@@ -23,9 +22,8 @@ make OPENSBI_FW_PAYLOAD_BIN_PATH=path/to/bin
 ```
 
 ## Changing memory layout
-Users will have to make sure that the entrypoint of the payload matches
-the address where OpenSBI is going to jump. For OpenSBI FW_JUMP, there will be different offsets
-according to the `PLATFORM_RISCV_XLEN`:
+Users will have to make sure that the entrypoint of the payload matches the address where OpenSBI is
+going to jump. For OpenSBI FW_JUMP, there will be different offsets according to the `PLATFORM_RISCV_XLEN`:
 
 ```make
 ifeq ($(PLATFORM_RISCV_XLEN), 32)
@@ -35,14 +33,14 @@ FW_JUMP_OFFSET=0x200000
 endif
 ```
 
-> [NOTE]: A payload must be loaded at `OPENSBI_FW_TEXT_START + FW_JUMP_OFFSET`. 
-> For example, if `OPENSBI_FW_TEXT_START=0x1000000`, payload must be at `0x1200000`.
+Ideally, one would never really need to modify these offsets. The base address is automatically calculated
+when using `make install` (using [create_config.py](../scripts/create_config.py) script) taking the base address of
+the `DDR4CH1` memory device.
 
 ## Customizing the debug session
 
-Users can change the default [platform_run.sh](../simply-v/platform_run.sh) by specifying the following 
-parameters:
+Users can change the default [platform_run.sh](../simply-v/platform_run.sh) by specifying the following parameters:
 
 - OPENSBI_GDB_SERVER_ADDRESS: address of the GDB server, default to `localhost:3004`.
-- FW_JUMP: if `y` the FW_JUMP firmware is loaded
+- OPENSBI_FW_JUMP: if `y` the FW_JUMP firmware is loaded
 - LOAD_JUMP_PAYLOAD: if `n` does not load the payload

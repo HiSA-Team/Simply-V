@@ -21,7 +21,7 @@ PYTHON ?= python3.10 # Requires >= 3.10
 include $(SW_ROOT)/SoC/common/config.mk
 
 # Overwrite: we need linux-gnu toolchain for OpenSBI
-RV_PREFIX   := riscv${XLEN}-unknown-linux-gnu-
+RV_PREFIX   := riscv$(XLEN)-unknown-linux-gnu-
 
 # Payload directory
 PAYLOAD_DIR := payloads

@@ -93,13 +93,13 @@ for the GDB server.
 Alternatively, the same script can be used for `FW_JUMP` to load the OpenSBI firmware and payload separately with GDB:
 
 ```sh
-make run FW_JUMP=y
+make run OPENSBI_FW_JUMP=y
 ```
 
 Users can skip the payload loading (ie. they prefer to load using the PCIe bus) using:
 
 ```sh
-make run FW_JUMP=y LOAD_JUMP_PAYLOAD=n
+make run OPENSBI_FW_JUMP=y LOAD_JUMP_PAYLOAD=n
 ```
 
 The `platform_run.sh` script always adds the `OPENSBI_FW_PAYLOAD_ELF_PATH` as symbol file to eas debug.
@@ -112,5 +112,5 @@ From the top of directory of the Simply-V project, run:
 
 ```sh
 make -C hw/xilinx load_binary BIN_PATH=absolute/path/to/fw_jump.bin OFFSET=0x1200000
-make -C sw/SoC/project/opensbi run FW_JUMP=y LOAD_JUMP_PAYLOAD=n
+make -C sw/SoC/project/opensbi run OPENSBI_FW_JUMP=y LOAD_JUMP_PAYLOAD=n
 ```
