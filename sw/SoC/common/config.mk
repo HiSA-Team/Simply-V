@@ -7,7 +7,10 @@
 # Toolchain #
 #############
 
-XLEN ?= 32
+# Don't touch this line, since it is a target of the config flow
+XLEN ?= 64
+
+# Toolchain
 RV_PREFIX   ?= riscv${XLEN}-unknown-elf-
 
 CC          = $(RV_PREFIX)gcc
@@ -75,6 +78,7 @@ LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib \
            -T$(SW_SOC_ROOT)/common/ld/memory.ld \
            -T$(SW_SOC_ROOT)/common/ld/sections.ld 
 
+# Define IS_EMBEDDED macro
 MACRO_LIST =
 ifeq ($(SIMPLYV_PROFILE), embedded)
 	MACRO_LIST += -DIS_EMBEDDED
