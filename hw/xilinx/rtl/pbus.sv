@@ -69,7 +69,7 @@ module peripheral_bus #(
     /////////////////////////////////////////
     // Buses declaration and concatenation //
     /////////////////////////////////////////
-    `include "pbus_buses.svinc"
+    `include "pbus_interconnect.svinc"
     `DECLARE_AXI_BUS(to_dwidth_conv, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
     `DECLARE_AXI_BUS(to_prot_conv, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 

@@ -171,12 +171,12 @@ module simplyv (
     /////////////////////////////////////////
     // Buses declaration and concatenation //
     /////////////////////////////////////////
-    `include "mbus_buses.svinc"
+    `include "mbus_interconnect.svinc"
 
     ///////////////////////
     // Clock assignments //
     ///////////////////////
-    `include "simplyv_clk_assignments.svinc"
+    `include "mbus_clk_assignments.svinc"
 
     ///////////////////////
     // Local assignments //

@@ -107,7 +107,7 @@ module highperformance_bus #(
     /////////////////////////////////////////
     // Buses declaration and concatenation //
     /////////////////////////////////////////
-    `include "hbus_buses.svinc"
+    `include "hbus_interconnect.svinc"
     // MBUS_DATA_WIDTH
     `DECLARE_AXI_BUS(s_MBUS_clock_conv_to_dwidth_conv, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
     `DECLARE_AXI_BUS(m_MBUS_dwidth_conv_to_clock_conv, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
