@@ -32,14 +32,14 @@ class Logger(metaclass=Singleton):
 
 
 	def simplyv_error(self, message: str):
-		self.logger.error(f"--- [CONFIG] {message} ---")
+		self.logger.error(f"--- [SIMPLY-CONFIG] {message} ---")
 
 	def simplyv_warning(self, message: str):
-		self.logger.warning(f"--- [CONFIG] {message} ---")
+		self.logger.warning(f"--- [SIMPLY-CONFIG] {message} ---")
 
 	def simplyv_crash(self, message: str):
-		self.logger.error(f"--- [CONFIG] {message} ---")
+		self.logger.error(f"--- [SIMPLY-CONFIG] {message} ---")
 		exit(1)
 
 	def simplyv_info(self, message: str):
-		self.logger.info(f"--- [CONFIG] {message} ---")
+		self.logger.info(f"--- [SIMPLY-CONFIG] {message} ---")

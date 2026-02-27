@@ -11,7 +11,7 @@
 #	 flows
 #
 # all the targets of the makefile in the "config root" are compatible with the simplyv methods
-# through the "simply_conf.py" file that launches the correct methods based on the makefile target that
+# through the "simply_config.py" file that launches the correct methods based on the makefile target that
 # launched the whole configuration
 
 import re

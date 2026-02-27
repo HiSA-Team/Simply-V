@@ -168,7 +168,7 @@ def main(logger):
 		]
 
 		if system.config_bus("MBUS", outputs):
-			logger.simplyv_info("Generated MBUS configs")
+			logger.simplyv_info("Generated MBUS configs at " + str(outputs))
 		else:
 			logger.simplyv_warning("MBUS configs NOT generated (bus disabled)")
 
@@ -188,7 +188,7 @@ def main(logger):
 		]
 
 		if system.config_bus("PBUS", outputs):
-			logger.simplyv_info("Generated PBUS configs")
+			logger.simplyv_info("Generated PBUS configs at " + str(outputs))
 		else:
 			logger.simplyv_warning("PBUS configs NOT generated (bus disabled)")
 
@@ -210,7 +210,7 @@ def main(logger):
 		]
 
 		if system.config_bus("HBUS", outputs):
-			logger.simplyv_info("Generated HBUS configs")
+			logger.simplyv_info("Generated HBUS configs at " + str(outputs))
 		else:
 			logger.simplyv_warning("HBUS configs NOT generated (bus disabled)")
 
@@ -227,7 +227,12 @@ def main(logger):
 		system.create_hal_header(args.hal_conf)
 		system.update_sw_makefile(args.sw_mk)
 		system.create_linker_script(args.ld_root)
-		logger.simplyv_info("Generated software configs")
+		outputs = [
+			args.hal_conf,
+			args.sw_mk,
+			args.ld_root,
+		]
+		logger.simplyv_info("Generated software configs at " + str(outputs))
 
 	# Triggered by Makefile: config_xilinx or all
 	# =====================
@@ -251,7 +256,13 @@ def main(logger):
 			args.bram_root,
 			args.uart_root,
 		])
-		logger.simplyv_info("Generated Xilinx configs")
+		outputs = [
+			args.xilinx_mk,
+			args.ddr4_root,
+			args.bram_root,
+			args.uart_root,
+		]
+		logger.simplyv_info("Generated Xilinx configs at " + str(outputs))
 
 	# Triggered by Makefile: config_dump or all
 	# =====================
@@ -264,7 +275,7 @@ def main(logger):
 			)
 
 		system.dump_reachability(args.dump_path)
-		logger.simplyv_info("Generated reachability dump")
+		logger.simplyv_info("Generated reachability dump at " + args.dump_path)
 
 
 if __name__ == "__main__":
