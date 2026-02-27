@@ -151,41 +151,24 @@ int main()
     // Configure the PLIC for GPIOIN and TIM0, same priority
     uint32_t priority = 1;
     plic_configure_set_one(priority, PLIC_GPIOIN_INTERRUPT);
-<<<<<<< HEAD
-    plic_configure_set_one(priority, PLIC_TIM0_INTERRUPT);
-    plic_enable_all();
-
-    #ifdef GPIO_IN_IS_ENABLED
-=======
     plic_configure_set_one(priority, PLIC_TIM_0_INTERRUPT);
     plic_enable_all();
 
     #ifdef GPIOIN_IS_ENABLED
->>>>>>> 8eca2db (squash for rebase preparation)
     retval = retval = xlnx_gpio_in_init(&gpio_in);
     if ( retval != SIMPLYV_OK ) {
         printf("[main][ERROR] GPIOIN interrupt init\r\n");
         return retval;
     }
-<<<<<<< HEAD
-    #endif // GPIO_IN_IS_ENABLED
-
-    #ifdef GPIO_OUT_IS_ENABLED
-=======
     #endif // GPIOIN_IS_ENABLED
 
     #ifdef GPIOOUT_IS_ENABLED
->>>>>>> 8eca2db (squash for rebase preparation)
     retval = xlnx_gpio_out_init(&gpio_out);
     if ( retval != SIMPLYV_OK ) {
         printf("[main][ERROR] GPIOOUT\r\n");
         return retval;
     }
-<<<<<<< HEAD
-    #endif // GPIO_OUT_IS_ENABLED
-=======
     #endif // GPIOOUT_IS_ENABLED
->>>>>>> 8eca2db (squash for rebase preparation)
 
     // Configure timer0
     retval = xlnx_tim_init( &timer0 );
