@@ -1,4 +1,4 @@
-# Simply-Conf: Configuration and Generation Framework for Simply-V
+# Simply-Config: Configuration and Generation Framework for Simply-V
 This tree allows for the automatic generation of the AXI crossbar IP and linker script for software development.
 
 ## Prerequisites and Tools versions
