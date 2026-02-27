@@ -24,6 +24,9 @@ GDB_CMD="${CROSS_COMPILE}gdb -ex 'set confirm off' -ex 'target remote ${GDB_SERV
 # Add symbol file (always)
 GDB_CMD="$GDB_CMD -ex 'add-symbol-file ${FW_PAYLOAD_ELF_PATH}'"
 
+# Load the firmware
+GDB_CMD="$GDB_CMD -ex 'load'"
+
 # Launch GDB based on firmware mode
 if [ "${FW_JUMP:-}" = "y" ]; then
 
@@ -33,11 +36,8 @@ if [ "${FW_JUMP:-}" = "y" ]; then
         printf "[INFO] Skipping payload loading\n"
     fi
 
-    # Load the firmware
-    GDB_CMD="$GDB_CMD -ex 'load'"
     GDB_CMD="$GDB_CMD build/platform/fpga/simply-v/firmware/fw_jump.elf"
 else
-    GDB_CMD="$GDB_CMD -ex 'load'"
     GDB_CMD="$GDB_CMD build/platform/fpga/simply-v/firmware/fw_payload.elf"
 fi
 

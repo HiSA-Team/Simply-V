@@ -45,6 +45,7 @@ LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
 
 include $(SW_ROOT)/SoC/common/config.mk
 
+# Override to use ld/config.ld
 LDFLAGS := $(LIB_OBJ_LIST) -nostdlib \
            -T$(SW_SOC_ROOT)/common/ld/variables.ld \
            -T$(SW_SOC_ROOT)/common/ld/memory.ld \
