@@ -50,8 +50,8 @@ make hw
 Two copies of the example program were created:
 
 ```
-sw/SoC/examples/dual_hello_wolrd/hello_core0.elf
-sw/SoC/examples/dual_hello_wolrd/hello_core1.elf
+sw/SoC/examples/dual_hello_world/hello_core0.elf
+sw/SoC/examples/dual_hello_world/hello_core1.elf
 ```
 
 Main programs differ only in a print statement:
@@ -76,8 +76,8 @@ The on-chip BRAM is split into two 32 KB regions:
 Custom linker scripts:
 
 ```
-sw/SoC/common/dual_hello_wolrd/hello_core0/user.ld
-sw/SoC/common/dual_hello_wolrd/hello_core1/user.ld
+sw/SoC/common/dual_hello_world/hello_core0/ld/config.ld
+sw/SoC/common/dual_hello_world/hello_core1/ld/config.ld
 ```
 
 ## Building
