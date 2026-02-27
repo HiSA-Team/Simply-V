@@ -171,12 +171,12 @@ module simplyv (
     /////////////////////////////////////////
     // Buses declaration and concatenation //
     /////////////////////////////////////////
-    `include "mbus_interconnect.svinc"
+    `include "generated/interconnects/mbus_interconnect.svinc"
 
     ///////////////////////
     // Clock assignments //
     ///////////////////////
-    `include "mbus_clk_assignments.svinc"
+    `include "generated/clk_assignments/mbus_clk_assignments.svinc"
 
     ///////////////////////
     // Local assignments //
@@ -1144,8 +1144,8 @@ module simplyv (
         .HBUS_ID_WIDTH   ( HBUS_ID_WIDTH   )
     ) hls_conv2d_wrapper_u (
         // MBUS clock and reset
-        .main_clk_i                 ( MBUS_clk  ),
-        .main_rstn_i                ( MBUS_rstn ),
+        .MBUS_clk_i                 ( MBUS_clk  ),
+        .MBUS_rstn_i                ( MBUS_rstn ),
         // HLS IP clock and reset (from HBUS)
         .HLSCONTROL_clk_i          ( HLSCONTROL_clk  ),
         .HLSCONTROL_rstn_i         ( HLSCONTROL_rstn ),
@@ -1250,8 +1250,8 @@ module simplyv (
         .NUM_HBM_CHANNELS ( 0 )
     ) highperformance_bus_u (
         // MBUS domain clock and reset
-        .main_clock_i        ( MBUS_clk  ),
-        .main_reset_ni       ( MBUS_rstn ),
+        .MBUS_clk_i          ( MBUS_clk  ),
+        .MBUS_rstn_i         ( MBUS_rstn ),
         // From MBUS
         .s_MBUS_axi_awid     ( MBUS_to_HBUS_axi_awid     ),
         .s_MBUS_axi_awaddr   ( MBUS_to_HBUS_axi_awaddr   ),

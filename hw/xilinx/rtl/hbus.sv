@@ -59,8 +59,12 @@ module highperformance_bus #(
 )(
 
     // MBUS clock and reset
-    input logic main_clock_i,
-    input logic main_reset_ni,
+    input logic MBUS_clk_i,
+    input logic MBUS_rstn_i,
+
+    // Output clock and reset
+    output logic HBUS_clk_o,
+    output logic HBUS_rstn_o,
 
     // AXI4 Slave interface from MBUS
     `DEFINE_AXI_SLAVE_PORTS(s_MBUS, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
@@ -98,16 +102,11 @@ module highperformance_bus #(
             else $error("HBUS_ID_WIDTH (%d) must be the same as MBUS_ID_WIDTH (%d)", HBUS_ID_WIDTH, MBUS_ID_WIDTH);
     end : assert_properties
 
-    /////////////////
-    // Assignments //
-    /////////////////
-    assign clk_300MHz_o  = ddr_clk;
-    assign rstn_300MHz_o = ~ddr_rst;
 
     /////////////////////////////////////////
     // Buses declaration and concatenation //
     /////////////////////////////////////////
-    `include "hbus_interconnect.svinc"
+    `include "generated/interconnects/hbus_interconnect.svinc"
     // MBUS_DATA_WIDTH
     `DECLARE_AXI_BUS(s_MBUS_clock_conv_to_dwidth_conv, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
     `DECLARE_AXI_BUS(m_MBUS_dwidth_conv_to_clock_conv, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
@@ -120,6 +119,15 @@ module highperformance_bus #(
     // (s_MBUS) -> xlnx_axi_clock_converter_s_MBUS_u -> (s_MBUS_clock_conv_to_dwidth_conv) -> axi_dwidth_conv_s_MBUS_u -> (dwidth_conv_to_HBUS) -> ASSIGN_AXI_BUS -> (MBUS_to_HBUS)
     // - m_MBUS (master to MBUS)
     // (HBUS_to_MBUS) -> ASSIGN_AXI_BUS -> (dwidth_conv_from_HBUS) -> axi_dwidth_conv_m_MBUS_u -> (m_MBUS_dwidth_conv_to_clock_conv) -> xlnx_axi_clock_converter_m_MBUS_u -> (m_MBUS)
+
+
+    ///////////////////////
+    // Clock assignments //
+    ///////////////////////
+    // TODO: import this from config
+    // `include "generated/clk_assignments/hbus_clk_assignments.svinc"
+    assign clk_300MHz_o  = ddr_clk;
+    assign rstn_300MHz_o = ~ddr_rst;
 
     ////////////////////
     // AXI Converters //
@@ -138,8 +146,8 @@ module highperformance_bus #(
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
     ) xlnx_axi_clock_converter_s_MBUS_u (
         // Slave from MBUS
-        .s_axi_aclk     ( main_clock_i   ),
-        .s_axi_aresetn  ( main_reset_ni  ),
+        .s_axi_aclk     ( MBUS_clk_i   ),
+        .s_axi_aresetn  ( MBUS_rstn_i  ),
         .s_axi_awid     ( s_MBUS_axi_awid     ),
         .s_axi_awaddr   ( s_MBUS_axi_awaddr   ),
         .s_axi_awlen    ( s_MBUS_axi_awlen    ),
@@ -410,8 +418,8 @@ module highperformance_bus #(
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
     ) xlnx_axi_clock_converter_m_MBUS_u (
         // Slave from BUS
-        .s_axi_aclk     ( HBUS_clk     ),
-        .s_axi_aresetn  ( HBUS_rstn    ),
+        .s_axi_aclk     ( HBUS_clk  ),
+        .s_axi_aresetn  ( HBUS_rstn ),
         .s_axi_awid     ( m_MBUS_dwidth_conv_to_clock_conv_axi_awid     ),
         .s_axi_awaddr   ( m_MBUS_dwidth_conv_to_clock_conv_axi_awaddr   ),
         .s_axi_awlen    ( m_MBUS_dwidth_conv_to_clock_conv_axi_awlen    ),
@@ -453,8 +461,8 @@ module highperformance_bus #(
         .s_axi_rready   ( m_MBUS_dwidth_conv_to_clock_conv_axi_rready   ),
 
         // Master to MBUS
-        .m_axi_aclk     ( main_clock_i        ),
-        .m_axi_aresetn  ( main_reset_ni       ),
+        .m_axi_aclk     ( MBUS_clk_i          ),
+        .m_axi_aresetn  ( MBUS_rstn_i         ),
         .m_axi_awid     ( m_MBUS_axi_awid     ),
         .m_axi_awaddr   ( m_MBUS_axi_awaddr   ),
         .m_axi_awlen    ( m_MBUS_axi_awlen    ),
@@ -598,8 +606,8 @@ module highperformance_bus #(
 
     // Synch DDR4 sys reset - it is active high
     logic ddr4_reset = 1'b1;
-    always @(posedge main_clock_i or negedge main_reset_ni) begin
-        if (main_reset_ni == 1'b0) begin
+    always @(posedge MBUS_clk_i or negedge MBUS_rstn_i) begin
+        if (MBUS_rstn_i == 1'b0) begin
             ddr4_reset <= 1'b1;
         end else begin
             ddr4_reset <= 1'b0;

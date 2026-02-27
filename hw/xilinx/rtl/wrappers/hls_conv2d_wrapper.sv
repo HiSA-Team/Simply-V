@@ -44,8 +44,8 @@ module hls_conv2d_wrapper # (
     parameter HBUS_ID_WIDTH   = 4
 ) (
     // MBUS clock and reset
-    input  logic main_clk_i,
-    input  logic main_rstn_i,
+    input  logic MBUS_clk_i,
+    input  logic MBUS_rstn_i,
 
     // HLS IP clock and reset (from HBUS)
     input  logic HLSCONTROL_clk_i,
@@ -95,8 +95,8 @@ module hls_conv2d_wrapper # (
             .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
         ) axi_clock_converter_u (
             // AXI4 Slave from MBUS
-            .s_axi_aclk     ( main_clk_i  ),
-            .s_axi_aresetn  ( main_rstn_i ),
+            .s_axi_aclk     ( MBUS_clk_i  ),
+            .s_axi_aresetn  ( MBUS_rstn_i ),
             .s_axi_awid     ( s_HLSCONTROL_axi_awid     ),
             .s_axi_awaddr   ( s_HLSCONTROL_axi_awaddr   ),
             .s_axi_awlen    ( s_HLSCONTROL_axi_awlen    ),
@@ -359,7 +359,7 @@ module hls_conv2d_wrapper # (
     )
     xpm_cdc_array_single_inst (
         .dest_out       ( hls_interrupt_o     ),
-        .dest_clk       ( main_clk_i          ),
+        .dest_clk       ( MBUS_clk_i          ),
         .src_clk        ( HLSCONTROL_clk_i   ),
         .src_in         ( hls_interrupt_async )
     );
