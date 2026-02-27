@@ -15,8 +15,11 @@ ifndef SIMPLY_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
-RV_PREFIX   ?= riscv${XLEN}-unknown-linux-gnu-
-XLEN        ?= 64
+# SoC system configuration
+include $(SW_ROOT)/SoC/common/config.mk
+
+# Overwrite: we need linux-gnu toolchain for OpenSBI
+RV_PREFIX   := riscv${XLEN}-unknown-linux-gnu-
 
 # Payload directory
 PAYLOAD_DIR := payloads

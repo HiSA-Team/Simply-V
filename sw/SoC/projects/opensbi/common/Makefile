@@ -14,20 +14,11 @@ ifndef SIMPLY_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
-RV_PREFIX   ?= 	riscv${XLEN}-unknown-elf-
-XLEN        ?= 64
-
-# Toolchain
-CC      := $(RV_PREFIX)gcc
-LD      := $(RV_PREFIX)ld
-OBJCOPY := $(RV_PREFIX)objcopy
+include $(SW_ROOT)/SoC/common/config.mk
 
 # Project name = current directory
 PROJECT    := $(notdir $(CURDIR))
 COMMON_DIR := $(SW_SOC_ROOT)/projects/opensbi/common
-
-# Architecture
-ARCH       := rv$(XLEN)imc_zalrsc_zicsr_zifencei
 
 # Output directories (relative to project dir)
 BUILD_DIR        := build
@@ -58,14 +49,22 @@ else
 CFLAGS  += -O2
 endif
 
-LDFLAGS := -T$(COMMON_DIR)/linker.ld -nostdlib
+LDFLAGS := -nostdlib \
+           -T$(SW_SOC_ROOT)/common/ld/memory.ld \
+           -T$(COMMON_DIR)/config.ld \
+           -T$(COMMON_DIR)/sections.ld
 
 # Outputs
-ELF := $(BUILD_DIR)/$(PROJECT).elf
-BIN := $(BUILD_DIR)/$(PROJECT).bin
+ELF  := $(BUILD_DIR)/$(PROJECT).elf
+BIN  := $(BUILD_DIR)/$(PROJECT).bin
+DUMP := $(BUILD_DIR)/$(PROJECT).dump
 
 # Default target
-all: $(BIN)
+all: $(BIN) $(DUMP)
+
+# Dump
+$(DUMP): $(ELF)
+	$(OBJDUMP) -D $< > $@
 
 # Link
 $(ELF): $(OBJS)
