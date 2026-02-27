@@ -79,7 +79,7 @@ HIGH_PERF_ROUTING ?= HigherDelayCost
 # Whether to use ILA probes (0|1)
 XILINX_ILA ?= 0
 # Clock net for ILA probes: use main clock by default
-XILINX_ILA_CLOCK ?= main_clk
+XILINX_ILA_CLOCK ?= MBUS_clk
 
 # Full environment variables list for Vivado
 XILINX_VIVADO_ENV =                                 \

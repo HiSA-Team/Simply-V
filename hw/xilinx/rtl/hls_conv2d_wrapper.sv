@@ -87,7 +87,7 @@ module hls_conv2d_wrapper # (
     /////////////
 
     // Add clock bridges for HLS_CONTROL
-    `ifdef HLS_CONTROL_HAS_CLOCK_DOMAIN
+    `ifdef HLSCONTROL_HAS_CLOCK_DOMAIN
         // s_HLS_CONTROL -> sync_HLS_CONTROL
         axi_clock_converter_wrapper # (
             .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
@@ -180,7 +180,7 @@ module hls_conv2d_wrapper # (
             .m_axi_rvalid   ( sync_HLS_CONTROL_axi_rvalid    ),
             .m_axi_rready   ( sync_HLS_CONTROL_axi_rready    )
         );
-    `else // notdefined(HLS_CONTROL_HAS_CLOCK_DOMAIN)
+    `else // notdefined(HLSCONTROL_HAS_CLOCK_DOMAIN)
         // Error out for now
         $error("This version of HLS CONV2D IP must be in HBUS clock domain");
     `endif

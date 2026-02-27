@@ -506,7 +506,7 @@ module highperformance_bus #(
     `ASSIGN_AXI_BUS(dwidth_conv_from_HBUS, HBUS_to_MBUS)
 
     // AXI4 crossbar
-    xlnx_highperformance_crossbar highperformance_xbar_u (
+    xlnx_hbus_crossbar hbus_xbar_u (
         .aclk           ( HBUS_clk                  ),
         .aresetn        ( HBUS_rstn                 ),
         .s_axi_awid     ( HBUS_masters_axi_awid     ), // input

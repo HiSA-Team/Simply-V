@@ -4,10 +4,10 @@
 // Clocks declaration and assignments  //
 /////////////////////////////////////////
 
-assign HBUS_clk_o = clk_DDR4CH0_300MHz;
+assign HBUS_clk_o = clk_DDR4CH_0_300MHz;
 
-assign HBUS_clk = clk_DDR4CH0_300MHz;
-assign HBUS_rstn = rstn_DDR4CH0_300MHz;
+assign HBUS_clk = clk_DDR4CH_0_300MHz;
+assign HBUS_rstn = rstn_DDR4CH_0_300MHz;
 
 
 

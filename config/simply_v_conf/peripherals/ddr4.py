@@ -18,7 +18,7 @@ class DDR4(Peripheral):
 	def __init__(self, base_name: str, addr_ranges_list: Addr_Ranges, clock_domain: str, \
 					   channel: int, father_bus_name: str):
 
-		static_domain = f"DDR4CH{channel}_300"
+		static_domain = f"DDR4CH_{channel}_300"
 		static_frequency = 300
 
 		super().__init__(base_name, addr_ranges_list, static_domain, static_frequency)

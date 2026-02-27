@@ -131,6 +131,8 @@ module simplyv (
     logic clk_MBUS_50MHz;
     logic clk_MBUS_100MHz;
     logic clk_MBUS_250MHz;      // HPC ONLY
+    // DDR4CH_x
+    logic clk_DDR4CH_0_300MHz, clk_DDR4CH_1_300MHz;
     // Clint real-time clock
     logic clint_rtc;
 
@@ -141,6 +143,8 @@ module simplyv (
     logic rstn_MBUS_50MHz;
     logic rstn_MBUS_100MHz;
     logic rstn_MBUS_250MHz;     // HPC ONLY
+    // DDR4CH_x
+    logic rstn_DDR4CH_0_300MHz, rstn_DDR4CH_1_300MHz;
 
     // VIO Signals
     logic vio_resetn;
@@ -187,7 +191,7 @@ module simplyv (
     );
 
     // MBUS Axi Crossbar
-    xlnx_mbus_crossbar main_xbar_u (
+    xlnx_mbus_crossbar mbus_xbar_u (
         .aclk           ( MBUS_clk                  ), // input
         .aresetn        ( MBUS_rstn                 ), // input
         .s_axi_awid     ( MBUS_masters_axi_awid     ), // input

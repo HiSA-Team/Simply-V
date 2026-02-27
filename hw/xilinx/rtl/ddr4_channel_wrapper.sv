@@ -94,7 +94,7 @@ module ddr4_channel_wrapper # (
             assign s_axi_awuser = '0;
             assign s_axi_aruser = '0;
 
-            xlnx_system_cache_0 system_cache_u (
+            xlnx_system_cache_ddr4ch1 xlnx_system_cache_ddr4ch1_u (
                 .ACLK               ( clock_i                 ), // input wire ACLK
                 .ARESETN            ( reset_ni                ), // input wire ARESETN
                 .Initializing       ( /* empty */             ), // output wire Initializing
