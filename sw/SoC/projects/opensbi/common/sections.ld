@@ -8,9 +8,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-    . = ORIGIN(DDR4CH1);
-
-    .text : {
+    .text __payload_start : {
         KEEP(*(.text._start))
         *(.text*)
     } > DDR4CH1
