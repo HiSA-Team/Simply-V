@@ -10,8 +10,8 @@
  * Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
  */
 
-#ifndef __SIMPLV_SBI
-#define __SIMPLV_SBI
+#ifndef __SIMPLYV_SBI
+#define __SIMPLYV_SBI
 
 struct sbiret {
     long error;
@@ -154,4 +154,4 @@ static const char *sbi_impl_names[] = {
     NULL,
 };
 
-#endif /* __SIMPLV_SBI */
+#endif /* __SIMPLYV_SBI */
