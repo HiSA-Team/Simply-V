@@ -13,13 +13,13 @@
 
 // Registers
 // GPIO is configured to use just one channel (so all the "2" registers like GPIO2_DATA are unused)
-#define GPIO_DATA  (0x0000u) // Data Register
-#define GPIO_TRI   (0x0004u) // Direction Register
-#define GPIO2_DATA (0x0008u) // Data register second channel
-#define GPIO2_TRI  (0x000Cu) // Data register second channel
-#define GIER       (0x011Cu) // Global Interrupt Enable Register
-#define IP_ISR     (0x0120u) // Interrupt Status Register
-#define IP_IER     (0x0128u) // Interrupt Enable Register
+#define GPIO_IN_DATA  (0x0000u) // Data Register
+#define GPIO_IN_TRI   (0x0004u) // Direction Register
+#define GPIO2_IN_DATA (0x0008u) // Data register second channel
+#define GPIO2_IN_TRI  (0x000Cu) // Data register second channel
+#define GPIO_IN_GIER  (0x011Cu) // Global Interrupt Enable Register
+#define GPIO_IN_ISR   (0x0120u) // Interrupt Status Register
+#define GPIO_IN_IER   (0x0128u) // Interrupt Enable Register
 
 // INTERRUPTS
 typedef enum {
