@@ -10,7 +10,7 @@
 # .3 Launch all the file generations/modifications that will be needed from the "sw" and "hw"
 #	 flows
 #
-# all the targets of the makefile in the "config root" are compatible with the simply_v methods
+# all the targets of the makefile in the "config root" are compatible with the simplyv methods
 # through the "simply_conf.py" file that launches the correct methods based on the makefile target that
 # launched the whole configuration
 

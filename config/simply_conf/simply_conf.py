@@ -8,7 +8,7 @@ from general.error import Simply_V_Error
 from parsers.sys_parser import Sys_Parser
 from general.env import Env
 from general.logger import Logger
-from general.simply_v import SimplyV
+from general.simplyv import SimplyV
 import argparse
 import traceback
 
@@ -168,9 +168,9 @@ def main(logger):
 		]
 
 		if system.config_bus("MBUS", outputs):
-			logger.simply_v_info("Generated MBUS configs")
+			logger.simplyv_info("Generated MBUS configs")
 		else:
-			logger.simply_v_warning("MBUS configs NOT generated (bus disabled)")
+			logger.simplyv_warning("MBUS configs NOT generated (bus disabled)")
 
 	# Triggered by Makefile: config_pbus or all
 	# =====================
@@ -188,9 +188,9 @@ def main(logger):
 		]
 
 		if system.config_bus("PBUS", outputs):
-			logger.simply_v_info("Generated PBUS configs")
+			logger.simplyv_info("Generated PBUS configs")
 		else:
-			logger.simply_v_warning("PBUS configs NOT generated (bus disabled)")
+			logger.simplyv_warning("PBUS configs NOT generated (bus disabled)")
 
 
 	# Triggered by Makefile: config_hbus or all
@@ -210,9 +210,9 @@ def main(logger):
 		]
 
 		if system.config_bus("HBUS", outputs):
-			logger.simply_v_info("Generated HBUS configs")
+			logger.simplyv_info("Generated HBUS configs")
 		else:
-			logger.simply_v_warning("HBUS configs NOT generated (bus disabled)")
+			logger.simplyv_warning("HBUS configs NOT generated (bus disabled)")
 
 	# Triggered by Makefile: config_sw or all
 	# =====================
@@ -227,7 +227,7 @@ def main(logger):
 		system.create_hal_header(args.hal_conf)
 		system.update_sw_makefile(args.sw_mk)
 		system.create_linker_script(args.ld_root)
-		logger.simply_v_info("Generated software configs")
+		logger.simplyv_info("Generated software configs")
 
 	# Triggered by Makefile: config_xilinx or all
 	# =====================
@@ -251,7 +251,7 @@ def main(logger):
 			args.bram_root,
 			args.uart_root,
 		])
-		logger.simply_v_info("Generated Xilinx configs")
+		logger.simplyv_info("Generated Xilinx configs")
 
 	# Triggered by Makefile: config_dump or all
 	# =====================
@@ -264,7 +264,7 @@ def main(logger):
 			)
 
 		system.dump_reachability(args.dump_path)
-		logger.simply_v_info("Generated reachability dump")
+		logger.simplyv_info("Generated reachability dump")
 
 
 if __name__ == "__main__":
@@ -273,9 +273,9 @@ if __name__ == "__main__":
 		main(logger)
 	# Normal System Failure, we just need to show the custom error message
 	except Simply_V_Error as e:
-		logger.simply_v_crash(str(e))
+		logger.simplyv_crash(str(e))
 	# Unexpected error we show the stack trace for debugging purposes
 	except Exception:
-		logger.simply_v_crash(
+		logger.simplyv_crash(
 			"Unexpected error:\n" + traceback.format_exc()
 		)

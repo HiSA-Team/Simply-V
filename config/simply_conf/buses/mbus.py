@@ -31,7 +31,7 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 		# Env is the class that manages all the "settings.sh" related values (project's paths and profile configuration)
 		self.env_global = Env.get_instance()
 
-		if self.env_global.get_simply_v_profile()=="hpc":
+		if self.env_global.get_simplyv_profile()=="hpc":
 			self.LEGAL_PERIPHERALS = self.LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL")
 			self.LEGAL_BUSES = self.LEGAL_BUSES + ("HBUS",)
 

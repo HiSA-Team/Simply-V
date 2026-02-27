@@ -53,7 +53,7 @@ mapfile -t PACKAGES < <(
 # Generate class diagram for each package
 for pkg in "${PACKAGES[@]}"; do
   if [ "$pkg" = "." ]; then
-    pkg_name="simply_v"
+    pkg_name="simplyv"
   else
     pkg_name="$(basename "$pkg")"
   fi

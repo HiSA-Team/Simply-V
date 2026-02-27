@@ -37,10 +37,6 @@ class Sys_Parser(Parser):
 				Conflict_Error("XLEN", "CORE_SELECTOR")
 				),
 			lambda d: (
-				(d["XLEN"] == 64) and (d["PHYSICAL_ADDR_WIDTH"] == 32),
-				Conflict_Error("XLEN", "PHYSICAL_ADDR_WIDTH", "PHYSICAL_ADDR_WIDTH should be in range (32,64]")
-				),
-			lambda d: (
 				(d["CORE_SELECTOR"] == "CORE_PICORV32") and (d["VIO_RESETN_DEFAULT"] != 0),
 				Conflict_Error("CORE_SELECTOR", "VIO_RESETN_DEFAULT", \
 				   "CORE_PICORV32 only supports VIO_RESETN_DEFAULT == 0")

@@ -23,23 +23,23 @@ class Env(metaclass=Singleton):
 		self._SIMPLYV_PROFILE = os.environ["SIMPLYV_PROFILE"]
 
 		if (self._board not in self.SUPPORTED_BOARDS):
-			raise Unsupported_Value_Error("BOARD", self._board, self.SUPPORTED_BOARDS, 
+			raise Unsupported_Value_Error("BOARD", self._board, self.SUPPORTED_BOARDS,
 													"Probably settings.sh script wasn't sourced")
 
 
 		if(self._SIMPLYV_PROFILE not in self.SUPPORTED_PROFILES):
-			raise Unsupported_Value_Error("SIMPLYV_PROFILE", self._SIMPLYV_PROFILE, self.SUPPORTED_PROFILES, 
+			raise Unsupported_Value_Error("SIMPLYV_PROFILE", self._SIMPLYV_PROFILE, self.SUPPORTED_PROFILES,
 								  "Probably settings.sh script wasn't sourced")
 
 
-			
+
 	def set_inputs(self, bus_input_files: dict[str,str]):
 		self.bus_input_files = bus_input_files
 
 	def get_config_path(self, bus_name: str) -> str:
 		return self.bus_input_files[bus_name]
 
-	def get_simply_v_profile(self):
+	def get_simplyv_profile(self):
 		return self._SIMPLYV_PROFILE
 
 	def get_board(self):
@@ -63,7 +63,7 @@ class Env(metaclass=Singleton):
 				return [0]
 			case _:
 				assert False, f"BOARD CONFIGURATION CHANGED DURING EXECUTION: {self._board}"
-				
+
 
 	def get_supp_hbm(self) -> bool | None:
 		match self._board:

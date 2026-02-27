@@ -10,8 +10,8 @@ To add a new bus, you must:
 
 1. Add a new configuration `.csv` file
 2. Adapt the configuration Makefile and simply_conf.py file with new INPUT and OUTPUT files related to the new bus
-3. Implement a new Python bus class (for example ['pbus.py'](../simply_v_conf/buses/pbus.py))
-4. Register the new bus in the ['buses_factory'](../simply_v_conf/factories/buses_factory.py)
+3. Implement a new Python bus class (for example ['pbus.py'](../simply_conf/buses/pbus.py))
+4. Register the new bus in the ['buses_factory'](../simply_conf/factories/buses_factory.py)
 5. (Optional) Extend the parser hierarchy for complex buses
 
 ### Naming Conventions
@@ -19,7 +19,7 @@ To add a new bus, you must:
 The {BUSNAME} name of the new bus must follow the `FULL_NAME` semantic, this applies to:
 - configuration files (.csv and Makefile)
 
-other informations must follow the `BASE_NAME` semantic 
+other informations must follow the `BASE_NAME` semantic
 
 This applies to:
 - Python class names
@@ -42,7 +42,7 @@ The file must be placed in:
 
 {CONFIG_ROOT}/configs/embedded
 
-and/or 
+and/or
 
 {CONFIG_ROOT}/configs/hpc
 
@@ -59,7 +59,7 @@ The Makefile of the {CONFIG_ROOT} must be extended to:
 - Declare the OUTPUT_{BUSNAME}\_CROSSBAR, OUTPUT_{BUSNAME}\_INTERCONNECT and OUTPUT_{BUSNAME}\_CLK_ASSIGNMENTS (NonLeafBus only) variables containing the paths of the new bus configuration files to generate
 - Add the corresponding build target in the form "config_{BUSNAME}" with its specific CONFIG_{BUSNAME}_ARGS
 used to propagate the new INPUT and OUPUT files to the configuration flow
-- Also adapt ["simply_conf.py"](../simply_v_conf/simply_conf.py) to accept the new args from the Makefile
+- Also adapt ["simply_conf.py"](../simply_conf/simply_conf.py) to accept the new args from the Makefile
 
 All names must follow the `FULL_NAME` semantic.
 
@@ -70,7 +70,7 @@ All names must follow the `FULL_NAME` semantic.
 
 Create a new Python file in:
 
-{CONFIG_ROOT}/simply_v_conf/buses/
+{CONFIG_ROOT}/simply_conf/buses/
 
 ### Class Inheritance
 
@@ -108,9 +108,9 @@ If the bus is a LeafBus, the class must extend:
 
 Example from the already implemented HBUS class:
 
-LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("DDR4CH",)  
-LEGAL_BUSES = NonLeafBus.LEGAL_BUSES + ("MBUS",)  
-LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)  
+LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("DDR4CH",)
+LEGAL_BUSES = NonLeafBus.LEGAL_BUSES + ("MBUS",)
+LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
 
 
@@ -120,7 +120,7 @@ LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 
 ## 4. Register the Bus in the Bus Factory
 
-Update the create_bus method in ['buses_factory'](../simply_v_conf/factories/buses_factory.py) class.
+Update the create_bus method in ['buses_factory'](../simply_conf/factories/buses_factory.py) class.
 
 Add a new case that:
 - Matches the bus `BASE_NAME`

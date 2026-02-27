@@ -27,8 +27,8 @@ class Parser(metaclass=SingletonABCMeta):
 	# These are lambda functions that will cast the parsed values to the expected values
 	# substituting the parsed values with the casted ones in the dictionary that "parse_csv" returns
 	type_parsers: dict[str, Callable[[str], Any]]= {}
-	
-	# These are lambda functions that will throw and Out_Of_Range exception if the check fails 
+
+	# These are lambda functions that will throw and Out_Of_Range exception if the check fails
 	range_validators: dict[str, Callable[[str, int], None]] = {}
 
 	# These are lambda functions that will check interactions between the parameters
@@ -37,7 +37,7 @@ class Parser(metaclass=SingletonABCMeta):
 
 	def __init__(self):
 		self.logger = Logger.get_instance()
-	
+
 	# Defined as static to be used from child classes to check integer ranges values
 	@staticmethod
 	def _check_range(name: str, value: int, min_value: int, max_value: int):
@@ -84,6 +84,6 @@ class Parser(metaclass=SingletonABCMeta):
 			return data
 
 		except FileNotFoundError:
-			self.logger.simply_v_crash(f"File error: {file_name} not found.")
+			self.logger.simplyv_crash(f"File error: {file_name} not found.")
 		except Exception as e:
-			self.logger.simply_v_crash(f"{e} (in file {file_name})")
+			self.logger.simplyv_crash(f"{e} (in file {file_name})")

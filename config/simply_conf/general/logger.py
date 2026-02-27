@@ -30,16 +30,16 @@ class Logger(metaclass=Singleton):
 			self.logger.addHandler(stdout_handler)
 			self.logger.addHandler(stderr_handler)
 
-			
-	def simply_v_error(self, message: str):
+
+	def simplyv_error(self, message: str):
 		self.logger.error(f"--- [CONFIG] {message} ---")
 
-	def simply_v_warning(self, message: str):
+	def simplyv_warning(self, message: str):
 		self.logger.warning(f"--- [CONFIG] {message} ---")
 
-	def simply_v_crash(self, message: str):
+	def simplyv_crash(self, message: str):
 		self.logger.error(f"--- [CONFIG] {message} ---")
 		exit(1)
 
-	def simply_v_info(self, message: str):
+	def simplyv_info(self, message: str):
 		self.logger.info(f"--- [CONFIG] {message} ---")

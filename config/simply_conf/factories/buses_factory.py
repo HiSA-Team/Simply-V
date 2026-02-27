@@ -59,5 +59,5 @@ class Buses_Factory(Factory):
 			case _:
 				raise Unsupported_Value_Error("BASE_NAME", base_name, ["MBUS", "HBUS", "PBUS"])
 
-		self.logger.simply_v_info(f"Created BUS {full_name} parsing file: {file_name}")
+		self.logger.simplyv_info(f"Created BUS {full_name} parsing file: {file_name}")
 		return bus
