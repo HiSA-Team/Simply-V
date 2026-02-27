@@ -36,9 +36,5 @@
 // Concatenate AXI slave buses //
 /////////////////////////////////
 `DECLARE_AXI_BUS_ARRAY(MBUS_slaves, MBUS_NUM_MI, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
-<<<<<<< HEAD
-`CONCAT_AXI_SLAVES_ARRAY6(MBUS_slaves, MBUS_to_PLIC, MBUS_to_CDMA, MBUS_to_CLINT, MBUS_to_PBUS, MBUS_to_DM_mem, MBUS_to_BRAM)
-=======
 `CONCAT_AXI_SLAVES_ARRAY6(MBUS_slaves, MBUS_to_PLIC, MBUS_to_CLINT, MBUS_to_CDMA, MBUS_to_PBUS, MBUS_to_DMmem, MBUS_to_BRAM_0)
 
->>>>>>> 8eca2db (squash for rebase preparation)
