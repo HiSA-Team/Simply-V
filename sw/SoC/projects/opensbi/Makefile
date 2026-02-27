@@ -25,8 +25,10 @@ RV_PREFIX   := riscv${XLEN}-unknown-linux-gnu-
 PAYLOAD_DIR := payloads
 PAYLOADS    := $(notdir $(wildcard $(PAYLOAD_DIR)/*))
 
+# Provide opensbi configuration variables
+include $(SW_ROOT)/SoC/projects/opensbi/common/config.mk
+
 # OpenSBI params
-OPENSBI_FW_TEXT_START       ?= 0x1000000
 OPENSBI_FW_PAYLOAD_BIN_PATH ?= $(SW_SOC_ROOT)/projects/opensbi/payloads/hello_world/build/hello_world.bin
 OPENSBI_DIR                 := $(SW_SOC_ROOT)/projects/opensbi/opensbi
 OPENSBI_FLAGS               := PLATFORM=fpga/simply-v \
