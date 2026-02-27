@@ -6,8 +6,11 @@
 
 # Original is at opensbi/platform/template/object.mk
 
+# Include to get FW_TEXT_START
+include $(SW_SOC_ROOT)/projects/opensbi/opensbi/platform/fpga/simply-v/config.mk
+
 # Compiler pre-processor flags
-platform-cppflags-y =
+platform-cppflags-y = -DFW_TEXT_START=$(FW_TEXT_START)
 
 # C Compiler and assembler flags.
 platform-cflags-y = -I$(SW_SOC_ROOT)/lib/tinyio/inc -I$(SW_SOC_ROOT)/lib/simplyv/inc/

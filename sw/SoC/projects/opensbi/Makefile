@@ -15,6 +15,8 @@ ifndef SIMPLY_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
+PYTHON ?= python3.10 # Requires >= 3.10
+
 # SoC system configuration
 include $(SW_ROOT)/SoC/common/config.mk
 
@@ -25,15 +27,11 @@ RV_PREFIX   := riscv${XLEN}-unknown-linux-gnu-
 PAYLOAD_DIR := payloads
 PAYLOADS    := $(notdir $(wildcard $(PAYLOAD_DIR)/*))
 
-# Provide opensbi configuration variables
-include $(SW_ROOT)/SoC/projects/opensbi/common/config.mk
-
 # OpenSBI params
 OPENSBI_FW_PAYLOAD_BIN_PATH ?= $(SW_SOC_ROOT)/projects/opensbi/payloads/hello_world/build/hello_world.bin
 OPENSBI_DIR                 := $(SW_SOC_ROOT)/projects/opensbi/opensbi
 OPENSBI_FLAGS               := PLATFORM=fpga/simply-v \
                                CROSS_COMPILE=$(RV_PREFIX) \
-                               FW_TEXT_START=$(OPENSBI_FW_TEXT_START) \
                                FW_PAYLOAD_PATH=$(OPENSBI_FW_PAYLOAD_BIN_PATH) \
                                PLATFORM_RISCV_XLEN=$(XLEN)
 # Run script params
@@ -55,6 +53,9 @@ opensbi:
 
 # install: installs the platform configuration in the OpenSBI tree
 install: pull-opensbi
+	$(PYTHON) $(SW_SOC_ROOT)/projects/opensbi/scripts/create_config.py \
+		$(CONFIG_ROOT)/configs/$(SIMPLYV_PROFILE)/config_main_bus.csv \
+		$(SW_SOC_ROOT)/projects/opensbi/simply-v/config.mk
 	cp -vr simply-v $(OPENSBI_DIR)/platform/fpga
 
 # pull-opensbi: retrieve opensbi code

@@ -12,6 +12,10 @@ memory layout of the system.
 
 To get started, pull OpenSBI sources and install the Simply-V platform:
 
+> [!WARNING]
+> The installation process generates a `config.mk` file. Changes to the SoC configuration will require a 
+new `make install` command.
+
 ```
 make install
 ```
