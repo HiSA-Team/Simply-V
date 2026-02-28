@@ -1,9 +1,9 @@
 # Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 # Description: This is the class used to define the "MBus"
 # the MBus is a singleton and is the root of the tree hierarchy
-# "Simply_V" creates it and uses it as a way to interact with the whole
+# "SimplyV" creates it and uses it as a way to interact with the whole
 # nodes hierarchy.
-# "Simply_V" calls the "init_configurations" functions to trigger
+# "SimplyV" calls the "init_configurations" functions to trigger
 # all the recursive checks and configuration of the whole hierarchy
 
 from general.addr_range import Addr_Ranges

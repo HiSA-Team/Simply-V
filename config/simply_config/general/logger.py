@@ -10,7 +10,7 @@ from .singleton import Singleton
 
 class Logger(metaclass=Singleton):
 	def __init__(self):
-		self.logger = logging.getLogger("Simply_V")
+		self.logger = logging.getLogger("SimplyV")
 		self.logger.setLevel(logging.INFO)
 
 		if not self.logger.handlers:
@@ -32,14 +32,14 @@ class Logger(metaclass=Singleton):
 
 
 	def simplyv_error(self, message: str):
-		self.logger.error(f"--- [SIMPLY-CONFIG] {message} ---")
+		self.logger.error(f"[SIMPLY-CONFIG] {message}")
 
 	def simplyv_warning(self, message: str):
-		self.logger.warning(f"--- [SIMPLY-CONFIG] {message} ---")
+		self.logger.warning(f"[SIMPLY-CONFIG] {message}")
 
 	def simplyv_crash(self, message: str):
-		self.logger.error(f"--- [SIMPLY-CONFIG] {message} ---")
+		self.logger.error(f"[SIMPLY-CONFIG] {message}")
 		exit(1)
 
 	def simplyv_info(self, message: str):
-		self.logger.info(f"--- [SIMPLY-CONFIG] {message} ---")
+		self.logger.info(f"[SIMPLY-CONFIG] {message}")

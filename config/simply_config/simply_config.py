@@ -1,10 +1,10 @@
 # Author: Salvatore Santoro	<sal.santoro@studenti.unina.it>
 # Description: This is the entry point of the configuration flow.
 # The purpose of this code is to dispatch the selected configuration target (from the config Makefile)
-# to the actual python config implementation, creating the "Simply_V" object (the root of all the configurations)
+# to the actual python config implementation, creating the "SimplyV" object (the root of all the configurations)
 # and using it to generate/modify the configuration files
 
-from general.error import Simply_V_Error
+from general.error import SimplyV_Error
 from parsers.sys_parser import Sys_Parser
 from general.env import Env
 from general.logger import Logger
@@ -168,7 +168,8 @@ def main(logger):
 		]
 
 		if system.config_bus("MBUS", outputs):
-			logger.simplyv_info("Generated MBUS configs at " + str(outputs))
+			logger.simplyv_info("MBUS configs succesfully generated!")
+			logger.simplyv_info("MBUS output files: " + str(outputs))
 		else:
 			logger.simplyv_warning("MBUS configs NOT generated (bus disabled)")
 
@@ -188,7 +189,8 @@ def main(logger):
 		]
 
 		if system.config_bus("PBUS", outputs):
-			logger.simplyv_info("Generated PBUS configs at " + str(outputs))
+			logger.simplyv_info("PBUS configs succesfully generated!")
+			logger.simplyv_info("PBUS output files: " + str(outputs))
 		else:
 			logger.simplyv_warning("PBUS configs NOT generated (bus disabled)")
 
@@ -210,7 +212,8 @@ def main(logger):
 		]
 
 		if system.config_bus("HBUS", outputs):
-			logger.simplyv_info("Generated HBUS configs at " + str(outputs))
+			logger.simplyv_info("HBUS configs succesfully generated!")
+			logger.simplyv_info("HBUS output files: " + str(outputs))
 		else:
 			logger.simplyv_warning("HBUS configs NOT generated (bus disabled)")
 
@@ -232,7 +235,8 @@ def main(logger):
 			args.sw_mk,
 			args.ld_root,
 		]
-		logger.simplyv_info("Generated software configs at " + str(outputs))
+		logger.simplyv_info("Software configs succesfully generated!")
+		logger.simplyv_info("Software output files: " + str(outputs))
 
 	# Triggered by Makefile: config_xilinx or all
 	# =====================
@@ -262,7 +266,8 @@ def main(logger):
 			args.bram_root,
 			args.uart_root,
 		]
-		logger.simplyv_info("Generated Xilinx configs at " + str(outputs))
+		logger.simplyv_info("Xilinx configs succesfully generated!")
+		logger.simplyv_info("Xilinx output files: " + str(outputs))
 
 	# Triggered by Makefile: config_dump or all
 	# =====================
@@ -275,7 +280,7 @@ def main(logger):
 			)
 
 		system.dump_reachability(args.dump_path)
-		logger.simplyv_info("Generated reachability dump at " + args.dump_path)
+		logger.simplyv_info("Reachability dump generated at " + args.dump_path)
 
 
 if __name__ == "__main__":
@@ -283,7 +288,7 @@ if __name__ == "__main__":
 	try:
 		main(logger)
 	# Normal System Failure, we just need to show the custom error message
-	except Simply_V_Error as e:
+	except SimplyV_Error as e:
 		logger.simplyv_crash(str(e))
 	# Unexpected error we show the stack trace for debugging purposes
 	except Exception:
