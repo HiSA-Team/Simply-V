@@ -15,7 +15,7 @@ sudo apt-get install -y autoconf automake autotools-dev curl python3 python3-pip
 
 Clone sources:
 ``` bash
-git clone https://github.com/riscv/riscv-gnu-toolchain.git --depth 1 -b 2024.03.01
+git clone https://github.com/riscv/riscv-gnu-toolchain.git --depth 1 -b 2026.02.13
 cd riscv-gnu-toolchain
 ```
 
