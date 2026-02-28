@@ -14,12 +14,12 @@ The child bus will access its father address space creating new `BEFORE` and `AF
 
 A `NonLeafBus` can activate LOOPBACK only if all the following conditions are met:
 
-- The activating `NonLeafBus` **must have a father bus**  
+- The activating `NonLeafBus` **must have a father bus**
   - Only the `MBUS` has no father bus and therefore cannot activate LOOPBACK.
 - `RANGE_BASE_ADDR` must be:
   - Equal to **0**, or
   - A **power of 2**
-- `ADDR_RANGES` must be equal to **1**.  
+- `ADDR_RANGES` must be equal to **1**.
 
 Furthermore the `AFTER` address range will be limited to the same `ADDR_WIDTH` or `ADDR_WIDTH + 1` of the activating bus address range, according to what described in the **Rationale** section.
 
@@ -51,21 +51,21 @@ Then three different behaviours are possible depending on the position of the `c
 
 In the first case the child bus will use the new added slave interface to address the address space on its father `AFTER` its own address space.
 
-![Loopback_After](loopback_after.png)
+![Loopback_After](./img/oopback_after.png)
 
 In the second case the child bus will use the new added slave interface to address the address space on its father `BEFORE` its own address space.
 
-![Loopback_Before](loopback_before.png)
+![Loopback_Before](./img/loopback_before.png)
 
 In the third case the child bus will use the new added slave interface to address both the address space on its father `BEFORE` and `AFTER` its own. In order to accomodate two different address spaces through the same master port the child bus will also set the `ADDR_RANGES` parameter equal to **2** (this enables the addressing of two different address ranges for each **MASTER (M)** port on the bus).
 
-![Loopback_Before_After](loopback_before_after.png)
+![Loopback_Before_After](./img/loopback_before_after.png)
 
 ---
 
 ## Rationale
 
-The constraints associated with the use of the LOOPBACK functionality originate from considerations about the [AXI Interconnect v2.1 Product Guide](https://docs.amd.com/r/en-US/pg059-axi-interconnect) 
+The constraints associated with the use of the LOOPBACK functionality originate from considerations about the [AXI Interconnect v2.1 Product Guide](https://docs.amd.com/r/en-US/pg059-axi-interconnect)
 
 More specifically:
   - `P. 104: AXI Crossbar Global Parameters table` for the `ADDR_RANGES` parameter description
@@ -149,7 +149,7 @@ The first address in the `AFTER` address range will be `0x100000`, but again res
 
 Covering the addresses from `0x100000` to `0x1FFFFF` and leaving all the addresses from `0x200000` uncovered.
 
-In this example the ADDR_WIDTH of the `AFTER` address range is equal to the one of the child bus plus one.  
+In this example the ADDR_WIDTH of the `AFTER` address range is equal to the one of the child bus plus one.
 
 Is easy to find an example in which, following the same reasoning, the configuration flow assigns to the `AFTER` range the same ADDR_WIDTH of the child bus:
 

@@ -113,7 +113,7 @@ The `MAIN_CLOCK_DOMAIN` is the clock domain of the core and the main bus (`MBUS`
 ### Configuration Architecture
 The directory `simply_config/` holds all the configuration related files, the main configuration flow is depicted here:
 
-![Configuration flow](./doc/simplyv.png)
+![Configuration flow](./doc/img/simply_config.png)
 
 The generation flow can be summarized as follows:
 
