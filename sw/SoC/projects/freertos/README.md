@@ -28,7 +28,7 @@ make freertos
 ```
 
 > [!Note]
-> Toolchain, architecture, ABI etc. are managed from `${SIMPLY_ROOT_DIR}/sw/SoC/common/config.mk`. You can define your
+> Toolchain, architecture, ABI etc. are managed from `${SIMPLYV_ROOT_DIR}/sw/SoC/common/config.mk`. You can define your
 custom RV_PREFIX by running something `make RV_PREFIX=<path-to-prefix> XLEN=<32-64>`
 
 Build an application with:

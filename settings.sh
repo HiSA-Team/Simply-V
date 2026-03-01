@@ -5,7 +5,7 @@
 # Initial setup #
 #################
 # Root directory of current project, same path as this script
-export SIMPLY_ROOT_DIR=$( dirname $( realpath $BASH_SOURCE[0]} ) )
+export SIMPLYV_ROOT_DIR=$( dirname $( realpath $BASH_SOURCE[0]} ) )
 
 # Check if Vivado is in path
 if ! command -v vivado &> /dev/null; then
@@ -19,14 +19,14 @@ export XILINX_VIVADO_VERSION=$(vivado -version | grep -i Vivado | awk '{print $2
 #################
 # Configuration #
 #################
-export CONFIG_ROOT=${SIMPLY_ROOT_DIR}/config
+export CONFIG_ROOT=${SIMPLYV_ROOT_DIR}/config
 
 ############
 # Hardware #
 ############
-export HW_ROOT=${SIMPLY_ROOT_DIR}/hw
-export HW_RTL_ROOT=${SIMPLY_ROOT_DIR}/hw/rtl
-export HW_UNITS_ROOT=${SIMPLY_ROOT_DIR}/hw/units
+export HW_ROOT=${SIMPLYV_ROOT_DIR}/hw
+export HW_RTL_ROOT=${SIMPLYV_ROOT_DIR}/hw/rtl
+export HW_UNITS_ROOT=${SIMPLYV_ROOT_DIR}/hw/units
 
 ###################
 # Unit Simulation #
@@ -114,7 +114,7 @@ fi
 ###############
 
 # Root directory
-export XILINX_ROOT=${SIMPLY_ROOT_DIR}/hw/xilinx
+export XILINX_ROOT=${SIMPLYV_ROOT_DIR}/hw/xilinx
 export XILINX_IPS_ROOT=${XILINX_ROOT}/ips
 export XILINX_SCRIPT_ROOT=${XILINX_ROOT}/scripts
 # Synthesis
@@ -131,14 +131,14 @@ export XILINX_HW_SERVER_PORT=3121
 ############
 # Software #
 ############
-export SW_ROOT=${SIMPLY_ROOT_DIR}/sw
-export SW_HOST_ROOT=${SIMPLY_ROOT_DIR}/sw/host
-export SW_SOC_ROOT=${SIMPLY_ROOT_DIR}/sw/SoC
+export SW_ROOT=${SIMPLYV_ROOT_DIR}/sw
+export SW_HOST_ROOT=${SIMPLYV_ROOT_DIR}/sw/host
+export SW_SOC_ROOT=${SIMPLYV_ROOT_DIR}/sw/SoC
 
 ########
 # Dump #
 ########
-echo "[INFO] SIMPLY_ROOT_DIR       = $SIMPLY_ROOT_DIR"
+echo "[INFO] SIMPLYV_ROOT_DIR       = $SIMPLYV_ROOT_DIR"
 echo "[INFO] SIMPLYV_PROFILE       = $SIMPLYV_PROFILE"
 echo "[INFO] BOARD                 = $BOARD"
 echo "[INFO] XILINX_PART_NUMBER    = $XILINX_PART_NUMBER"

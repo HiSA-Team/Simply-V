@@ -6,7 +6,7 @@
 #  It can be used to compile all default examples
 
 # Environment check
-ifndef SIMPLY_ROOT_DIR
+ifndef SIMPLYV_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
