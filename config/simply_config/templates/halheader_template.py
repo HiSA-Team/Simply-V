@@ -20,14 +20,14 @@ class HALheader_Template(Template):
 
 	#include <stdint.h>
 
-	// Address of configured peripherals
+	// Address of configured peripherals, sorted by base address
 	{peripheral_block_str}
-
-	// Enabled devices
-	{device_block_str}
 
 	// Clock Frequencies in MHz
 	{clocks_str}
+
+	// Enabled devices, sorted alphabetically
+	{device_block_str}
 
 	#endif // {include_guard}
 	""")
@@ -46,8 +46,8 @@ class HALheader_Template(Template):
 			name = name
 			base = dimensions[0]
 			end = dimensions[1]
-			lines.append(f"#define _peripheral_{name}_start  0x{base:016x}u")
-			lines.append(f"#define _peripheral_{name}_end    0x{end:016x}u")
+			lines.append(f"#define _peripheral_{name}_start  (0x{base:016x}u)")
+			lines.append(f"#define _peripheral_{name}_end    (0x{end:016x}u)")
 		return "\n".join(lines)
 
 	# Produces a C preprocessor define with:
@@ -70,7 +70,7 @@ class HALheader_Template(Template):
 		lines = []
 		for n in nodes:
 			# Write frequency in MHz
-			lines.append(f"#define {n.FULL_NAME}_FREQ_MHz {n.CLOCK_FREQUENCY}u")
+			lines.append(f"#define {n.FULL_NAME}_FREQ_MHz ({n.CLOCK_FREQUENCY}u)")
 		return "\n".join(lines)
 
 	def __init__(self, peripherals: list[Peripheral], devices: list[Peripheral], nodes: list[Node], file_name: str):

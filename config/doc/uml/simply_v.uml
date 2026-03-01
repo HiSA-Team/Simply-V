@@ -24,7 +24,7 @@ class SimplyV <<Singleton>> {
     --
     + create_linker_script(ld_file_name : str)
     + dump_reachability(dump_file_name : str)
-    + create_hal_header(hal_hdr_file_name : str)
+    + create_hal_header(hal_header_file_name : str)
     + update_sw_makefile(sw_makefile : str)
     + config_bus(target_bus : str, outputs : list) : bool
     + config_xilinx_makefile(xilinx_makefile : str)

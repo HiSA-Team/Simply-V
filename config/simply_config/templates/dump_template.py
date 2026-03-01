@@ -9,7 +9,7 @@ import textwrap
 class Dump_Template(Template):
 	# using "dedent" to ignore leading spaces
 	_str_template: str = textwrap.dedent("""\
-	NAME,BASE_ADDR,END_ADDR,CLOCK_DOMAIN,{buses_list_hdr}
+	NAME,BASE_ADDR,END_ADDR,CLOCK_DOMAIN,{buses_list_header}
 	{csv_body}
 	""")
 
@@ -62,7 +62,7 @@ class Dump_Template(Template):
 		# in order to have coherent results about the same bus in different rows (peripherals)
 		buses_list = list(sorted(buses))
 		# HEADER
-		self.buses_list_hdr = ",".join(buses_list)
+		self.buses_list_header = ",".join(buses_list)
 		# BODY
 		self.csv_body = self._get_body(buses_list, peripherals)
 
@@ -70,6 +70,6 @@ class Dump_Template(Template):
 	#  Used by template.py in the write_to_file implementation
 	def get_params(self) -> dict[str, str]:
 		return {
-				"buses_list_hdr": self.buses_list_hdr,
+				"buses_list_header": self.buses_list_header,
 				"csv_body": self.csv_body
 				}

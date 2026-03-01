@@ -88,6 +88,10 @@ class SimplyV(metaclass=Singleton):
 		self.mbus.init_configurations()
 		# get ALL the peripherals and buses on the configuration
 		self.peripherals = self.mbus.get_peripherals(recursive=True)
+		# Sort peripherals by base address range
+		self.peripherals.sort(key=lambda p: p.assigned_addr_ranges)
+
+
 		self.buses = [self.mbus]
 		tree_buses = self.mbus.get_buses(recursive=True)
 		if(tree_buses):
@@ -127,13 +131,13 @@ class SimplyV(metaclass=Singleton):
 
 
 	# Create HAL header used from the "sw" flow
-	def create_hal_header(self, hal_hdr_file_name: str) -> None:
+	def create_hal_header(self, hal_header_file_name: str) -> None:
 		nodes: list[Node] = []
 		nodes.extend(self.buses)
 		nodes.extend(self.peripherals)
 
-		template = HALheader_Template(self.peripherals, self.devices, nodes, hal_hdr_file_name)
-		template.write_to_file(hal_hdr_file_name)
+		template = HALheader_Template(self.peripherals, self.devices, nodes, hal_header_file_name)
+		template.write_to_file(hal_header_file_name)
 
 
 	# Update the "sw" makefile with the corresponding XLEN selected
