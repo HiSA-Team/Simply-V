@@ -45,29 +45,29 @@ class Dump_Template(Template):
 					list_of_reachables[position] = "Y"
 
 				str_of_reachables = ",".join(list_of_reachables)
-				#write row
+				# write row
 				rows.append(f"{key},{hex(dim_dict[key][0])},{hex(dim_dict[key][1]-1)},{p.CLOCK_DOMAIN},{str_of_reachables}")
 
 		return "\n".join(rows)
 
 	def __init__(self, peripherals: list[Peripheral]):
-		#Avoid duplicates
+		# Avoid duplicates
 		buses = set()
 		for p in peripherals:
 			reach_dict = p.assigned_addr_ranges.get_reachable_from(explicit=False)
 			for value in reach_dict.values():
 				buses.update(value)
 
-		#"buses_list" is the source of truth for the rest of the configuration
-		#in order to have coherent results about the same bus in different rows (peripherals)
+		# "buses_list" is the source of truth for the rest of the configuration
+		# in order to have coherent results about the same bus in different rows (peripherals)
 		buses_list = list(sorted(buses))
-		#HEADER
+		# HEADER
 		self.buses_list_hdr = ",".join(buses_list)
-		#BODY
+		# BODY
 		self.csv_body = self._get_body(buses_list, peripherals)
 
 
-	# Used by template.py in the write_to_file implementation
+	#  Used by template.py in the write_to_file implementation
 	def get_params(self) -> dict[str, str]:
 		return {
 				"buses_list_hdr": self.buses_list_hdr,

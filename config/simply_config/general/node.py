@@ -17,7 +17,7 @@
 
 # RANGE_NAME(s) (in this case “TIM_1_range_0” and “TIM_1_range_1”; if there is only one range RANGE_NAME
 # it is set equal to FULL_NAME ) are useful to have more granular control over the address space
-# especially regarding the “REACHABILITY” property of an address space 
+# especially regarding the “REACHABILITY” property of an address space
 # (i.e., which bus can actually address that space, also considering LOOPBACK).
 # RANGE_NAME(s) are contained inside the "Addr_Range" objects wrapped in the "assigned_addr_ranges" of a node.
 
@@ -30,7 +30,7 @@ from .addr_range import Addr_Ranges
 
 class Node(ABC):
 	def __init__(self, base_name: str, assigned_addr_ranges: Addr_Ranges, clock_domain: str, clock_frequency: int):
-		self.assigned_addr_ranges: Addr_Ranges = assigned_addr_ranges 
+		self.assigned_addr_ranges: Addr_Ranges = assigned_addr_ranges
 		self.BASE_NAME = base_name
 		self.FULL_NAME = assigned_addr_ranges.FULL_NAME
 		self.CLOCK_DOMAIN: str = clock_domain
@@ -52,4 +52,4 @@ class Node(ABC):
 
 	def split_addr_ranges(self):
 		return self.assigned_addr_ranges.split_addr_ranges()
-	
+

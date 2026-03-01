@@ -9,7 +9,7 @@ abstract class Factory <<Singleton>> {
     -_register_creation(full_name: str)
     -_extract_base_name(full_name: str): str
     -_extract_id(full_name: str): int
-    
+
     +extract_clock_frequency(clock_domain: str): int
 }
 

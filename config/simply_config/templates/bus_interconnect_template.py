@@ -52,12 +52,12 @@ class Bus_Interconnect_Template(Template):
 			# (see _init_bus_to_slaves)
 			ret_list.insert(0, f"{name}_to_{bus.FULL_NAME}")
 		return ret_list
-	
+
 	def _get_bus_to_slaves(self, bus: Bus) -> list[str]:
 		slaves_ranges = bus.get_ordered_children_ranges()
 		ret_list = []
 		for addr_range in slaves_ranges:
-			# we're effectively "prepending" the names 
+			# we're effectively "prepending" the names
 			# due to the order (which the RTL requires) is most to least significant array positions.
 			# This ensures compatibility with the crossbar generation code
 			# matching the correct "M" (slaves) ports order expected by the crossbar.
@@ -94,7 +94,7 @@ class Bus_Interconnect_Template(Template):
 							name + interfaces_suffix + ", " + \
 							width_params_str + \
 							")"
-		
+
 		concat_array_str: str = concat_prefix + array_prefix + \
 							str(num_interfaces) + \
 							"(" + signals_name + ", " + ", ".join(nodes_signals) +")"

@@ -8,13 +8,13 @@ from general.addr_range import Addr_Ranges
 
 class HBus(NonLeafBus):
 	# Redefyning legals according to HBUS needs
-	# they're checked the NonLeafBus "check_legals" function 
+	# they're checked the NonLeafBus "check_legals" function
 	LEGAL_PERIPHERALS = Bus.LEGAL_PERIPHERALS + ("DDR4CH",)
 	LEGAL_BUSES = NonLeafBus.LEGAL_BUSES +  ("MBUS",)
 	LEGAL_PROTOCOLS = Bus.LEGAL_PROTOCOLS + ("AXI4",)
 	DDR4_LEGAL_CHANNELS = (0,)
 
-	def __init__(self, base_name: str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, clock_domain: str, 
+	def __init__(self, base_name: str, data_dict: dict, assigned_addr_ranges: Addr_Ranges, clock_domain: str,
 					clock_frequency: int, axi_addr_width: int, father: NonLeafBus):
 		# init NonleafBus object
 		axi_data_width = 512

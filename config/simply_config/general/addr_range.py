@@ -9,12 +9,12 @@
 # independently of the number of address ranges that belong to it.
 # The class "Addr_Range" should be only used internally by "Addr_Ranges" class.
 
-# a RANGE_NAME (contained in Addr_Range objects) identifies a range of addresses rather than a single node. 
+# a RANGE_NAME (contained in Addr_Range objects) identifies a range of addresses rather than a single node.
 # (This enables correct handling of several edge cases, for example:
-# A NonLeafBus connected in loopback that, for some reason, can only address a certain 
-# address range of a peripheral connected to its parent node. 
-# It is incorrect to say that the NonLeafBus addresses the peripheral “FULL_NAME”; 
-# instead, it may address specific “RANGE_NAME(s)” of that peripheral. 
+# A NonLeafBus connected in loopback that, for some reason, can only address a certain
+# address range of a peripheral connected to its parent node.
+# It is incorrect to say that the NonLeafBus addresses the peripheral “FULL_NAME”;
+# instead, it may address specific “RANGE_NAME(s)” of that peripheral.
 
 # At the moment the configuration flow assumes that the user needs to specify all the address ranges
 # necessary to fulfill the "ADDR_RANGES" constraints, for each Slave Node specified in the configuration files.
@@ -35,9 +35,9 @@ class Addr_Range():
 	# Addr_Range Constructor
 	def __init__(self, range_name: str, range_base_addr: int, range_addr_width: int):
 		self.RANGE_NAME: str = range_name
-		self.RANGE_BASE_ADDR : int = range_base_addr 
-		self.RANGE_ADDR_WIDTH : int = range_addr_width 
-		
+		self.RANGE_BASE_ADDR : int = range_base_addr
+		self.RANGE_ADDR_WIDTH : int = range_addr_width
+
 		# compute the number of consecutive least significant bits equal to 0 that we
 		# get from the number obtained considering "RANGE_ADDR_WIDTH" as a power of 2 exponent
 		# ex. RANGE_ADDR_WIDTH == 3 -> 2**3 = 8 -> least_significant_zeroes of 8 = 3
@@ -58,7 +58,7 @@ class Addr_Range():
 		# list of buses "FULL_NAMEs" that can reach this range
 		self.REACHABLE_FROM: set = set()
 
-	# Used when printing the object 
+	# Used when printing the object
 	def __str__(self):
 		return (
 			f"{self.RANGE_NAME}: "
@@ -97,11 +97,11 @@ class Addr_Range():
 		#preserve reachability
 		second_range.add_list_to_reachable(list(self.REACHABLE_FROM))
 		return second_range
-		
+
 	# Add bus "FULL_NAME" to the list of buses that can reach this range
 	def add_to_reachable(self, bus_name: str):
 		self.REACHABLE_FROM.add(bus_name)
-	
+
 	# Add list of buses "FULL_NAMEs" to the list of buses that can reach this range
 	def add_list_to_reachable(self, list_of_names: list[str]):
 		self.REACHABLE_FROM.update(list_of_names)
@@ -112,12 +112,12 @@ class Addr_Range():
 
 	# Check if this address space is contained in the address space passed
 	def is_contained(self, addr_range: "Addr_Range") -> bool:
-		return ((addr_range.RANGE_BASE_ADDR <= self.RANGE_BASE_ADDR) and 
+		return ((addr_range.RANGE_BASE_ADDR <= self.RANGE_BASE_ADDR) and
 		   (self.RANGE_END_ADDR <= addr_range.RANGE_END_ADDR))
 
 	# Check if this address space overlaps with the address space passed
 	def overlaps(self, addr_range: "Addr_Range") -> bool:
-		return not (self.RANGE_END_ADDR <= addr_range.RANGE_BASE_ADDR or 
+		return not (self.RANGE_END_ADDR <= addr_range.RANGE_BASE_ADDR or
 					self.RANGE_BASE_ADDR >= addr_range.RANGE_END_ADDR)
 
 
@@ -139,13 +139,13 @@ class Addr_Ranges():
 			# otherwise just copy the FULL_NAME
 			if(len(range_base_addr) != 1):
 				range_name = self._add_range_suffix(full_name, i)
-				
+
 			self.addr_ranges.append(Addr_Range(range_name, range_base, range_width))
 
 		# set the "contiguous" variable checking if the created addresses are contiguous
 		self._check_contiguous()
-	
-	# Used when printing the object 
+
+	# Used when printing the object
 	def __str__(self):
 		lines = "\n".join(str(addr_range) for addr_range in self.addr_ranges)
 		return f"{self.FULL_NAME}:\n{lines}"
@@ -192,7 +192,7 @@ class Addr_Ranges():
 
 	# PRIVATE, used to check if all the address ranges are contiguous
 	def _check_contiguous(self):
-		# sort the ranges ascending respect to BASE_ADDR in order 
+		# sort the ranges ascending respect to BASE_ADDR in order
 		# to facilitate the check
 		self.addr_ranges = sorted(self.addr_ranges, key= lambda x: x.RANGE_BASE_ADDR)
 		for i, addr_range in enumerate(self.addr_ranges):
@@ -250,7 +250,7 @@ class Addr_Ranges():
 			ret_dict = {addr_range.RANGE_NAME: list(addr_range.REACHABLE_FROM.copy()) for addr_range in self.addr_ranges}
 
 		return ret_dict
-	
+
 	# returns a list of the REACHABLE_FROM values common to all ranges
 	# for example assume this configuration in which a LOOPBACKING bus has this effect on the address space
 	# { Node_range_0, REACHABLE_FROM = [MBUS, PBUS, HBUS]

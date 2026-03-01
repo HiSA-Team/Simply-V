@@ -67,7 +67,7 @@ class Addr_Ranges {
 
 
 class Peripheral {
-    -{static} min_addr_space: int 
+    -{static} min_addr_space: int
     - IS_A_MEMORY: bool
     - HAL_DRIVER: bool
     + config_ip(root_path: str, **kwargs)

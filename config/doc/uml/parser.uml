@@ -10,12 +10,12 @@ class Parser  <<Singleton>> {
   {static} range_validators
   {static} intra_rules
   {static} _check_range(name, value, min_value, max_value)
-  
+
   - _validate_mandatory(data : dict)
   - _cast_and_validate(data : dict)
   - _check_intra(data : dict)
   - _validate_values(data : dict)
-  
+
   + parse_csv(file_name : str) : dict
 }
 

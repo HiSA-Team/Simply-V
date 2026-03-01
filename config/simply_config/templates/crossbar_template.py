@@ -17,7 +17,7 @@ class Crossbar_Template(Template):
 	create_ip -name axi_crossbar -vendor xilinx.com -library ip -version 2.1 -module_name $::env(IP_NAME)
 	# Configure IP
 	set_property -dict [list {bus_configs}
-	 \\\n                         
+	 \\\n
 	] [get_ips $::env(IP_NAME)]
 	""")
 

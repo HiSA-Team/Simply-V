@@ -12,7 +12,7 @@ skinparam wrapWidth 200
 @startuml
 
 class Peripheral {
-    -{static} min_addr_space: int 
+    -{static} min_addr_space: int
     - IS_A_MEMORY: bool
     - HAL_DRIVER: bool
     + __init__(base_name: str, assigned_addr_ranges: Addr_Ranges, clock_domain: str, clock_frequency: int)
