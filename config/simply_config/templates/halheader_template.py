@@ -26,7 +26,7 @@ class HALheader_Template(Template):
 	// Enabled devices
 	{device_block_str}
 
-	// Clock Frequencies in Hz
+	// Clock Frequencies in MHz
 	{clocks_str}
 
 	#endif // {include_guard}

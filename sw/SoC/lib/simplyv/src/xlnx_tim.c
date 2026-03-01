@@ -129,4 +129,4 @@ int xlnx_tim_stop(xlnx_tim_t* timer)
 
 }
 
-#endif
+#endif // TIM_IS_ENABLED

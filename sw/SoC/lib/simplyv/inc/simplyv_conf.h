@@ -36,7 +36,7 @@
 #define TIM_IS_ENABLED 1
 #define UART_IS_ENABLED 1
 
-// Clock Frequencies in Hz
+// Clock Frequencies in MHz
 #define MBUS_FREQ_MHz 20u
 #define PBUS_FREQ_MHz 10u
 #define BRAM_0_FREQ_MHz 20u

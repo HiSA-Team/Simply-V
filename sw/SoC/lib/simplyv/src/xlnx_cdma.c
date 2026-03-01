@@ -193,4 +193,4 @@ void XAxiCdma_IntrDisable(XAxiCdma *InstancePtr, uint32_t Mask) {
     XAxiCdma_WriteReg(InstancePtr->BaseAddr, XAXICDMA_CR_OFFSET, RegValue);
 }
 
-#endif
+#endif // CDMA_IS_ENABLED

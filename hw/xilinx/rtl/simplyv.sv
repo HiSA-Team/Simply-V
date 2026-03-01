@@ -887,8 +887,8 @@ module simplyv (
 
     // AXI-lite converter
     xlnx_axi4_to_axilite_d32_converter axi4_to_axilite_cdma_u (
-        .aclk           ( MBUS_clk    ),
-        .aresetn        ( MBUS_rstn   ),
+        .aclk           ( CDMA_clk    ),
+        .aresetn        ( CDMA_rstn   ),
         // AXI4 slave (from MBUS)
         .s_axi_awid     ( MBUS_to_CDMA_axi_awid           ),
         .s_axi_awaddr   ( MBUS_to_CDMA_axi_awaddr         ),

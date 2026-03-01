@@ -38,10 +38,11 @@ The following table details the supported properties.
 | CORE_SELECTOR         | Select target RV core       | CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA
 | VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1]
 | XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]
-| PHYSICAL_ADDR_WIDTH $^1$| Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..)
-| BOOT_MEMORY_BLOCK     | Select memory device to use for boot | [BRAM_\<n\>, DDR4CH_\<n\>]
+| PHYSICAL_ADDR_WIDTH $^1$| Select the phyisical address width | (32..64)
+| BOOT_MEMORY_BLOCK $^2$ | Select memory device to use for boot | [BRAM_\<n\>, DDR4CH_\<n\>]
 | MAIN_CLOCK_DOMAIN     | Clock domain of the core + MBUS                           | (10, 20, 50, 100) for embedded. (10, 20, 50, 100, 250) for hpc
-> $^1$ For `embedded` profile, due to limitations in the JTAG to AXI Master IP [PG174](https://docs.amd.com/v/u/en-US/pg174-jtag-axi), PHYSICAL_ADDR_WIDTH allowed values are only [32,64].
+> $^1$ If XLEN=32 it must equal 32. If XLEN=64, it must be > 32. For `embedded` profile, due to limitations in the JTAG to AXI Master IP [PG174](https://docs.amd.com/v/u/en-US/pg174-jtag-axi), PHYSICAL_ADDR_WIDTH allowed values are only [32,64].
+> $^2$ Assuming the target memory is instantiated
 
 
 ### Notes for CORE_SELECTOR
@@ -102,9 +103,9 @@ The `config_xilinx` flow also configures:
 - the cache base and end address of the IP `xlnx_system_cache_ddr4ch<i>` (where i is the DDR4 channel on which the cache is configured) assigned to the `DDR4CH_<i>` in the CSV.
 - the clock frequency of the UART in the IP `xlnx_axi_uartlite` based on the clock domain assigned to the `PBUS` in the CSV.
 
-> **NOTE**: The `xlnx_bram_0/config.tcl` file configures the first BRAM occurrence, hence it uses the index 0. If multiple BRAMs are declared in the config (CSV) file, they MUST be specified with different indexes according to the [Naming convention](./doc/names.md), the same applies to DDR4 channels caches.
-
-> **NOTE**: All the `xlnx_bram_<i>/config.tcl` configuration files must be in the `ips/common` directory.
+> **NOTE**: The `xlnx_bram_0/config.tcl` file configures the first BRAM occurrence, hence it uses the index 0, as `xlnx_bram_1/config.tcl` uses index 1.
+If multiple BRAMs are declared in the config (CSV) file, they MUST be specified with different indexes according to the [Naming convention](./doc/names.md).
+All the `xlnx_bram_<i>/config.tcl` configuration files must be in the `ips/common` directory.
 
 ### Clock domains
 The configuration flow gives the possibility to specify clock domains.

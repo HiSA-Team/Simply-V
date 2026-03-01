@@ -62,4 +62,4 @@ int xlnx_gpio_in_clear_int(xlnx_gpio_in_t* gpio_in)
     return SIMPLYV_OK;
 }
 
-#endif
+#endif // GPIOIN_IS_ENABLED

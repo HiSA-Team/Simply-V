@@ -65,4 +65,4 @@ int xlnx_gpio_out_toggle(xlnx_gpio_out_t* gpio, pin_t pin)
     return SIMPLYV_OK;
 }
 
-#endif
+#endif // GPIOOUT_IS_ENABLED

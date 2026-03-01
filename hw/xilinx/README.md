@@ -33,7 +33,7 @@ Bitstream build parameters:
 | HIGH_PERF_BUILD     | Select high-performance of development build  | 0                          | 0,1                       |
 | HIGH_PERF_ROUTING   | Routing directive if `HIGH_PERF_BUILD=1`      | HigherDelayCost            | Vivado version compatible |
 | XILINX_ILA          | Enable ILA for marked nets  (see below)       | 0                          | 0,1                       |
-| XILINX_ILA_CLOCK    | Clock for ILA probes                          | main_clk                   | Legal clock in the design |
+| XILINX_ILA_CLOCK    | Clock for ILA probes                          | MBUS_clk                   | Legal clock in the design |
 
 Once the build is completed, program target device running:
 ``` bash

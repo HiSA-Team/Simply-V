@@ -20,10 +20,10 @@ package simplyv_pkg;
     // PBUS widths
     localparam PBUS_DATA_WIDTH = 32; // Fixed 32-bits
     localparam PBUS_ADDR_WIDTH = 32; // Fixed 32-bits
-    localparam PBUS_ID_WIDTH = `PBUS_ID_WIDTH; // From PBUS config
+    localparam PBUS_ID_WIDTH   = `PBUS_ID_WIDTH; // From PBUS config
 
     // HBUS widths
-    localparam int unsigned HBUS_DATA_WIDTH = 512; // Same as DRAM channels
+    localparam int unsigned HBUS_DATA_WIDTH = 512; // Same as DRAM channels (for now)
     localparam int unsigned HBUS_ADDR_WIDTH = `MBUS_ADDR_WIDTH; // Same as MBUS
     localparam int unsigned HBUS_ID_WIDTH   = `HBUS_ID_WIDTH; // From HBUS config
 
@@ -79,29 +79,28 @@ package simplyv_pkg;
     // The PLIC forwards interrupts to the Masters (e.g. the Socket)
 
     // RISC-V cores standard interrupts
-    localparam int unsigned RVSOCKET_SW_INTERRUPT = 3;      // Inter Processor Interrupts
-    localparam int unsigned RVSOCKET_TIM_INTERRUPT = 7;     // Real-time Clock Timer
-    localparam int unsigned RVSOCKET_EXT_INTERRUPT = 11;    // PLIC-to-hart interrupts
+    localparam int unsigned RVSOCKET_SW_INTERRUPT  = 3;  // Inter Processor Interrupts
+    localparam int unsigned RVSOCKET_TIM_INTERRUPT = 7;  // Real-time Clock Timer
+    localparam int unsigned RVSOCKET_EXT_INTERRUPT = 11; // PLIC-to-hart interrupts
 
     // Peripheral Bus interrupts
-    localparam int unsigned PBUS_GPIOIN_INTERRUPT = 0;      // GPIO In [embedded only]
-    localparam int unsigned PBUS_TIM_0_INTERRUPT = 1;        // Timer 0
-    localparam int unsigned PBUS_TIM_1_INTERRUPT = 2;        // Timer 1
-    localparam int unsigned PBUS_UART_INTERRUPT = 3;        // UART
-    // Total number of interrupts
-    localparam int unsigned PBUS_NUM_INTERRUPTS = 4;
+    localparam int unsigned PBUS_GPIOIN_INTERRUPT = 0; // GPIO In [embedded only]
+    localparam int unsigned PBUS_TIM_0_INTERRUPT  = 1; // Timer 0
+    localparam int unsigned PBUS_TIM_1_INTERRUPT  = 2; // Timer 1
+    localparam int unsigned PBUS_UART_INTERRUPT   = 3; // UART
+    localparam int unsigned PBUS_NUM_INTERRUPTS   = 4; // Total number of interrupts
 
     // PLIC Interrupts mapping
     // We support 32 possible sources of platform interrupts, which are statically mapped
     // regardless of the configuration.
     // TODO154: this is static for now, must generate by config
-    localparam int unsigned PLIC_RESERVED_INTERRUPT = 0;    // PLIC line 0 is reserved
-    localparam int unsigned PLIC_GPIOIN_INTERRUPT = 1;      // GPIO In (From PBUS)[embedded only]
-    localparam int unsigned PLIC_TIM_0_INTERRUPT = 2;        // Timer 0 (From PBUS)
-    localparam int unsigned PLIC_TIM_1_INTERRUPT = 3;        // Timer 1 (From PBUS)
-    localparam int unsigned PLIC_UART_INTERRUPT = 4;        // UART    (From PBUS)
-    localparam int unsigned PLIC_HLS_INTERRUPT = 5;         // HLS     (From HLS core) [HPC only]
-    localparam int unsigned PLIC_CDMA_INTERRUPT = 6;        // CDMA    (From DMA IP)
+    localparam int unsigned PLIC_RESERVED_INTERRUPT = 0; // PLIC line 0 is reserved
+    localparam int unsigned PLIC_GPIOIN_INTERRUPT   = 1; // GPIO In (From PBUS)[embedded only]
+    localparam int unsigned PLIC_TIM_0_INTERRUPT    = 2; // Timer 0 (From PBUS)
+    localparam int unsigned PLIC_TIM_1_INTERRUPT    = 3; // Timer 1 (From PBUS)
+    localparam int unsigned PLIC_UART_INTERRUPT     = 4; // UART    (From PBUS)
+    localparam int unsigned PLIC_HLS_INTERRUPT      = 5; // HLS     (From HLS core) [HPC only]
+    localparam int unsigned PLIC_CDMA_INTERRUPT     = 6; // CDMA    (From DMA IP)
 
     ///////////////
     // Functions //
