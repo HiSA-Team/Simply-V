@@ -9,7 +9,7 @@
 ##########
 
 # System
-XLEN ?= 64
+XLEN ?= 32
 PHYSICAL_ADDR_WIDTH ?= 32
 
 # MBUS
@@ -29,7 +29,7 @@ HBUS_NUM_SI ?= 0
 HBUS_ID_WIDTH ?= 0
 
 # RV core
-CORE_SELECTOR ?= CORE_CV64A6
+CORE_SELECTOR ?= CORE_CV32E40P
 
 # VIO resetn
 VIO_RESETN_DEFAULT ?= 1
