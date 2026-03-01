@@ -250,13 +250,18 @@ class SimplyV(metaclass=Singleton):
 		output_mk_file.write_text(content)
 
 	# Trigger specific peripherals IPs configurations
-	def config_peripherals_ips(self, files: list[str]) -> None:
+	# NOTE: this could be handled with a dictiorary of {peripheral, paths},
+	#		rather than this unstructured list of paths
+	def config_peripherals_ips(self, paths: list[str]) -> None:
 		for p in self.peripherals:
+			# DDR4CHx
 			if isinstance(p, DDR4):
-				p.config_ip(files[0])
+				p.config_ip(paths[0])
+			# BRAM
 			if isinstance(p, Bram):
 				# divide for XLEN_bytes
 				xlen_bytes = int(self.XLEN / 8)
-				p.config_ip(files[1], xlen_bytes=xlen_bytes)
+				p.config_ip(paths[1], xlen_bytes=xlen_bytes)
+			# UART
 			if isinstance(p, Uart):
-			 	p.config_ip(files[2])
+			 	p.config_ip(paths[2])

@@ -29,7 +29,7 @@ class SimplyV <<Singleton>> {
     + config_bus(target_bus : str, outputs : list) : bool
     + config_xilinx_makefile(xilinx_makefile : str)
     + config_xilinx_clock_domains(file_name : str)
-    + config_peripherals_ips(files : list)
+    + config_peripherals_ips(paths : list)
 }
 
 note right of SimplyV
@@ -88,7 +88,7 @@ abstract class Bus {
 
 
 class Peripheral {
-    -{static} min_addr_space: int 
+    -{static} min_addr_space: int
     - IS_A_MEMORY: bool
     - HAL_DRIVER: bool
     + config_ip(root_path: str, **kwargs)
