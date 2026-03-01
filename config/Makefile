@@ -35,7 +35,6 @@ OUTPUT_VAR_LD_FILE    ?= ${SW_ROOT}/SoC/common/ld/variables.ld
 OUTPUT_HAL_CONF_FILE  ?= ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
 
 config_ld: config_check
-	mkdir -p ${SW_ROOT}/SoC/common/ld
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_linkerscript_fragments.py \
 		${CONFIG_SYSTEM_CSV} \
 		${CONFIG_MBUS_CSV} \
@@ -43,7 +42,7 @@ config_ld: config_check
 		${OUTPUT_MEM_LD_FILE} \
 		${OUTPUT_SEC_LD_FILE} \
 		${OUTPUT_VAR_LD_FILE}
-	@echo "[CONFIG] Output file are at ${OUTPUT_MEM_LD_FILE} ${OUTPUT_SEC_LD_FILE} ${OUTPUT_VAR_LD_FILE}"
+	@echo "[CONFIG] Output files are at ${OUTPUT_MEM_LD_FILE} ${OUTPUT_SEC_LD_FILE} ${OUTPUT_VAR_LD_FILE}"
 
 
 config_check:
@@ -58,4 +57,5 @@ config_xilinx:
 config_sw: config_check
 	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
 	${PYTHON} ${CONFIG_ROOT}/scripts/create_simplyv_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
+
 

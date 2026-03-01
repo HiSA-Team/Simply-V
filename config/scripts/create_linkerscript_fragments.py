@@ -12,11 +12,11 @@
 # Note:
 #   Addresses overlaps are not sanitized.
 # Args:
-#   1: [IN] Input configuration file for system
-#   2: [IN] Input configuration files for buses
-#   3: [OUT] Memory segment
-#   4: [OUT] Section segment
-#   5: [OUT] Variable segment
+#   1: Input configuration file for system
+#   2: Input configuration files for buses
+#   3: Memory segment
+#   4: Section segment
+#   5: Variable segment
 
 ####################
 # Import libraries #

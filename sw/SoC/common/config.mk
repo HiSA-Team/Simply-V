@@ -9,11 +9,10 @@
 #############
 
 # Don't touch this line, since it is a target of the config flow
-XLEN ?= 32
+XLEN ?= 64
 
 # Toolchain
 RV_PREFIX   ?= riscv${XLEN}-unknown-elf-
-
 CC          = $(RV_PREFIX)gcc
 LD          = $(RV_PREFIX)ld
 OBJDUMP     = $(RV_PREFIX)objdump
@@ -21,10 +20,10 @@ OBJCOPY     = $(RV_PREFIX)objcopy
 AR          = $(RV_PREFIX)ar
 
 # RISC-V Extensions
-C_EXTENSION     ?= Y
-F_EXTENSION     ?= N
-A_EXTENSION     ?= N
-V_EXTENSION     ?= N
+C_EXTENSION ?= Y
+F_EXTENSION	?= N
+A_EXTENSION ?= N
+V_EXTENSION	?= N
 
 #########
 # Flags #
@@ -77,7 +76,7 @@ CFLAGS  ?= -march=${ARCH} -mabi=${ABI} $(DFLAG) -c
 LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib \
            -T$(SW_SOC_ROOT)/common/ld/variables.ld \
            -T$(SW_SOC_ROOT)/common/ld/memory.ld \
-           -T$(SW_SOC_ROOT)/common/ld/sections.ld 
+           -T$(SW_SOC_ROOT)/common/ld/sections.ld
 
 # Define IS_EMBEDDED macro
 MACRO_LIST =

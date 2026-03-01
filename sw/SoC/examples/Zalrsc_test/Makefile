@@ -19,11 +19,11 @@ PROGRAM_NAME = $(shell basename $$PWD)
 # Paths and Folders #
 #####################
 
-SRC_DIR       = src
-OBJ_DIR       = obj
-INC_DIR       = inc
-STARTUP_DIR   = $(SW_SOC_ROOT)/common
-LIB_DIR       = $(SW_SOC_ROOT)/lib
+SRC_DIR     = src
+OBJ_DIR     = obj
+INC_DIR     = inc
+STARTUP_DIR = $(SW_SOC_ROOT)/common
+LIB_DIR	    = $(SW_SOC_ROOT)/lib
 
 #############
 # Libraries #
@@ -32,11 +32,12 @@ LIB_DIR       = $(SW_SOC_ROOT)/lib
 LIB_OBJ_TINYIO    = $(LIB_DIR)/tinyio/lib/tinyio.a
 LIB_INC_TINYIO    = -I$(LIB_DIR)/tinyio/inc
 
-LIB_OBJ_SIMPLYV   = $(LIB_DIR)/simplyv/lib/libsimplyv.a
+LIB_OBJ_SIMPLYV  = $(LIB_DIR)/simplyv/lib/libsimplyv.a
 LIB_INC_SIMPLYV   = -I$(LIB_DIR)/simplyv/inc
 
-LIB_OBJ_LIST      = $(LIB_OBJ_TINYIO) $(LIB_OBJ_SIMPLYV)
-LIB_INC_LIST      = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
+LIB_OBJ_LIST     = $(LIB_OBJ_TINYIO) $(LIB_OBJ_SIMPLYV)
+LIB_INC_LIST     = $(LIB_INC_TINYIO) $(LIB_INC_SIMPLYV)
+
 
 #############
 # Toolchain #
@@ -47,11 +48,6 @@ A_EXTENSION = Y
 
 include $(SW_ROOT)/SoC/common/config.mk
 
-LDFLAGS := $(LIB_OBJ_LIST) -nostdlib \
-           -T$(SW_SOC_ROOT)/common/ld/variables.ld \
-           -T$(SW_SOC_ROOT)/common/ld/memory.ld \
-           -Tld/config.ld \
-           -T$(SW_SOC_ROOT)/common/ld/sections.ld
 ###########
 # Targets #
 ###########
