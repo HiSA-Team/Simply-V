@@ -25,12 +25,12 @@
  *  .heap_size          = SBI_PLATFORM_DEFAULT_HEAP_SIZE(1),
  *  .platform_ops_addr  = (unsigned long)&platform_ops
  * };
- * 
+ *
  * Provided function hooks will be executed in different stage of the bootloading. For example,
  * `early_init` initializes the debug console, while cold_boot_allowed returns 0 if the hart id
  * can perform cald boot.
  *
- * The code uses OpenSBI library to import all `sbi_*` function. For example, we need to register 
+ * The code uses OpenSBI library to import all `sbi_*` function. For example, we need to register
  * the UART as console device (the one used by OpenSBI for the DBCN).
  *
  * Original at .opensbi/platform/template/platform.c
@@ -45,12 +45,12 @@
 
 
 /* Platform specific configuration */
-#define SIMPLYV_HART_COUNT		1
+#define SIMPLYV_HART_COUNT 1
 #include "simplyv_conf.h"
 
 /*
  * Using Kconfig we can specify to use the Xilinx Serial driver provided by OpenSBI by selecting
- * SIMPLV_USE_XILINX_SERIAL. The implementation fallbacks to the tinyIO implementation.
+ * SIMPLYV_USE_XILINX_SERIAL. The implementation fallbacks to the tinyIO implementation.
  */
 #ifndef CONFIG_SIMPLYV_USE_XILINX_SERIAL
 
@@ -145,7 +145,7 @@ static int simplyv_timer_init(void)
 }
 
 /*
- * Platform descriptor. Refer to opensbi/include/sbi/sbi_platform.h for full definition of platform 
+ * Platform descriptor. Refer to opensbi/include/sbi/sbi_platform.h for full definition of platform
  * operation structs.
  */
 const struct sbi_platform_operations platform_ops = {
@@ -155,8 +155,8 @@ const struct sbi_platform_operations platform_ops = {
     .timer_init         = simplyv_timer_init,
 };
 
-/* 
- * This struct contains all definition for the platform including a reference to platform_operations, 
+/*
+ * This struct contains all definition for the platform including a reference to platform_operations,
  * number of HARTs, stack size per hart and HEAP size.
  */
 const struct sbi_platform platform = {

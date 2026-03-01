@@ -30,33 +30,37 @@ PAYLOADS    := $(notdir $(wildcard $(PAYLOAD_DIR)/*))
 # OpenSBI params
 OPENSBI_FW_PAYLOAD_BIN_PATH ?= $(SW_SOC_ROOT)/projects/opensbi/payloads/hello_world/build/hello_world.bin
 OPENSBI_DIR                 := $(SW_SOC_ROOT)/projects/opensbi/opensbi
-OPENSBI_FLAGS               := PLATFORM=fpga/simply-v \
+OPENSBI_FLAGS               := PLATFORM=simply-v \
                                CROSS_COMPILE=$(RV_PREFIX) \
                                FW_PAYLOAD_PATH=$(OPENSBI_FW_PAYLOAD_BIN_PATH) \
                                PLATFORM_RISCV_XLEN=$(XLEN)
 # Run script params
 OPENSBI_GDB_SERVER_ADDRESS  := localhost:3004
 OPENSBI_FW_PAYLOAD_ELF_PATH ?= $(OPENSBI_FW_PAYLOAD_BIN_PATH:.bin=.elf)
-LOAD_JUMP_PAYLOAD           ?= y
+OPENSBI_LOAD_JUMP_PAYLOAD   ?= y
 OPENSBI_FW_JUMP             ?= n
 OPENSBI_RUN_FLAGS           := GDB_SERVER=$(OPENSBI_GDB_SERVER_ADDRESS) \
-                               FW_JUMP=$(OPENSBI_FW_JUMP) \
-                               LOAD_JUMP_PAYLOAD=$(LOAD_JUMP_PAYLOAD) \
+                               OPENSBI_FW_JUMP=$(OPENSBI_FW_JUMP) \
+                               OPENSBI_LOAD_JUMP_PAYLOAD=$(OPENSBI_LOAD_JUMP_PAYLOAD) \
                                FW_PAYLOAD_ELF_PATH=$(OPENSBI_FW_PAYLOAD_ELF_PATH)
 
 # retrieve OpenSBI code, install platform porting and build all payloads
 all: payloads opensbi
 
 # build opensbi firmware
+OPENSBI_FW_ROOT=$(OPENSBI_DIR)/build/platform/simply-v/firmware
 opensbi:
 	$(MAKE) -C $(OPENSBI_DIR) $(OPENSBI_FLAGS)
+# 	Dump
+	$(OBJDUMP) -d $(OPENSBI_FW_ROOT)/fw_payload.elf > $(OPENSBI_FW_ROOT)/fw_payload.dump
+	$(OBJDUMP) -d $(OPENSBI_FW_ROOT)/fw_jump.elf    > $(OPENSBI_FW_ROOT)/fw_jump.dump
 
 # install: installs the platform configuration in the OpenSBI tree
 install: pull-opensbi
 	$(PYTHON) $(SW_SOC_ROOT)/projects/opensbi/scripts/create_config.py \
 		$(CONFIG_ROOT)/configs/$(SIMPLYV_PROFILE)/config_main_bus.csv \
 		$(SW_SOC_ROOT)/projects/opensbi/simply-v/config.mk
-	cp -vr simply-v $(OPENSBI_DIR)/platform/fpga
+	cp -vr simply-v $(OPENSBI_DIR)/platform/
 
 # pull-opensbi: retrieve opensbi code
 pull-opensbi:
@@ -67,6 +71,9 @@ payloads: $(PAYLOADS)
 
 menuconfig: install
 	$(MAKE) -C $(OPENSBI_DIR) $(OPENSBI_FLAGS) menuconfig
+
+config: install
+	$(MAKE) -C $(OPENSBI_DIR) $(OPENSBI_FLAGS) savedefconfig
 
 # call make inside payloads/<name>
 $(PAYLOADS):

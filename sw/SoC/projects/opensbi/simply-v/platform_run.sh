@@ -12,12 +12,14 @@
 set -eu pipefail
 
 # Extract the FW_TEXT_START
-FW_TEXT_START=$(grep "FW_TEXT_START" ${SW_SOC_ROOT}/projects/opensbi/opensbi/platform/fpga/simply-v/config.mk | sed 's/.*= //')
+FW_TEXT_START=$(grep "FW_TEXT_START" ${SW_SOC_ROOT}/projects/opensbi/opensbi/platform/simply-v/config.mk | sed 's/.*= //')
 
 # Debug info
 printf "[INFO] Connecting to %s\n" ${GDB_SERVER}
 printf "[INFO] Payload: %s\n" ${FW_PAYLOAD_ELF_PATH}
 printf "[INFO] Firmware Start Address from config: %s\n" ${FW_TEXT_START}
+printf "[INFO] OPENSBI_FW_JUMP=${OPENSBI_FW_JUMP}\n"
+printf "[INFO] OPENSBI_LOAD_JUMP_PAYLOAD=${OPENSBI_LOAD_JUMP_PAYLOAD}\n"
 
 # Build GDB command (POSIX sh compatible)
 # If you are experiencing mismatch of the opensbi version (this is mostly due to the GLIBC version
@@ -29,22 +31,29 @@ GDB_CMD="${CROSS_COMPILE}gdb -ex 'set confirm off' -ex 'target extended-remote $
 GDB_CMD="$GDB_CMD -ex 'add-symbol-file ${FW_PAYLOAD_ELF_PATH}'"
 
 # Launch GDB based on firmware mode
-if [ "${FW_JUMP:-}" = "y" ]; then
+if [ "${OPENSBI_FW_JUMP:-}" = "y" ]; then
 
-    if [ "${LOAD_JUMP_PAYLOAD:-}" = "y" ]; then
+    # Whether to explicitly load the payload with GDB
+    if [ "${OPENSBI_LOAD_JUMP_PAYLOAD:-}" = "y" ]; then
+        printf "[INFO] Loading payload ${FW_PAYLOAD_ELF_PATH}\n"
         GDB_CMD="$GDB_CMD -ex 'load ${FW_PAYLOAD_ELF_PATH}'"
     else
         printf "[INFO] Skipping payload loading\n"
     fi
 
-    GDB_CMD="$GDB_CMD build/platform/fpga/simply-v/firmware/fw_jump.elf"
+    # OPENSBI_FW_JUMP
+    printf "[INFO] Running OPENSBI_FW_JUMP\n"
+    GDB_CMD="$GDB_CMD build/platform/simply-v/firmware/fw_jump.elf"
 else
-    GDB_CMD="$GDB_CMD build/platform/fpga/simply-v/firmware/fw_payload.elf"
+    # FW_PAYLOAD
+    printf "[INFO] Running FW_PAYLOAD\n"
+    GDB_CMD="$GDB_CMD build/platform/simply-v/firmware/fw_payload.elf"
 fi
 
 # Load the firmware
 GDB_CMD="$GDB_CMD -ex 'load'"
 GDB_CMD="$GDB_CMD -ex 'set \$pc = ${FW_TEXT_START}'"
+GDB_CMD="$GDB_CMD -ex 'c'"
 
 # Execute the GDB command
 eval "$GDB_CMD"

@@ -41,7 +41,8 @@ APP_OBJS := $(patsubst %.c,$(APP_BUILD_DIR)/%.o,$(APP_SRCS))
 OBJS := $(COMMON_OBJS) $(APP_OBJS)
 
 # Flags
-CFLAGS := -Wall -Wextra -march=$(ARCH) -I$(COMMON_DIR) -I. -mcmodel=medany
+ABI := lp64
+CFLAGS := -Wall -Wextra -march=$(ARCH) -mabi=${ABI} -I$(COMMON_DIR) -I. -mcmodel=medany
 
 ifeq ($(DEBUG),1)
 CFLAGS  += -g -O0

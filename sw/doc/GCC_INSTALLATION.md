@@ -2,9 +2,9 @@
 To build SoC software, we require [RISC-V GCC](https://github.com/riscv/riscv-gnu-toolchain.git) to be installed on the developement host.
 
 > [!WARNING]
-> We use 2024.03.01 version as a reference and Ubuntu 22.04 as building host. 
+> We use 2024.03.01 version as a reference and Ubuntu 22.04 as building host.
 Refer to the documentation for different Linux distribution support.
-RISC-V GCC release 2024.03.01 has been verified with host GCC 11.4.0. Newer or older releases might require a different host GCC version.
+RISC-V GCC release 2026.02.13 has been verified with host GCC 11.4.0. Newer or older releases might require a different host GCC version.
 
 First, download prerequisites (for Debian and Debian-derived distro):
 ``` bash

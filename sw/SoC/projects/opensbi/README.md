@@ -13,8 +13,8 @@ memory layout of the system.
 To get started, pull OpenSBI sources and install the Simply-V platform:
 
 > [!WARNING]
-> The installation process generates a `config.mk` file. Changes to the SoC configuration will require a 
-new `make install` command.
+> The installation process generates a `config.mk` file.
+Any changes to the SoC configuration will require a new `make install` command.
 
 ```
 make install
@@ -99,18 +99,20 @@ make run OPENSBI_FW_JUMP=y
 Users can skip the payload loading (ie. they prefer to load using the PCIe bus) using:
 
 ```sh
-make run OPENSBI_FW_JUMP=y LOAD_JUMP_PAYLOAD=n
+make run OPENSBI_FW_JUMP=y OPENSBI_LOAD_JUMP_PAYLOAD=n
 ```
 
-The `platform_run.sh` script always adds the `OPENSBI_FW_PAYLOAD_ELF_PATH` as symbol file to eas debug.
+The `platform_run.sh` script always adds the `OPENSBI_FW_PAYLOAD_ELF_PATH` as symbol file to ease debug.
 
 ### Running the supervisor payload manually
 
 For large paylaods such as a full OS image, using GDB can be lengthy, hence we provide the means for a high-speed load though PCIe.
 
-From the top of directory of the Simply-V project, run:
+E.g., from the top of directory of the Simply-V project, to load hello_world supervisor payload and OpenSBI separately, run:
 
 ```sh
-make -C hw/xilinx load_binary BIN_PATH=absolute/path/to/fw_jump.bin OFFSET=0x1200000
-make -C sw/SoC/project/opensbi run OPENSBI_FW_JUMP=y LOAD_JUMP_PAYLOAD=n
+make -C hw/xilinx/ load_binary \
+    BIN_PATH=$(realpath sw/project/opensbi/sw/SoC/projects/opensbi/payloads/hello_world/build/hello_world.bin) \
+    OFFSET=0x1200000
+make -C sw/SoC/projects/opensbi run OPENSBI_FW_JUMP=y OPENSBI_LOAD_JUMP_PAYLOAD=n
 ```

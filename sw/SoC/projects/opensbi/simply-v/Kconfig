@@ -13,11 +13,11 @@ config PLATFORM_SIMPLYV
     help
       Enable support for the SimplV RISC-V platform (University of Naples Federico II).
 
-if PLATFORM_SIMPLV
+if PLATFORM_SIMPLYV
 
-config SIMPLVY_USE_XILINX_SERIAL
+config SIMPLYV_USE_XILINX_SERIAL
     bool "Enable Xilinx UARTLite Serial Support directly from OpenSBI"
-    default n
+    default y
     select SERIAL_XILINX_UARTLITE
     help
       Enable support for the SimplV RISC-V platform using the built-in

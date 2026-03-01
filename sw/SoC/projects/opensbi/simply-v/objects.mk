@@ -7,7 +7,7 @@
 # Original is at opensbi/platform/template/object.mk
 
 # Include to get FW_TEXT_START
-include $(SW_SOC_ROOT)/projects/opensbi/opensbi/platform/fpga/simply-v/config.mk
+include $(SW_SOC_ROOT)/projects/opensbi/opensbi/platform/simply-v/config.mk
 
 # Compiler pre-processor flags
 platform-cppflags-y = -DFW_TEXT_START=$(FW_TEXT_START)
@@ -24,7 +24,7 @@ platform-ldflags-y = $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a -static
 # Command for platform specific "make run"
 # Useful for development and debugging on plaftform simulator (such as QEMU)
 #
-platform-runcmd = $(SW_SOC_ROOT)/projects/opensbi/opensbi/platform/fpga/simply-v/platform_run.sh
+platform-runcmd = $(SW_SOC_ROOT)/projects/opensbi/opensbi/platform/simply-v/platform_run.sh
 
 #
 # Platform RISC-V XLEN, ABI, ISA and Code Model configuration.
