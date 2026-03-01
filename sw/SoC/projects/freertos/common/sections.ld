@@ -3,7 +3,7 @@ SECTIONS {
     .vector_table _vector_table_start :
     {
         KEEP(*(.vector_table))
-    }> BRAM
+    }> BRAM_0
 
     .text :
     {
@@ -15,7 +15,7 @@ SECTIONS {
         *(.text*)
         . = ALIGN(32);
         _text_end = .;
-    }> BRAM
+    }> BRAM_0
 
    .bss : ALIGN(0x20)
    {

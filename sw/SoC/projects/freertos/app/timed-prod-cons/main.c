@@ -20,7 +20,7 @@
 #include "simplyv.h"
 
 /*  =============================== Variables ================================ */
-static xlnx_tim_t timer = {.base_addr = TIM0_BASEADDR,
+static xlnx_tim_t timer = {.base_addr = _peripheral_TIM_0_start,
                            .counter = 200000,
                            .reload_mode = TIM_RELOAD_AUTO,
                            .count_direction = TIM_COUNT_DOWN};
