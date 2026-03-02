@@ -35,19 +35,16 @@
  * ==============================================================
  */
 
-#include "uninasoc.h"
+#include "simplyv.h"
 #include <stdint.h>
-
-extern unsigned int _DDR_start;
-extern unsigned int _DDR_end;
 
 int main(int argc, char* argv[]) {
 
     // Initialize HAL
-    uninasoc_init();
+    simplyv_init();
 
-    uintptr_t ddr_base = (uintptr_t)&_DDR_start;
-    uintptr_t ddr_end  = (uintptr_t)&_DDR_end;
+    uintptr_t ddr_base = (uintptr_t)_peripheral_DDR4CH1_start;
+    uintptr_t ddr_end  = (uintptr_t)_peripheral_DDR4CH1_end;
 
     printf("=== RISC-V AMO FUNCTIONAL TEST START ===\n\r");
 
@@ -278,6 +275,5 @@ int main(int argc, char* argv[]) {
 
     printf("=== RISC-V AMO FUNCTIONAL TEST END ===\n\r");
 
-    while (1) {};
-    return 0;
+    return SIMPLYV_OK;
 }
