@@ -11,7 +11,7 @@
 #
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 
-ifndef SIMPLY_ROOT_DIR
+ifndef SIMPLYV_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
@@ -58,7 +58,7 @@ opensbi:
 # install: installs the platform configuration in the OpenSBI tree
 install: pull-opensbi
 	$(PYTHON) $(SW_SOC_ROOT)/projects/opensbi/scripts/create_config.py \
-		$(CONFIG_ROOT)/configs/$(SIMPLYV_PROFILE)/config_main_bus.csv \
+		$(CONFIG_ROOT)/configs/$(SIMPLYV_PROFILE)/config_mbus.csv \
 		$(SW_SOC_ROOT)/projects/opensbi/simply-v/config.mk
 	cp -vr simply-v $(OPENSBI_DIR)/platform/
 
