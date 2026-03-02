@@ -3,4 +3,4 @@
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 
 # CONFIG_SERIAL_XILINX_UARTLITE is not set
-CONFIG_SIMPLYV_USE_XILINX_SERIAL=y
+CONFIG_SIMPLYV_USE_XILINX_SERIAL=n

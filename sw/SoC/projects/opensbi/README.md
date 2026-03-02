@@ -28,8 +28,7 @@ driver instead of the tinyIO implementation), they can use:
 make menuconfig
 ```
 
-Users can also directly edit the `simply-v/configs/defconfig` instead of using menuconfig.
-After saving the configuration, users can start a build process.
+For more info about configuring this project, refer to [doc/CONFIGURING.md](doc/CONFIGURING.md).
 
 ## Building a supervisor payload
 In [payloads/](payloads/), we provide a simple infrastructure to build S-mode payloads for OpenSBI.
