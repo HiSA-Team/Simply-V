@@ -14,7 +14,6 @@ set -eu pipefail
 # Debug info
 printf "[INFO] Connecting to %s\n" ${GDB_SERVER}
 printf "[INFO] Payload: %s\n" ${FW_PAYLOAD_ELF_PATH}
-printf "[INFO] Firmware Start Address from config: %s\n" ${FW_TEXT_START}
 printf "[INFO] OPENSBI_FW_JUMP=${OPENSBI_FW_JUMP}\n"
 printf "[INFO] OPENSBI_LOAD_JUMP_PAYLOAD=${OPENSBI_LOAD_JUMP_PAYLOAD}\n"
 
