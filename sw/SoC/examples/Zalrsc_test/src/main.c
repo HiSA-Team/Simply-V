@@ -27,10 +27,15 @@ int main(int argc, char* argv[]) {
     printf("Expected write value (D): 0x%016llx\n", new_val_d);
 
 
-    // Iterate over DDR addresses with step
-    for (uintptr_t base = ddr_base; base + 8 < ddr_end; base += STEP) {
+    // Iterate over DDR addresses with step, for a max number of iterations
+    #define MAX_ITERATIONS 50
+    unsigned int num_iterations = 0;
+    for (uintptr_t base = ddr_base; base + 8 < ddr_end && num_iterations < MAX_ITERATIONS; base += STEP) {
 
-        printf("==== Iteration base address: 0x%08lx ====\n\n\r", base);
+        printf("==== Iteration %u base address: 0x%08lx ====\n\n\r", num_iterations, base);
+
+        // Increment counter
+        num_iterations++;
 
         // Word-mode pointers
         volatile unsigned int*  addr_aligned_w    = (volatile unsigned int*) base;

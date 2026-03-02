@@ -20,7 +20,7 @@ EXAMPLE ?= hello_world
 # Path to target binary
 BIN_PATH ?= ${SW_ROOT}/SoC/examples/${EXAMPLE}/bin/${EXAMPLE}.bin
 # BRAM base address
-BASE_ADDRESS ?= 0x00000000
+OFFSET ?= 0x00000000
 # Whether to readback and check the loaded binary or not
 LOAD_BINARY_READBACK ?= false
 
@@ -33,12 +33,12 @@ load_binary_embedded: ${BIN_PATH}
 	${XILINX_VIVADO} \
 		-source ${XILINX_SCRIPT_ROOT}/utils/open_hw_manager.tcl \
 		-source ${XILINX_SCRIPTS_LOAD_ROOT}/jtag2axi_load_binary.tcl \
-		-tclargs ${BIN_PATH} ${BASE_ADDRESS} ${LOAD_BINARY_READBACK}
+		-tclargs ${BIN_PATH} ${OFFSET} ${LOAD_BINARY_READBACK}
 
 # Write the binary to BRAM/DDR through XDMA
 load_binary_hpc: ${BIN_PATH}
 	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/xdma_load_binary.sh \
-		${PCIE_BAR} ${BIN_PATH} ${BASE_ADDRESS} ${LOAD_BINARY_READBACK}"
+		${PCIE_BAR} ${BIN_PATH} ${OFFSET} ${LOAD_BINARY_READBACK}"
 
 ######################
 # Load ELF - Backend #
