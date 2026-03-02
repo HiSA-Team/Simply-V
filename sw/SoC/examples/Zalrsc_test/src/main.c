@@ -32,7 +32,8 @@ int main(int argc, char* argv[]) {
     unsigned int num_iterations = 0;
     for (uintptr_t base = ddr_base; base + 8 < ddr_end && num_iterations < MAX_ITERATIONS; base += STEP) {
 
-        printf("==== Iteration base address: 0x%08lx ====\n\n\r", base);
+        printf("==== Iteration %u base address: 0x%08lx ====\n\n\r", num_iterations, base);
+
         // Increment counter
         num_iterations++;
 
