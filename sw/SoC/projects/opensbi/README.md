@@ -108,7 +108,7 @@ The `platform_run.sh` script always adds the `OPENSBI_FW_PAYLOAD_ELF_PATH` as sy
 
 For large paylaods such as a full OS image, using GDB can be lengthy, hence we provide the means for a high-speed load though PCIe.
 
-E.g., from the top of directory of the Simply-V project, to load hello_world supervisor payload and OpenSBI separately, run:
+E.g., from the top of directory of the Simply-V project, assuming in DDR4CH1 starts at 0x1000000, load hello_world supervisor payload and OpenSBI separately by running:
 
 ```sh
 make -C hw/xilinx/ load_binary \

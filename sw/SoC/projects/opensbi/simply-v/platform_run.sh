@@ -11,9 +11,6 @@
 
 set -eu pipefail
 
-# Extract the FW_TEXT_START
-FW_TEXT_START=$(grep "FW_TEXT_START" ${SW_SOC_ROOT}/projects/opensbi/opensbi/platform/simply-v/config.mk | sed 's/.*= //')
-
 # Debug info
 printf "[INFO] Connecting to %s\n" ${GDB_SERVER}
 printf "[INFO] Payload: %s\n" ${FW_PAYLOAD_ELF_PATH}
@@ -27,9 +24,6 @@ printf "[INFO] OPENSBI_LOAD_JUMP_PAYLOAD=${OPENSBI_LOAD_JUMP_PAYLOAD}\n"
 # GDB_CMD="riscv${PLATFORM_RISCV_XLEN}-unknown-elf-gdb -ex 'set confirm off' -ex 'target extended-remote ${GDB_SERVER}'"
 GDB_CMD="${CROSS_COMPILE}gdb -ex 'set confirm off' -ex 'target extended-remote ${GDB_SERVER}'"
 
-# Add symbol file (always)
-GDB_CMD="$GDB_CMD -ex 'add-symbol-file ${FW_PAYLOAD_ELF_PATH}'"
-
 # Launch GDB based on firmware mode
 if [ "${OPENSBI_FW_JUMP:-}" = "y" ]; then
 
@@ -39,6 +33,10 @@ if [ "${OPENSBI_FW_JUMP:-}" = "y" ]; then
         GDB_CMD="$GDB_CMD -ex 'load ${FW_PAYLOAD_ELF_PATH}'"
     else
         printf "[INFO] Skipping payload loading\n"
+        printf "[INFO] Just adding symbols from ${FW_PAYLOAD_ELF_PATH}\n"
+
+        # Just add symbol file
+        GDB_CMD="$GDB_CMD -ex 'add-symbol-file ${FW_PAYLOAD_ELF_PATH}'"
     fi
 
     # OPENSBI_FW_JUMP
@@ -50,9 +48,9 @@ else
     GDB_CMD="$GDB_CMD build/platform/simply-v/firmware/fw_payload.elf"
 fi
 
-# Load the firmware
+# Load and run OpenSBI firmware
 GDB_CMD="$GDB_CMD -ex 'load'"
-GDB_CMD="$GDB_CMD -ex 'set \$pc = ${FW_TEXT_START}'"
+GDB_CMD="$GDB_CMD -ex 'j _fw_start'"
 GDB_CMD="$GDB_CMD -ex 'c'"
 
 # Execute the GDB command
