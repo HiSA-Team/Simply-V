@@ -43,7 +43,7 @@ module custom_top_wrapper # (
     parameter LOCAL_AXI_LAST_WIDTH    = 1,
     parameter LOCAL_AXI_RESP_WIDTH    = 2,
     parameter LOCAL_AXI_USER_WIDTH    = 64,
-    parameter USE_ATOMICS             = 0
+    parameter USE_ATOMICS             = 1
 
 ) (
 
