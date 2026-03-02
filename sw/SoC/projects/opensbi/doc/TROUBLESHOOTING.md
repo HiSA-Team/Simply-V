@@ -6,8 +6,8 @@ When running `make run`, if you experience the error shown below, you might want
 
 ![Error example](./corrupted_library_error.jpg)
 
-This can be achieved by modifying the [platform_run-.sh](../simply-v/platform_run.sh) script in line
-26 changing the `gdb` command with the newlib (like shown in the comment above). For example:
+This can be achieved by modifying the [platform_run.sh](../simply-v/platform_run.sh) script changing the `gdb` command with the newlib (like shown in the comment above). 
+For example:
 
 ```sh
 # Build GDB command (POSIX sh compatible)
