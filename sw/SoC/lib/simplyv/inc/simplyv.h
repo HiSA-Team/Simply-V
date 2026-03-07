@@ -9,29 +9,35 @@
 // Interrupt utilities and controller drivers (PLIC and CLINT)
 #include "irq_handlers.h"
 #include "plic.h"
-#include "clint.h"
-
-// Xilinx Central DMA (CDMA)
-#include "xlnx_cdma.h"
-
-// TinyIO for printf() and scanf()
-#include "tinyIO.h"
-
-// PBUS peripherals
-#ifdef GPIO_IN_IS_ENABLED
-#include "xlnx_gpio_in.h"
+#ifdef CLINT_IS_ENABLED
+    #include "clint.h"
 #endif
 
-#ifdef GPIO_OUT_IS_ENABLED
-#include "xlnx_gpio_out.h"
+// Xilinx Central DMA (CDMA)
+#ifdef CDMA_IS_ENABLED
+    #include "xlnx_cdma.h"
+#endif
+
+// TinyIO for printf() and scanf()
+#ifdef UART_IS_ENABLED
+    #include "tinyIO.h"
+#endif
+
+// PBUS peripherals
+#ifdef GPIOIN_IS_ENABLED
+    #include "xlnx_gpio_in.h"
+#endif
+
+#ifdef GPIOOUT_IS_ENABLED
+    #include "xlnx_gpio_out.h"
 #endif
 
 #ifdef TIM_IS_ENABLED
-#include "xlnx_tim.h"
+    #include "xlnx_tim.h"
 #endif
 
 
-
+// Return codes
 enum{
     SIMPLYV_OK = 0,
     SIMPLYV_ERROR

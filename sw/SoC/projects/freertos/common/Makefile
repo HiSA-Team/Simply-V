@@ -9,7 +9,7 @@
 #
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 
-ifndef SIMPLY_ROOT_DIR
+ifndef SIMPLYV_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
@@ -65,8 +65,8 @@ CFLAGS  += $(INCLUDES)
 LDFLAGS  = -nostdlib -nostartfiles \
            $(SW_SOC_ROOT)/lib/simplyv/lib/libsimplyv.a \
            $(SW_SOC_ROOT)/lib/tinyio/lib/tinyio.a \
-           -T$(SW_SOC_ROOT)/common/memory.ld \
-           -T$(SW_SOC_ROOT)/common/variables.ld \
+           -T$(SW_SOC_ROOT)/common/ld/memory.ld \
+           -T$(SW_SOC_ROOT)/common/ld/variables.ld \
            -T$(FREERTOS_COMMON)/config.ld \
            -T$(FREERTOS_COMMON)/sections.ld
 

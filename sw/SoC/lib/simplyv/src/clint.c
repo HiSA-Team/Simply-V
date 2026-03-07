@@ -5,6 +5,10 @@
 
 
 #include "simplyv.h"
+
+
+#ifdef CLINT_IS_ENABLED
+
 #include "io.h"
 #include <stdint.h>
 
@@ -102,3 +106,5 @@ int clint_sleep_us( uint32_t usec )
     // Compute number of ticks based on RTC frequency
     return clint_sleep_ticks ( (uint64_t)(usec * RTC_FREQ_MHz) );
 }
+
+#endif // CLINT_IS_ENABLED

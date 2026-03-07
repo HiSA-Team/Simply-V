@@ -86,8 +86,8 @@ for rtl_file in "${headers[@]}" ; do
 
     filename=$(basename "$rtl_file")
 
-    # Remove $SIMPLY_ROOT_DIR/ prefix if present
-    relative_rtl_file="${rtl_file/#\$SIMPLY_ROOT_DIR\//}"
+    # Remove $SIMPLYV_ROOT_DIR/ prefix if present
+    relative_rtl_file="${rtl_file/#\$SIMPLYV_ROOT_DIR\//}"
 
     # Rename headers for flat build
     if [[ "$relative_rtl_file" == *"axi"* ]]; then

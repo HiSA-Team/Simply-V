@@ -25,15 +25,6 @@
 #define CLINT_MTIMECMP       (CLINT_BASEADDR + 0x4000u) // Machine mode timer compare register for Hart 0
 #define CLINT_MTIME          (CLINT_BASEADDR + 0xBFF8u) // Timer register
 
-// Define CLINT frequency in MHz
-// TODO198: import from config
-//       for now we use the default frequency of the MBUS
-#ifdef IS_EMBEDDED
-    #define CLINT_FREQ_MHz (20u)
-#else
-    #define CLINT_FREQ_MHz (100u)
-#endif
-
 // Divide factor for RTC w.r.t. MBUS clock
 // NOTE: this must be aligned with clint custom_top_wrapper.sv
 #define RTC_CLOCK_DIVIDE (20u)

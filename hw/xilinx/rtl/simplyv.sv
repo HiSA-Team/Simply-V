@@ -7,15 +7,19 @@
 
 // System architecture:
 //
-//                                                     __________                     ________
-//   ____________                                     |          |                   |        |
-//  |            |                                    |          |------------------>|  BRAM  |
-//  | sys_master |----------------------------------->|          |                   |________|
-//  |____________|                                    |          |                    ___________
-//   ______________                                   |          |                   |           |
-//  |              |--------------------------------->|          |------------------>|  DDR4CH1  |
-//  | Debug Module |                                  |   Main   |                   |___________|
-//  |______________|<---------------------------------|   Bus    |                    __________________
+//                                                     __________                     __________
+//                                                    |          |                   |          |
+//                                                    |          |------------------>|  BRAM_0  |
+//                                                    |          |                   |__________|
+//                                                    |          |                    __________
+//                                                    |          |                   |          |
+//                                                    |          |------------------>|  BRAM_1  |
+//                                                    |          |                   |__________|
+//                                                    |          |                    ____________
+//                                                    |          |                   |            |
+//                                                    |          |------------------>|  DDR4CH_1  |
+//                                                    |   Main   |                   |____________|
+//                                                    |   Bus    |                    __________________
 //                                                    |  (MBUS)  |                   |                  |
 //                                                    |          |------------------>| High-performance |
 //                                                    |          |                   |       bus        |<------\
@@ -24,25 +28,29 @@
 //                                                    |          |                    ______________            |
 //                                                    |          |                   |              |-----------/
 //                                                    |          |------------------>|  HLS CONV2D  |
-//                                                    |          |                   |______________|-----------\
-//                                                    |          |                    ____________              |
-//                                                    |          |------------------>|            |             |
-//                                                    |          |                   |    CDMA    |             v
-//                                                    |          |<------------------|____________|-------------\
-//                                                    |          |                    ________________          |
-//                                                    |          |                   |                |         v
-//                                                    |          |------------------>| Peripheral bus |---------\
-//                                                    |          |                   |     (PBUS)     |         |
-//                                                    |          |                   |________________|         | peripheral
-//   _________              ____________              |          |                    ________________          | interrupts
-//  |         |            |            |------------>|          |                   |                |         |
-//  |   vio   |----------->| rv_socket  |             |          |------------------>|      PLIC      |<--------/
-//  |_________|            |____________|------------>|          |                   |________________|
-//                                ^                   |          |                            |
-//                                |                   |__________|                            |
-//                                |                                                           |
-//                                \___________________________________________________________/
-//                                                 platform interrupt
+//   ____________                                     |          |                   |______________|-----------\
+//  |            |                                    |          |                    ____________              |
+//  | sys_master |----------------------------------->|          |------------------>|            |             |
+//  |____________|                                    |          |                   |    CDMA    |             v
+//                         _____________              |          |<------------------|____________|-------------\
+//                        |             | instr       |          |                    ________________          |
+//                        |             |------------>|          |                   |                |         v
+//                        |             | data        |          |------------------>| Peripheral bus |---------\
+//                        |  rv_socket  |------------>|          |                   |     (PBUS)     |         |
+//                        |             | dbg_master  |          |                   |________________|         | peripheral
+//   _________            |             |------------>|          |                    ________________          | interrupts
+//  |         |           |             | dbg_slave   |          |                   |                |<--------/
+//  |   vio   |---------->|             |<------------|          |------------------>|      PLIC      |
+//  |_________|           |_____________|             |          |                   |________________|--------\
+//                             ^      ^               |          |                    ________________         |
+//                             |      |               |          |                   |                |        |
+//                             |      |               |          |------------------>|      CLINT     |----\   |
+//                             |      |               |          |                   |________________|    |   |
+//                             |      |               |__________|                                         |   |
+//                             |      \____________________________________________________________________/   |
+//                             |                      Timer/IPI interrupt                                      |
+//                             \_______________________________________________________________________________/
+//                                                 Ext (platform) interrupt
 
 /////////////////////
 // Import packages //
@@ -120,22 +128,27 @@ module simplyv (
     ///////////////////
 
     // CLOCKS
-    logic main_clk;
-    logic clk_10MHz;
-    logic clk_20MHz;
-    logic clk_50MHz;
-    logic clk_100MHz;
-    logic clk_250MHz;      // HPC ONLY
+    // MBUS_clk is the main clock
+    logic MBUS_clk;
+    logic clk_MBUS_10MHz;
+    logic clk_MBUS_20MHz;
+    logic clk_MBUS_50MHz;
+    logic clk_MBUS_100MHz;
+    logic clk_MBUS_250MHz;      // HPC ONLY
+    // DDR4CH_x
+    logic clk_DDR4CH_0_300MHz, clk_DDR4CH_1_300MHz;
     // Clint real-time clock
     logic clint_rtc;
 
     // RESETS
-    logic main_rstn;
-    logic rstn_10MHz;
-    logic rstn_20MHz;
-    logic rstn_50MHz;
-    logic rstn_100MHz;
-    logic rstn_250MHz;     // HPC ONLY
+    logic MBUS_rstn;
+    logic rstn_MBUS_10MHz;
+    logic rstn_MBUS_20MHz;
+    logic rstn_MBUS_50MHz;
+    logic rstn_MBUS_100MHz;
+    logic rstn_MBUS_250MHz;     // HPC ONLY
+    // DDR4CH_x
+    logic rstn_DDR4CH_0_300MHz, rstn_DDR4CH_1_300MHz;
 
     // VIO Signals
     logic vio_resetn;
@@ -158,12 +171,12 @@ module simplyv (
     /////////////////////////////////////////
     // Buses declaration and concatenation //
     /////////////////////////////////////////
-    `include "mbus_buses.svinc"
+    `include "generated/interconnects/mbus_interconnect.svinc"
 
     ///////////////////////
     // Clock assignments //
     ///////////////////////
-    `include "simplyv_clk_assignments.svinc"
+    `include "generated/clk_assignments/mbus_clk_assignments.svinc"
 
     ///////////////////////
     // Local assignments //
@@ -175,16 +188,16 @@ module simplyv (
 
     // Virtual I/O
     xlnx_vio vio_inst (
-      .clk        ( main_clk        ),
+      .clk        ( MBUS_clk        ),
       .probe_out0 ( vio_resetn      ),
       .probe_out1 (                 ),
       .probe_in0  (                 )
     );
 
-    // MBUS AXI crossbar
-    xlnx_main_crossbar main_xbar_u (
-        .aclk           ( main_clk                  ), // input
-        .aresetn        ( main_rstn                 ), // input
+    // MBUS Axi Crossbar
+    xlnx_mbus_crossbar mbus_xbar_u (
+        .aclk           ( MBUS_clk                  ), // input
+        .aresetn        ( MBUS_rstn                 ), // input
         .s_axi_awid     ( MBUS_masters_axi_awid     ), // input
         .s_axi_awaddr   ( MBUS_masters_axi_awaddr   ), // input
         .s_axi_awlen    ( MBUS_masters_axi_awlen    ), // input
@@ -282,17 +295,18 @@ module simplyv (
         .pci_exp_txn_o(pci_exp_txn_o),
         .pci_exp_txp_o(pci_exp_txp_o),
         // Output clocks
-        .clk_10MHz_o(clk_10MHz),
-        .clk_20MHz_o(clk_20MHz),
-        .clk_50MHz_o(clk_50MHz),
-        .clk_100MHz_o(clk_100MHz),
-        .clk_250MHz_o(clk_250MHz),      // HPC ONLY
+        .clk_10MHz_o(clk_MBUS_10MHz),
+        .clk_20MHz_o(clk_MBUS_20MHz),
+        .clk_50MHz_o(clk_MBUS_50MHz),
+        .clk_100MHz_o(clk_MBUS_100MHz),
+        .clk_250MHz_o(clk_MBUS_250MHz),      // HPC ONLY
+
         // Output resets
-        .rstn_10MHz_o(rstn_10MHz),
-        .rstn_20MHz_o(rstn_20MHz),
-        .rstn_50MHz_o(rstn_50MHz),
-        .rstn_100MHz_o(rstn_100MHz),
-        .rstn_250MHz_o(rstn_250MHz),      // HPC ONLY
+        .rstn_10MHz_o(rstn_MBUS_10MHz),
+        .rstn_20MHz_o(rstn_MBUS_20MHz),
+        .rstn_50MHz_o(rstn_MBUS_50MHz),
+        .rstn_100MHz_o(rstn_MBUS_100MHz),
+        .rstn_250MHz_o(rstn_MBUS_250MHz),      // HPC ONLY
         // AXI Master
         .m_axi_awid     ( SYS_MASTER_to_MBUS_axi_awid     ),
         .m_axi_awaddr   ( SYS_MASTER_to_MBUS_axi_awaddr   ),
@@ -342,8 +356,8 @@ module simplyv (
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH      ),
         .CORE_SELECTOR      ( CORE_SELECTOR      )
     ) rv_socket_u (
-        .clk_i          ( main_clk   ),
-        .rst_ni         ( main_rstn  ),
+        .clk_i          ( MBUS_clk   ),
+        .rst_ni         ( MBUS_rstn  ),
         .core_resetn_i  ( vio_resetn ),
         .bootaddr_i     ( RV_SOCKET_BOOT_ADDRESS   ),
         .irq_i          ( rv_socket_interrupt_line ),
@@ -554,83 +568,121 @@ module simplyv (
         .rv_socket_dbg_master_axi_rready     ( DBG_MASTER_to_MBUS_axi_rready   ),
 
         // Debug AXI slave
-        .rv_socket_dbg_slave_axi_awid        ( MBUS_to_DM_mem_axi_awid     ),
-        .rv_socket_dbg_slave_axi_awaddr      ( MBUS_to_DM_mem_axi_awaddr   ),
-        .rv_socket_dbg_slave_axi_awlen       ( MBUS_to_DM_mem_axi_awlen    ),
-        .rv_socket_dbg_slave_axi_awsize      ( MBUS_to_DM_mem_axi_awsize   ),
-        .rv_socket_dbg_slave_axi_awburst     ( MBUS_to_DM_mem_axi_awburst  ),
-        .rv_socket_dbg_slave_axi_awlock      ( MBUS_to_DM_mem_axi_awlock   ),
-        .rv_socket_dbg_slave_axi_awcache     ( MBUS_to_DM_mem_axi_awcache  ),
-        .rv_socket_dbg_slave_axi_awprot      ( MBUS_to_DM_mem_axi_awprot   ),
-        .rv_socket_dbg_slave_axi_awqos       ( MBUS_to_DM_mem_axi_awqos    ),
-        .rv_socket_dbg_slave_axi_awvalid     ( MBUS_to_DM_mem_axi_awvalid  ),
-        .rv_socket_dbg_slave_axi_awready     ( MBUS_to_DM_mem_axi_awready  ),
-        .rv_socket_dbg_slave_axi_awregion    ( MBUS_to_DM_mem_axi_awregion ),
-        .rv_socket_dbg_slave_axi_wdata       ( MBUS_to_DM_mem_axi_wdata    ),
-        .rv_socket_dbg_slave_axi_wstrb       ( MBUS_to_DM_mem_axi_wstrb    ),
-        .rv_socket_dbg_slave_axi_wlast       ( MBUS_to_DM_mem_axi_wlast    ),
-        .rv_socket_dbg_slave_axi_wvalid      ( MBUS_to_DM_mem_axi_wvalid   ),
-        .rv_socket_dbg_slave_axi_wready      ( MBUS_to_DM_mem_axi_wready   ),
-        .rv_socket_dbg_slave_axi_bid         ( MBUS_to_DM_mem_axi_bid      ),
-        .rv_socket_dbg_slave_axi_bresp       ( MBUS_to_DM_mem_axi_bresp    ),
-        .rv_socket_dbg_slave_axi_bvalid      ( MBUS_to_DM_mem_axi_bvalid   ),
-        .rv_socket_dbg_slave_axi_bready      ( MBUS_to_DM_mem_axi_bready   ),
-        .rv_socket_dbg_slave_axi_arid        ( MBUS_to_DM_mem_axi_arid     ),
-        .rv_socket_dbg_slave_axi_araddr      ( MBUS_to_DM_mem_axi_araddr   ),
-        .rv_socket_dbg_slave_axi_arlen       ( MBUS_to_DM_mem_axi_arlen    ),
-        .rv_socket_dbg_slave_axi_arsize      ( MBUS_to_DM_mem_axi_arsize   ),
-        .rv_socket_dbg_slave_axi_arburst     ( MBUS_to_DM_mem_axi_arburst  ),
-        .rv_socket_dbg_slave_axi_arlock      ( MBUS_to_DM_mem_axi_arlock   ),
-        .rv_socket_dbg_slave_axi_arcache     ( MBUS_to_DM_mem_axi_arcache  ),
-        .rv_socket_dbg_slave_axi_arprot      ( MBUS_to_DM_mem_axi_arprot   ),
-        .rv_socket_dbg_slave_axi_arqos       ( MBUS_to_DM_mem_axi_arqos    ),
-        .rv_socket_dbg_slave_axi_arvalid     ( MBUS_to_DM_mem_axi_arvalid  ),
-        .rv_socket_dbg_slave_axi_arready     ( MBUS_to_DM_mem_axi_arready  ),
-        .rv_socket_dbg_slave_axi_arregion    ( MBUS_to_DM_mem_axi_arregion ),
-        .rv_socket_dbg_slave_axi_rid         ( MBUS_to_DM_mem_axi_rid      ),
-        .rv_socket_dbg_slave_axi_rdata       ( MBUS_to_DM_mem_axi_rdata    ),
-        .rv_socket_dbg_slave_axi_rresp       ( MBUS_to_DM_mem_axi_rresp    ),
-        .rv_socket_dbg_slave_axi_rlast       ( MBUS_to_DM_mem_axi_rlast    ),
-        .rv_socket_dbg_slave_axi_rvalid      ( MBUS_to_DM_mem_axi_rvalid   ),
-        .rv_socket_dbg_slave_axi_rready      ( MBUS_to_DM_mem_axi_rready   )
+        .rv_socket_dbg_slave_axi_awid        ( MBUS_to_DMmem_axi_awid     ),
+        .rv_socket_dbg_slave_axi_awaddr      ( MBUS_to_DMmem_axi_awaddr   ),
+        .rv_socket_dbg_slave_axi_awlen       ( MBUS_to_DMmem_axi_awlen    ),
+        .rv_socket_dbg_slave_axi_awsize      ( MBUS_to_DMmem_axi_awsize   ),
+        .rv_socket_dbg_slave_axi_awburst     ( MBUS_to_DMmem_axi_awburst  ),
+        .rv_socket_dbg_slave_axi_awlock      ( MBUS_to_DMmem_axi_awlock   ),
+        .rv_socket_dbg_slave_axi_awcache     ( MBUS_to_DMmem_axi_awcache  ),
+        .rv_socket_dbg_slave_axi_awprot      ( MBUS_to_DMmem_axi_awprot   ),
+        .rv_socket_dbg_slave_axi_awqos       ( MBUS_to_DMmem_axi_awqos    ),
+        .rv_socket_dbg_slave_axi_awvalid     ( MBUS_to_DMmem_axi_awvalid  ),
+        .rv_socket_dbg_slave_axi_awready     ( MBUS_to_DMmem_axi_awready  ),
+        .rv_socket_dbg_slave_axi_awregion    ( MBUS_to_DMmem_axi_awregion ),
+        .rv_socket_dbg_slave_axi_wdata       ( MBUS_to_DMmem_axi_wdata    ),
+        .rv_socket_dbg_slave_axi_wstrb       ( MBUS_to_DMmem_axi_wstrb    ),
+        .rv_socket_dbg_slave_axi_wlast       ( MBUS_to_DMmem_axi_wlast    ),
+        .rv_socket_dbg_slave_axi_wvalid      ( MBUS_to_DMmem_axi_wvalid   ),
+        .rv_socket_dbg_slave_axi_wready      ( MBUS_to_DMmem_axi_wready   ),
+        .rv_socket_dbg_slave_axi_bid         ( MBUS_to_DMmem_axi_bid      ),
+        .rv_socket_dbg_slave_axi_bresp       ( MBUS_to_DMmem_axi_bresp    ),
+        .rv_socket_dbg_slave_axi_bvalid      ( MBUS_to_DMmem_axi_bvalid   ),
+        .rv_socket_dbg_slave_axi_bready      ( MBUS_to_DMmem_axi_bready   ),
+        .rv_socket_dbg_slave_axi_arid        ( MBUS_to_DMmem_axi_arid     ),
+        .rv_socket_dbg_slave_axi_araddr      ( MBUS_to_DMmem_axi_araddr   ),
+        .rv_socket_dbg_slave_axi_arlen       ( MBUS_to_DMmem_axi_arlen    ),
+        .rv_socket_dbg_slave_axi_arsize      ( MBUS_to_DMmem_axi_arsize   ),
+        .rv_socket_dbg_slave_axi_arburst     ( MBUS_to_DMmem_axi_arburst  ),
+        .rv_socket_dbg_slave_axi_arlock      ( MBUS_to_DMmem_axi_arlock   ),
+        .rv_socket_dbg_slave_axi_arcache     ( MBUS_to_DMmem_axi_arcache  ),
+        .rv_socket_dbg_slave_axi_arprot      ( MBUS_to_DMmem_axi_arprot   ),
+        .rv_socket_dbg_slave_axi_arqos       ( MBUS_to_DMmem_axi_arqos    ),
+        .rv_socket_dbg_slave_axi_arvalid     ( MBUS_to_DMmem_axi_arvalid  ),
+        .rv_socket_dbg_slave_axi_arready     ( MBUS_to_DMmem_axi_arready  ),
+        .rv_socket_dbg_slave_axi_arregion    ( MBUS_to_DMmem_axi_arregion ),
+        .rv_socket_dbg_slave_axi_rid         ( MBUS_to_DMmem_axi_rid      ),
+        .rv_socket_dbg_slave_axi_rdata       ( MBUS_to_DMmem_axi_rdata    ),
+        .rv_socket_dbg_slave_axi_rresp       ( MBUS_to_DMmem_axi_rresp    ),
+        .rv_socket_dbg_slave_axi_rlast       ( MBUS_to_DMmem_axi_rlast    ),
+        .rv_socket_dbg_slave_axi_rvalid      ( MBUS_to_DMmem_axi_rvalid   ),
+        .rv_socket_dbg_slave_axi_rready      ( MBUS_to_DMmem_axi_rready   )
     );
 
     // BlockRAM
-    xlnx_blk_mem_gen_0 bram_u (
+    xlnx_bram_0 bram_u_0 (
         .rsta_busy      ( /* open */                ), // output wire rsta_busy
         .rstb_busy      ( /* open */                ), // output wire rstb_busy
-        .s_aclk         ( BRAM_clk                  ), // input wire s_aclk
-        .s_aresetn      ( BRAM_rstn                 ), // input wire s_aresetn
-        .s_axi_awid     ( MBUS_to_BRAM_axi_awid     ), // input wire [3 : 0] s_axi_awid
-        .s_axi_awaddr   ( MBUS_to_BRAM_axi_awaddr   ), // input wire [31 : 0] s_axi_awaddr
-        .s_axi_awlen    ( MBUS_to_BRAM_axi_awlen    ), // input wire [7 : 0] s_axi_awlen
-        .s_axi_awsize   ( MBUS_to_BRAM_axi_awsize   ), // input wire [2 : 0] s_axi_awsize
-        .s_axi_awburst  ( MBUS_to_BRAM_axi_awburst  ), // input wire [1 : 0] s_axi_awburst
-        .s_axi_awvalid  ( MBUS_to_BRAM_axi_awvalid  ), // input wire s_axi_awvalid
-        .s_axi_awready  ( MBUS_to_BRAM_axi_awready  ), // output wire s_axi_awready
-        .s_axi_wdata    ( MBUS_to_BRAM_axi_wdata    ), // input wire [31 : 0] s_axi_wdata
-        .s_axi_wstrb    ( MBUS_to_BRAM_axi_wstrb    ), // input wire [3 : 0] s_axi_wstrb
-        .s_axi_wlast    ( MBUS_to_BRAM_axi_wlast    ), // input wire s_axi_wlast
-        .s_axi_wvalid   ( MBUS_to_BRAM_axi_wvalid   ), // input wire s_axi_wvalid
-        .s_axi_wready   ( MBUS_to_BRAM_axi_wready   ), // output wire s_axi_wready
-        .s_axi_bid      ( MBUS_to_BRAM_axi_bid      ), // output wire [3 : 0] s_axi_bid
-        .s_axi_bresp    ( MBUS_to_BRAM_axi_bresp    ), // output wire [1 : 0] s_axi_bresp
-        .s_axi_bvalid   ( MBUS_to_BRAM_axi_bvalid   ), // output wire s_axi_bvalid
-        .s_axi_bready   ( MBUS_to_BRAM_axi_bready   ), // input wire s_axi_bready
-        .s_axi_arid     ( MBUS_to_BRAM_axi_arid     ), // input wire [3 : 0] s_axi_arid
-        .s_axi_araddr   ( MBUS_to_BRAM_axi_araddr   ), // input wire [31 : 0] s_axi_araddr
-        .s_axi_arlen    ( MBUS_to_BRAM_axi_arlen    ), // input wire [7 : 0] s_axi_arlen
-        .s_axi_arsize   ( MBUS_to_BRAM_axi_arsize   ), // input wire [2 : 0] s_axi_arsize
-        .s_axi_arburst  ( MBUS_to_BRAM_axi_arburst  ), // input wire [1 : 0] s_axi_arburst
-        .s_axi_arvalid  ( MBUS_to_BRAM_axi_arvalid  ), // input wire s_axi_arvalid
-        .s_axi_arready  ( MBUS_to_BRAM_axi_arready  ), // output wire s_axi_arready
-        .s_axi_rid      ( MBUS_to_BRAM_axi_rid      ), // output wire [3 : 0] s_axi_rid
-        .s_axi_rdata    ( MBUS_to_BRAM_axi_rdata    ), // output wire [31 : 0] s_axi_rdata
-        .s_axi_rresp    ( MBUS_to_BRAM_axi_rresp    ), // output wire [1 : 0] s_axi_rresp
-        .s_axi_rlast    ( MBUS_to_BRAM_axi_rlast    ), // output wire s_axi_rlast
-        .s_axi_rvalid   ( MBUS_to_BRAM_axi_rvalid   ), // output wire s_axi_rvalid
-        .s_axi_rready   ( MBUS_to_BRAM_axi_rready   )  // input wire s_axi_rready
+        .s_aclk         ( BRAM_0_clk                  ), // input wire s_aclk
+        .s_aresetn      ( BRAM_0_rstn                 ), // input wire s_aresetn
+        .s_axi_awid     ( MBUS_to_BRAM_0_axi_awid     ), // input wire [3 : 0] s_axi_awid
+        .s_axi_awaddr   ( MBUS_to_BRAM_0_axi_awaddr   ), // input wire [31 : 0] s_axi_awaddr
+        .s_axi_awlen    ( MBUS_to_BRAM_0_axi_awlen    ), // input wire [7 : 0] s_axi_awlen
+        .s_axi_awsize   ( MBUS_to_BRAM_0_axi_awsize   ), // input wire [2 : 0] s_axi_awsize
+        .s_axi_awburst  ( MBUS_to_BRAM_0_axi_awburst  ), // input wire [1 : 0] s_axi_awburst
+        .s_axi_awvalid  ( MBUS_to_BRAM_0_axi_awvalid  ), // input wire s_axi_awvalid
+        .s_axi_awready  ( MBUS_to_BRAM_0_axi_awready  ), // output wire s_axi_awready
+        .s_axi_wdata    ( MBUS_to_BRAM_0_axi_wdata    ), // input wire [31 : 0] s_axi_wdata
+        .s_axi_wstrb    ( MBUS_to_BRAM_0_axi_wstrb    ), // input wire [3 : 0] s_axi_wstrb
+        .s_axi_wlast    ( MBUS_to_BRAM_0_axi_wlast    ), // input wire s_axi_wlast
+        .s_axi_wvalid   ( MBUS_to_BRAM_0_axi_wvalid   ), // input wire s_axi_wvalid
+        .s_axi_wready   ( MBUS_to_BRAM_0_axi_wready   ), // output wire s_axi_wready
+        .s_axi_bid      ( MBUS_to_BRAM_0_axi_bid      ), // output wire [3 : 0] s_axi_bid
+        .s_axi_bresp    ( MBUS_to_BRAM_0_axi_bresp    ), // output wire [1 : 0] s_axi_bresp
+        .s_axi_bvalid   ( MBUS_to_BRAM_0_axi_bvalid   ), // output wire s_axi_bvalid
+        .s_axi_bready   ( MBUS_to_BRAM_0_axi_bready   ), // input wire s_axi_bready
+        .s_axi_arid     ( MBUS_to_BRAM_0_axi_arid     ), // input wire [3 : 0] s_axi_arid
+        .s_axi_araddr   ( MBUS_to_BRAM_0_axi_araddr   ), // input wire [31 : 0] s_axi_araddr
+        .s_axi_arlen    ( MBUS_to_BRAM_0_axi_arlen    ), // input wire [7 : 0] s_axi_arlen
+        .s_axi_arsize   ( MBUS_to_BRAM_0_axi_arsize   ), // input wire [2 : 0] s_axi_arsize
+        .s_axi_arburst  ( MBUS_to_BRAM_0_axi_arburst  ), // input wire [1 : 0] s_axi_arburst
+        .s_axi_arvalid  ( MBUS_to_BRAM_0_axi_arvalid  ), // input wire s_axi_arvalid
+        .s_axi_arready  ( MBUS_to_BRAM_0_axi_arready  ), // output wire s_axi_arready
+        .s_axi_rid      ( MBUS_to_BRAM_0_axi_rid      ), // output wire [3 : 0] s_axi_rid
+        .s_axi_rdata    ( MBUS_to_BRAM_0_axi_rdata    ), // output wire [31 : 0] s_axi_rdata
+        .s_axi_rresp    ( MBUS_to_BRAM_0_axi_rresp    ), // output wire [1 : 0] s_axi_rresp
+        .s_axi_rlast    ( MBUS_to_BRAM_0_axi_rlast    ), // output wire s_axi_rlast
+        .s_axi_rvalid   ( MBUS_to_BRAM_0_axi_rvalid   ), // output wire s_axi_rvalid
+        .s_axi_rready   ( MBUS_to_BRAM_0_axi_rready   )  // input wire s_axi_rready
     );
+
+	// Main memory
+    xlnx_bram_1 bram_u_1 (
+        .rsta_busy      ( /* open */                ), // output wire rsta_busy
+        .rstb_busy      ( /* open */                ), // output wire rstb_busy
+        .s_aclk         ( BRAM_1_clk                  ), // input wire s_aclk
+        .s_aresetn      ( BRAM_1_rstn                 ), // input wire s_aresetn
+        .s_axi_awid     ( MBUS_to_BRAM_1_axi_awid     ), // input wire [3 : 0] s_axi_awid
+        .s_axi_awaddr   ( MBUS_to_BRAM_1_axi_awaddr   ), // input wire [31 : 0] s_axi_awaddr
+        .s_axi_awlen    ( MBUS_to_BRAM_1_axi_awlen    ), // input wire [7 : 0] s_axi_awlen
+        .s_axi_awsize   ( MBUS_to_BRAM_1_axi_awsize   ), // input wire [2 : 0] s_axi_awsize
+        .s_axi_awburst  ( MBUS_to_BRAM_1_axi_awburst  ), // input wire [1 : 0] s_axi_awburst
+        .s_axi_awvalid  ( MBUS_to_BRAM_1_axi_awvalid  ), // input wire s_axi_awvalid
+        .s_axi_awready  ( MBUS_to_BRAM_1_axi_awready  ), // output wire s_axi_awready
+        .s_axi_wdata    ( MBUS_to_BRAM_1_axi_wdata    ), // input wire [31 : 0] s_axi_wdata
+        .s_axi_wstrb    ( MBUS_to_BRAM_1_axi_wstrb    ), // input wire [3 : 0] s_axi_wstrb
+        .s_axi_wlast    ( MBUS_to_BRAM_1_axi_wlast    ), // input wire s_axi_wlast
+        .s_axi_wvalid   ( MBUS_to_BRAM_1_axi_wvalid   ), // input wire s_axi_wvalid
+        .s_axi_wready   ( MBUS_to_BRAM_1_axi_wready   ), // output wire s_axi_wready
+        .s_axi_bid      ( MBUS_to_BRAM_1_axi_bid      ), // output wire [3 : 0] s_axi_bid
+        .s_axi_bresp    ( MBUS_to_BRAM_1_axi_bresp    ), // output wire [1 : 0] s_axi_bresp
+        .s_axi_bvalid   ( MBUS_to_BRAM_1_axi_bvalid   ), // output wire s_axi_bvalid
+        .s_axi_bready   ( MBUS_to_BRAM_1_axi_bready   ), // input wire s_axi_bready
+        .s_axi_arid     ( MBUS_to_BRAM_1_axi_arid     ), // input wire [3 : 0] s_axi_arid
+        .s_axi_araddr   ( MBUS_to_BRAM_1_axi_araddr   ), // input wire [31 : 0] s_axi_araddr
+        .s_axi_arlen    ( MBUS_to_BRAM_1_axi_arlen    ), // input wire [7 : 0] s_axi_arlen
+        .s_axi_arsize   ( MBUS_to_BRAM_1_axi_arsize   ), // input wire [2 : 0] s_axi_arsize
+        .s_axi_arburst  ( MBUS_to_BRAM_1_axi_arburst  ), // input wire [1 : 0] s_axi_arburst
+        .s_axi_arvalid  ( MBUS_to_BRAM_1_axi_arvalid  ), // input wire s_axi_arvalid
+        .s_axi_arready  ( MBUS_to_BRAM_1_axi_arready  ), // output wire s_axi_arready
+        .s_axi_rid      ( MBUS_to_BRAM_1_axi_rid      ), // output wire [3 : 0] s_axi_rid
+        .s_axi_rdata    ( MBUS_to_BRAM_1_axi_rdata    ), // output wire [31 : 0] s_axi_rdata
+        .s_axi_rresp    ( MBUS_to_BRAM_1_axi_rresp    ), // output wire [1 : 0] s_axi_rresp
+        .s_axi_rlast    ( MBUS_to_BRAM_1_axi_rlast    ), // output wire s_axi_rlast
+        .s_axi_rvalid   ( MBUS_to_BRAM_1_axi_rvalid   ), // output wire s_axi_rvalid
+        .s_axi_rready   ( MBUS_to_BRAM_1_axi_rready   )  // input wire s_axi_rready
+    );
+
 
     // Interrupt mappings
     always_comb begin : system_interrupts
@@ -644,8 +696,8 @@ module simplyv (
         // TODO154: generate by config
         plic_int_lines[PLIC_RESERVED_INTERRUPT ] = 1'b0;
         plic_int_lines[PLIC_GPIOIN_INTERRUPT   ] = pbus_int_line[PBUS_GPIOIN_INTERRUPT];
-        plic_int_lines[PLIC_TIM0_INTERRUPT     ] = pbus_int_line[PBUS_TIM0_INTERRUPT];
-        plic_int_lines[PLIC_TIM1_INTERRUPT     ] = pbus_int_line[PBUS_TIM1_INTERRUPT];
+        plic_int_lines[PLIC_TIM_0_INTERRUPT    ] = pbus_int_line[PBUS_TIM_0_INTERRUPT];
+        plic_int_lines[PLIC_TIM_1_INTERRUPT    ] = pbus_int_line[PBUS_TIM_1_INTERRUPT];
         plic_int_lines[PLIC_UART_INTERRUPT     ] = pbus_int_line[PBUS_UART_INTERRUPT];
         plic_int_lines[PLIC_HLS_INTERRUPT      ] = irq_hls_to_plic;
         plic_int_lines[PLIC_CDMA_INTERRUPT     ] = irq_cdma_to_plic;
@@ -718,8 +770,8 @@ module simplyv (
         .CLINTCORES         ( RV_SOCKET_NUM_CPU )
     ) clint_wrapper_u (
         // Clocks and resets
-        .clk_i          ( main_clk  ),
-        .rst_ni         ( main_rstn ),
+        .clk_i          ( CLINT_clk  ),
+        .rst_ni         ( CLINT_rstn ),
         .rtc_o          (  ), // Unused
         // Interupt outputs
         .timer_irq_o    ( clint_timer_irq ), // Timer interrupts
@@ -773,8 +825,8 @@ module simplyv (
         .LOCAL_ID_WIDTH     ( PBUS_ID_WIDTH   )
     ) peripheral_bus_u (
         // Clocks and resets
-        .main_clock_i   ( main_clk    ),
-        .main_reset_ni  ( main_rstn   ),
+        .main_clock_i   ( MBUS_clk    ),
+        .main_reset_ni  ( MBUS_rstn   ),
         .PBUS_clock_i   ( PBUS_clk    ),
         .PBUS_reset_ni  ( PBUS_rstn   ),
         // EMBEDDED ONLY
@@ -835,8 +887,8 @@ module simplyv (
 
     // AXI-lite converter
     xlnx_axi4_to_axilite_d32_converter axi4_to_axilite_cdma_u (
-        .aclk           ( main_clk    ),
-        .aresetn        ( main_rstn   ),
+        .aclk           ( CDMA_clk    ),
+        .aresetn        ( CDMA_rstn   ),
         // AXI4 slave (from MBUS)
         .s_axi_awid     ( MBUS_to_CDMA_axi_awid           ),
         .s_axi_awaddr   ( MBUS_to_CDMA_axi_awaddr         ),
@@ -916,7 +968,7 @@ module simplyv (
         .s_axi_lite_aresetn ( CDMA_rstn ),
         // Assume master on MBUS domain
         // TODO: config for HBUS as well
-        .m_axi_aclk         ( main_clk  ),
+        .m_axi_aclk         ( MBUS_clk  ),
         // Interrupt
         .cdma_introut       ( irq_cdma_to_plic                    ),
         // AXI-Lite Control Interface (from converter)
@@ -978,25 +1030,24 @@ module simplyv (
     // DDR4 Channel 1 //
     ////////////////////
 
-    // TODO127: export these to config
-    logic ddr4ch1_clk300MHz;
-    logic ddr4ch1_rst300MHz;
+    logic ddr4ch1_ddr_rst;
+    assign rstn_DDR4CH_1_300MHz = ~ddr4ch1_ddr_rst;
 
     // DDR channel 1 on MBUS
     ddr4_channel_wrapper # (
-        .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH1
+        .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH_1
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
     ) ddr4_channel_1_wrapper_u (
-        .clock_i              ( main_clk          ),
-        .reset_ni             ( main_rstn         ),
+        .clock_i              ( MBUS_clk          ),
+        .reset_ni             ( MBUS_rstn         ),
         // DDR4 differential clock
         .clk_300mhz_x_p_i     ( clk_300mhz_1_p_i  ),
         .clk_300mhz_x_n_i     ( clk_300mhz_1_n_i  ),
         // Output clock and reset
-        .ddr_clk_o            ( ddr4ch1_clk300MHz ),
-        .ddr_rst_o            ( ddr4ch1_rst300MHz ),
+        .ddr_clk_o            ( clk_DDR4CH_1_300MHz  ),
+        .ddr_rst_o            ( ddr4ch1_ddr_rst      ),
         // Connect DDR4 channel 1
         .cx_ddr4_adr          ( c1_ddr4_adr       ),
         .cx_ddr4_ba           ( c1_ddr4_ba        ),
@@ -1030,45 +1081,45 @@ module simplyv (
         .s_ctrl_axilite_rdata    (       ),
         .s_ctrl_axilite_rresp    (       ),
         // Slave interface
-        .s_axi_awid           ( MBUS_to_DDR4CH1_axi_awid     ),
-        .s_axi_awaddr         ( MBUS_to_DDR4CH1_axi_awaddr   ),
-        .s_axi_awlen          ( MBUS_to_DDR4CH1_axi_awlen    ),
-        .s_axi_awsize         ( MBUS_to_DDR4CH1_axi_awsize   ),
-        .s_axi_awburst        ( MBUS_to_DDR4CH1_axi_awburst  ),
-        .s_axi_awlock         ( MBUS_to_DDR4CH1_axi_awlock   ),
-        .s_axi_awcache        ( MBUS_to_DDR4CH1_axi_awcache  ),
-        .s_axi_awprot         ( MBUS_to_DDR4CH1_axi_awprot   ),
-        .s_axi_awregion       ( MBUS_to_DDR4CH1_axi_awregion ),
-        .s_axi_awqos          ( MBUS_to_DDR4CH1_axi_awqos    ),
-        .s_axi_awvalid        ( MBUS_to_DDR4CH1_axi_awvalid  ),
-        .s_axi_awready        ( MBUS_to_DDR4CH1_axi_awready  ),
-        .s_axi_wdata          ( MBUS_to_DDR4CH1_axi_wdata    ),
-        .s_axi_wstrb          ( MBUS_to_DDR4CH1_axi_wstrb    ),
-        .s_axi_wlast          ( MBUS_to_DDR4CH1_axi_wlast    ),
-        .s_axi_wvalid         ( MBUS_to_DDR4CH1_axi_wvalid   ),
-        .s_axi_wready         ( MBUS_to_DDR4CH1_axi_wready   ),
-        .s_axi_bid            ( MBUS_to_DDR4CH1_axi_bid      ),
-        .s_axi_bresp          ( MBUS_to_DDR4CH1_axi_bresp    ),
-        .s_axi_bvalid         ( MBUS_to_DDR4CH1_axi_bvalid   ),
-        .s_axi_bready         ( MBUS_to_DDR4CH1_axi_bready   ),
-        .s_axi_arid           ( MBUS_to_DDR4CH1_axi_arid     ),
-        .s_axi_araddr         ( MBUS_to_DDR4CH1_axi_araddr   ),
-        .s_axi_arlen          ( MBUS_to_DDR4CH1_axi_arlen    ),
-        .s_axi_arsize         ( MBUS_to_DDR4CH1_axi_arsize   ),
-        .s_axi_arburst        ( MBUS_to_DDR4CH1_axi_arburst  ),
-        .s_axi_arlock         ( MBUS_to_DDR4CH1_axi_arlock   ),
-        .s_axi_arcache        ( MBUS_to_DDR4CH1_axi_arcache  ),
-        .s_axi_arprot         ( MBUS_to_DDR4CH1_axi_arprot   ),
-        .s_axi_arregion       ( MBUS_to_DDR4CH1_axi_arregion ),
-        .s_axi_arqos          ( MBUS_to_DDR4CH1_axi_arqos    ),
-        .s_axi_arvalid        ( MBUS_to_DDR4CH1_axi_arvalid  ),
-        .s_axi_arready        ( MBUS_to_DDR4CH1_axi_arready  ),
-        .s_axi_rid            ( MBUS_to_DDR4CH1_axi_rid      ),
-        .s_axi_rdata          ( MBUS_to_DDR4CH1_axi_rdata    ),
-        .s_axi_rresp          ( MBUS_to_DDR4CH1_axi_rresp    ),
-        .s_axi_rlast          ( MBUS_to_DDR4CH1_axi_rlast    ),
-        .s_axi_rvalid         ( MBUS_to_DDR4CH1_axi_rvalid   ),
-        .s_axi_rready         ( MBUS_to_DDR4CH1_axi_rready   )
+        .s_axi_awid           ( MBUS_to_DDR4CH_1_axi_awid     ),
+        .s_axi_awaddr         ( MBUS_to_DDR4CH_1_axi_awaddr   ),
+        .s_axi_awlen          ( MBUS_to_DDR4CH_1_axi_awlen    ),
+        .s_axi_awsize         ( MBUS_to_DDR4CH_1_axi_awsize   ),
+        .s_axi_awburst        ( MBUS_to_DDR4CH_1_axi_awburst  ),
+        .s_axi_awlock         ( MBUS_to_DDR4CH_1_axi_awlock   ),
+        .s_axi_awcache        ( MBUS_to_DDR4CH_1_axi_awcache  ),
+        .s_axi_awprot         ( MBUS_to_DDR4CH_1_axi_awprot   ),
+        .s_axi_awregion       ( MBUS_to_DDR4CH_1_axi_awregion ),
+        .s_axi_awqos          ( MBUS_to_DDR4CH_1_axi_awqos    ),
+        .s_axi_awvalid        ( MBUS_to_DDR4CH_1_axi_awvalid  ),
+        .s_axi_awready        ( MBUS_to_DDR4CH_1_axi_awready  ),
+        .s_axi_wdata          ( MBUS_to_DDR4CH_1_axi_wdata    ),
+        .s_axi_wstrb          ( MBUS_to_DDR4CH_1_axi_wstrb    ),
+        .s_axi_wlast          ( MBUS_to_DDR4CH_1_axi_wlast    ),
+        .s_axi_wvalid         ( MBUS_to_DDR4CH_1_axi_wvalid   ),
+        .s_axi_wready         ( MBUS_to_DDR4CH_1_axi_wready   ),
+        .s_axi_bid            ( MBUS_to_DDR4CH_1_axi_bid      ),
+        .s_axi_bresp          ( MBUS_to_DDR4CH_1_axi_bresp    ),
+        .s_axi_bvalid         ( MBUS_to_DDR4CH_1_axi_bvalid   ),
+        .s_axi_bready         ( MBUS_to_DDR4CH_1_axi_bready   ),
+        .s_axi_arid           ( MBUS_to_DDR4CH_1_axi_arid     ),
+        .s_axi_araddr         ( MBUS_to_DDR4CH_1_axi_araddr   ),
+        .s_axi_arlen          ( MBUS_to_DDR4CH_1_axi_arlen    ),
+        .s_axi_arsize         ( MBUS_to_DDR4CH_1_axi_arsize   ),
+        .s_axi_arburst        ( MBUS_to_DDR4CH_1_axi_arburst  ),
+        .s_axi_arlock         ( MBUS_to_DDR4CH_1_axi_arlock   ),
+        .s_axi_arcache        ( MBUS_to_DDR4CH_1_axi_arcache  ),
+        .s_axi_arprot         ( MBUS_to_DDR4CH_1_axi_arprot   ),
+        .s_axi_arregion       ( MBUS_to_DDR4CH_1_axi_arregion ),
+        .s_axi_arqos          ( MBUS_to_DDR4CH_1_axi_arqos    ),
+        .s_axi_arvalid        ( MBUS_to_DDR4CH_1_axi_arvalid  ),
+        .s_axi_arready        ( MBUS_to_DDR4CH_1_axi_arready  ),
+        .s_axi_rid            ( MBUS_to_DDR4CH_1_axi_rid      ),
+        .s_axi_rdata          ( MBUS_to_DDR4CH_1_axi_rdata    ),
+        .s_axi_rresp          ( MBUS_to_DDR4CH_1_axi_rresp    ),
+        .s_axi_rlast          ( MBUS_to_DDR4CH_1_axi_rlast    ),
+        .s_axi_rvalid         ( MBUS_to_DDR4CH_1_axi_rvalid   ),
+        .s_axi_rready         ( MBUS_to_DDR4CH_1_axi_rready   )
     );
 
     ///////////////////
@@ -1093,51 +1144,51 @@ module simplyv (
         .HBUS_ID_WIDTH   ( HBUS_ID_WIDTH   )
     ) hls_conv2d_wrapper_u (
         // MBUS clock and reset
-        .main_clk_i                 ( main_clk  ),
-        .main_rstn_i                ( main_rstn ),
+        .MBUS_clk_i                 ( MBUS_clk  ),
+        .MBUS_rstn_i                ( MBUS_rstn ),
         // HLS IP clock and reset (from HBUS)
-        .HLS_CONTROL_clk_i          ( HLS_CONTROL_clk  ),
-        .HLS_CONTROL_rstn_i         ( HLS_CONTROL_rstn ),
+        .HLSCONTROL_clk_i          ( HLSCONTROL_clk  ),
+        .HLSCONTROL_rstn_i         ( HLSCONTROL_rstn ),
         // Slave for control
-        .s_HLS_CONTROL_axi_awid     ( MBUS_to_HLS_CONTROL_axi_awid     ),
-        .s_HLS_CONTROL_axi_awaddr   ( MBUS_to_HLS_CONTROL_axi_awaddr   ),
-        .s_HLS_CONTROL_axi_awlen    ( MBUS_to_HLS_CONTROL_axi_awlen    ),
-        .s_HLS_CONTROL_axi_awsize   ( MBUS_to_HLS_CONTROL_axi_awsize   ),
-        .s_HLS_CONTROL_axi_awburst  ( MBUS_to_HLS_CONTROL_axi_awburst  ),
-        .s_HLS_CONTROL_axi_awlock   ( MBUS_to_HLS_CONTROL_axi_awlock   ),
-        .s_HLS_CONTROL_axi_awcache  ( MBUS_to_HLS_CONTROL_axi_awcache  ),
-        .s_HLS_CONTROL_axi_awprot   ( MBUS_to_HLS_CONTROL_axi_awprot   ),
-        .s_HLS_CONTROL_axi_awregion ( MBUS_to_HLS_CONTROL_axi_awregion ),
-        .s_HLS_CONTROL_axi_awqos    ( MBUS_to_HLS_CONTROL_axi_awqos    ),
-        .s_HLS_CONTROL_axi_awvalid  ( MBUS_to_HLS_CONTROL_axi_awvalid  ),
-        .s_HLS_CONTROL_axi_awready  ( MBUS_to_HLS_CONTROL_axi_awready  ),
-        .s_HLS_CONTROL_axi_wdata    ( MBUS_to_HLS_CONTROL_axi_wdata    ),
-        .s_HLS_CONTROL_axi_wstrb    ( MBUS_to_HLS_CONTROL_axi_wstrb    ),
-        .s_HLS_CONTROL_axi_wlast    ( MBUS_to_HLS_CONTROL_axi_wlast    ),
-        .s_HLS_CONTROL_axi_wvalid   ( MBUS_to_HLS_CONTROL_axi_wvalid   ),
-        .s_HLS_CONTROL_axi_wready   ( MBUS_to_HLS_CONTROL_axi_wready   ),
-        .s_HLS_CONTROL_axi_bid      ( MBUS_to_HLS_CONTROL_axi_bid      ),
-        .s_HLS_CONTROL_axi_bresp    ( MBUS_to_HLS_CONTROL_axi_bresp    ),
-        .s_HLS_CONTROL_axi_bvalid   ( MBUS_to_HLS_CONTROL_axi_bvalid   ),
-        .s_HLS_CONTROL_axi_bready   ( MBUS_to_HLS_CONTROL_axi_bready   ),
-        .s_HLS_CONTROL_axi_arid     ( MBUS_to_HLS_CONTROL_axi_arid     ),
-        .s_HLS_CONTROL_axi_araddr   ( MBUS_to_HLS_CONTROL_axi_araddr   ),
-        .s_HLS_CONTROL_axi_arlen    ( MBUS_to_HLS_CONTROL_axi_arlen    ),
-        .s_HLS_CONTROL_axi_arsize   ( MBUS_to_HLS_CONTROL_axi_arsize   ),
-        .s_HLS_CONTROL_axi_arburst  ( MBUS_to_HLS_CONTROL_axi_arburst  ),
-        .s_HLS_CONTROL_axi_arlock   ( MBUS_to_HLS_CONTROL_axi_arlock   ),
-        .s_HLS_CONTROL_axi_arcache  ( MBUS_to_HLS_CONTROL_axi_arcache  ),
-        .s_HLS_CONTROL_axi_arprot   ( MBUS_to_HLS_CONTROL_axi_arprot   ),
-        .s_HLS_CONTROL_axi_arregion ( MBUS_to_HLS_CONTROL_axi_arregion ),
-        .s_HLS_CONTROL_axi_arqos    ( MBUS_to_HLS_CONTROL_axi_arqos    ),
-        .s_HLS_CONTROL_axi_arvalid  ( MBUS_to_HLS_CONTROL_axi_arvalid  ),
-        .s_HLS_CONTROL_axi_arready  ( MBUS_to_HLS_CONTROL_axi_arready  ),
-        .s_HLS_CONTROL_axi_rid      ( MBUS_to_HLS_CONTROL_axi_rid      ),
-        .s_HLS_CONTROL_axi_rdata    ( MBUS_to_HLS_CONTROL_axi_rdata    ),
-        .s_HLS_CONTROL_axi_rresp    ( MBUS_to_HLS_CONTROL_axi_rresp    ),
-        .s_HLS_CONTROL_axi_rlast    ( MBUS_to_HLS_CONTROL_axi_rlast    ),
-        .s_HLS_CONTROL_axi_rvalid   ( MBUS_to_HLS_CONTROL_axi_rvalid   ),
-        .s_HLS_CONTROL_axi_rready   ( MBUS_to_HLS_CONTROL_axi_rready   ),
+        .s_HLSCONTROL_axi_awid     ( MBUS_to_HLSCONTROL_axi_awid     ),
+        .s_HLSCONTROL_axi_awaddr   ( MBUS_to_HLSCONTROL_axi_awaddr   ),
+        .s_HLSCONTROL_axi_awlen    ( MBUS_to_HLSCONTROL_axi_awlen    ),
+        .s_HLSCONTROL_axi_awsize   ( MBUS_to_HLSCONTROL_axi_awsize   ),
+        .s_HLSCONTROL_axi_awburst  ( MBUS_to_HLSCONTROL_axi_awburst  ),
+        .s_HLSCONTROL_axi_awlock   ( MBUS_to_HLSCONTROL_axi_awlock   ),
+        .s_HLSCONTROL_axi_awcache  ( MBUS_to_HLSCONTROL_axi_awcache  ),
+        .s_HLSCONTROL_axi_awprot   ( MBUS_to_HLSCONTROL_axi_awprot   ),
+        .s_HLSCONTROL_axi_awregion ( MBUS_to_HLSCONTROL_axi_awregion ),
+        .s_HLSCONTROL_axi_awqos    ( MBUS_to_HLSCONTROL_axi_awqos    ),
+        .s_HLSCONTROL_axi_awvalid  ( MBUS_to_HLSCONTROL_axi_awvalid  ),
+        .s_HLSCONTROL_axi_awready  ( MBUS_to_HLSCONTROL_axi_awready  ),
+        .s_HLSCONTROL_axi_wdata    ( MBUS_to_HLSCONTROL_axi_wdata    ),
+        .s_HLSCONTROL_axi_wstrb    ( MBUS_to_HLSCONTROL_axi_wstrb    ),
+        .s_HLSCONTROL_axi_wlast    ( MBUS_to_HLSCONTROL_axi_wlast    ),
+        .s_HLSCONTROL_axi_wvalid   ( MBUS_to_HLSCONTROL_axi_wvalid   ),
+        .s_HLSCONTROL_axi_wready   ( MBUS_to_HLSCONTROL_axi_wready   ),
+        .s_HLSCONTROL_axi_bid      ( MBUS_to_HLSCONTROL_axi_bid      ),
+        .s_HLSCONTROL_axi_bresp    ( MBUS_to_HLSCONTROL_axi_bresp    ),
+        .s_HLSCONTROL_axi_bvalid   ( MBUS_to_HLSCONTROL_axi_bvalid   ),
+        .s_HLSCONTROL_axi_bready   ( MBUS_to_HLSCONTROL_axi_bready   ),
+        .s_HLSCONTROL_axi_arid     ( MBUS_to_HLSCONTROL_axi_arid     ),
+        .s_HLSCONTROL_axi_araddr   ( MBUS_to_HLSCONTROL_axi_araddr   ),
+        .s_HLSCONTROL_axi_arlen    ( MBUS_to_HLSCONTROL_axi_arlen    ),
+        .s_HLSCONTROL_axi_arsize   ( MBUS_to_HLSCONTROL_axi_arsize   ),
+        .s_HLSCONTROL_axi_arburst  ( MBUS_to_HLSCONTROL_axi_arburst  ),
+        .s_HLSCONTROL_axi_arlock   ( MBUS_to_HLSCONTROL_axi_arlock   ),
+        .s_HLSCONTROL_axi_arcache  ( MBUS_to_HLSCONTROL_axi_arcache  ),
+        .s_HLSCONTROL_axi_arprot   ( MBUS_to_HLSCONTROL_axi_arprot   ),
+        .s_HLSCONTROL_axi_arregion ( MBUS_to_HLSCONTROL_axi_arregion ),
+        .s_HLSCONTROL_axi_arqos    ( MBUS_to_HLSCONTROL_axi_arqos    ),
+        .s_HLSCONTROL_axi_arvalid  ( MBUS_to_HLSCONTROL_axi_arvalid  ),
+        .s_HLSCONTROL_axi_arready  ( MBUS_to_HLSCONTROL_axi_arready  ),
+        .s_HLSCONTROL_axi_rid      ( MBUS_to_HLSCONTROL_axi_rid      ),
+        .s_HLSCONTROL_axi_rdata    ( MBUS_to_HLSCONTROL_axi_rdata    ),
+        .s_HLSCONTROL_axi_rresp    ( MBUS_to_HLSCONTROL_axi_rresp    ),
+        .s_HLSCONTROL_axi_rlast    ( MBUS_to_HLSCONTROL_axi_rlast    ),
+        .s_HLSCONTROL_axi_rvalid   ( MBUS_to_HLSCONTROL_axi_rvalid   ),
+        .s_HLSCONTROL_axi_rready   ( MBUS_to_HLSCONTROL_axi_rready   ),
         // Master to HBUS
         .m_HLS_gmem0_d512_axi_awid      ( HLS_gmem0_d512_axi_awid     ),
         .m_HLS_gmem0_d512_axi_awaddr    ( HLS_gmem0_d512_axi_awaddr   ),
@@ -1199,8 +1250,8 @@ module simplyv (
         .NUM_HBM_CHANNELS ( 0 )
     ) highperformance_bus_u (
         // MBUS domain clock and reset
-        .main_clock_i        ( main_clk  ),
-        .main_reset_ni       ( main_rstn ),
+        .MBUS_clk_i          ( MBUS_clk  ),
+        .MBUS_rstn_i         ( MBUS_rstn ),
         // From MBUS
         .s_MBUS_axi_awid     ( MBUS_to_HBUS_axi_awid     ),
         .s_MBUS_axi_awaddr   ( MBUS_to_HBUS_axi_awaddr   ),
@@ -1328,8 +1379,8 @@ module simplyv (
         .clk_300mhz_x_p_i     ( clk_300mhz_0_p_i  ),
         .clk_300mhz_x_n_i     ( clk_300mhz_0_n_i  ),
         // DDR4 user clock and reset
-        .clk_300MHz_o         ( clk_300MHz        ),
-        .rstn_300MHz_o        ( rstn_300MHz       ),
+        .clk_300MHz_o         ( clk_DDR4CH_0_300MHz  ),
+        .rstn_300MHz_o        ( rstn_DDR4CH_0_300MHz ),
         // Connect DDR4 channel 0
         .cx_ddr4_adr          ( c0_ddr4_adr       ),
         .cx_ddr4_ba           ( c0_ddr4_ba        ),

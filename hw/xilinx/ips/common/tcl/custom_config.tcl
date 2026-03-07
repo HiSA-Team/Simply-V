@@ -10,8 +10,8 @@ set rtl_dir_name ${dir_name}/rtl
 set unina_soc_dir $::env(XILINX_ROOT)/rtl
 
 # Define paths for the simplyv files (and wrapper file)
-set mem_macro_path ${unina_soc_dir}/simplyv_mem.svh
-set axi_macro_path ${unina_soc_dir}/simplyv_axi.svh
+set mem_macro_path ${unina_soc_dir}/headers/simplyv_mem.svh
+set axi_macro_path ${unina_soc_dir}/headers/simplyv_axi.svh
 set pkg_path ${unina_soc_dir}/simplyv_pkg.sv
 set top_module_path ${dir_name}/${top_module}.sv
 

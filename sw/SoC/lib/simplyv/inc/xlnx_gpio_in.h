@@ -2,17 +2,24 @@
 // Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
 // Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
 // Description:
-//  This file defines the API to adoperate the Input GPIO
+//  This file defines the API to adoperate the Xilinx Input GPIO
+// Reference:https://docs.amd.com/v/u/en-US/pg144-axi-gpio
 
-#ifndef XLNX_GPIO_IN_H
-#define XLNX_GPIO_IN_H
+#ifndef _XLNX_GPIO_IN_H
+#define _XLNX_GPIO_IN_H
 
 #include <stdint.h>
 #include "simplyv_conf.h"
 
-// https://docs.amd.com/v/u/en-US/pg144-axi-gpio
-
-#define GPIO_IN_BASEADDR ((uintptr_t)_peripheral_GPIO_in_start)
+// Registers
+// GPIO is configured to use just one channel (so all the "2" registers like GPIO2_DATA are unused)
+#define GPIO_IN_DATA  (0x0000u) // Data Register
+#define GPIO_IN_TRI   (0x0004u) // Direction Register
+#define GPIO2_IN_DATA (0x0008u) // Data register second channel
+#define GPIO2_IN_TRI  (0x000Cu) // Data register second channel
+#define GPIO_IN_GIER  (0x011Cu) // Global Interrupt Enable Register
+#define GPIO_IN_ISR   (0x0120u) // Interrupt Status Register
+#define GPIO_IN_IER   (0x0128u) // Interrupt Enable Register
 
 // INTERRUPTS
 typedef enum {
@@ -20,7 +27,7 @@ typedef enum {
     ENABLE_INT = 1,
 } xlnx_gpio_in_interrupt_conf_t;
 
-// Need to be initialized with GPIO_IN_BASEADDR
+// Need to be initialized with _peripheral_GPIOIN_start
 typedef struct {
     uintptr_t base_addr;
     xlnx_gpio_in_interrupt_conf_t interrupt;
@@ -41,4 +48,4 @@ int xlnx_gpio_in_clear_int(xlnx_gpio_in_t* gpio_in);
 // This function returns the content of the Input GPIO's register, used to read input data
 int xlnx_gpio_in_read(xlnx_gpio_in_t* gpio_in, uint16_t* data);
 
-#endif
+#endif // _XLNX_GPIO_IN_H

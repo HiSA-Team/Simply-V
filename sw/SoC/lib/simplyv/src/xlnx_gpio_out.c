@@ -6,27 +6,17 @@
 
 #include "simplyv.h"
 
-// #ifdef IS_EMBEDDED // TODO47: placeholder to HAL
+#ifdef GPIOOUT_IS_ENABLED
 
-#ifdef GPIO_OUT_IS_ENABLED
 #include "io.h"
 #include <stdint.h>
 
-
-// Registers
-#define GPIO_DATA 0x0000 // Data Register
-#define GPIO_TRI 0x0004 // Direction Register
-#define GPIO2_DATA 0x0008 // Data register second channel
-#define GPIO2_TRI 0x000C // Data register second channel
-#define GIER 0x011C // Global Interrupt Enable Register
-#define IP_ISR 0x0120 // Interrupt Status Register
-#define IP_IER 0x0128 // Interrupt Enable Register
 
 
 //Extend this function implementation in case you add more peripherals
 static inline int assert_gpio_out(xlnx_gpio_out_t* gpio)
 {
-    if ((gpio->base_addr != GPIO_OUT_BASEADDR)) {
+    if ((gpio->base_addr != _peripheral_GPIOOUT_start)) {
         return SIMPLYV_ERROR;
     }
     return SIMPLYV_OK;
@@ -75,4 +65,4 @@ int xlnx_gpio_out_toggle(xlnx_gpio_out_t* gpio, pin_t pin)
     return SIMPLYV_OK;
 }
 
-#endif
+#endif // GPIOOUT_IS_ENABLED

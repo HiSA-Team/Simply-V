@@ -1,60 +1,166 @@
-# Variables
-PYTHON ?= python3.10 # Requires >= 3.10
+###########################
+###  	INPUT FILES     ###
+###########################
 
-# Configurations
-CONFIG_MBUS_CSV ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_main_bus.csv
-CONFIG_PBUS_CSV ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_peripheral_bus.csv
-CONFIG_HBUS_CSV ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_highperformance_bus.csv
-# csv for system-level configuration
-CONFIG_SYSTEM_CSV ?= ${CONFIG_ROOT}/configs/common/config_system.csv
-# CSVs list
-CONFIG_BUS_CSVS ?= ${CONFIG_MBUS_CSV} \
-			   ${CONFIG_PBUS_CSV} \
-			   ${CONFIG_HBUS_CSV}
+INPUT_MBUS_CSV  ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_mbus.csv
+INPUT_PBUS_CSV  ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_pbus.csv
+INPUT_HBUS_CSV  ?= ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_hbus.csv
+INPUT_SYSTEM_CSV ?= ${CONFIG_ROOT}/configs/common/config_system.csv
 
-all: config_main_bus config_peripheral_bus config_highperformance_bus config_ld config_sw config_xilinx
+###########################
+###  	OUTPUT FILES    ###
+###########################
 
-config_main_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_main_crossbar/config.tcl
-config_peripheral_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/common/xlnx_peripheral_crossbar/config.tcl
-config_highperformance_bus: OUTPUT_TCL_FILE = ${XILINX_ROOT}/ips/hpc/xlnx_highperformance_crossbar/config.tcl
-config_%_bus: CONFIG_BUS_CSV = ${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_$*_bus.csv
-config_%_bus:
-config_%_bus: config_check
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_crossbar_config.py \
-		${CONFIG_SYSTEM_CSV} \
-		${CONFIG_BUS_CSV} \
-		${OUTPUT_TCL_FILE}
-	${PYTHON} ${CONFIG_ROOT}/scripts/declare_and_concat_buses_rtl.py ${CONFIG_BUS_CSV}
-	${PYTHON} ${CONFIG_ROOT}/scripts/declare_and_assign_clocks_rtl.py ${CONFIG_BUS_CSV}
+# Generated from "config_mbus"
+OUTPUT_MBUS_CROSSBAR        := ${XILINX_ROOT}/ips/common/xlnx_mbus_crossbar/config.tcl
+OUTPUT_MBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/mbus_interconnect.svinc
+OUTPUT_MBUS_CLK_ASSIGNMENTS := ${XILINX_ROOT}/rtl/generated/clk_assignments/mbus_clk_assignments.svinc
+
+# Generated from "config_pbus"
+OUTPUT_PBUS_CROSSBAR        := ${XILINX_ROOT}/ips/common/xlnx_pbus_crossbar/config.tcl
+OUTPUT_PBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/pbus_interconnect.svinc
+
+# Generated from "config_hbus"
+OUTPUT_HBUS_CROSSBAR        := ${XILINX_ROOT}/ips/hpc/xlnx_hbus_crossbar/config.tcl
+OUTPUT_HBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/hbus_interconnect.svinc
+OUTPUT_HBUS_CLK_ASSIGNMENTS := ${XILINX_ROOT}/rtl/generated/clk_assignments/hbus_clk_assignments.svinc
+
+# Generated from "config_sw"
+OUTPUT_HAL_CONF := ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
+OUTPUT_SW_MK    := ${SW_ROOT}/SoC/common/config.mk
+OUTPUT_LD_ROOT  := ${SW_ROOT}/SoC/common/ld
+
+# Generated from "config_xilinx"
+OUTPUT_XILINX_MK := ${XILINX_ROOT}/make/config.mk
+
+# Generated from "config_xilinx"
+OUTPUT_DDR4_ROOT := ${XILINX_IPS_ROOT}/hpc
+OUTPUT_BRAM_ROOT := ${XILINX_IPS_ROOT}/common
+OUTPUT_UART_ROOT := ${XILINX_IPS_ROOT}/embedded
+
+# Generated from "config_dump"
+OUTPUT_DUMP := ${CONFIG_ROOT}/memory_map.csv
 
 
-OUTPUT_MEM_LD_FILE    ?= ${SW_ROOT}/SoC/common/ld/memory.ld
-OUTPUT_SEC_LD_FILE    ?= ${SW_ROOT}/SoC/common/ld/sections.ld
-OUTPUT_VAR_LD_FILE    ?= ${SW_ROOT}/SoC/common/ld/variables.ld
-# Generate HAL configuration file
-OUTPUT_HAL_CONF_FILE  ?= ${SW_ROOT}/SoC/lib/simplyv/inc/simplyv_conf.h
+###########################
+###  	CMD PARAMS      ###
+###########################
 
-config_ld: config_check
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_linkerscript_fragments.py \
-		${CONFIG_SYSTEM_CSV} \
-		${CONFIG_MBUS_CSV} \
-		${CONFIG_HBUS_CSV} \
-		${OUTPUT_MEM_LD_FILE} \
-		${OUTPUT_SEC_LD_FILE} \
-		${OUTPUT_VAR_LD_FILE}
-	@echo "[CONFIG] Output files are at ${OUTPUT_MEM_LD_FILE} ${OUTPUT_SEC_LD_FILE} ${OUTPUT_VAR_LD_FILE}"
+PYTHON ?= python3.10
 
+INPUT_ARGS = \
+	--system_csv ${INPUT_SYSTEM_CSV} \
+	--mbus_csv   ${INPUT_MBUS_CSV}  \
+	--pbus_csv   ${INPUT_PBUS_CSV}  \
+	--hbus_csv   ${INPUT_HBUS_CSV}
+
+CONFIG_MBUS_ARGS = \
+	--config_mbus \
+	--mbus_tcl ${OUTPUT_MBUS_CROSSBAR} \
+	--mbus_interconnect ${OUTPUT_MBUS_INTERCONNECT} \
+	--mbus_clock ${OUTPUT_MBUS_CLK_ASSIGNMENTS}
+
+CONFIG_PBUS_ARGS = \
+	--config_pbus \
+	--pbus_tcl ${OUTPUT_PBUS_CROSSBAR} \
+	--pbus_interconnect ${OUTPUT_PBUS_INTERCONNECT}
+
+CONFIG_HBUS_ARGS = \
+	--config_hbus \
+	--hbus_tcl ${OUTPUT_HBUS_CROSSBAR} \
+	--hbus_interconnect ${OUTPUT_HBUS_INTERCONNECT} \
+	--hbus_clock ${OUTPUT_HBUS_CLK_ASSIGNMENTS}
+
+CONFIG_SW_ARGS = \
+	--config_sw \
+	--hal_conf ${OUTPUT_HAL_CONF} \
+	--sw_mk ${OUTPUT_SW_MK} \
+	--ld_root ${OUTPUT_LD_ROOT}
+
+CONFIG_HW_ARGS = \
+	--config_xilinx \
+	--xilinx_mk ${OUTPUT_XILINX_MK} \
+	--ddr4_root ${OUTPUT_DDR4_ROOT} \
+	--bram_root ${OUTPUT_BRAM_ROOT} \
+	--uart_root ${OUTPUT_UART_ROOT}
+
+CONFIG_DUMP_ARGS = \
+	--config_dump \
+	--dump_path ${OUTPUT_DUMP}
+
+
+###########################
+###  	 TARGETS        ###
+###########################
+
+SIMPLY_CONFIG := ${CONFIG_ROOT}/simply_config/simply_config.py
+all:
+	@${PYTHON} ${SIMPLY_CONFIG} ${INPUT_ARGS} ${CONFIG_MBUS_ARGS} ${CONFIG_PBUS_ARGS}\
+			   ${CONFIG_HBUS_ARGS} ${CONFIG_SW_ARGS} ${CONFIG_HW_ARGS} ${CONFIG_DUMP_ARGS}
+
+
+# This target can be used to validate configuration without generating
+# any output files, isn't needed as "prerequisite" for any other target
+# because validation of configuration is implicit in the generation of files
 config_check:
-	${PYTHON} ${CONFIG_ROOT}/scripts/check_config.py ${CONFIG_SYSTEM_CSV} ${CONFIG_BUS_CSVS}
+	@${PYTHON} ${SIMPLY_CONFIG} ${INPUT_ARGS}
 
-# Update config Makefiles
-OUTPUT_XILINX_MK_FILE ?= ${XILINX_ROOT}/make/config.mk
-OUTPUT_SW_MK_FILE ?= $(SW_ROOT)/SoC/common/config.mk
+
+############################################################
+###     		 BUS TARGETS (mbus, pbus, hbus)			 ###
+############################################################
+
+config_mbus: CONFIG_BUS_ARGS := ${CONFIG_MBUS_ARGS}
+config_pbus: CONFIG_BUS_ARGS := ${CONFIG_PBUS_ARGS}
+config_hbus: CONFIG_BUS_ARGS := ${CONFIG_HBUS_ARGS}
+
+config_%bus:
+	@${PYTHON} ${SIMPLY_CONFIG} ${INPUT_ARGS} ${CONFIG_BUS_ARGS}
+
+############################################################
+###					 SOFTWARE TARGETS					 ###
+############################################################
+
+config_sw:
+	@${PYTHON} ${SIMPLY_CONFIG} ${INPUT_ARGS} ${CONFIG_SW_ARGS}
+
+
+############################################################
+###					 XILINX TARGET					 	 ###
+############################################################
+
 config_xilinx:
-	${CONFIG_ROOT}/scripts/config_xilinx.sh ${CONFIG_SYSTEM_CSV} ${CONFIG_BUS_CSVS} ${OUTPUT_XILINX_MK_FILE}
-
-config_sw: config_check
-	${CONFIG_ROOT}/scripts/config_sw.sh ${CONFIG_SYSTEM_CSV} ${OUTPUT_SW_MK_FILE}
-	${PYTHON} ${CONFIG_ROOT}/scripts/create_simplyv_conf_header.py ${CONFIG_BUS_CSVS} ${OUTPUT_HAL_CONF_FILE}
+	@${PYTHON} ${SIMPLY_CONFIG} ${INPUT_ARGS} ${CONFIG_HW_ARGS}
 
 
+############################################################
+###					  DUMP TARGET						 ###
+############################################################
+
+config_dump:
+	@${PYTHON} ${SIMPLY_CONFIG} ${INPUT_ARGS} ${CONFIG_DUMP_ARGS}
+
+
+############################################################
+###                     HELP TARGET                      ###
+############################################################
+
+help:
+	@echo ""
+	@echo "Simply-V configuration Makefile"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  all            Generate all HW/SW configurations"
+	@echo "  config_check   Validate CSV configuration files only"
+	@echo ""
+	@echo "  config_mbus    Generate MBUS-related configuration files"
+	@echo "  config_pbus    Generate PBUS-related configuration files"
+	@echo "  config_hbus    Generate HBUS-related configuration files"
+	@echo ""
+	@echo "  config_sw      Generate software configuration files"
+	@echo "  config_xilinx  Generate Xilinx-specific configuration files (HW flow)"
+	@echo "  config_dump    Generate reachability dump of the configured peripherals (CSV)"
+	@echo ""
+	@echo "Simply-Config application help:"
+	@echo "------------------------------------------------------------"
+	@${PYTHON} ${SIMPLY_CONFIG} --help

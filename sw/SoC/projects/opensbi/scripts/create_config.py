@@ -34,8 +34,8 @@ _, config_main_bus, config_file = sys.argv
 # Read config #
 ###############
 
-# Read system CSV file
-OPENSBI_BOOT_MEMORY_BLOCK = "DDR4CH1"
+# Hard-code this for now
+OPENSBI_BOOT_MEMORY_BLOCK = "DDR4CH_1"
 
 # Read CSV file
 with open(config_main_bus, "r") as file:
