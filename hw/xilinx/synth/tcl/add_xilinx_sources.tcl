@@ -11,7 +11,6 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/mbus_buses.svinc                 \
     $::env(XILINX_ROOT)/rtl/pbus_buses.svinc                 \
     $::env(XILINX_ROOT)/rtl/hbus_buses.svinc                 \
-    $::env(XILINX_ROOT)/rtl/match_engine.sv                  \
     $::env(XILINX_ROOT)/rtl/cmac_subsystem.sv                \
     $::env(XILINX_ROOT)/rtl/hbus_clk_assignments.svinc       \
     $::env(XILINX_ROOT)/rtl/highperformance_bus.sv           \
