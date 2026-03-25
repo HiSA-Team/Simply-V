@@ -1,5 +1,5 @@
 # Environment check
-ifndef ROOT_DIR
+ifndef SIMPLY_ROOT_DIR
 $(error Setup script settings.sh has not been sourced, aborting)
 endif
 
@@ -14,17 +14,17 @@ units: $(addsuffix /rtl, ${IP_RTL_LIST})
 
 # Fetch sources for all IPs without local rtl
 custom_%/rtl:
-	cd ${HW_UNITS_ROOT}/custom_$*; source fetch_sources.sh \
+	cd ${HW_UNITS_ROOT}/custom_$*; source fetch_sources.sh
 # 	Check if sources are preset, error otherwise and clean stale dir
-	if [ -z "$(shell ls -A $${HW_UNITS_ROOT}/$$@)" ]; then \
-		echo "[UNITS] Failed to fetch sources for $@"  >&2; \
+	if [ -z "$$(ls -A $@ 2>/dev/null)" ]; then \
+		echo "[UNITS][ERROR] Failed to fetch sources for $@"  >&2; \
 		rm -rf $@; \
 		false; \
 	fi
 
 # Selectively remove a single RTL dir
 clean_custom_%:
-	rm -rf ${HW_UNITS_ROOT}/$*/rtl
+	rm -rf ${HW_UNITS_ROOT}/custom_$*/rtl
 
 # Remove all RTL dirs
 clean:

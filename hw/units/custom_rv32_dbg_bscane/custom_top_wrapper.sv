@@ -1,13 +1,9 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
-// Description:
-// This module is intended as a top-level wrapper for the code in ./rtl
-// IT might support either MEM protocol or AXI protocol, using the
-// uninasoc_axi and uninasoc_mem svh files in hw/xilinx/rtl
+// Description: Top level wrapper module for PULP DTM and AXI adapters, 32-bit version.
 
-
-// Import UninaSoC headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+// Import Simply-V headers
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 // From axi/include
 `include "typedef.svh"
 
@@ -18,7 +14,7 @@ module custom_top_wrapper # (
     //////////////////////////////////////
     parameter int unsigned        NrHarts          = 1,
     // parameter int unsigned        BusWidth         = 32,
-    parameter logic [31:0]        DmBaseAddress    = 32'h10000, // TODO34: match from config
+    parameter logic [31:0]        DmBaseAddress    = 32'h10000, // TODO121: match from config
     // parameter int unsigned        DmBaseAddress    = 'h1000, // default to non-zero page
     // Bitmask to select physically available harts for systems
     // that don't use hart numbers in a contiguous fashion.
@@ -31,13 +27,14 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
     parameter LOCAL_MEM_DATA_WIDTH    = 32,
     parameter LOCAL_MEM_ADDR_WIDTH    = 32,
 
     parameter LOCAL_AXI_DATA_WIDTH    = 32,
     parameter LOCAL_AXI_ADDR_WIDTH    = 32,
     parameter LOCAL_AXI_STRB_WIDTH    = 4,
-    parameter LOCAL_AXI_ID_WIDTH      = 3, // TODO: align with config
+    parameter LOCAL_AXI_ID_WIDTH      = 5,
     parameter LOCAL_AXI_REGION_WIDTH  = 4,
     parameter LOCAL_AXI_LEN_WIDTH     = 8,
     parameter LOCAL_AXI_SIZE_WIDTH    = 3,
@@ -268,7 +265,7 @@ module custom_top_wrapper # (
         .AxiAddrWidth ( LOCAL_AXI_ADDR_WIDTH     ),
         .DataWidth    ( LOCAL_AXI_DATA_WIDTH     ),
         .MaxRequests  ( axi_from_mem_MaxRequests ),
-        .AxiProt      ( '0                       ),
+        .AxiProt      ( axi_from_mem_AxiProt     ),
         .axi_req_t    ( axi_req_t                ),
         .axi_rsp_t    ( axi_resp_t               )
     ) axi_from_mem_u (

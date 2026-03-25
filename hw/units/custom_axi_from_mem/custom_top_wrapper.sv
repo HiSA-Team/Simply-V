@@ -1,11 +1,10 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description:
-// This module is intended as a top-level wrapper for the code in the rtl/ folder
+// Description: Top level wrapper module for PULP AXI axi_from_mem adapter.
 
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 `include "typedef.svh"
 
 module custom_top_wrapper # (
@@ -14,12 +13,13 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
     parameter LOCAL_MEM_ADDR_WIDTH    = 32,
     parameter LOCAL_MEM_DATA_WIDTH    = 32,
     parameter LOCAL_AXI_DATA_WIDTH    = 32,
     parameter LOCAL_AXI_ADDR_WIDTH    = 32,
     parameter LOCAL_AXI_STRB_WIDTH    = LOCAL_AXI_DATA_WIDTH / 8,
-    parameter LOCAL_AXI_ID_WIDTH      = 3, // TODO: align with config
+    parameter LOCAL_AXI_ID_WIDTH      = 5,
     parameter LOCAL_AXI_REGION_WIDTH  = 4,
     parameter LOCAL_AXI_LEN_WIDTH     = 8,
     parameter LOCAL_AXI_SIZE_WIDTH    = 3,

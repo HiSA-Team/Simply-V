@@ -1,13 +1,12 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description:
+// Description: Top level wrapper for Ibex CPU.
 //      Ibex CPU is fully functional in 3 configurations: LIGHTWEIGHT, PERFORMANCE and OPENTITAN
 //      By Default, PERFORMANCE configuration is slected. Uncomment the appropriate define to select.
-//      Currently OPENTITAN configuration works, but without the debugger
 
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 
 /////////////////////////
 // Ibex Configurations //
@@ -22,6 +21,8 @@ module custom_top_wrapper import ibex_pkg::*; # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+
+    // TODO121: Automatically align with config
     // AXI/MEM macros parameter
     parameter LOCAL_DATA_WIDTH  = 32,
     parameter LOCAL_ADDR_WIDTH  = 32,

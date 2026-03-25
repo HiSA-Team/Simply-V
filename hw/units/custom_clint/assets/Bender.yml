@@ -1,0 +1,9 @@
+package:
+  name: axi-clint
+  authors:
+    - "Vincenzo Maisto <vincenzo.maisto2@unina.it>"
+
+dependencies:
+  clint:               { git: "https://github.com/pulp-platform/clint.git",                  version: 0.2.0  }
+  # For axi_to_reg_v2
+  register_interface:  { git: "https://github.com/pulp-platform/register_interface.git",     version: 0.4.5  }

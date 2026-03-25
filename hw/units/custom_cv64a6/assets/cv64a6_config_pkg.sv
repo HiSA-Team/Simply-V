@@ -8,26 +8,32 @@
 // Original Author: Jean-Roch COULON - Thales
 
 
-// Author: Stefano Mercogliano
+// Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+// Description:
 //    This configuration file is a slightly modified version compare to the OpenHW one.
 //    Differently, we support FpgaEn and Setup our own debug addresses
 
 
 package cva6_config_pkg;
 
+  // XLEN and Virtual address length
   localparam CVA6ConfigXlen   = 64;
   localparam CVA6ConfigVlen   = 64;
 
+  // FPGA optimizations
   localparam CVA6ConfigFpgaEn = 1;
 
+  // Debug memory
   localparam CVA6ConfigDmBaseAddress = 64'h10000;
   localparam CVA6ConfigDmHaltAddress = 64'h800;
   localparam CVA6ConfigDmExceptionAddress = 64'h810;
 
+  // RISC-V extensions
   localparam CVA6ConfigRVF = 1;
   localparam CVA6ConfigF16En = 0;
   localparam CVA6ConfigF16AltEn = 0;
   localparam CVA6ConfigF8En = 0;
+  // localparam CVA6ConfigF8AltEn = 0;
   localparam CVA6ConfigFVecEn = 0;
 
   localparam CVA6ConfigCvxifEn = 1;
@@ -39,7 +45,9 @@ package cva6_config_pkg;
   localparam CVA6ConfigBExtEn = 1;
   localparam CVA6ConfigVExtEn = 0;
   localparam CVA6ConfigRVZiCond = 1;
+  // localparam CVA6ConfigSclicExtEn = 0;
 
+  // AXI
   localparam CVA6ConfigAxiIdWidth = 4;
   localparam CVA6ConfigAxiAddrWidth = 64;
   localparam CVA6ConfigAxiDataWidth = 64;
@@ -48,12 +56,21 @@ package cva6_config_pkg;
   localparam CVA6ConfigDataUserEn = 0;
   localparam CVA6ConfigDataUserWidth = CVA6ConfigXlen;
 
+  // L1 Caches
+  localparam CachedAddrBeg = 64'h8000_0000; // TODO121: align this with config
   localparam CVA6ConfigIcacheByteSize = 16384;
   localparam CVA6ConfigIcacheSetAssoc = 4;
   localparam CVA6ConfigIcacheLineWidth = 128;
   localparam CVA6ConfigDcacheByteSize = 32768;
   localparam CVA6ConfigDcacheSetAssoc = 8;
   localparam CVA6ConfigDcacheLineWidth = 128;
+  // From cv64a6_imafdcv_sv39_config_pkg
+  // localparam CVA6ConfigIcacheByteSize = 4096;
+  // localparam CVA6ConfigIcacheSetAssoc = 4;
+  // localparam CVA6ConfigIcacheLineWidth = 128;
+  // localparam CVA6ConfigDcacheByteSize = 8192;
+  // localparam CVA6ConfigDcacheSetAssoc = 4;
+  // localparam CVA6ConfigDcacheLineWidth = 256;
 
   localparam CVA6ConfigDcacheFlushOnFence = 1'b0;
   localparam CVA6ConfigDcacheInvalidateOnFlush = 1'b0;
@@ -61,6 +78,8 @@ package cva6_config_pkg;
   localparam CVA6ConfigDcacheIdWidth = 1;
   localparam CVA6ConfigMemTidWidth = 2;
   localparam CVA6ConfigWtDcacheWbufDepth = 8;
+
+  // Microarchitecture
   localparam CVA6ConfigNrScoreboardEntries = 8;
   localparam CVA6ConfigNrLoadPipeRegs = 1;
   localparam CVA6ConfigNrStorePipeRegs = 0;
@@ -91,6 +110,7 @@ package cva6_config_pkg;
       NrLoadBufEntries: unsigned'(CVA6ConfigNrLoadBufEntries),
       RVF: bit'(CVA6ConfigRVF),
       RVD: bit'(CVA6ConfigRVF),
+      // XF8ALT: bit'(CVA6ConfigF8AltEn),
       XF16: bit'(CVA6ConfigF16En),
       XF16ALT: bit'(CVA6ConfigF16AltEn),
       XF8: bit'(CVA6ConfigF8En),
@@ -105,7 +125,9 @@ package cva6_config_pkg;
       RVZCMP: bit'(CVA6ConfigZcmpExtEn),
       XFVec: bit'(CVA6ConfigFVecEn),
       CvxifEn: bit'(CVA6ConfigCvxifEn),
+      // CoproType: config_pkg::COPRO_NONE,
       RVZiCond: bit'(CVA6ConfigRVZiCond),
+      // RVSCLIC: bit'(CVA6ConfigSclicExtEn),
       RVZicntr: bit'(1),
       RVZihpm: bit'(1),
       NrScoreboardEntries: unsigned'(CVA6ConfigNrScoreboardEntries),
@@ -128,6 +150,7 @@ package cva6_config_pkg;
       PMPEntryReadOnly: 64'd0,
       PMPNapotEn: bit'(1),
       NOCType: config_pkg::NOC_TYPE_AXI4_ATOP,
+      // CLICNumInterruptSrc: unsigned'(0),
       NrNonIdempotentRules: unsigned'(2),
       NonIdempotentAddrBase: 1024'({64'b0, 64'b0}),
       NonIdempotentLength: 1024'({64'b0, 64'b0}),
@@ -135,7 +158,7 @@ package cva6_config_pkg;
       ExecuteRegionAddrBase: 1024'({64'h0}), // Regions here could be tweaked depending on the system config
       ExecuteRegionLength: 1024'({64'hffff_ffff_ffff_ffff}), // Regions here could be tweaked depending on the system config
       NrCachedRegionRules: unsigned'(1),
-      CachedRegionAddrBase: 1024'({64'h8000_0000}),
+      CachedRegionAddrBase: 1024'(CachedAddrBeg),
       CachedRegionLength: 1024'({64'h40000000}),
       MaxOutstandingStores: unsigned'(7),
       DebugEn: bit'(1),

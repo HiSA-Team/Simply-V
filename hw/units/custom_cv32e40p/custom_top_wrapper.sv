@@ -1,13 +1,10 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description:
-// This module is intended as a top-level wrapper for the code in ./rtl
-// IT might support either MEM protocol or AXI protocol, using the
-// uninasoc_axi and uninasoc_mem svh files in hw/xilinx/rtl
+// Description: Top level wrapper for CV32E40P CPU.
 
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 
 module custom_top_wrapper # (
 
@@ -15,6 +12,7 @@ module custom_top_wrapper # (
     //  Add here IP-related parameters  //
     //////////////////////////////////////
 
+    // TODO121: Automatically align with config
     parameter LOCAL_DATA_WIDTH  = 32,   // AXI/MEM macros parameter
     parameter LOCAL_ADDR_WIDTH  = 32,   // AXI/MEM macros parameter
     parameter COREV_PULP        = 0,    // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. cv.elw)
