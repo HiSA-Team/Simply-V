@@ -123,7 +123,6 @@ def parse_XLEN (
 	if (config.PROTOCOL == "DISABLE"):
 		# No-op
 		return config
-
 	# Set BUS-related parameters
 	match config.CONFIG_NAME:
 		# Main bus, use XLEN
@@ -145,7 +144,8 @@ def parse_XLEN (
 			config.set_DATA_WIDTH(512)
 		# SoC config
 		case "SYS":
-			# No-op
+			# Set XLEN in order to check CORE data width correctness
+			config.XLEN = int(property_value)
 			logging.info("Skipping DATA_WIDTH set for SYS")
 		case _:
 			logging.error("Can't read valid config.CONFIG_NAME " + config.CONFIG_NAME)
@@ -680,15 +680,6 @@ def parse_MAIN_CLOCK_DOMAIN(
 ):
 	config.MAIN_CLOCK_DOMAIN = int(property_value)
 	return config
-
-def parse_HBUS_CLOCK_DOMAIN(
-	config,
-	property_name : str,
-	property_value: str,
-):
-	config.HBUS_CLOCK_DOMAIN = int(property_value)
-	return config
-
 
 def parse_RANGE_CLOCK_DOMAINS(
 	config,

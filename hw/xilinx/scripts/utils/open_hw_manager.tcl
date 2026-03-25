@@ -29,7 +29,7 @@ set_property PROGRAM.FILE $::env(XILINX_BITSTREAM) $hw_device
 # Add probe file
 puts "\[ILA\] Using probe file $::env(XILINX_PROBE_LTX)"
 if {[catch { exec ls $::env(XILINX_PROBE_LTX) } 0]} {
-    puts "[INFO] Probe $::env(XILINX_PROBE_LTX) file not found"
+    puts "\[INFO\] Probe $::env(XILINX_PROBE_LTX) file not found"
 } else {
     set_property PROBES.FILE      $::env(XILINX_PROBE_LTX) $hw_device
     set_property FULL_PROBES.FILE $::env(XILINX_PROBE_LTX) $hw_device

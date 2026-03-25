@@ -1,0 +1,60 @@
+// Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
+// Author: Valerio Di Domenico <valer.didomenico@studenti.unina.it>
+// Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+// Description:
+//  This file defines the API to adoperate the Timer
+
+#ifndef TIM_H
+#define TIM_H
+
+#include <stdint.h>
+#include "simplyv_conf.h"
+
+// https://docs.amd.com/v/u/en-US/pg079-axi-timer
+// Base address
+#define TIM0_BASEADDR ((uintptr_t)_peripheral_TIM0_start)
+#define TIM1_BASEADDR ((uintptr_t)_peripheral_TIM1_start)
+
+// Reload initial counter value
+#define TIM_RELOAD_AUTO 0
+// Mantain the termination value
+#define TIM_RELOAD_HOLD 1
+
+// Count from the specified counter value to 0
+#define TIM_COUNT_DOWN 0
+// Count from 0 to the specified value
+#define TIM_COUNT_UP 1
+
+typedef struct {
+    uintptr_t base_addr;
+    uint32_t counter;
+    uint32_t reload_mode : TIM_RELOAD_HOLD;
+    uint32_t count_direction : TIM_COUNT_UP;
+} xlnx_tim_t;
+
+// All the Functions return SIMPLYV_ERROR in case of error and SIMPLYV_OK otherwise
+
+// Initialize timer peripheral
+int xlnx_tim_init(xlnx_tim_t* timer);
+
+// Configure the timer
+// base_addr should contain the base address of the specific timer
+// and the other parameters should contain the values specified from the above macros
+// in case mode parameters are missing or wrong, the timer will be configured
+// COUNT UP and RELOAD HOLD
+int xlnx_tim_configure(xlnx_tim_t* timer);
+
+// Enable timer interrupts
+int xlnx_tim_enable_int(xlnx_tim_t* timer);
+
+// Clear timer interrupt signal
+// NOTE: use to assert the completition of the timer interrupt handling
+int xlnx_tim_clear_int(xlnx_tim_t* timer);
+
+// Start configured timer
+int xlnx_tim_start(xlnx_tim_t* timer);
+
+// Stop running timer
+int xlnx_tim_stop(xlnx_tim_t* timer);
+
+#endif

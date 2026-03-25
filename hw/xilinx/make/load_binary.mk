@@ -8,6 +8,9 @@ include ${XILINX_ROOT}/make/config.mk
 # Common scripts directory
 XILINX_SCRIPTS_LOAD_ROOT := ${XILINX_SCRIPT_ROOT}/load_binary
 
+# Default example to run
+EXAMPLE ?= hello_world
+
 ###############
 # Load Binary #
 ###############
@@ -15,26 +18,27 @@ XILINX_SCRIPTS_LOAD_ROOT := ${XILINX_SCRIPT_ROOT}/load_binary
 # For CPUs that does not support debuggers yet
 
 # Path to target binary
-BIN_PATH ?= ${SW_ROOT}/SoC/examples/blinky/bin/blinky.bin
+BIN_PATH ?= ${SW_ROOT}/SoC/examples/${EXAMPLE}/bin/${EXAMPLE}.bin
 # BRAM base address
-BASE_ADDRESS ?= 0x00000000
+OFFSET ?= 0x00000000
 # Whether to readback and check the loaded binary or not
 LOAD_BINARY_READBACK ?= false
 
 # Load the binary into SoC memory (BRAM for now)
-# Call the specific load script based on the SOC_CONFIG (HPC or EMBEDDED)
-load_binary: load_binary_${SOC_CONFIG}
+# Call the specific load script based on the SIMPLYV_PROFILE (HPC or EMBEDDED)
+load_binary: load_binary_${SIMPLYV_PROFILE}
 
 # Write the binary to BRAM through jtag2axi
 load_binary_embedded: ${BIN_PATH}
 	${XILINX_VIVADO} \
 		-source ${XILINX_SCRIPT_ROOT}/utils/open_hw_manager.tcl \
 		-source ${XILINX_SCRIPTS_LOAD_ROOT}/jtag2axi_load_binary.tcl \
-		-tclargs ${BIN_PATH} ${BASE_ADDRESS} ${LOAD_BINARY_READBACK}
+		-tclargs ${BIN_PATH} ${OFFSET} ${LOAD_BINARY_READBACK}
 
 # Write the binary to BRAM/DDR through XDMA
 load_binary_hpc: ${BIN_PATH}
-	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/xdma_load_binary.sh ${BIN_PATH} ${BASE_ADDRESS} ${LOAD_BINARY_READBACK}"
+	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/xdma_load_binary.sh \
+		${PCIE_BAR} ${BIN_PATH} ${OFFSET} ${LOAD_BINARY_READBACK}"
 
 ######################
 # Load ELF - Backend #
@@ -44,18 +48,14 @@ load_binary_hpc: ${BIN_PATH}
 # Depending on the selected CPU, two backends flows are supported
 
 # Path to target elf
-ELF_PATH ?= ${SW_ROOT}/SoC/examples/blinky/bin/blinky.elf
+ELF_PATH ?= ${SW_ROOT}/SoC/examples/${EXAMPLE}/bin/${EXAMPLE}.elf
 
 # Use XSDB as a backend
 XSDB ?= xsdb
-# 32-bit RISC-V port exposed by Vivado HW Server is 3004, while it is 3005 for 64_bit
-# If using OpenOCD, we always connect to port 3004
-DEBUG_PORT ?= 3004
-
 xsdb_run:
 	${XSDB} -interactive ${XILINX_SCRIPTS_LOAD_ROOT}/xsdb_backend.tcl
 
-# Use openOCD as a backed
+# Use OpenOCD as a backend
 OPENOCD ?= openocd
 OPENOCD_SCRIPT ?= ${XILINX_SCRIPTS_LOAD_ROOT}/openocd.cfg
 
@@ -67,10 +67,23 @@ openocd_run:
 # Load ELF - Debugger and Loader #
 ##################################
 
-# Use GDB to load the ELF and run (open the backend in a shell before)
+# For MicroblazeV, Vivado HW Server exposes ports:
+# - 3004 for 32-bit,
+# - 3005 for 64-bit
+# If using OpenOCD, we always connect to port 3004
+GDB_HOST ?= localhost
+GDB_PORT ?= 3004
+ifeq (${CORE_SELECTOR},CORE_MICROBLAZEV_RV64)
+	GDB_PORT = 3005
+endif
 
+# Use GDB to load the ELF and run (open the backend in a shell before)
 gdb_run:
-	@bash -c "source ${XILINX_SCRIPTS_LOAD_ROOT}/run_gdb.sh ${ELF_PATH} ${DEBUG_PORT} ${XLEN}"
+	${XILINX_SCRIPTS_LOAD_ROOT}/run_gdb.sh ${ELF_PATH} ${GDB_HOST}:${GDB_PORT} ${XLEN}
+
+# Run XSBD to load the ELF and run directly
+xsdb_run_elf:
+	${XSDB} ${XILINX_SCRIPTS_LOAD_ROOT}/xsdb_run_elf.tcl ${ELF_PATH}
 
 ###########
 # PHONIES #

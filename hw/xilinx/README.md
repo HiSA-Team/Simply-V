@@ -16,7 +16,7 @@ Check [hw/units/README.md](../units/README.md) for more info.
 
 To build Xilinx and custom IPs:
 ``` bash
-make ips
+make ips -j <jobs>
 make ips/<IP name>.xci # For a single IP
 ```
 
@@ -24,12 +24,30 @@ To build the bitstream just run:
 ``` bash
 make bistream
 ```
+Bitstream build parameters:
+
+| Parameter           | Description                                   | Default                    | Supported values          |
+|---------------------|-----------------------------------------------|----------------------------|---------------------------|
+| SYNTH_STRATEGY      | Vivado synthesis strategy                     | Flow_PerfOptimized_high    | Vivado version compatible |
+| IMPL_STRATEGY       | Vivado implementation strategy                | Performance_ExtraTimingOpt | Vivado version compatible |
+| HIGH_PERF_BUILD     | Select high-performance of development build  | 0                          | 0,1                       |
+| HIGH_PERF_ROUTING   | Routing directive if `HIGH_PERF_BUILD=1`      | HigherDelayCost            | Vivado version compatible |
+| XILINX_ILA          | Enable ILA for marked nets  (see below)       | 0                          | 0,1                       |
+| XILINX_ILA_CLOCK    | Clock for ILA probes                          | main_clk                   | Legal clock in the design |
 
 Once the build is completed, program target device running:
 ``` bash
-make start_hw_server # Only once after host boot and for older versions of Vivado
 make program_bitstream
 ```
+Program bitstream parameters:
+| Parameter                | Description               | Default         | Supported values |
+|--------------------------|---------------------------|-----------------|------------------|
+| XILINX_VIVADO_MODE       | Vivado `-mode` flag value | batch           | batch, tcl, gui  |
+| XILINX_PROJECT_BUILD_DIR | Target build directory    | hw/xilinx/build | Legal directory  |
+| XILINX_BITSTREAM         | Target bitstream file     | `${XILINX_PROJECT_BUILD_DIR}`/simplyv.runs/impl_1/simplyv.bit | Legal file path  |
+| XILINX_PROBE_LTX         | Target probe file         | `${XILINX_PROJECT_BUILD_DIR}`/simplyv.runs/impl_1/simplyv.ltx | Legal file path  |
+| PCIE_BDF $^1$            | Target PCIe device        | 01:00.0         | Legal PCIe address  |
+> $^1$ Only for `hpc` profile, necessary to rescan the PCIe bus for accelerator cards.
 
 ## Directory Structure
 This tree is structured as follows:
@@ -91,4 +109,4 @@ To add probe on a net, you should mark it as `MARK_DEBUG=1` or `TRUE`, in one of
 3. Adding many probes might complicate the design and make it more difficult to route.
 
 ## Running Software
-To load and run software on the platform, check the [related documentation](doc/PROGRAM_LOADING.md).
+To load and run software on a programmed device, check the [related documentation](doc/PROGRAM_LOADING.md).

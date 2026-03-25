@@ -18,14 +18,10 @@ PROGRAM_NAME = $(shell basename $$PWD)
 # Paths and Folders #
 #####################
 
-SOC_SW_ROOT_DIR = $(SW_ROOT)/SoC
-
-SRC_DIR        = src
-OBJ_DIR        = obj
+SRC_DIR     = src
+OBJ_DIR     = obj
 INC_DIR     = inc
-STARTUP_DIR = $(SOC_SW_ROOT_DIR)/common
-
-LD_SCRIPT     = ld/user.ld
+STARTUP_DIR = $(SW_SOC_ROOT)/common
 
 #############
 # Libraries #

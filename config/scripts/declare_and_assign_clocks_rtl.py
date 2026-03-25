@@ -1,5 +1,5 @@
-#!/bin/python3.10
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
+# Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 # Description: utility functions to write RTL file for CLOCKS declaration and assignments
 
 ####################
@@ -13,99 +13,63 @@ import os
 import configuration
 from utils import *
 
-# Constants
-
-# File comments
-FILE_HEADER = \
-f"// This file is auto-generated with {os.path.basename(__file__)}\n\n\
-/////////////////////////////////////////\n\
-// Clocks declaration and assignments  //\n\
-/////////////////////////////////////////\n"
-
 # RTL files to edit
-RTL_FILES                = {
-    "UNINASOC"   : f"{os.environ.get('XILINX_ROOT')}/rtl/uninasoc_clk_assignments.svinc",
-    "HBUS"       : f"{os.environ.get('XILINX_ROOT')}/rtl/hbus_clk_assignments.svinc",
+RTL_FILES = {
+    "simplyv": f"{os.environ.get('XILINX_ROOT')}/rtl/simplyv_clk_assignments.svinc",
 }
 
-# HBUS internal clock frequencies
-HBUS_INTERN_CLK_FREQUENCIES = {
-    "ddr"  : 300,
-    # "hbm"  : 450
-}
+# Template string
+rtl_template_str = r"""// This file is auto-generated with {current_file_path}
 
-# HBUS external clock frequencies
-HBUS_EXTERN_CLK_FREQUENCIES = {
-    "cmac" : 322,
-}
+/////////////////////////////////////////
+// Clocks declaration and assignments  //
+/////////////////////////////////////////
 
-# Clock owners (HBUS, DDR etc.)
-CLK_OWNERS = [
-    "HBUS",
-    "DDR"
-]
+assign main_clk = clk_{main_clock_domain}MHz;
+assign main_rstn = rstn_{main_clock_domain}MHz;
+logic clk_300MHz;
+logic rstn_300MHz;
 
-# TODO 127: Maybe refactor (?)
-# Clocks declarations and assignments
-def declare_and_assign_clocks(config : configuration.Configuration) -> None:
-    # Declare and assign clocks
-    if config.CONFIG_NAME == "MBUS":
-        file = open(RTL_FILES["UNINASOC"], "w")
+{clock_domains_block}
 
-    elif config.CONFIG_NAME == "HBUS":
-        file = open(RTL_FILES["HBUS"], "w")
+logic HBUS_clk;
+"""
 
-    file.write(FILE_HEADER)
+# For each entry in the configuration create a clock domain object:
+# {
+#   "name": name,
+#   "clock": clock
+# }
+def declare_and_assign_clocks_rtl(config: configuration.Configuration) -> list:
+    # Get (name: clock) data structure
+    clock_domains = []
+    # Navigate the 2 lists. Skip HBUS or DDR4CH* because they have their clock
+    for clock, name in zip(mbus_config.RANGE_CLOCK_DOMAINS, mbus_config.RANGE_NAMES):
+        if name == "HBUS" or name.startswith("DDR4CH"):
+            continue
+        clock_domains.append(
+            {
+                "name": name,
+                "clock": clock,
+            }
+        )
+    return clock_domains
 
-    # Uninasoc
-    if config.CONFIG_NAME == "MBUS":
 
-        # Get the HBUS clock domain (MHz)
-        hbus_clk_freq = 300
-        for i in range(len(config.RANGE_CLOCK_DOMAINS)):
-            if config.RANGE_NAMES[i] == "HBUS":
-                hbus_clk_freq = config.RANGE_CLOCK_DOMAINS[i]
-                break
+# Create a string for each clock domain object in SV declaring the signal "logic name_clk" and assigning
+# the correct value to it
+def render_clock_domains(clock_domains: list) -> str:
+    lines = []
+    for c in clock_domains:
+        name = c["name"]
+        clock = c["clock"]
 
-        file.write(f"assign main_clk = clk_{config.MAIN_CLOCK_DOMAIN}MHz;\n")
-        file.write(f"assign main_rstn = rstn_{config.MAIN_CLOCK_DOMAIN}MHz;\n")
-        # file.write(f"logic clk_300MHz;\n")
-        # file.write(f"logic rstn_300MHz;\n")
+        lines.append(f"logic {name}_clk;")
+        lines.append(f"assign {name}_clk = clk_{clock}MHz;")
+        lines.append(f"logic {name}_rstn;")
+        lines.append(f"assign {name}_rstn = rstn_{clock}MHz;")
 
-        for i in range(len(config.RANGE_CLOCK_DOMAINS)):
-            # Exclude the DDR and the HBUS from this since they have its own clock (they are clock owners )
-            if config.RANGE_NAMES[i] not in CLK_OWNERS:
-                file.write(f"logic {config.RANGE_NAMES[i]}_clk;\n")
-                file.write(f"assign {config.RANGE_NAMES[i]}_clk = clk_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
-                file.write(f"logic {config.RANGE_NAMES[i]}_rstn;\n")
-                file.write(f"assign {config.RANGE_NAMES[i]}_rstn = rstn_{config.RANGE_CLOCK_DOMAINS[i]}MHz;\n")
-            elif config.RANGE_NAMES[i] == "HBUS":
-
-                # Find what is the external clock
-                for freq in HBUS_EXTERN_CLK_FREQUENCIES:
-                    if HBUS_EXTERN_CLK_FREQUENCIES[freq] == hbus_clk_freq:
-                        file.write(f"assign HBUS_extern_clk  = clk_{HBUS_EXTERN_CLK_FREQUENCIES[freq]}MHz;\n")
-                        file.write(f"assign HBUS_extern_rstn = rstn_{HBUS_EXTERN_CLK_FREQUENCIES[freq]}MHz;\n")
-
-    # HBUS
-    elif config.CONFIG_NAME == "HBUS":
-
-        # This is the only point where we need to read this from the config
-        hbus_clk_freq = config.HBUS_CLOCK_DOMAIN
-
-        # If the clock frequency is an HBUS-internal clock then find from what component it comes
-        if hbus_clk_freq in HBUS_INTERN_CLK_FREQUENCIES.values():
-            for freq in HBUS_INTERN_CLK_FREQUENCIES:
-                if HBUS_INTERN_CLK_FREQUENCIES[freq] == hbus_clk_freq:
-                    file.write(f"assign HBUS_clk = {freq}_clk;\n")
-                    file.write(f"assign HBUS_rstn = ~{freq}_rst;\n") # TODO 127: this work only in the DDR case, each peripheral has a different reset type...
-
-        # If the clock frequency is NOT an HBUS-internal clock then take the clock from the extern (CMAC or other extern peripherals/accelerators)
-        else:
-            file.write(f"assign HBUS_clk = extern_clock_i;\n")
-            file.write(f"assign HBUS_rstn = extern_reset_ni;\n")
-
-    file.close()
+    return "\n".join(lines)
 
 
 ########
@@ -114,6 +78,25 @@ def declare_and_assign_clocks(config : configuration.Configuration) -> None:
 if __name__ == "__main__":
     config_file_names = sys.argv[1:]
     configs = read_config(config_file_names)
+    mbus_config: configuration.Configuration = None
+
+    # Get the MBUS configuration
     for config in configs:
-        if config.CONFIG_NAME == "MBUS" or config.CONFIG_NAME == "HBUS":
-            declare_and_assign_clocks(config)
+        if config.CONFIG_NAME == "MBUS":
+            mbus_config = config
+            break
+
+    if mbus_config is None:
+        sys.exit(0)
+
+    # Get clock domains
+    clock_domains = declare_and_assign_clocks_rtl(mbus_config)
+
+    rendered = rtl_template_str.format(
+        current_file_path=os.path.basename(__file__),
+        clock_domains_block=render_clock_domains(clock_domains),
+        main_clock_domain=config.MAIN_CLOCK_DOMAIN,
+    )
+
+    with open(RTL_FILES["simplyv"], "w") as f:
+        f.write(rendered)

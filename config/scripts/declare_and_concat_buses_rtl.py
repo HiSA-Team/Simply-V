@@ -1,4 +1,3 @@
-#!/bin/python3.10
 # Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 # Description: utility functions to write RTL file for BUS declaration and concatenation
 
@@ -70,11 +69,18 @@ RTL_FILES                = {
 }
 
 # Get the correct bus suffix depending on bus name
-def GET_BUS_SUFFIX(busname) -> None:
+def GET_BUS_SUFFIX_AXI(busname) -> None:
 
     bus_suffix = ", "   + busname + "_DATA_WIDTH, " \
                         + busname + "_ADDR_WIDTH, " \
                         + busname + "_ID_WIDTH)\n"
+
+    return bus_suffix
+
+def GET_BUS_SUFFIX_AXILITE(busname) -> None:
+
+    bus_suffix = ", "   + busname + "_DATA_WIDTH, " \
+                        + busname + "_ADDR_WIDTH)\n"
 
     return bus_suffix
 
@@ -88,6 +94,8 @@ def concat_buses(lines : list, buses : list, is_master : bool, config : configur
     declare_prefix     = str()
     data_width         = str()
 
+    is_axilite = False
+
     # If is master
     if is_master:
         match (config.CONFIG_NAME):
@@ -95,6 +103,7 @@ def concat_buses(lines : list, buses : list, is_master : bool, config : configur
                 bus_cnt_str    = "1"                               # The width of the bus array in case of PBUS (1 since the PBUS has just a master)
                 concat_prefix  = CONCAT_AXILITE_MASTER_BUS_PREFIX  # The concatenation prefix in case of a PBUS
                 declare_prefix = DECLARE_AXILITE_BUS_ARRAY_PREFIX  # The declaration prefix in case of a PBUS
+                is_axilite = True
             case  "MBUS":
                 declare_prefix = DECLARE_BUS_ARRAY_PREFIX          # The declaration prefix in case of MBUS
                 bus_cnt_str    = "MBUS_NUM_SI"                     # The width of the bus array in case of MBUS
@@ -115,6 +124,7 @@ def concat_buses(lines : list, buses : list, is_master : bool, config : configur
                 bus_cnt_str    = "PBUS_NUM_MI"                     # The width of the bus array in case of PBUS
                 concat_prefix  = CONCAT_AXILITE_SLAVE_BUS_PREFIX   # The concatenation prefix in case of a PBUS
                 declare_prefix = DECLARE_AXILITE_BUS_ARRAY_PREFIX  # The declaration prefix in case of a PBUS
+                is_axilite = True
             case  "MBUS":
                 declare_prefix = DECLARE_BUS_ARRAY_PREFIX          # The declaration prefix in case of MBUS
                 bus_cnt_str    = "MBUS_NUM_MI"                     # The width of the bus array in case of MBUS
@@ -122,7 +132,7 @@ def concat_buses(lines : list, buses : list, is_master : bool, config : configur
             case  "HBUS":
                 declare_prefix = DECLARE_BUS_ARRAY_PREFIX          # The declaration prefix in case of HBUS
                 # NOTE: loopback to MBUS + 1 DDR
-                # TODO: only one DDR channel supported for now
+                # TODO125: only one DDR channel supported for now
                 bus_cnt_str    = "HBUS_NUM_MI"                     # The width of the bus array in case of HBUS
                 concat_prefix  = CONCAT_SLAVE_BUS_PREFIX           # The concatenation prefix in case of HBUS
 
@@ -134,9 +144,11 @@ def concat_buses(lines : list, buses : list, is_master : bool, config : configur
         # In the and it looks like (for masters): ..., MASTER1_to_BUS, MASTER0_to_BUS
         buses_string = f", {bus}{buses_string}"
 
-
     # Declare an AXI4/AXILITE BUS ARRAY master/slave
-    lines.append(f"{declare_prefix}{config.CONFIG_NAME}{suffix}, {bus_cnt_str}{GET_BUS_SUFFIX(config.CONFIG_NAME)}")
+    if is_axilite:
+        lines.append(f"{declare_prefix}{config.CONFIG_NAME}{suffix}, {bus_cnt_str}{GET_BUS_SUFFIX_AXILITE(config.CONFIG_NAME)}")
+    else:
+        lines.append(f"{declare_prefix}{config.CONFIG_NAME}{suffix}, {bus_cnt_str}{GET_BUS_SUFFIX_AXI(config.CONFIG_NAME)}")
     # Concatenate all master/slave buses with the declared AXI4/AXILITE BUS ARRAY
     lines.append(f"{concat_prefix}{len(buses)}({config.CONFIG_NAME}{suffix}{buses_string}{BASE_SUFFIX}")
 
@@ -166,10 +178,10 @@ def declare_buses(lines : list, is_master : bool, config : configuration.Configu
 
         if config.CONFIG_NAME == "PBUS":
             # If the bus is PBUS declare an AXILITE bus using the last created bus name
-            lines.append(f"{DECLARE_AXILITE_BUS_PREFIX}{buses[-1]}{GET_BUS_SUFFIX(config.CONFIG_NAME)}")
+            lines.append(f"{DECLARE_AXILITE_BUS_PREFIX}{buses[-1]}{GET_BUS_SUFFIX_AXILITE(config.CONFIG_NAME)}")
         elif config.CONFIG_NAME in {"MBUS", "HBUS"}:
             # If the bus is not PBUS declare an AXI4 bus using the last created bus name
-            lines.append(f"{DECLARE_BUS_PREFIX}{buses[-1]}{GET_BUS_SUFFIX(config.CONFIG_NAME)}")
+            lines.append(f"{DECLARE_BUS_PREFIX}{buses[-1]}{GET_BUS_SUFFIX_AXI(config.CONFIG_NAME)}")
     return buses
 
 

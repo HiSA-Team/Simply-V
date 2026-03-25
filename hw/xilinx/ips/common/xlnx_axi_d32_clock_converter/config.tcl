@@ -5,7 +5,7 @@ create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 
 
 set_property -dict [list \
     CONFIG.ACLK_ASYNC {1} \
-    CONFIG.SYNCHRONIZATION_STAGES {4} \
+    CONFIG.SYNCHRONIZATION_STAGES {8} \
 ] [get_ips $::env(IP_NAME)]
 
 # Fixed to 32 bits

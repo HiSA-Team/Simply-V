@@ -7,12 +7,12 @@
 set verilog_defines ""
 
 # HPC/EMBEDDED
-if { "$::env(SOC_CONFIG)" == "hpc" } {
+if { "$::env(SIMPLYV_PROFILE)" == "hpc" } {
     lappend verilog_defines HPC=1
-} elseif { "$::env(SOC_CONFIG)" == "embedded" } {
+} elseif { "$::env(SIMPLYV_PROFILE)" == "embedded" } {
     lappend verilog_defines EMBEDDED=1
 } else {
-    puts "Unsupported board $::env(SOC_CONFIG)"
+    puts "Unsupported board $::env(SIMPLYV_PROFILE)"
     exit 1
 }
 
@@ -23,15 +23,14 @@ lappend verilog_defines MBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
 lappend verilog_defines MBUS_NUM_SI=$::env(MBUS_NUM_SI)
 lappend verilog_defines MBUS_NUM_MI=$::env(MBUS_NUM_MI)
 lappend verilog_defines PBUS_NUM_MI=$::env(PBUS_NUM_MI)
-lappend verilog_defines PBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
+lappend verilog_defines PBUS_ID_WIDTH=$::env(PBUS_ID_WIDTH)
 lappend verilog_defines HBUS_NUM_MI=$::env(HBUS_NUM_MI)
 lappend verilog_defines HBUS_NUM_SI=$::env(HBUS_NUM_SI)
-lappend verilog_defines HBUS_ID_WIDTH=$::env(MBUS_ID_WIDTH)
+lappend verilog_defines HBUS_ID_WIDTH=$::env(HBUS_ID_WIDTH)
 # Core selection
 lappend verilog_defines CORE_SELECTOR=$::env(CORE_SELECTOR)
 # Clock domains
 lappend verilog_defines MAIN_CLOCK_FREQ_MHZ=$::env(MAIN_CLOCK_FREQ_MHZ)
-lappend verilog_defines HBUS_CLOCK_FREQ_MHZ=$::env(HBUS_CLOCK_FREQ_MHZ)
 set clock_domain_list [split $::env(RANGE_CLOCK_DOMAINS) " "]
 foreach clock_domain $clock_domain_list {
     lappend verilog_defines $clock_domain=$clock_domain

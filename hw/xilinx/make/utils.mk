@@ -32,12 +32,23 @@ open_ila:
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/set_ila_trigger.tcl
 
 # Read back from address
-OFFSET	?= 0x40000
+OFFSET	?= 0x00000
 NUM_BYTES ?= 16
-readback_jtag2axi:
+
+# Load the binary into SoC memory (BRAM for now)
+# Call the specific load script based on the SIMPLYV_PROFILE (HPC or EMBEDDED)
+readback: readback_${SIMPLYV_PROFILE}
+
+# Embedded profile
+readback_embedded:
 	${XILINX_VIVADO_ENV} ${XILINX_VIVADO} \
 	-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
-	-source ${XILINX_SCRIPTS_UTILS_ROOT}/$@.tcl -tclargs ${OFFSET} ${NUM_BYTES}
+	-source ${XILINX_SCRIPTS_UTILS_ROOT}/readback_jtag2axi.tcl -tclargs ${OFFSET} ${NUM_BYTES}
+
+# HPC profile
+readback_hpc:
+	@bash -c "source ${XILINX_SCRIPTS_UTILS_ROOT}/readback_xdma.sh \
+		${PCIE_BAR} ${OFFSET} ${NUM_BYTES}"
 
 # Trigger a reset pulse on VIO probes
 vio_resetn:
@@ -47,7 +58,7 @@ vio_%:
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/vio_reset.tcl -tclargs $@
 
 # Program the bitstream based on the SoC profile
-program_bitstream: program_bitstream_${SOC_CONFIG}
+program_bitstream: program_bitstream_${SIMPLYV_PROFILE}
 
 # Program bitstream for embedded profile
 program_bitstream_embedded:
@@ -56,17 +67,16 @@ program_bitstream_embedded:
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/program_bitstream.tcl
 
 # Program bitstream for HPC profile
-PCIE_DEV ?= 01:00.0 # TODO: remove this and find the dev automatically in the script
 program_bitstream_hpc:
 #	Kill pending virtual_uart instances (if any)
-#	TODO: This might be overkill, as only that one instance should cause problems 
-	-killall virtual_uart 
+#	TODO: This might be overkill, as only that one instance should cause problems
+	-killall virtual_uart
 #	Program
 	${XILINX_VIVADO} \
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/program_bitstream.tcl
 #	Rescan PCIe device
-	sudo ${XILINX_SCRIPTS_UTILS_ROOT}/pcie_hot_reset.sh ${PCIE_DEV}
+	sudo ${XILINX_SCRIPTS_UTILS_ROOT}/pcie_hot_reset.sh ${PCIE_BDF}
 
 # PHONIES
 .PHONY: open_prj open_gui start_hw_server open_hw_manager open_ila program_bitstream program_bitstream_embedded program_bitstream_hpc

@@ -1,27 +1,24 @@
-#  AXI Crossbar Configuration Generator
+#  Configuration Generation Flow
 This tree allows for the automatic generation of the AXI crossbar IP and linker script for software development.
 
 ## Prerequisites and Tools versions
-This tree has been verified with the following tools and versions
+This tree has been verified with the following tools and versions:
 * Vivado 2022.2 - 2024.2
 * AXI Interconnect v2.1
-* Pyhton >= 3.10
-* Pandas >= 2.2.3
+* Python >= 3.10
 
 ##  Configuration file format
 The input configuration files are CSV files. These files are under the configs directory structured as follows:
 ``` bash
 configs
-├── common                             # Config files shared between hpc and embedded
-│   ├── config_system.csv              # System-level configurations
-├── embedded                           # Config files for embedded
-│   ├── config_highperformance_bus.csv # High-performance bus config file
-│   ├── config_main_bus.csv            # Main bus config file
-│   └── config_peripheral_bus.csv      # Peripheral bus config file
-└── hpc                                # Config files for hpc
-    ├── config_highperformance_bus.csv # High-performance bus config file
-    ├── config_main_bus.csv            # Main bus config file
-    └── config_peripheral_bus.csv      # Peripheral bus config file
+├── common                           # Config files shared between hpc and embedded
+│   └── config_system.csv            # System-level configurations
+├── embedded                         # Config files for embedded
+│   ├── config_main_bus.csv          # Main bus config file
+│   └── config_peripheral_bus.csv    # Peripheral bus config file
+└── hpc                              # Config files for hpc
+    ├── config_main_bus.csv          # Main bus config file
+    └── config_peripheral_bus.csv    # Peripheral bus config file
 ```
 
 A configuration file can either refer to system-level options or to a specific bus. For now only main bus and peripheral bus are supported, **but file names must match those above**.
@@ -37,52 +34,70 @@ The following table details the supported properties.
 
 | Name  | Description | Values | Default
 |-|-|-|-|
-| CORE_SELECTOR         | Select target RV core (**only for main_bus**)             | CORE_PICORV32*, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV | CORE_CV64A6 | None (**mandatory value**)
-| VIO_RESETN_DEFAULT    | Select value for VIO resetn (**only for main_bus**)       | [0,1]                                                     | 1
-| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version             | [32,64]                                                 | 32
-| PHYSICAL_ADDR_WIDTH   | Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
+| CORE_SELECTOR         | Select target RV core       | CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA | None (**mandatory value**)
+| VIO_RESETN_DEFAULT    | Select value for VIO resetn | [0,1] | 1
+| XLEN                  | Defines Bus DATA_WIDTH, supported cores and Toolchain version | [32,64]                                                 | 32
+| PHYSICAL_ADDR_WIDTH $^1$| Select the phyisical address width. If XLEN=32 it must equal 32. If XLEN=64, it must be > 32 | (32..64) | 32
+| BOOT_MEMORY_BLOCK     | Select memory device to use for boot | [BRAM, DDR4CH\<n\>] | BRAM
+> $^1$ For `embedded` profile, due to limitations in the JTAG to AXI Master IP [PG174](https://docs.amd.com/v/u/en-US/pg174-jtag-axi), PHYSICAL_ADDR_WIDTH allowed values are only [32,64].
 
-> \* the external PicoRV32 IP is currently bugged in CSR support. Any code running with CORE_PICORV32 must not perform any CSR operation.
+### Notes for CORE_SELECTOR
+**XLEN** configuration must match the selected `CORE_SELECTOR`:
+- `XLEN=64` requires `CORE_SELECTOR in {CORE_MICROBLAZEV_RV64, CORE_CV64A6}`
+- `XLEN=32` requires `CORE_SELECTOR in {CORE_PICORV32, CORE_CV32E40P, CORE_IBEX, CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32}`
+
+Additional notes:
+- `CORE_SELECTOR = CORE_PICORV32`: the external PicoRV32 IP is currently bugged in CSR support. Any code running with CORE_PICORV32 must not perform any CSR operation.
+- `CORE_SELECTOR = CORE_DUAL_MICROBLAZEV_RV32` requires two additional `MASTER_NAMES` into `config_main_bus.csv`, namely `RV_SOCKET_DATA1 RV_SOCKET_INSTR1`.
+- `CORE_SELECTOR = CORE_CV64A6_ARA` supports a maximum MAIN_CLOCK_DOMAIN frequency of 50 MHz.
+
+### VIO resetn default
+The `VIO_RESETN_DEFAULT` parameter controls the programming-time value of core reset.
+- `VIO_RESETN_DEFAULT = 1` (default): VIO resetn is non-active, the CPU starts running at programming-time, allowing debugging with DTM and GDB.
+- `VIO_RESETN_DEFAULT = 0`:  VIO resetn is active, keeping the core in a reset state when the bitstream is programmed.
 
 ### Bus Configuration
 
 > **IMPORTANT NOTE**: the address range of a bus (child) that is a slave of another bus (parent), in its configuration (.csv) file, must be an absolute address range, this means that if the child bus is mapped in the parent bus at the address 0x1000 to 0x1FFF, then the peripherals in the child bus must be in the address range 0x1000 to 0x1FFFE
 
-| Name  | Description | Values | Default | Bus
-|-|-|-|-|-|
-| PROTOCOL              | AXI PROTOCOL                                              | (AXI4, AXI4LITE, AXI3, DISABLE*)                           | N/A | MBUS, HBUS, PBUS
-| CONNECTIVITY_MODE     | Crossbar Interconnection                                  | Shared-Address, Multiple-Data(SAMD), Shared-Address/Shared-Data(SASD) | SAMD | MBUS, HBUS, PBUS
-| ID_WIDTH              | AXI ID Width                                              | (4..32)                                                   | 4 | MBUS, HBUS, PBUS
-| NUM_MI                | Number of Master Interfaces (number of slaves)            | (0..16)                                                   | 2 | MBUS, HBUS, PBUS
-| NUM_SI                | Number of Slave Interfaces (number of masters)            | (0..16)                                                   | 1 | MBUS, HBUS, PBUS
-| MASTER_NAMES          | Names of masters connected to the bus                     | [NUM_SI] Strings | N/A | MBUS, HBUS, PBUS
-| RANGE_NAMES           | Names of slave memory ranges                              | [NUM_MI] Strings | N/A | MBUS, HBUS, PBUS
-| MAIN_CLOCK_DOMAIN     | Clock domain of the core + MBUS                           | (10, 20, 50, 100) for embedded. (10, 20, 50, 100, 250) for hpc | None | MBUS
-| HBUS_CLOCK_DOMAIN     | Clock domain of the HBUS                                  | 300 (from DDR), 322 (from CMAC) | None | HBUS
-| RANGE_CLOCK_DOMAINS         | Clock domains of the slaves (RANGE_NAMES) of the MBUS | [NUM_MI] (10, 20, 50, 100, 250 hpc only)| Note: the BRAM, DM_mem, PLIC clock domain must be the same as MAIN_CLOCK_DOMAIN, while the DDR clock domain must have the same frequency of the DDR board clock (i.e. 300MHz) | MBUS
-| ADDR_RANGES           | Number of ranges for master interfaces                    | (1..16)                                                   | 1 | MBUS, HBUS, PBUS
-| BASE_ADDR             | The Base Addresses for each range of each Master          | [NUM_MI*ADDR_RANGES] 64 bits hex                          | 0x100000 for the first range of every Master, otherwise is 0xffffffffffffffff [not used], it must be lesser or equal of Global ADDR_WIDTH | MBUS, HBUS, PBUS
-| RANGE_ADDR_WIDTH      | Number of bytes covered by each range of each Master      | [NUM_MI*ADDR_RANGES] (12..64) for AXI4 and AXI3, (1..64) for AXI4LITE | 12 for the first range of every Master, otherwise is 0 [not used] | MBUS, HBUS, PBUS
-| READ_CONNECTIVITY     | Master to slave read connectivity                         | [NUM_MI*NUM_SI] not enabled (0), enabled (1)              | 1 | MBUS, HBUS, PBUS
-| WRITE_CONNECTIVITY    | Master to slave write connectivity                        | [NUM_MI*NUM_SI] not enabled (0), enabled (1)              | 1 | MBUS, HBUS, PBUS
-| STRATEGY              | Implementation strategy                                   | Minimize Area (1), Maximize Performance (2)               | 0 | MBUS, HBUS, PBUS
-| Slave_Priority        | Scheduling Slave Priorities                               | [NUM_SI] (0..16)                                          | 0 which is Round-Robin | MBUS, HBUS, PBUS
-| SI_READ_ACCEPTANCE    | Number of concurrent Read Transactions for each Slave     | [NUM_SI] (1..32)                                          | 2, only 1 with SASD [forced by STRATEGY, Connectivity Mode and R_REGISTER choices] | MBUS, HBUS, PBUS
-| SI_WRITE_ACCEPTANCE   | Number of concurrent Write Transactions for each Slave    | [NUM_SI] (1..32)                                          | 2, only 1 with SASD [forced by STRATEGY, Connectivity Mode and R_REGISTER choices] | MBUS, HBUS, PBUS
-| THREAD_ID_WIDTH       | Number of ID bits used for Thread ID for each Slave       | [NUM_SI] (0..32)                                          | 0 is default, at the moment it’s forced to 0 | MBUS, HBUS, PBUS
-| SINGLE_THREAD         | Support for multiple Threads for each Slave               | [NUM_SI] Multiple Threads (0), Single Thread (1)          | 0 | MBUS, HBUS, PBUS
-| BASE_ID               | ID Base value for each Slave                              | [NUM_SI] (0x0..0xffffffff)                                | N/A | MBUS, HBUS, PBUS
-| MI_READ_ISSUING       | Number of concurrent Read Transactions for each Master    | [NUM_MI] (1..32)                                          | 4, only 1 with AXI4LITE and AXI3 [forced by PROTOCOL] | MBUS, HBUS, PBUS
-| MI_WRITE_ISSUING      | Number of concurrent Write Transactions for each Master   | [NUM_MI] (1..32)                                          | 4, only 1 AXI4LITE and AXI3 [forced by PROTOCOL] | MBUS, HBUS, PBUS
-| SECURE                | SECURE Mode for each Master                               | [NUM_MI] Non-SECURE (0), SECURE (1)                       | 0 | MBUS, HBUS, PBUS
-| R_REGISTER            | Read channel register slice                               | None (0), Full (1), Light(8), Automatic (8)               | 0, 1 only with SASD [forced by STRATEGY] | MBUS, HBUS, PBUS
-| AWUSER_WIDTH          | AXI AW User width                                         | (0..1024)                                                 | 0 | MBUS, HBUS, PBUS
-| ARUSER_WIDTH          | AXI AR User width                                         | (0..1024)                                                 | 0 | MBUS, HBUS, PBUS
-| WUSER_WIDTH           | AXI  W User width                                         | (0..1024)                                                 | 0 | MBUS, HBUS, PBUS
-| RUSER_WIDTH           | AXI  R User width                                         | (0..1024)                                                 | 0 | MBUS, HBUS, PBUS
-| BUSER_WIDTH           | AXI  B User width                                         | (0..1024)                                                 | 0 | MBUS, HBUS, PBUS
+| Name  | Description | Values | Default
+|-|-|-|-|
+| PROTOCOL              | AXI PROTOCOL                                              | (AXI4, AXI4LITE, AXI3, DISABLE*)                           | N/A
+| CONNECTIVITY_MODE     | Crossbar Interconnection                                  | Shared-Address, Multiple-Data(SAMD), Shared-Address/Shared-Data(SASD)                | SAMD
+| ID_WIDTH              | AXI ID Width                                              | (4..32)                                                   | 4
+| NUM_MI                | Number of Master Interfaces (number of slaves)            | (0..16)                                                   | 2
+| NUM_SI                | Number of Slave Interfaces (number of masters)            | (0..16)                                                   | 1
+| MASTER_NAMES          | Names of masters connected to the bus                     | [NUM_SI] Strings | N/A
+| RANGE_NAMES           | Names of slave memory ranges                                               | [NUM_MI] Strings                                          | N/A
+| MAIN_CLOCK_DOMAIN     | Clock domain of the core + MBUS                           | (10, 20, 50, 100) for embedded. (10, 20, 50, 100, 250) for hpc | None
+| RANGE_CLOCK_DOMAINS         | Clock domains of the slaves (RANGE_NAMES) of the MBUS | [NUM_MI] (10, 20, 50, 100, 250 hpc only)| Note: the BRAM, DM_mem, PLIC clock domain must be the same as MAIN_CLOCK_DOMAIN, while the DDR clock domain must have the same frequency of the DDR board clock (i.e. 300MHz)
+| ADDR_RANGES           | Number of ranges for master interfaces                    | (1..16)                                                   | 1
+| BASE_ADDR             | The Base Addresses for each range of each Master          | [NUM_MI*ADDR_RANGES] 64 bits hex                          | 0x100000 for the first range of every Master, otherwise is 0xffffffffffffffff [not used], it must be lesser or equal of Global ADDR_WIDTH
+| RANGE_ADDR_WIDTH      | Number of bytes covered by each range of each Master      | [NUM_MI*ADDR_RANGES] (12..64) for AXI4 and AXI3, (1..64) for AXI4LITE | 12 for the first range of every Master, otherwise is 0 [not used]
+| READ_CONNECTIVITY     | Master to slave read connectivity                         | [NUM_MI*NUM_SI] not enabled (0), enabled (1)              | 1
+| WRITE_CONNECTIVITY    | Master to slave write connectivity                        | [NUM_MI*NUM_SI] not enabled (0), enabled (1)              | 1
+| STRATEGY              | Implementation strategy                                   | Minimize Area (1), Maximize Performance (2)               | 0
+| Slave_Priority        | Scheduling Slave Priorities                               | [NUM_SI] (0..16)                                          | 0 which is Round-Robin
+| SI_READ_ACCEPTANCE    | Number of concurrent Read Transactions for each Slave     | [NUM_SI] (1..32)                                          | 2, only 1 with SASD [forced by STRATEGY, Connectivity Mode and R_REGISTER choices]
+| SI_WRITE_ACCEPTANCE   | Number of concurrent Write Transactions for each Slave    | [NUM_SI] (1..32)                                          | 2, only 1 with SASD [forced by STRATEGY, Connectivity Mode and R_REGISTER choices]
+| THREAD_ID_WIDTH       | Number of ID bits used for Thread ID for each Slave       | [NUM_SI] (0..32)                                          | 0 is default, at the moment it’s forced to 0
+| SINGLE_THREAD         | Support for multiple Threads for each Slave               | [NUM_SI] Multiple Threads (0), Single Thread (1)          | 0
+| BASE_ID               | ID Base value for each Slave                              | [NUM_SI] (0x0..0xffffffff)                                | N/A
+| MI_READ_ISSUING       | Number of concurrent Read Transactions for each Master    | [NUM_MI] (1..32)                                          | 4, only 1 with AXI4LITE and AXI3 [forced by PROTOCOL]
+| MI_WRITE_ISSUING      | Number of concurrent Write Transactions for each Master   | [NUM_MI] (1..32)                                          | 4, only 1 AXI4LITE and AXI3 [forced by PROTOCOL]
+| SECURE                | SECURE Mode for each Master                               | [NUM_MI] Non-SECURE (0), SECURE (1)                       | 0
+| R_REGISTER            | Read channel register slice                               | None (0), Full (1), Light(8), Automatic (8)               | 0, 1 only with SASD [forced by STRATEGY]
+| AWUSER_WIDTH          | AXI AW User width                                         | (0..1024)                                                 | 0
+| ARUSER_WIDTH          | AXI AR User width                                         | (0..1024)                                                 | 0
+| WUSER_WIDTH           | AXI  W User width                                         | (0..1024)                                                 | 0
+| RUSER_WIDTH           | AXI  R User width                                         | (0..1024)                                                 | 0
+| BUSER_WIDTH           | AXI  B User width                                         | (0..1024)                                                 | 0
 
 > \* Using `DISABLE` as AXI PROTOCOL, disable all checks for a given bus. Useful for non-instantiated buses, e.g. HBUS in `embedded` profile
+
+> \**: AXI Crossbar (PG059) uses an opaque THREAD_ID_WIDTH parameter to track transaction ordering alongside ID_WIDTH.
+Hence, the ID_WIDTH parameter requires to accommodate the Master ID plus the maximum THREAD_ID_WIDTH value, i.e. [ceil_log2(NUM_SI) + max(THREAD_ID_WIDTH)].
+
 
 ## Genenerate Configurations
 After applying configuration changes to the target CSV files (`embedded` or `hpc`), apply though `make`.
@@ -99,19 +114,15 @@ $ make config_sw                  # Update software config
 ```
 
 ### BRAM size configuration
-The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_gen` according to the `RANGE_ADDR_WIDTH` assigned to the BRAM in the CSV.
+The `config_xilinx` flow also configures the BRAM size of the IP `xlnx_blk_mem_gen_<i>` (where i is the BRAM index) according to the `RANGE_ADDR_WIDTH` assigned to the BRAM in the CSV.
 
-> **NOTE**: The xlnx_blk_mem_gen/config.tcl file configures the first BRAM occurrence, hence it uses the index 0. For now, a single BRAM is supported, if multiple BRAMs are declared in the config (CSV) file, the config flow gives an error. Multiple BRAMs would be simple to add in the future.
+> **NOTE**: The `xlnx_blk_mem_gen_0/config.tcl` file configures the first BRAM occurrence, hence it uses the index 0. For now, a single BRAM is supported, if multiple BRAMs are declared in the config (CSV) file, the config flow gives an error. Multiple BRAMs would be simple to add in the future.
+
+> **NOTE**: All the `xlnx_blk_mem_gen_<i>/config.tcl` configuration files must be in the `ips/common` directory.
 
 ### Clock domains
 The configuration flow gives the possibility to specify clock domains.
 The `MAIN_CLOCK_DOMAIN` is the closk domain of the core and the main bus (`MBUS`). All the slaves attached to the `MBUS` can have their own clock domain. If a slave has a domain different from the `MAIN_CLOCK_DOMAIN`, it needs a `xlnx_axi_clock_converter` to cross the clock domains. In this case the configuration flow will set the `<SLAVE_NAME>_HAS_CLOCK_DOMAIN` (i.e. `PBUS_HAS_CLOCK_DOMAIN`) variable which informs that the slave has its own clock domain.
-The `HBUS_CLOCK_DOMAIN` is the clock domain of the high-performance bus (`HBUS`). It comes from a peripheral attached to the `HBUS`. The peripheral can be external or internal to the `HBUS`. For now the only clock domains supported are `300` (from the internal `DDR`) and `322` (from the external `CMAC`).
-
-### VIO resetn default
-The `VIO_RESETN_DEFAULT` parameter controls the programming-time value of core reset.
-- `VIO_RESETN_DEFAULT = 1` (default): VIO resetn is non-active, the CPU starts running at programming-time, allowing debugging with DTM and GDB.
-- `VIO_RESETN_DEFAULT = 0`:  VIO resetn is active, keeping the core in a reset state when the bitstream is programmed.
 
 ### Scripting Architecture
 The directory `scripts/` holds multiple scripts, acting in the following scripting architecture:
@@ -121,7 +132,7 @@ The directory `scripts/` holds multiple scripts, acting in the following scripti
 The multiple scripts generate outputs from common inputs:
 1. The Xilinx-related environment configuration in [`config.mk`](../hw/xilinx/make/config.mk) is handled by [`config_xilinx.sh`](scripts/config_xilinx.sh).
 1. The software-related environment (including toolchain and compilation flags) configuration in [`config.mk`](../sw/SoC/common/config.mk) is handled by [`config_sw.sh`](scripts/config_sw.sh).
-1. [Linker script](../sw/SoC/common/UninaSoC.ld) generation is handled solely by [`create_linker_script.py`](scripts/create_linker_script.py) source.
+1. [Linker script](../sw/SoC/common/simplyv.ld) generation is handled solely by [`create_linker_script.py`](scripts/create_linker_script.py) source.
 1. Configuration TCL files (for [MBUS](../hw/xilinx/ips/common/xlnx_main_crossbar/config.tcl) and [PBUS](../hw/xilinx/ips/common/xlnx_peripheral_crossbar/config.tcl)) for the platform crossbars are generated with [`create_crossbar_config.py`](scripts/create_crossbar_config.py) as master script.
 
 ### How to add a new property
