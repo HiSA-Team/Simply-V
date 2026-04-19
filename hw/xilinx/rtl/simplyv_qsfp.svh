@@ -1,8 +1,8 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
 // Description: Utility variables and macros for QSFP28 interface
 
-`ifndef UNINASOC_QSFP_SVH__
-`define UNINASOC_QSFP_SVH__
+`ifndef SIMPLYV_QSFP_SVH__
+`define SIMPLYV_QSFP_SVH__
 
 // QSFP Lanes
 localparam unsigned QSFP_LANES = 4;
@@ -17,4 +17,4 @@ localparam unsigned QSFP_LANES = 4;
     output logic [QSFP_LANES-1:0] qsfp``port``_txn_o
 
 
-`endif // UNINASOC_QSFP_SVH
+`endif // SIMPLYV_QSFP_SVH

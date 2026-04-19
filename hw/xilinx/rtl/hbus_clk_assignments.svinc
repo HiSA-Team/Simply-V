@@ -1,7 +1,0 @@
-// This file is auto-generated with declare_and_assign_clocks_rtl.py
-
-/////////////////////////////////////////
-// Clocks declaration and assignments  //
-/////////////////////////////////////////
-assign HBUS_clk = extern_clock_i;
-assign HBUS_rstn = extern_reset_ni;

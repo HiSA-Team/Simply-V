@@ -1,14 +1,16 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Author: Cesare Pulcrano <ce.pulcrano@studenti.unina.it>
+// Author: Salvatore Santoro <sal.santoro@studenti.unina.it>
+// Author: Alessandra Maraia <a.maraia@studenti.unina.it>
 // Description: Wrapper module for RISC-V CPUs and Debuggers
 
 // Import packages
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_mem.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_mem.svh"
 
 module rv_socket # (
     parameter core_selector_t CORE_SELECTOR     = CORE_CV32E40P,
@@ -23,13 +25,18 @@ module rv_socket # (
     input  logic [LOCAL_ADDR_WIDTH -1 : 0 ] bootaddr_i,
     input  logic [NUM_IRQ          -1 : 0 ] irq_i,
 
-    // Core
+    // Core 0
     `DEFINE_AXI_MASTER_PORTS(rv_socket_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
     `DEFINE_AXI_MASTER_PORTS(rv_socket_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+
+    // Core 1
+    `DEFINE_AXI_MASTER_PORTS(rv_socket_instr1, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_MASTER_PORTS(rv_socket_data1,  LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
 
     // Debug module
     `DEFINE_AXI_MASTER_PORTS(rv_socket_dbg_master, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
     `DEFINE_AXI_SLAVE_PORTS(rv_socket_dbg_slave, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+
 );
 
     //////////////////////////////////////////////////////
@@ -42,11 +49,15 @@ module rv_socket # (
 
     // Let's assume single core
     localparam logic [LOCAL_DATA_WIDTH-1:0] hart_id = '0;
-    localparam logic [LOCAL_ADDR_WIDTH-1:0] DEBUG_START   = 'h10000; // From config
+    localparam logic [LOCAL_ADDR_WIDTH-1:0] DEBUG_START   = 'h10000; // TODO121: import from config
 
     // From dm_pkg
     localparam logic [LOCAL_ADDR_WIDTH-1:0] dm_HaltAddress = 'h800;
     localparam logic [LOCAL_ADDR_WIDTH-1:0] dm_ExceptionAddress = dm_HaltAddress + 16;
+
+    // Extended boot_addr_i to 64-bits
+    // - For cores that have a fixed adddress width
+    logic [63 : 0] extended_a64_boot_addr = {{(64-LOCAL_ADDR_WIDTH){1'b0}}, bootaddr_i };
 
     //////////////////////////////////////
     //    ___ _                _        //
@@ -60,11 +71,7 @@ module rv_socket # (
     logic core_resetn_internal;
     assign core_resetn_internal = rst_ni & core_resetn_i;
 
-    // Declare AXI interfaces for instruction memory port and data memory port
-    `DECLARE_AXI_BUS(core_instr_to_socket_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
-    `DECLARE_AXI_BUS(core_data_to_socket_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
-
-    // Declare MEM ports
+    // Declare common MEM ports
     `DECLARE_MEM_BUS(core_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
     `DECLARE_MEM_BUS(core_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
 
@@ -84,8 +91,8 @@ module rv_socket # (
     ////////////////////////////
 
     // Check if the selected Core is compatible with the system XLEN
-    if ( LOCAL_DATA_WIDTH == 64 && CORE_SELECTOR inside {CORE_PICORV32,CORE_CV32E40P,CORE_IBEX,CORE_MICROBLAZEV} ||
-         LOCAL_DATA_WIDTH == 32 && CORE_SELECTOR inside {CORE_CV64A6} ) begin : xlen_core_error
+    if ( LOCAL_DATA_WIDTH == 64 && CORE_SELECTOR inside {CORE_PICORV32,CORE_CV32E40P,CORE_IBEX,CORE_MICROBLAZEV_RV32,CORE_DUAL_MICROBLAZEV_RV32} ||
+         LOCAL_DATA_WIDTH == 32 && CORE_SELECTOR inside {CORE_CV64A6, CORE_CV64A6_ARA, CORE_MICROBLAZEV_RV64} ) begin : xlen_core_error
         $error($sformatf("[Socket] Illegal CORE (%s) for the selected XLEN (%0d)",
                         core_selector_to_string(CORE_SELECTOR), LOCAL_DATA_WIDTH));
     end : xlen_core_error
@@ -94,8 +101,10 @@ module rv_socket # (
     // Core Instantiation //
     ////////////////////////
 
+    // Select core based on CORE_SELECTOR parameter
     generate
-        if (CORE_SELECTOR == CORE_PICORV32) begin: core_picorv32
+    case (CORE_SELECTOR)
+        CORE_PICORV32 : begin: core_picorv32
 
             //////////////////////////
             //      PicoRV32        //
@@ -162,9 +171,8 @@ module rv_socket # (
                 .trace_valid_o      (                           ), // Unmapped atm
                 .trace_data_o       (                           )  // Unmapped atm
             );
-
-        end
-        else if (CORE_SELECTOR == CORE_CV32E40P) begin: core_cv32e40p
+        end : core_picorv32
+        CORE_CV32E40P : begin : core_cv32e40p
 
             //////////////////////////
             //      CV32E40P        //
@@ -222,9 +230,8 @@ module rv_socket # (
                 .fetch_enable_i         ( 1'b1                      ),
                 .core_sleep_o           (                           )   // TBD
             );
-
-        end
-        else if (CORE_SELECTOR == CORE_IBEX) begin : core_ibex
+        end : core_cv32e40p
+        CORE_IBEX : begin : core_ibex
 
             //////////////////////
             //      Ibex        //
@@ -260,17 +267,17 @@ module rv_socket # (
                 .data_mem_rdata         ( core_data_mem_rdata       ),
                 .data_mem_error         ( core_data_mem_error       ), // Although unused
 
-                .irq_software_i         ( irq_i[CORE_SW_INTERRUPT] ),
-                .irq_timer_i            ( irq_i[CORE_TIM_INTERRUPT] ),
-                .irq_external_i         ( irq_i[CORE_EXT_INTERRUPT] ),
+                .irq_software_i         ( irq_i[RVSOCKET_SW_INTERRUPT] ),
+                .irq_timer_i            ( irq_i[RVSOCKET_TIM_INTERRUPT] ),
+                .irq_external_i         ( irq_i[RVSOCKET_EXT_INTERRUPT] ),
                 .irq_fast_i             ( '0 ),
                 .irq_nm_i               ( '0 ),
 
                 .debug_req_i            ( debug_req_core )
 
             );
-        end
-        else if (CORE_SELECTOR == CORE_MICROBLAZEV) begin : xlnx_microblaze_riscv
+        end : core_ibex
+        CORE_MICROBLAZEV_RV32 : begin : xlnx_microblazev_rv32
 
             // Tie-off unused signals
             assign core_instr_mem_wdata = '0;
@@ -278,7 +285,7 @@ module rv_socket # (
             assign core_instr_mem_be    = '0;
 
             //////////////////////////
-            //      MICROBLAZE      //
+            //    MICROBLAZE RV32   //
             //////////////////////////
 
             // Debug interface connections definition
@@ -293,26 +300,40 @@ module rv_socket # (
             logic       Dbg_Rst;      // wire Dbg_Rst_0
             logic       Dbg_Disable;  // wire Dbg_Disable_0
 
-
             // Declare AXI interfaces for instruction memory port and data memory port for MicroblazeV
             `DECLARE_AXI_BUS(microblaze_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
-            `DECLARE_AXILITE_BUS(microblaze_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXILITE_BUS(microblaze_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
 
             // Declare AXI interface for Protocol Converter
             `DECLARE_AXI_BUS(converter_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
 
-            // Microblaze V instance
-            xlnx_microblaze_riscv microblazev_u (
+            // Attach to socket
+            `ASSIGN_AXI_BUS(rv_socket_data , microblaze_data);
+            `ASSIGN_AXI_BUS(rv_socket_instr , converter_instr);
+
+            // Tie-off undriven ID signals
+            // ID's are set to zero since they are not present in microblaze, while the crossbar have ID's of size 2.
+            // Instruction
+            assign converter_instr_axi_awid = '0;
+            assign converter_instr_axi_arid = '0;
+            // Data
+            assign microblaze_data_axi_awid = '0;
+            assign microblaze_data_axi_arid = '0;
+
+            // Regions are not present in microblaze data implementation so they are set to 0.
+            assign microblaze_data_axi_awregion ='0;
+            assign microblaze_data_axi_arregion ='0;
+
+            // MICROBLAZE-V RV32 instance
+            xlnx_microblazev_rv32 microblazev_u (
                 // Clock and reset
                 .Clk                ( clk_i       ), // input wire Clk
                 .Reset              ( dbg_sys_rst ), // input wire Reset
-
                 // Interrupts
-                // Ublaze can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
-                .Interrupt          ( irq_i[CORE_EXT_INTERRUPT] ), // input wire Interrupt
-                .Interrupt_Address  ('0                         ), // input wire [0 : 31] Interrupt_Address
-                .Interrupt_Ack      (                           ), // output wire [0 : 1] Interrupt_Ack
-
+                // Microblaze-V can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
+                .Interrupt          ( irq_i[RVSOCKET_EXT_INTERRUPT] ), // input wire Interrupt
+                .Interrupt_Address  ('0                             ), // input wire [0 : 31] Interrupt_Address
+                .Interrupt_Ack      (                               ), // output wire [0 : 1] Interrupt_Ack
                 // Debug port to MDMV
                 .Dbg_Clk            ( Dbg_Clk     ), // input wire Dbg_Clk
                 .Dbg_TDI            ( Dbg_TDI     ), // input wire Dbg_TDI
@@ -323,7 +344,6 @@ module rv_socket # (
                 .Dbg_Update         ( Dbg_Update  ), // input wire Dbg_Update
                 .Debug_Rst          ( Dbg_Rst     ), // input wire Debug_Rst
                 .Dbg_Disable        ( Dbg_Disable ), // input wire Dbg_Disable
-
                 // Data port (AXI)
                 .M_AXI_DP_AWADDR    ( microblaze_data_axi_awaddr    ), // output wire [31 : 0] M_AXI_DP_AWADDR
                 .M_AXI_DP_AWLEN     ( microblaze_data_axi_awlen     ), // output wire [7 : 0] M_AXI_DP_AWLEN
@@ -358,7 +378,6 @@ module rv_socket # (
                 .M_AXI_DP_RLAST     ( microblaze_data_axi_rlast     ), // input wire M_AXI_DP_RLAST
                 .M_AXI_DP_RVALID    ( microblaze_data_axi_rvalid    ), // input wire M_AXI_DP_RVALID
                 .M_AXI_DP_RREADY    ( microblaze_data_axi_rready    ), // output wire M_AXI_DP_RREADY
-
                 // Instruction port (AXI-lite)
                 .M_AXI_IP_AWADDR    ( microblaze_instr_axilite_awaddr   ), // output wire [31 : 0] M_AXI_IP_AWADDR
                 .M_AXI_IP_AWPROT    ( microblaze_instr_axilite_awprot   ), // output wire [2 : 0] M_AXI_IP_AWPROT
@@ -381,7 +400,7 @@ module rv_socket # (
                 .M_AXI_IP_RREADY    ( microblaze_instr_axilite_rready   )  // output wire M_AXI_IP_RREADY
             );
 
-            // Microblaze Debug Module V
+            // Microblaze Debug Module V (MDMV)
             xlnx_microblaze_debug_module_v mdmv_u (
                 .Debug_SYS_Rst  ( dbg_sys_rst   ), // output wire Debug_SYS_Rst
                 .Dbg_Clk_0      ( Dbg_Clk       ), // output wire Dbg_Clk_0
@@ -395,29 +414,7 @@ module rv_socket # (
                 .Dbg_Disable_0  ( Dbg_Disable   )  // output wire Dbg_Disable_0
             );
 
-
-            // Attach to socket
-            `ASSIGN_AXI_BUS( rv_socket_data , microblaze_data );
-            `ASSIGN_AXI_BUS( rv_socket_instr , converter_instr);
-
-            // Tie-off undriven ID signals
-            // ID's are set to zero since they are not present in microblaze, while the crossbar have ID's of size 2.
-            // Instruction
-            assign converter_instr_axi_awid = '0;
-            // assign converter_instr_axi_bid  = '0;
-            assign converter_instr_axi_arid = '0;
-            // assign converter_instr_axi_rid  = '0;
-            // Data
-            assign microblaze_data_axi_awid = '0;
-            // assign microblaze_data_axi_bid  = '0;
-            assign microblaze_data_axi_arid = '0;
-            // assign microblaze_data_axi_rid  = '0;
-
-            // Regions are not present in microblaze data implementation so they are set to 0.
-            assign microblaze_data_axi_awregion ='0;
-            assign microblaze_data_axi_arregion ='0;
-
-            // Convert from Microblaze V (AXI-lite) to socket (AXI)
+            // Convert from MICROBLAZE-V (AXI-lite) to socket (AXI)
             // Only instruction port (AXI-lite), data port is socket compliant (AXI)
             xlnx_axilite_to_axi4_d32_converter axilite_to_axi4_converter_u (
                 .aclk           ( clk_i                             ), // input wire aclk
@@ -479,26 +476,752 @@ module rv_socket # (
                 .m_axi_rvalid   ( converter_instr_axi_rvalid        ), // input wire m_axi_rvalid
                 .m_axi_rready   ( converter_instr_axi_rready        )  // output wire m_axi_rready
             );
+        end : xlnx_microblazev_rv32
+        CORE_DUAL_MICROBLAZEV_RV32 : begin : xlnx_dual_microblazev_rv32
 
-        // 64-bits cores
-        end else if (CORE_SELECTOR == CORE_CV64A6) begin: core_cv64a6
+            // Tie-off unused signals
+            assign core_instr_mem_wdata = '0;
+            assign core_instr_mem_we    = '0;
+            assign core_instr_mem_be    = '0;
+
+            //////////////////////////
+            // DUAL MICROBLAZE RV32 //
+            //////////////////////////
+            // TODO: export this eventually
+            localparam int unsigned NUM_CORES = 2;
+
+            // Debug interface connections definition
+            logic [NUM_CORES-1 : 0]      dbg_sys_rst;
+            logic [NUM_CORES-1 : 0]      Dbg_Clk;      // wire Dbg_Clk_0
+            logic [NUM_CORES-1 : 0]      Dbg_TDI;      // wire Dbg_TDI_0
+            logic [NUM_CORES-1 : 0]      Dbg_TDO;      // wire Dbg_TDO_0
+            logic [NUM_CORES-1 : 0][0:7] Dbg_Reg_En;   // wire [0 : 7] Dbg_Reg_En_0
+            logic [NUM_CORES-1 : 0]      Dbg_Capture;  // wire Dbg_Capture_0
+            logic [NUM_CORES-1 : 0]      Dbg_Shift;    // wire Dbg_Shift_0
+            logic [NUM_CORES-1 : 0]      Dbg_Update;   // wire Dbg_Update_0
+            logic [NUM_CORES-1 : 0]      Dbg_Rst;      // wire Dbg_Rst_0
+            logic [NUM_CORES-1 : 0]      Dbg_Disable;  // wire Dbg_Disable_0
+
+            // Declare AXI interfaces for instruction memory port and data memory port for MicroblazeV
+            `DECLARE_AXI_BUS(microblaze0_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXI_BUS(microblaze1_data,  LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXILITE_BUS(microblaze0_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
+            `DECLARE_AXILITE_BUS(microblaze1_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH);
+            // Declare AXI interface for Protocol Converter
+            `DECLARE_AXI_BUS(converter0_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXI_BUS(converter1_instr, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+
+            // MICROBLAZE-V RV32 instance
+            xlnx_microblazev_rv32 microblazev_u0 (
+                // Clock and reset
+                .Clk                ( clk_i       ), // input wire Clk
+                .Reset              ( dbg_sys_rst ), // input wire Reset
+                // Interrupts
+                // Microblaze-V can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
+                .Interrupt          ( irq_i[RVSOCKET_EXT_INTERRUPT] ), // input wire Interrupt
+                .Interrupt_Address  ('0                             ), // input wire [0 : 31] Interrupt_Address
+                .Interrupt_Ack      (                               ), // output wire [0 : 1] Interrupt_Ack
+                // Debug port to MDMV (core 0)
+                .Dbg_Clk            ( Dbg_Clk     [0] ), // input wire Dbg_Clk
+                .Dbg_TDI            ( Dbg_TDI     [0] ), // input wire Dbg_TDI
+                .Dbg_TDO            ( Dbg_TDO     [0] ), // output wire Dbg_TDO
+                .Dbg_Reg_En         ( Dbg_Reg_En  [0] ), // input wire [0 : 7] Dbg_Reg_En
+                .Dbg_Shift          ( Dbg_Shift   [0] ), // input wire Dbg_Shift
+                .Dbg_Capture        ( Dbg_Capture [0] ), // input wire Dbg_Capture
+                .Dbg_Update         ( Dbg_Update  [0] ), // input wire Dbg_Update
+                .Debug_Rst          ( Dbg_Rst     [0] ), // input wire Debug_Rst
+                .Dbg_Disable        ( Dbg_Disable [0] ), // input wire Dbg_Disable
+                // Data port (AXI)
+                .M_AXI_DP_AWADDR    ( microblaze0_data_axi_awaddr    ), // output wire [31 : 0] M_AXI_DP_AWADDR
+                .M_AXI_DP_AWLEN     ( microblaze0_data_axi_awlen     ), // output wire [7 : 0] M_AXI_DP_AWLEN
+                .M_AXI_DP_AWSIZE    ( microblaze0_data_axi_awsize    ), // output wire [2 : 0] M_AXI_DP_AWSIZE
+                .M_AXI_DP_AWBURST   ( microblaze0_data_axi_awburst   ), // output wire [1 : 0] M_AXI_DP_AWBURST
+                .M_AXI_DP_AWLOCK    ( microblaze0_data_axi_awlock    ), // output wire M_AXI_DP_AWLOCK
+                .M_AXI_DP_AWCACHE   ( microblaze0_data_axi_awcache   ), // output wire [3 : 0] M_AXI_DP_AWCACHE
+                .M_AXI_DP_AWPROT    ( microblaze0_data_axi_awprot    ), // output wire [2 : 0] M_AXI_DP_AWPROT
+                .M_AXI_DP_AWQOS     ( microblaze0_data_axi_awqos     ), // output wire [3 : 0] M_AXI_DP_AWQOS
+                .M_AXI_DP_AWVALID   ( microblaze0_data_axi_awvalid   ), // output wire M_AXI_DP_AWVALID
+                .M_AXI_DP_AWREADY   ( microblaze0_data_axi_awready   ), // input wire M_AXI_DP_AWREADY
+                .M_AXI_DP_WDATA     ( microblaze0_data_axi_wdata     ), // output wire [31 : 0] M_AXI_DP_WDATA
+                .M_AXI_DP_WSTRB     ( microblaze0_data_axi_wstrb     ), // output wire [3 : 0] M_AXI_DP_WSTRB
+                .M_AXI_DP_WLAST     ( microblaze0_data_axi_wlast     ), // output wire M_AXI_DP_WLAST
+                .M_AXI_DP_WVALID    ( microblaze0_data_axi_wvalid    ), // output wire M_AXI_DP_WVALID
+                .M_AXI_DP_WREADY    ( microblaze0_data_axi_wready    ), // input wire M_AXI_DP_WREADY
+                .M_AXI_DP_BRESP     ( microblaze0_data_axi_bresp     ), // input wire [1 : 0] M_AXI_DP_BRESP
+                .M_AXI_DP_BVALID    ( microblaze0_data_axi_bvalid    ), // input wire M_AXI_DP_BVALID
+                .M_AXI_DP_BREADY    ( microblaze0_data_axi_bready    ), // output wire M_AXI_DP_BREADY
+                .M_AXI_DP_ARADDR    ( microblaze0_data_axi_araddr    ), // output wire [31 : 0] M_AXI_DP_ARADDR
+                .M_AXI_DP_ARLEN     ( microblaze0_data_axi_arlen     ), // output wire [7 : 0] M_AXI_DP_ARLEN
+                .M_AXI_DP_ARSIZE    ( microblaze0_data_axi_arsize    ), // output wire [2 : 0] M_AXI_DP_ARSIZE
+                .M_AXI_DP_ARBURST   ( microblaze0_data_axi_arburst   ), // output wire [1 : 0] M_AXI_DP_ARBURST
+                .M_AXI_DP_ARLOCK    ( microblaze0_data_axi_arlock    ), // output wire M_AXI_DP_ARLOCK
+                .M_AXI_DP_ARCACHE   ( microblaze0_data_axi_arcache   ), // output wire [3 : 0] M_AXI_DP_ARCACHE
+                .M_AXI_DP_ARPROT    ( microblaze0_data_axi_arprot    ), // output wire [2 : 0] M_AXI_DP_ARPROT
+                .M_AXI_DP_ARQOS     ( microblaze0_data_axi_arqos     ), // output wire [3 : 0] M_AXI_DP_ARQOS
+                .M_AXI_DP_ARVALID   ( microblaze0_data_axi_arvalid   ), // output wire M_AXI_DP_ARVALID
+                .M_AXI_DP_ARREADY   ( microblaze0_data_axi_arready   ), // input wire M_AXI_DP_ARREADY
+                .M_AXI_DP_RDATA     ( microblaze0_data_axi_rdata     ), // input wire [31 : 0] M_AXI_DP_RDATA
+                .M_AXI_DP_RRESP     ( microblaze0_data_axi_rresp     ), // input wire [1 : 0] M_AXI_DP_RRESP
+                .M_AXI_DP_RLAST     ( microblaze0_data_axi_rlast     ), // input wire M_AXI_DP_RLAST
+                .M_AXI_DP_RVALID    ( microblaze0_data_axi_rvalid    ), // input wire M_AXI_DP_RVALID
+                .M_AXI_DP_RREADY    ( microblaze0_data_axi_rready    ), // output wire M_AXI_DP_RREADY
+                // Instruction port (AXI-lite)
+                .M_AXI_IP_AWADDR    ( microblaze0_instr_axilite_awaddr   ), // output wire [31 : 0] M_AXI_IP_AWADDR
+                .M_AXI_IP_AWPROT    ( microblaze0_instr_axilite_awprot   ), // output wire [2 : 0] M_AXI_IP_AWPROT
+                .M_AXI_IP_AWVALID   ( microblaze0_instr_axilite_awvalid  ), // output wire M_AXI_IP_AWVALID
+                .M_AXI_IP_AWREADY   ( microblaze0_instr_axilite_awready  ), // input wire M_AXI_IP_AWREADY
+                .M_AXI_IP_WDATA     ( microblaze0_instr_axilite_wdata    ), // output wire [31 : 0] M_AXI_IP_WDATA
+                .M_AXI_IP_WSTRB     ( microblaze0_instr_axilite_wstrb    ), // output wire [3 : 0] M_AXI_IP_WSTRB
+                .M_AXI_IP_WVALID    ( microblaze0_instr_axilite_wvalid   ), // output wire M_AXI_IP_WVALID
+                .M_AXI_IP_WREADY    ( microblaze0_instr_axilite_wready   ), // input wire M_AXI_IP_WREADY
+                .M_AXI_IP_BRESP     ( microblaze0_instr_axilite_bresp    ), // input wire [1 : 0] M_AXI_IP_BRESP
+                .M_AXI_IP_BVALID    ( microblaze0_instr_axilite_bvalid   ), // input wire M_AXI_IP_BVALID
+                .M_AXI_IP_BREADY    ( microblaze0_instr_axilite_bready   ), // output wire M_AXI_IP_BREADY
+                .M_AXI_IP_ARADDR    ( microblaze0_instr_axilite_araddr   ), // output wire [31 : 0] M_AXI_IP_ARADDR
+                .M_AXI_IP_ARPROT    ( microblaze0_instr_axilite_arprot   ), // output wire [2 : 0] M_AXI_IP_ARPROT
+                .M_AXI_IP_ARVALID   ( microblaze0_instr_axilite_arvalid  ), // output wire M_AXI_IP_ARVALID
+                .M_AXI_IP_ARREADY   ( microblaze0_instr_axilite_arready  ), // input wire M_AXI_IP_ARREADY
+                .M_AXI_IP_RDATA     ( microblaze0_instr_axilite_rdata    ), // input wire [31 : 0] M_AXI_IP_RDATA
+                .M_AXI_IP_RRESP     ( microblaze0_instr_axilite_rresp    ), // input wire [1 : 0] M_AXI_IP_RRESP
+                .M_AXI_IP_RVALID    ( microblaze0_instr_axilite_rvalid   ), // input wire M_AXI_IP_RVALID
+                .M_AXI_IP_RREADY    ( microblaze0_instr_axilite_rready   )  // output wire M_AXI_IP_RREADY
+            );
+                // MICROBLAZE-V RV32 instance - CORE 1
+            xlnx_microblazev_rv32 microblazev_u1 (
+                // Clock and reset
+                .Clk                ( clk_i       ), // input wire Clk
+                .Reset              ( dbg_sys_rst ), // input wire Reset
+                // Interrupts
+                .Interrupt          ( irq_i[RVSOCKET_EXT_INTERRUPT] ), // input wire Interrupt
+                .Interrupt_Address  ('0                             ), // input wire [0 : 31] Interrupt_Address
+                .Interrupt_Ack      (                               ), // output wire [0 : 1] Interrupt_Ack
+                // Debug port to MDMV (core 1)
+                .Dbg_Clk            ( Dbg_Clk     [1] ), // input wire Dbg_Clk
+                .Dbg_TDI            ( Dbg_TDI     [1] ), // input wire Dbg_TDI
+                .Dbg_TDO            ( Dbg_TDO     [1] ), // output wire Dbg_TDO
+                .Dbg_Reg_En         ( Dbg_Reg_En  [1] ), // input wire [0 : 7] Dbg_Reg_En
+                .Dbg_Shift          ( Dbg_Shift   [1] ), // input wire Dbg_Shift
+                .Dbg_Capture        ( Dbg_Capture [1] ), // input wire Dbg_Capture
+                .Dbg_Update         ( Dbg_Update  [1] ), // input wire Dbg_Update
+                .Debug_Rst          ( Dbg_Rst     [1] ), // input wire Debug_Rst
+                .Dbg_Disable        ( Dbg_Disable [1] ), // input wire Dbg_Disable
+                // Data port (AXI)
+                .M_AXI_DP_AWADDR    ( microblaze1_data_axi_awaddr    ),
+                .M_AXI_DP_AWLEN     ( microblaze1_data_axi_awlen     ),
+                .M_AXI_DP_AWSIZE    ( microblaze1_data_axi_awsize    ),
+                .M_AXI_DP_AWBURST   ( microblaze1_data_axi_awburst   ),
+                .M_AXI_DP_AWLOCK    ( microblaze1_data_axi_awlock    ),
+                .M_AXI_DP_AWCACHE   ( microblaze1_data_axi_awcache   ),
+                .M_AXI_DP_AWPROT    ( microblaze1_data_axi_awprot    ),
+                .M_AXI_DP_AWQOS     ( microblaze1_data_axi_awqos     ),
+                .M_AXI_DP_AWVALID   ( microblaze1_data_axi_awvalid   ),
+                .M_AXI_DP_AWREADY   ( microblaze1_data_axi_awready   ),
+                .M_AXI_DP_WDATA     ( microblaze1_data_axi_wdata     ),
+                .M_AXI_DP_WSTRB     ( microblaze1_data_axi_wstrb     ),
+                .M_AXI_DP_WLAST     ( microblaze1_data_axi_wlast     ),
+                .M_AXI_DP_WVALID    ( microblaze1_data_axi_wvalid    ),
+                .M_AXI_DP_WREADY    ( microblaze1_data_axi_wready    ),
+                .M_AXI_DP_BRESP     ( microblaze1_data_axi_bresp     ),
+                .M_AXI_DP_BVALID    ( microblaze1_data_axi_bvalid    ),
+                .M_AXI_DP_BREADY    ( microblaze1_data_axi_bready    ),
+                .M_AXI_DP_ARADDR    ( microblaze1_data_axi_araddr    ),
+                .M_AXI_DP_ARLEN     ( microblaze1_data_axi_arlen     ),
+                .M_AXI_DP_ARSIZE    ( microblaze1_data_axi_arsize    ),
+                .M_AXI_DP_ARBURST   ( microblaze1_data_axi_arburst   ),
+                .M_AXI_DP_ARLOCK    ( microblaze1_data_axi_arlock    ),
+                .M_AXI_DP_ARCACHE   ( microblaze1_data_axi_arcache   ),
+                .M_AXI_DP_ARPROT    ( microblaze1_data_axi_arprot    ),
+                .M_AXI_DP_ARQOS     ( microblaze1_data_axi_arqos     ),
+                .M_AXI_DP_ARVALID   ( microblaze1_data_axi_arvalid   ),
+                .M_AXI_DP_ARREADY   ( microblaze1_data_axi_arready   ),
+                .M_AXI_DP_RDATA     ( microblaze1_data_axi_rdata     ),
+                .M_AXI_DP_RRESP     ( microblaze1_data_axi_rresp     ),
+                .M_AXI_DP_RLAST     ( microblaze1_data_axi_rlast     ),
+                .M_AXI_DP_RVALID    ( microblaze1_data_axi_rvalid    ),
+                .M_AXI_DP_RREADY    ( microblaze1_data_axi_rready    ),
+                // Instruction port (AXI-lite)
+                .M_AXI_IP_AWADDR    ( microblaze1_instr_axilite_awaddr   ),
+                .M_AXI_IP_AWPROT    ( microblaze1_instr_axilite_awprot   ),
+                .M_AXI_IP_AWVALID   ( microblaze1_instr_axilite_awvalid  ),
+                .M_AXI_IP_AWREADY   ( microblaze1_instr_axilite_awready  ),
+                .M_AXI_IP_WDATA     ( microblaze1_instr_axilite_wdata    ),
+                .M_AXI_IP_WSTRB     ( microblaze1_instr_axilite_wstrb    ),
+                .M_AXI_IP_WVALID    ( microblaze1_instr_axilite_wvalid   ),
+                .M_AXI_IP_WREADY    ( microblaze1_instr_axilite_wready   ),
+                .M_AXI_IP_BRESP     ( microblaze1_instr_axilite_bresp    ),
+                .M_AXI_IP_BVALID    ( microblaze1_instr_axilite_bvalid   ),
+                .M_AXI_IP_BREADY    ( microblaze1_instr_axilite_bready   ),
+                .M_AXI_IP_ARADDR    ( microblaze1_instr_axilite_araddr   ),
+                .M_AXI_IP_ARPROT    ( microblaze1_instr_axilite_arprot   ),
+                .M_AXI_IP_ARVALID   ( microblaze1_instr_axilite_arvalid  ),
+                .M_AXI_IP_ARREADY   ( microblaze1_instr_axilite_arready  ),
+                .M_AXI_IP_RDATA     ( microblaze1_instr_axilite_rdata    ),
+                .M_AXI_IP_RRESP     ( microblaze1_instr_axilite_rresp    ),
+                .M_AXI_IP_RVALID    ( microblaze1_instr_axilite_rvalid   ),
+                .M_AXI_IP_RREADY    ( microblaze1_instr_axilite_rready   )
+            );
+
+            // Microblaze Debug Module V (MDMV)
+            xlnx_dual_microblaze_debug_module_v mdmv_u (
+                .Debug_SYS_Rst  ( dbg_sys_rst   ), // output wire Debug_SYS_Rst
+                // Port CORE 0
+                .Dbg_Clk_0      ( Dbg_Clk     [0]  ), // output wire Dbg_Clk_0
+                .Dbg_TDI_0      ( Dbg_TDI     [0]  ), // output wire Dbg_TDI_0
+                .Dbg_TDO_0      ( Dbg_TDO     [0]  ), // input wire Dbg_TDO_0
+                .Dbg_Reg_En_0   ( Dbg_Reg_En  [0]  ), // output wire [0 : 7] Dbg_Reg_En_0
+                .Dbg_Capture_0  ( Dbg_Capture [0]  ), // output wire Dbg_Capture_0
+                .Dbg_Shift_0    ( Dbg_Shift   [0]  ), // output wire Dbg_Shift_0
+                .Dbg_Update_0   ( Dbg_Update  [0]  ), // output wire Dbg_Update_0
+                .Dbg_Rst_0      ( Dbg_Rst     [0]  ), // output wire Dbg_Rst_0
+                .Dbg_Disable_0  ( Dbg_Disable [0]  ), // output wire Dbg_Disable_0
+                // Port CORE 1
+                .Dbg_Clk_1      ( Dbg_Clk     [1] ), // output wire Dbg_Clk_1
+                .Dbg_TDI_1      ( Dbg_TDI     [1] ), // output wire Dbg_TDI_1
+                .Dbg_TDO_1      ( Dbg_TDO     [1] ), // input wire Dbg_TDO_1
+                .Dbg_Reg_En_1   ( Dbg_Reg_En  [1] ), // output wire [0 : 7] Dbg_Reg_En_1
+                .Dbg_Capture_1  ( Dbg_Capture [1] ), // output wire Dbg_Capture_1
+                .Dbg_Shift_1    ( Dbg_Shift   [1] ), // output wire Dbg_Shift_1
+                .Dbg_Update_1   ( Dbg_Update  [1] ), // output wire Dbg_Update_1
+                .Dbg_Rst_1      ( Dbg_Rst     [1] ), // output wire Dbg_Rst_1
+                .Dbg_Disable_1  ( Dbg_Disable [1] )  // output wire Dbg_Disable_1
+            );
+
+
+            // Attach to socket
+            // Core 0
+            `ASSIGN_AXI_BUS(rv_socket_data  , microblaze0_data);
+            `ASSIGN_AXI_BUS(rv_socket_instr , converter0_instr);
+            // Core 1
+            `ASSIGN_AXI_BUS(rv_socket_data1  , microblaze1_data);
+            `ASSIGN_AXI_BUS(rv_socket_instr1 , converter1_instr);
+
+            // Tie-off undriven ID signals
+            // ID's are set to zero since they are not present in microblaze, while the crossbar have ID's of size 2.
+            // Instruction
+            assign converter0_instr_axi_awid = '0;
+            assign converter0_instr_axi_arid = '0;
+            assign converter1_instr_axi_awid = '0;
+            assign converter1_instr_axi_arid = '0;
+            // Data
+            assign microblaze0_data_axi_awid = '0;
+            assign microblaze0_data_axi_arid = '0;
+            assign microblaze1_data_axi_awid = '0;
+            assign microblaze1_data_axi_arid = '0;
+            // Regions are not present in microblaze data implementation so they are set to 0.
+            assign microblaze0_data_axi_awregion ='0;
+            assign microblaze0_data_axi_arregion ='0;
+            assign microblaze1_data_axi_awregion = '0;
+            assign microblaze1_data_axi_arregion = '0;
+
+            // Convert from MICROBLAZE-V (AXI-lite) to socket (AXI)
+            // Only instruction port (AXI-lite), data port is socket compliant (AXI)
+            xlnx_axilite_to_axi4_d32_converter axilite_to_axi4_converter_u0 (
+                .aclk           ( clk_i                             ), // input wire aclk
+                .aresetn        ( rst_ni                            ), // input wire aresetn
+                // From Microblaze (AXI-lite)
+                .s_axi_awaddr   ( microblaze0_instr_axilite_awaddr   ), // input wire [31 : 0] s_axi_awaddr
+                .s_axi_awprot   ( microblaze0_instr_axilite_awprot   ), // input wire [2 : 0] s_axi_awprot
+                .s_axi_awvalid  ( microblaze0_instr_axilite_awvalid  ), // input wire s_axi_awvalid
+                .s_axi_awready  ( microblaze0_instr_axilite_awready  ), // output wire s_axi_awready
+                .s_axi_wdata    ( microblaze0_instr_axilite_wdata    ), // input wire [31 : 0] s_axi_wdata
+                .s_axi_wstrb    ( microblaze0_instr_axilite_wstrb    ), // input wire [3 : 0] s_axi_wstrb
+                .s_axi_wvalid   ( microblaze0_instr_axilite_wvalid   ), // input wire s_axi_wvalid
+                .s_axi_wready   ( microblaze0_instr_axilite_wready   ), // output wire s_axi_wready
+                .s_axi_bresp    ( microblaze0_instr_axilite_bresp    ), // output wire [1 : 0] s_axi_bresp
+                .s_axi_bvalid   ( microblaze0_instr_axilite_bvalid   ), // output wire s_axi_bvalid
+                .s_axi_bready   ( microblaze0_instr_axilite_bready   ), // input wire s_axi_bready
+                .s_axi_araddr   ( microblaze0_instr_axilite_araddr   ), // input wire [31 : 0] s_axi_araddr
+                .s_axi_arprot   ( microblaze0_instr_axilite_arprot   ), // input wire [2 : 0] s_axi_arprot
+                .s_axi_arvalid  ( microblaze0_instr_axilite_arvalid  ), // input wire s_axi_arvalid
+                .s_axi_arready  ( microblaze0_instr_axilite_arready  ), // output wire s_axi_arready
+                .s_axi_rdata    ( microblaze0_instr_axilite_rdata    ), // output wire [31 : 0] s_axi_rdata
+                .s_axi_rresp    ( microblaze0_instr_axilite_rresp    ), // output wire [1 : 0] s_axi_rresp
+                .s_axi_rvalid   ( microblaze0_instr_axilite_rvalid   ), // output wire s_axi_rvalid
+                .s_axi_rready   ( microblaze0_instr_axilite_rready   ), // input wire s_axi_rready
+                // To socket (AXI)
+                .m_axi_awaddr   ( converter0_instr_axi_awaddr        ), // output wire [31 : 0] m_axi_awaddr
+                .m_axi_awlen    ( converter0_instr_axi_awlen         ), // output wire [7 : 0] m_axi_awlen
+                .m_axi_awsize   ( converter0_instr_axi_awsize        ), // output wire [2 : 0] m_axi_awsize
+                .m_axi_awburst  ( converter0_instr_axi_awburst       ), // output wire [1 : 0] m_axi_awburst
+                .m_axi_awlock   ( converter0_instr_axi_awlock        ), // output wire [0 : 0] m_axi_awlock
+                .m_axi_awcache  ( converter0_instr_axi_awcache       ), // output wire [3 : 0] m_axi_awcache
+                .m_axi_awprot   ( converter0_instr_axi_awprot        ), // output wire [2 : 0] m_axi_awprot
+                .m_axi_awregion ( converter0_instr_axi_awregion      ), // output wire [3 : 0] m_axi_awregion
+                .m_axi_awqos    ( converter0_instr_axi_awqos         ), // output wire [3 : 0] m_axi_awqos
+                .m_axi_awvalid  ( converter0_instr_axi_awvalid       ), // output wire m_axi_awvalid
+                .m_axi_awready  ( converter0_instr_axi_awready       ), // input wire m_axi_awready
+                .m_axi_wdata    ( converter0_instr_axi_wdata         ), // output wire [31 : 0] m_axi_wdata
+                .m_axi_wstrb    ( converter0_instr_axi_wstrb         ), // output wire [3 : 0] m_axi_wstrb
+                .m_axi_wlast    ( converter0_instr_axi_wlast         ), // output wire m_axi_wlast
+                .m_axi_wvalid   ( converter0_instr_axi_wvalid        ), // output wire m_axi_wvalid
+                .m_axi_wready   ( converter0_instr_axi_wready        ), // input wire m_axi_wready
+                .m_axi_bresp    ( converter0_instr_axi_bresp         ), // input wire [1 : 0] m_axi_bresp
+                .m_axi_bvalid   ( converter0_instr_axi_bvalid        ), // input wire m_axi_bvalid
+                .m_axi_bready   ( converter0_instr_axi_bready        ), // output wire m_axi_bready
+                .m_axi_araddr   ( converter0_instr_axi_araddr        ), // output wire [31 : 0] m_axi_araddr
+                .m_axi_arlen    ( converter0_instr_axi_arlen         ), // output wire [7 : 0] m_axi_arlen
+                .m_axi_arsize   ( converter0_instr_axi_arsize        ), // output wire [2 : 0] m_axi_arsize
+                .m_axi_arburst  ( converter0_instr_axi_arburst       ), // output wire [1 : 0] m_axi_arburst
+                .m_axi_arlock   ( converter0_instr_axi_arlock        ), // output wire [0 : 0] m_axi_arlock
+                .m_axi_arcache  ( converter0_instr_axi_arcache       ), // output wire [3 : 0] m_axi_arcache
+                .m_axi_arprot   ( converter0_instr_axi_arprot        ), // output wire [2 : 0] m_axi_arprot
+                .m_axi_arregion ( converter0_instr_axi_arregion      ), // output wire [3 : 0] m_axi_arregion
+                .m_axi_arqos    ( converter0_instr_axi_arqos         ), // output wire [3 : 0] m_axi_arqos
+                .m_axi_arvalid  ( converter0_instr_axi_arvalid       ), // output wire m_axi_arvalid
+                .m_axi_arready  ( converter0_instr_axi_arready       ), // input wire m_axi_arready
+                .m_axi_rdata    ( converter0_instr_axi_rdata         ), // input wire [31 : 0] m_axi_rdata
+                .m_axi_rresp    ( converter0_instr_axi_rresp         ), // input wire [1 : 0] m_axi_rresp
+                .m_axi_rlast    ( converter0_instr_axi_rlast         ), // input wire m_axi_rlast
+                .m_axi_rvalid   ( converter0_instr_axi_rvalid        ), // input wire m_axi_rvalid
+                .m_axi_rready   ( converter0_instr_axi_rready        )  // output wire m_axi_rready
+            );
+
+            // Convert from MICROBLAZE-V CORE 1 (AXI-lite) to socket (AXI)
+            xlnx_axilite_to_axi4_d32_converter axilite_to_axi4_converter_u1 (
+                .aclk           ( clk_i                             ),
+                .aresetn        ( rst_ni                            ),
+                // From Microblaze 1 (AXI-lite)
+                .s_axi_awaddr   ( microblaze1_instr_axilite_awaddr  ),
+                .s_axi_awprot   ( microblaze1_instr_axilite_awprot  ),
+                .s_axi_awvalid  ( microblaze1_instr_axilite_awvalid ),
+                .s_axi_awready  ( microblaze1_instr_axilite_awready ),
+                .s_axi_wdata    ( microblaze1_instr_axilite_wdata   ),
+                .s_axi_wstrb    ( microblaze1_instr_axilite_wstrb   ),
+                .s_axi_wvalid   ( microblaze1_instr_axilite_wvalid  ),
+                .s_axi_wready   ( microblaze1_instr_axilite_wready  ),
+                .s_axi_bresp    ( microblaze1_instr_axilite_bresp   ),
+                .s_axi_bvalid   ( microblaze1_instr_axilite_bvalid  ),
+                .s_axi_bready   ( microblaze1_instr_axilite_bready  ),
+                .s_axi_araddr   ( microblaze1_instr_axilite_araddr  ),
+                .s_axi_arprot   ( microblaze1_instr_axilite_arprot  ),
+                .s_axi_arvalid  ( microblaze1_instr_axilite_arvalid ),
+                .s_axi_arready  ( microblaze1_instr_axilite_arready ),
+                .s_axi_rdata    ( microblaze1_instr_axilite_rdata   ),
+                .s_axi_rresp    ( microblaze1_instr_axilite_rresp   ),
+                .s_axi_rvalid   ( microblaze1_instr_axilite_rvalid  ),
+                .s_axi_rready   ( microblaze1_instr_axilite_rready  ),
+                // To socket (AXI) – CORE 1
+                .m_axi_awaddr   ( converter1_instr_axi_awaddr       ),
+                .m_axi_awlen    ( converter1_instr_axi_awlen        ),
+                .m_axi_awsize   ( converter1_instr_axi_awsize       ),
+                .m_axi_awburst  ( converter1_instr_axi_awburst      ),
+                .m_axi_awlock   ( converter1_instr_axi_awlock       ),
+                .m_axi_awcache  ( converter1_instr_axi_awcache      ),
+                .m_axi_awprot   ( converter1_instr_axi_awprot       ),
+                .m_axi_awregion ( converter1_instr_axi_awregion     ),
+                .m_axi_awqos    ( converter1_instr_axi_awqos        ),
+                .m_axi_awvalid  ( converter1_instr_axi_awvalid      ),
+                .m_axi_awready  ( converter1_instr_axi_awready      ),
+                .m_axi_wdata    ( converter1_instr_axi_wdata        ),
+                .m_axi_wstrb    ( converter1_instr_axi_wstrb        ),
+                .m_axi_wlast    ( converter1_instr_axi_wlast        ),
+                .m_axi_wvalid   ( converter1_instr_axi_wvalid       ),
+                .m_axi_wready   ( converter1_instr_axi_wready       ),
+                .m_axi_bresp    ( converter1_instr_axi_bresp        ),
+                .m_axi_bvalid   ( converter1_instr_axi_bvalid       ),
+                .m_axi_bready   ( converter1_instr_axi_bready       ),
+                .m_axi_araddr   ( converter1_instr_axi_araddr       ),
+                .m_axi_arlen    ( converter1_instr_axi_arlen        ),
+                .m_axi_arsize   ( converter1_instr_axi_arsize       ),
+                .m_axi_arburst  ( converter1_instr_axi_arburst      ),
+                .m_axi_arlock   ( converter1_instr_axi_arlock       ),
+                .m_axi_arcache  ( converter1_instr_axi_arcache      ),
+                .m_axi_arprot   ( converter1_instr_axi_arprot       ),
+                .m_axi_arregion ( converter1_instr_axi_arregion     ),
+                .m_axi_arqos    ( converter1_instr_axi_arqos        ),
+                .m_axi_arvalid  ( converter1_instr_axi_arvalid      ),
+                .m_axi_arready  ( converter1_instr_axi_arready      ),
+                .m_axi_rdata    ( converter1_instr_axi_rdata        ),
+                .m_axi_rresp    ( converter1_instr_axi_rresp        ),
+                .m_axi_rlast    ( converter1_instr_axi_rlast        ),
+                .m_axi_rvalid   ( converter1_instr_axi_rvalid       ),
+                .m_axi_rready   ( converter1_instr_axi_rready       )
+            );
+        end : xlnx_dual_microblazev_rv32
+        CORE_MICROBLAZEV_RV64 : begin : xlnx_microblazev_rv64
+
+            // Tie-off unused signals
+            assign core_instr_mem_wdata = '0;
+            assign core_instr_mem_we    = '0;
+            assign core_instr_mem_be    = '0;
+
+            //////////////////////////
+            //  MICROBLAZE-V RV64   //
+            //////////////////////////
+
+            // Debug interface connections definition
+            logic       dbg_sys_rst;
+            logic       Dbg_Clk;      // wire Dbg_Clk_0
+            logic       Dbg_TDI;      // wire Dbg_TDI_0
+            logic       Dbg_TDO;      // wire Dbg_TDO_0
+            logic [0:7] Dbg_Reg_En;   // wire [0 : 7] Dbg_Reg_En_0
+            logic       Dbg_Capture;  // wire Dbg_Capture_0
+            logic       Dbg_Shift;    // wire Dbg_Shift_0
+            logic       Dbg_Update;   // wire Dbg_Update_0
+            logic       Dbg_Rst;      // wire Dbg_Rst_0
+            logic       Dbg_Disable;  // wire Dbg_Disable_0
+
+
+            // Declare AXI interfaces for instruction memory port and data memory port for MicroblazeV
+            `DECLARE_AXI_BUS(microblaze_data, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXILITE_BUS(microblaze_instr, 32, LOCAL_ADDR_WIDTH);
+
+            // Declare AXI dwith 32-64 adapters
+            `DECLARE_AXI_BUS(dwidth_conv_to_d64_data, 64, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXI_BUS(dwidth_conv_from_d32_instr, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            `DECLARE_AXI_BUS(dwidth_conv_to_d64_instr, 64, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+
+            // Attach to socket
+            `ASSIGN_AXI_BUS(rv_socket_data , dwidth_conv_to_d64_data);
+            `ASSIGN_AXI_BUS(rv_socket_instr , dwidth_conv_to_d64_instr);
+
+            // Tie-off undriven ID signals
+            // ID's are set to zero since they are not present in microblaze, while the crossbar have ID's of size 2.
+            // Instruction
+            assign dwidth_conv_to_d64_instr_axi_awid = '0;
+            assign dwidth_conv_to_d64_instr_axi_arid = '0;
+            // Data
+            assign dwidth_conv_to_d64_data_axi_awid = '0;
+            assign dwidth_conv_to_d64_data_axi_arid = '0;
+
+            // Microblaze-V 64 instance
+            xlnx_microblazev_rv64 microblazev_u (
+                // Clock and reset
+                .Clk                ( clk_i       ), // input wire Clk
+                .Reset              ( dbg_sys_rst ), // input wire Reset
+                // Interrupts
+                // Microblaze-V can only take one external interrupt, which we tie to EXT interrupt (from the PLIC)
+                .Interrupt          ( irq_i[RVSOCKET_EXT_INTERRUPT] ), // input wire Interrupt
+                .Interrupt_Address  ('0                             ), // input wire [0 : 31] Interrupt_Address
+                .Interrupt_Ack      (                               ), // output wire [0 : 1] Interrupt_Ack
+                // Debug port to MDMV
+                .Dbg_Clk            ( Dbg_Clk     ), // input wire Dbg_Clk
+                .Dbg_TDI            ( Dbg_TDI     ), // input wire Dbg_TDI
+                .Dbg_TDO            ( Dbg_TDO     ), // output wire Dbg_TDO
+                .Dbg_Reg_En         ( Dbg_Reg_En  ), // input wire [0 : 7] Dbg_Reg_En
+                .Dbg_Shift          ( Dbg_Shift   ), // input wire Dbg_Shift
+                .Dbg_Capture        ( Dbg_Capture ), // input wire Dbg_Capture
+                .Dbg_Update         ( Dbg_Update  ), // input wire Dbg_Update
+                .Debug_Rst          ( Dbg_Rst     ), // input wire Debug_Rst
+                .Dbg_Disable        ( Dbg_Disable ), // input wire Dbg_Disable
+                // Data port (AXI)
+                .M_AXI_DP_AWADDR    ( microblaze_data_axi_awaddr    ), // output wire [31 : 0] M_AXI_DP_AWADDR
+                .M_AXI_DP_AWLEN     ( microblaze_data_axi_awlen     ), // output wire [7 : 0] M_AXI_DP_AWLEN
+                .M_AXI_DP_AWSIZE    ( microblaze_data_axi_awsize    ), // output wire [2 : 0] M_AXI_DP_AWSIZE
+                .M_AXI_DP_AWBURST   ( microblaze_data_axi_awburst   ), // output wire [1 : 0] M_AXI_DP_AWBURST
+                .M_AXI_DP_AWLOCK    ( microblaze_data_axi_awlock    ), // output wire M_AXI_DP_AWLOCK
+                .M_AXI_DP_AWCACHE   ( microblaze_data_axi_awcache   ), // output wire [3 : 0] M_AXI_DP_AWCACHE
+                .M_AXI_DP_AWPROT    ( microblaze_data_axi_awprot    ), // output wire [2 : 0] M_AXI_DP_AWPROT
+                .M_AXI_DP_AWQOS     ( microblaze_data_axi_awqos     ), // output wire [3 : 0] M_AXI_DP_AWQOS
+                .M_AXI_DP_AWVALID   ( microblaze_data_axi_awvalid   ), // output wire M_AXI_DP_AWVALID
+                .M_AXI_DP_AWREADY   ( microblaze_data_axi_awready   ), // input wire M_AXI_DP_AWREADY
+                .M_AXI_DP_WDATA     ( microblaze_data_axi_wdata     ), // output wire [31 : 0] M_AXI_DP_WDATA
+                .M_AXI_DP_WSTRB     ( microblaze_data_axi_wstrb     ), // output wire [3 : 0] M_AXI_DP_WSTRB
+                .M_AXI_DP_WLAST     ( microblaze_data_axi_wlast     ), // output wire M_AXI_DP_WLAST
+                .M_AXI_DP_WVALID    ( microblaze_data_axi_wvalid    ), // output wire M_AXI_DP_WVALID
+                .M_AXI_DP_WREADY    ( microblaze_data_axi_wready    ), // input wire M_AXI_DP_WREADY
+                .M_AXI_DP_BRESP     ( microblaze_data_axi_bresp     ), // input wire [1 : 0] M_AXI_DP_BRESP
+                .M_AXI_DP_BVALID    ( microblaze_data_axi_bvalid    ), // input wire M_AXI_DP_BVALID
+                .M_AXI_DP_BREADY    ( microblaze_data_axi_bready    ), // output wire M_AXI_DP_BREADY
+                .M_AXI_DP_ARADDR    ( microblaze_data_axi_araddr    ), // output wire [31 : 0] M_AXI_DP_ARADDR
+                .M_AXI_DP_ARLEN     ( microblaze_data_axi_arlen     ), // output wire [7 : 0] M_AXI_DP_ARLEN
+                .M_AXI_DP_ARSIZE    ( microblaze_data_axi_arsize    ), // output wire [2 : 0] M_AXI_DP_ARSIZE
+                .M_AXI_DP_ARBURST   ( microblaze_data_axi_arburst   ), // output wire [1 : 0] M_AXI_DP_ARBURST
+                .M_AXI_DP_ARLOCK    ( microblaze_data_axi_arlock    ), // output wire M_AXI_DP_ARLOCK
+                .M_AXI_DP_ARCACHE   ( microblaze_data_axi_arcache   ), // output wire [3 : 0] M_AXI_DP_ARCACHE
+                .M_AXI_DP_ARPROT    ( microblaze_data_axi_arprot    ), // output wire [2 : 0] M_AXI_DP_ARPROT
+                .M_AXI_DP_ARQOS     ( microblaze_data_axi_arqos     ), // output wire [3 : 0] M_AXI_DP_ARQOS
+                .M_AXI_DP_ARVALID   ( microblaze_data_axi_arvalid   ), // output wire M_AXI_DP_ARVALID
+                .M_AXI_DP_ARREADY   ( microblaze_data_axi_arready   ), // input wire M_AXI_DP_ARREADY
+                .M_AXI_DP_RDATA     ( microblaze_data_axi_rdata     ), // input wire [31 : 0] M_AXI_DP_RDATA
+                .M_AXI_DP_RRESP     ( microblaze_data_axi_rresp     ), // input wire [1 : 0] M_AXI_DP_RRESP
+                .M_AXI_DP_RLAST     ( microblaze_data_axi_rlast     ), // input wire M_AXI_DP_RLAST
+                .M_AXI_DP_RVALID    ( microblaze_data_axi_rvalid    ), // input wire M_AXI_DP_RVALID
+                .M_AXI_DP_RREADY    ( microblaze_data_axi_rready    ), // output wire M_AXI_DP_RREADY
+                // Instruction port (AXI-lite)
+                .M_AXI_IP_AWADDR    ( microblaze_instr_axilite_awaddr   ), // output wire [31 : 0] M_AXI_IP_AWADDR
+                .M_AXI_IP_AWPROT    ( microblaze_instr_axilite_awprot   ), // output wire [2 : 0] M_AXI_IP_AWPROT
+                .M_AXI_IP_AWVALID   ( microblaze_instr_axilite_awvalid  ), // output wire M_AXI_IP_AWVALID
+                .M_AXI_IP_AWREADY   ( microblaze_instr_axilite_awready  ), // input wire M_AXI_IP_AWREADY
+                .M_AXI_IP_WDATA     ( microblaze_instr_axilite_wdata    ), // output wire [31 : 0] M_AXI_IP_WDATA
+                .M_AXI_IP_WSTRB     ( microblaze_instr_axilite_wstrb    ), // output wire [3 : 0] M_AXI_IP_WSTRB
+                .M_AXI_IP_WVALID    ( microblaze_instr_axilite_wvalid   ), // output wire M_AXI_IP_WVALID
+                .M_AXI_IP_WREADY    ( microblaze_instr_axilite_wready   ), // input wire M_AXI_IP_WREADY
+                .M_AXI_IP_BRESP     ( microblaze_instr_axilite_bresp    ), // input wire [1 : 0] M_AXI_IP_BRESP
+                .M_AXI_IP_BVALID    ( microblaze_instr_axilite_bvalid   ), // input wire M_AXI_IP_BVALID
+                .M_AXI_IP_BREADY    ( microblaze_instr_axilite_bready   ), // output wire M_AXI_IP_BREADY
+                .M_AXI_IP_ARADDR    ( microblaze_instr_axilite_araddr   ), // output wire [31 : 0] M_AXI_IP_ARADDR
+                .M_AXI_IP_ARPROT    ( microblaze_instr_axilite_arprot   ), // output wire [2 : 0] M_AXI_IP_ARPROT
+                .M_AXI_IP_ARVALID   ( microblaze_instr_axilite_arvalid  ), // output wire M_AXI_IP_ARVALID
+                .M_AXI_IP_ARREADY   ( microblaze_instr_axilite_arready  ), // input wire M_AXI_IP_ARREADY
+                .M_AXI_IP_RDATA     ( microblaze_instr_axilite_rdata    ), // input wire [31 : 0] M_AXI_IP_RDATA
+                .M_AXI_IP_RRESP     ( microblaze_instr_axilite_rresp    ), // input wire [1 : 0] M_AXI_IP_RRESP
+                .M_AXI_IP_RVALID    ( microblaze_instr_axilite_rvalid   ), // input wire M_AXI_IP_RVALID
+                .M_AXI_IP_RREADY    ( microblaze_instr_axilite_rready   )  // output wire M_AXI_IP_RREADY
+            );
+
+            xlnx_axi_dwidth_32_to_64_converter data_dwidth_conv_u (
+                // Clock and reset
+                .s_axi_aclk     ( clk_i  ),
+                .s_axi_aresetn  ( rst_ni ),
+                // Slave
+                .s_axi_awid     ( microblaze_data_axi_awid     ),
+                .s_axi_awaddr   ( microblaze_data_axi_awaddr   ),
+                .s_axi_awlen    ( microblaze_data_axi_awlen    ),
+                .s_axi_awsize   ( microblaze_data_axi_awsize   ),
+                .s_axi_awburst  ( microblaze_data_axi_awburst  ),
+                .s_axi_awvalid  ( microblaze_data_axi_awvalid  ),
+                .s_axi_awready  ( microblaze_data_axi_awready  ),
+                .s_axi_wdata    ( microblaze_data_axi_wdata    ),
+                .s_axi_wstrb    ( microblaze_data_axi_wstrb    ),
+                .s_axi_wlast    ( microblaze_data_axi_wlast    ),
+                .s_axi_wvalid   ( microblaze_data_axi_wvalid   ),
+                .s_axi_wready   ( microblaze_data_axi_wready   ),
+                .s_axi_bid      ( microblaze_data_axi_bid      ),
+                .s_axi_bresp    ( microblaze_data_axi_bresp    ),
+                .s_axi_bvalid   ( microblaze_data_axi_bvalid   ),
+                .s_axi_bready   ( microblaze_data_axi_bready   ),
+                .s_axi_arid     ( microblaze_data_axi_arid     ),
+                .s_axi_araddr   ( microblaze_data_axi_araddr   ),
+                .s_axi_arlen    ( microblaze_data_axi_arlen    ),
+                .s_axi_arsize   ( microblaze_data_axi_arsize   ),
+                .s_axi_arburst  ( microblaze_data_axi_arburst  ),
+                .s_axi_arvalid  ( microblaze_data_axi_arvalid  ),
+                .s_axi_arready  ( microblaze_data_axi_arready  ),
+                .s_axi_rid      ( microblaze_data_axi_rid      ),
+                .s_axi_rdata    ( microblaze_data_axi_rdata    ),
+                .s_axi_rresp    ( microblaze_data_axi_rresp    ),
+                .s_axi_rlast    ( microblaze_data_axi_rlast    ),
+                .s_axi_rvalid   ( microblaze_data_axi_rvalid   ),
+                .s_axi_rready   ( microblaze_data_axi_rready   ),
+                .s_axi_awlock   ( microblaze_data_axi_awlock   ),
+                .s_axi_awcache  ( microblaze_data_axi_awcache  ),
+                .s_axi_awprot   ( microblaze_data_axi_awprot   ),
+                .s_axi_awqos    ( microblaze_data_axi_awqos    ),
+                .s_axi_awregion ( microblaze_data_axi_awregion ),
+                .s_axi_arlock   ( microblaze_data_axi_arlock   ),
+                .s_axi_arcache  ( microblaze_data_axi_arcache  ),
+                .s_axi_arprot   ( microblaze_data_axi_arprot   ),
+                .s_axi_arqos    ( microblaze_data_axi_arqos    ),
+                .s_axi_arregion ( microblaze_data_axi_arregion ),
+                // Master
+                .m_axi_awaddr   ( dwidth_conv_to_d64_data_axi_awaddr   ),
+                .m_axi_awlen    ( dwidth_conv_to_d64_data_axi_awlen    ),
+                .m_axi_awsize   ( dwidth_conv_to_d64_data_axi_awsize   ),
+                .m_axi_awburst  ( dwidth_conv_to_d64_data_axi_awburst  ),
+                .m_axi_awlock   ( dwidth_conv_to_d64_data_axi_awlock   ),
+                .m_axi_awcache  ( dwidth_conv_to_d64_data_axi_awcache  ),
+                .m_axi_awprot   ( dwidth_conv_to_d64_data_axi_awprot   ),
+                .m_axi_awqos    ( dwidth_conv_to_d64_data_axi_awqos    ),
+                .m_axi_awvalid  ( dwidth_conv_to_d64_data_axi_awvalid  ),
+                .m_axi_awready  ( dwidth_conv_to_d64_data_axi_awready  ),
+                .m_axi_awregion ( dwidth_conv_to_d64_data_axi_awregion ),
+                .m_axi_wdata    ( dwidth_conv_to_d64_data_axi_wdata    ),
+                .m_axi_wstrb    ( dwidth_conv_to_d64_data_axi_wstrb    ),
+                .m_axi_wlast    ( dwidth_conv_to_d64_data_axi_wlast    ),
+                .m_axi_wvalid   ( dwidth_conv_to_d64_data_axi_wvalid   ),
+                .m_axi_wready   ( dwidth_conv_to_d64_data_axi_wready   ),
+                .m_axi_bresp    ( dwidth_conv_to_d64_data_axi_bresp    ),
+                .m_axi_bvalid   ( dwidth_conv_to_d64_data_axi_bvalid   ),
+                .m_axi_bready   ( dwidth_conv_to_d64_data_axi_bready   ),
+                .m_axi_arregion ( dwidth_conv_to_d64_data_axi_arregion ),
+                .m_axi_araddr   ( dwidth_conv_to_d64_data_axi_araddr   ),
+                .m_axi_arlen    ( dwidth_conv_to_d64_data_axi_arlen    ),
+                .m_axi_arsize   ( dwidth_conv_to_d64_data_axi_arsize   ),
+                .m_axi_arburst  ( dwidth_conv_to_d64_data_axi_arburst  ),
+                .m_axi_arlock   ( dwidth_conv_to_d64_data_axi_arlock   ),
+                .m_axi_arcache  ( dwidth_conv_to_d64_data_axi_arcache  ),
+                .m_axi_arprot   ( dwidth_conv_to_d64_data_axi_arprot   ),
+                .m_axi_arqos    ( dwidth_conv_to_d64_data_axi_arqos    ),
+                .m_axi_arvalid  ( dwidth_conv_to_d64_data_axi_arvalid  ),
+                .m_axi_arready  ( dwidth_conv_to_d64_data_axi_arready  ),
+                .m_axi_rdata    ( dwidth_conv_to_d64_data_axi_rdata    ),
+                .m_axi_rresp    ( dwidth_conv_to_d64_data_axi_rresp    ),
+                .m_axi_rlast    ( dwidth_conv_to_d64_data_axi_rlast    ),
+                .m_axi_rvalid   ( dwidth_conv_to_d64_data_axi_rvalid   ),
+                .m_axi_rready   ( dwidth_conv_to_d64_data_axi_rready   )
+            );
+
+            xlnx_axi_dwidth_32_to_64_converter instr_dwidth_conv_u (
+                // Clock and reset
+                .s_axi_aclk     ( clk_i  ),
+                .s_axi_aresetn  ( rst_ni ),
+                // Slave
+                .s_axi_awid     ( dwidth_conv_from_d32_instr_axi_awid     ),
+                .s_axi_awaddr   ( dwidth_conv_from_d32_instr_axi_awaddr   ),
+                .s_axi_awlen    ( dwidth_conv_from_d32_instr_axi_awlen    ),
+                .s_axi_awsize   ( dwidth_conv_from_d32_instr_axi_awsize   ),
+                .s_axi_awburst  ( dwidth_conv_from_d32_instr_axi_awburst  ),
+                .s_axi_awvalid  ( dwidth_conv_from_d32_instr_axi_awvalid  ),
+                .s_axi_awready  ( dwidth_conv_from_d32_instr_axi_awready  ),
+                .s_axi_wdata    ( dwidth_conv_from_d32_instr_axi_wdata    ),
+                .s_axi_wstrb    ( dwidth_conv_from_d32_instr_axi_wstrb    ),
+                .s_axi_wlast    ( dwidth_conv_from_d32_instr_axi_wlast    ),
+                .s_axi_wvalid   ( dwidth_conv_from_d32_instr_axi_wvalid   ),
+                .s_axi_wready   ( dwidth_conv_from_d32_instr_axi_wready   ),
+                .s_axi_bid      ( dwidth_conv_from_d32_instr_axi_bid      ),
+                .s_axi_bresp    ( dwidth_conv_from_d32_instr_axi_bresp    ),
+                .s_axi_bvalid   ( dwidth_conv_from_d32_instr_axi_bvalid   ),
+                .s_axi_bready   ( dwidth_conv_from_d32_instr_axi_bready   ),
+                .s_axi_arid     ( dwidth_conv_from_d32_instr_axi_arid     ),
+                .s_axi_araddr   ( dwidth_conv_from_d32_instr_axi_araddr   ),
+                .s_axi_arlen    ( dwidth_conv_from_d32_instr_axi_arlen    ),
+                .s_axi_arsize   ( dwidth_conv_from_d32_instr_axi_arsize   ),
+                .s_axi_arburst  ( dwidth_conv_from_d32_instr_axi_arburst  ),
+                .s_axi_arvalid  ( dwidth_conv_from_d32_instr_axi_arvalid  ),
+                .s_axi_arready  ( dwidth_conv_from_d32_instr_axi_arready  ),
+                .s_axi_rid      ( dwidth_conv_from_d32_instr_axi_rid      ),
+                .s_axi_rdata    ( dwidth_conv_from_d32_instr_axi_rdata    ),
+                .s_axi_rresp    ( dwidth_conv_from_d32_instr_axi_rresp    ),
+                .s_axi_rlast    ( dwidth_conv_from_d32_instr_axi_rlast    ),
+                .s_axi_rvalid   ( dwidth_conv_from_d32_instr_axi_rvalid   ),
+                .s_axi_rready   ( dwidth_conv_from_d32_instr_axi_rready   ),
+                .s_axi_awlock   ( dwidth_conv_from_d32_instr_axi_awlock   ),
+                .s_axi_awcache  ( dwidth_conv_from_d32_instr_axi_awcache  ),
+                .s_axi_awprot   ( dwidth_conv_from_d32_instr_axi_awprot   ),
+                .s_axi_awqos    ( dwidth_conv_from_d32_instr_axi_awqos    ),
+                .s_axi_awregion ( dwidth_conv_from_d32_instr_axi_awregion ),
+                .s_axi_arlock   ( dwidth_conv_from_d32_instr_axi_arlock   ),
+                .s_axi_arcache  ( dwidth_conv_from_d32_instr_axi_arcache  ),
+                .s_axi_arprot   ( dwidth_conv_from_d32_instr_axi_arprot   ),
+                .s_axi_arqos    ( dwidth_conv_from_d32_instr_axi_arqos    ),
+                .s_axi_arregion ( dwidth_conv_from_d32_instr_axi_arregion ),
+                // Master
+                .m_axi_awaddr   ( dwidth_conv_to_d64_instr_axi_awaddr   ),
+                .m_axi_awlen    ( dwidth_conv_to_d64_instr_axi_awlen    ),
+                .m_axi_awsize   ( dwidth_conv_to_d64_instr_axi_awsize   ),
+                .m_axi_awburst  ( dwidth_conv_to_d64_instr_axi_awburst  ),
+                .m_axi_awlock   ( dwidth_conv_to_d64_instr_axi_awlock   ),
+                .m_axi_awcache  ( dwidth_conv_to_d64_instr_axi_awcache  ),
+                .m_axi_awprot   ( dwidth_conv_to_d64_instr_axi_awprot   ),
+                .m_axi_awqos    ( dwidth_conv_to_d64_instr_axi_awqos    ),
+                .m_axi_awvalid  ( dwidth_conv_to_d64_instr_axi_awvalid  ),
+                .m_axi_awready  ( dwidth_conv_to_d64_instr_axi_awready  ),
+                .m_axi_awregion ( dwidth_conv_to_d64_instr_axi_awregion ),
+                .m_axi_wdata    ( dwidth_conv_to_d64_instr_axi_wdata    ),
+                .m_axi_wstrb    ( dwidth_conv_to_d64_instr_axi_wstrb    ),
+                .m_axi_wlast    ( dwidth_conv_to_d64_instr_axi_wlast    ),
+                .m_axi_wvalid   ( dwidth_conv_to_d64_instr_axi_wvalid   ),
+                .m_axi_wready   ( dwidth_conv_to_d64_instr_axi_wready   ),
+                .m_axi_bresp    ( dwidth_conv_to_d64_instr_axi_bresp    ),
+                .m_axi_bvalid   ( dwidth_conv_to_d64_instr_axi_bvalid   ),
+                .m_axi_bready   ( dwidth_conv_to_d64_instr_axi_bready   ),
+                .m_axi_araddr   ( dwidth_conv_to_d64_instr_axi_araddr   ),
+                .m_axi_arlen    ( dwidth_conv_to_d64_instr_axi_arlen    ),
+                .m_axi_arsize   ( dwidth_conv_to_d64_instr_axi_arsize   ),
+                .m_axi_arburst  ( dwidth_conv_to_d64_instr_axi_arburst  ),
+                .m_axi_arlock   ( dwidth_conv_to_d64_instr_axi_arlock   ),
+                .m_axi_arcache  ( dwidth_conv_to_d64_instr_axi_arcache  ),
+                .m_axi_arprot   ( dwidth_conv_to_d64_instr_axi_arprot   ),
+                .m_axi_arqos    ( dwidth_conv_to_d64_instr_axi_arqos    ),
+                .m_axi_arvalid  ( dwidth_conv_to_d64_instr_axi_arvalid  ),
+                .m_axi_arready  ( dwidth_conv_to_d64_instr_axi_arready  ),
+                .m_axi_arregion ( dwidth_conv_to_d64_instr_axi_arregion ),
+                .m_axi_rdata    ( dwidth_conv_to_d64_instr_axi_rdata    ),
+                .m_axi_rresp    ( dwidth_conv_to_d64_instr_axi_rresp    ),
+                .m_axi_rlast    ( dwidth_conv_to_d64_instr_axi_rlast    ),
+                .m_axi_rvalid   ( dwidth_conv_to_d64_instr_axi_rvalid   ),
+                .m_axi_rready   ( dwidth_conv_to_d64_instr_axi_rready   )
+            );
+
+            // Convert from MICROBLAZE-V (AXI-lite) to socket (AXI)
+            // Only instruction port (AXI-lite), data port is socket compliant (AXI)
+            xlnx_axilite_to_axi4_d32_converter axilite_to_axi4_converter_u (
+                // Clock and reset
+                .aclk           ( clk_i                             ), // input wire aclk
+                .aresetn        ( rst_ni                            ), // input wire aresetn
+                // From Microblaze (AXI-lite)
+                .s_axi_awaddr   ( microblaze_instr_axilite_awaddr   ), // input wire [31 : 0] s_axi_awaddr
+                .s_axi_awprot   ( microblaze_instr_axilite_awprot   ), // input wire [2 : 0] s_axi_awprot
+                .s_axi_awvalid  ( microblaze_instr_axilite_awvalid  ), // input wire s_axi_awvalid
+                .s_axi_awready  ( microblaze_instr_axilite_awready  ), // output wire s_axi_awready
+                .s_axi_wdata    ( microblaze_instr_axilite_wdata    ), // input wire [31 : 0] s_axi_wdata
+                .s_axi_wstrb    ( microblaze_instr_axilite_wstrb    ), // input wire [3 : 0] s_axi_wstrb
+                .s_axi_wvalid   ( microblaze_instr_axilite_wvalid   ), // input wire s_axi_wvalid
+                .s_axi_wready   ( microblaze_instr_axilite_wready   ), // output wire s_axi_wready
+                .s_axi_bresp    ( microblaze_instr_axilite_bresp    ), // output wire [1 : 0] s_axi_bresp
+                .s_axi_bvalid   ( microblaze_instr_axilite_bvalid   ), // output wire s_axi_bvalid
+                .s_axi_bready   ( microblaze_instr_axilite_bready   ), // input wire s_axi_bready
+                .s_axi_araddr   ( microblaze_instr_axilite_araddr   ), // input wire [31 : 0] s_axi_araddr
+                .s_axi_arprot   ( microblaze_instr_axilite_arprot   ), // input wire [2 : 0] s_axi_arprot
+                .s_axi_arvalid  ( microblaze_instr_axilite_arvalid  ), // input wire s_axi_arvalid
+                .s_axi_arready  ( microblaze_instr_axilite_arready  ), // output wire s_axi_arready
+                .s_axi_rdata    ( microblaze_instr_axilite_rdata    ), // output wire [31 : 0] s_axi_rdata
+                .s_axi_rresp    ( microblaze_instr_axilite_rresp    ), // output wire [1 : 0] s_axi_rresp
+                .s_axi_rvalid   ( microblaze_instr_axilite_rvalid   ), // output wire s_axi_rvalid
+                .s_axi_rready   ( microblaze_instr_axilite_rready   ), // input wire s_axi_rready
+                // To socket (AXI)
+                .m_axi_awaddr   ( dwidth_conv_from_d32_instr_axi_awaddr   ), // output wire [31 : 0] m_axi_awaddr
+                .m_axi_awlen    ( dwidth_conv_from_d32_instr_axi_awlen    ), // output wire [7 : 0] m_axi_awlen
+                .m_axi_awsize   ( dwidth_conv_from_d32_instr_axi_awsize   ), // output wire [2 : 0] m_axi_awsize
+                .m_axi_awburst  ( dwidth_conv_from_d32_instr_axi_awburst  ), // output wire [1 : 0] m_axi_awburst
+                .m_axi_awlock   ( dwidth_conv_from_d32_instr_axi_awlock   ), // output wire [0 : 0] m_axi_awlock
+                .m_axi_awcache  ( dwidth_conv_from_d32_instr_axi_awcache  ), // output wire [3 : 0] m_axi_awcache
+                .m_axi_awprot   ( dwidth_conv_from_d32_instr_axi_awprot   ), // output wire [2 : 0] m_axi_awprot
+                .m_axi_awregion ( dwidth_conv_from_d32_instr_axi_awregion ), // output wire [3 : 0] m_axi_awregion
+                .m_axi_awqos    ( dwidth_conv_from_d32_instr_axi_awqos    ), // output wire [3 : 0] m_axi_awqos
+                .m_axi_awvalid  ( dwidth_conv_from_d32_instr_axi_awvalid  ), // output wire m_axi_awvalid
+                .m_axi_awready  ( dwidth_conv_from_d32_instr_axi_awready  ), // input wire m_axi_awready
+                .m_axi_wdata    ( dwidth_conv_from_d32_instr_axi_wdata    ), // output wire [31 : 0] m_axi_wdata
+                .m_axi_wstrb    ( dwidth_conv_from_d32_instr_axi_wstrb    ), // output wire [3 : 0] m_axi_wstrb
+                .m_axi_wlast    ( dwidth_conv_from_d32_instr_axi_wlast    ), // output wire m_axi_wlast
+                .m_axi_wvalid   ( dwidth_conv_from_d32_instr_axi_wvalid   ), // output wire m_axi_wvalid
+                .m_axi_wready   ( dwidth_conv_from_d32_instr_axi_wready   ), // input wire m_axi_wready
+                .m_axi_bresp    ( dwidth_conv_from_d32_instr_axi_bresp    ), // input wire [1 : 0] m_axi_bresp
+                .m_axi_bvalid   ( dwidth_conv_from_d32_instr_axi_bvalid   ), // input wire m_axi_bvalid
+                .m_axi_bready   ( dwidth_conv_from_d32_instr_axi_bready   ), // output wire m_axi_bready
+                .m_axi_araddr   ( dwidth_conv_from_d32_instr_axi_araddr   ), // output wire [31 : 0] m_axi_araddr
+                .m_axi_arlen    ( dwidth_conv_from_d32_instr_axi_arlen    ), // output wire [7 : 0] m_axi_arlen
+                .m_axi_arsize   ( dwidth_conv_from_d32_instr_axi_arsize   ), // output wire [2 : 0] m_axi_arsize
+                .m_axi_arburst  ( dwidth_conv_from_d32_instr_axi_arburst  ), // output wire [1 : 0] m_axi_arburst
+                .m_axi_arlock   ( dwidth_conv_from_d32_instr_axi_arlock   ), // output wire [0 : 0] m_axi_arlock
+                .m_axi_arcache  ( dwidth_conv_from_d32_instr_axi_arcache  ), // output wire [3 : 0] m_axi_arcache
+                .m_axi_arprot   ( dwidth_conv_from_d32_instr_axi_arprot   ), // output wire [2 : 0] m_axi_arprot
+                .m_axi_arregion ( dwidth_conv_from_d32_instr_axi_arregion ), // output wire [3 : 0] m_axi_arregion
+                .m_axi_arqos    ( dwidth_conv_from_d32_instr_axi_arqos    ), // output wire [3 : 0] m_axi_arqos
+                .m_axi_arvalid  ( dwidth_conv_from_d32_instr_axi_arvalid  ), // output wire m_axi_arvalid
+                .m_axi_arready  ( dwidth_conv_from_d32_instr_axi_arready  ), // input wire m_axi_arready
+                .m_axi_rdata    ( dwidth_conv_from_d32_instr_axi_rdata    ), // input wire [31 : 0] m_axi_rdata
+                .m_axi_rresp    ( dwidth_conv_from_d32_instr_axi_rresp    ), // input wire [1 : 0] m_axi_rresp
+                .m_axi_rlast    ( dwidth_conv_from_d32_instr_axi_rlast    ), // input wire m_axi_rlast
+                .m_axi_rvalid   ( dwidth_conv_from_d32_instr_axi_rvalid   ), // input wire m_axi_rvalid
+                .m_axi_rready   ( dwidth_conv_from_d32_instr_axi_rready   )  // output wire m_axi_rready
+            );
+
+
+            // Microblaze Debug Module V (MDMV)
+            xlnx_microblaze_debug_module_v mdmv_u (
+                .Debug_SYS_Rst  ( dbg_sys_rst   ), // output wire Debug_SYS_Rst
+                .Dbg_Clk_0      ( Dbg_Clk       ), // output wire Dbg_Clk_0
+                .Dbg_TDI_0      ( Dbg_TDI       ), // output wire Dbg_TDI_0
+                .Dbg_TDO_0      ( Dbg_TDO       ), // input wire Dbg_TDO_0
+                .Dbg_Reg_En_0   ( Dbg_Reg_En    ), // output wire [0 : 7] Dbg_Reg_En_0
+                .Dbg_Capture_0  ( Dbg_Capture   ), // output wire Dbg_Capture_0
+                .Dbg_Shift_0    ( Dbg_Shift     ), // output wire Dbg_Shift_0
+                .Dbg_Update_0   ( Dbg_Update    ), // output wire Dbg_Update_0
+                .Dbg_Rst_0      ( Dbg_Rst       ), // output wire Dbg_Rst_0
+                .Dbg_Disable_0  ( Dbg_Disable   )  // output wire Dbg_Disable_0
+            );
+        end : xlnx_microblazev_rv64
+        CORE_CV64A6 : begin: core_cv64a6
 
             ////////////////////////
-            //      CV32A6        //
+            //      CV64A6        //
             ////////////////////////
 
             // CVA6 only has one Master port (for both data and instruction)
             `DECLARE_AXI_BUS(cv64a6, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
 
+            // CVA6 IP
             custom_cv64a6 cv64a6_core (
 
                 .clk_i           ( clk_i                            ),
                 .rst_ni          ( core_resetn_internal             ),
-                .boot_addr_i     ( bootaddr_i                       ),
+                .boot_addr_i     ( extended_a64_boot_addr           ),
                 .hart_id_i       ( hart_id                          ),
-                .irq_i           ( {0,irq_i[CORE_EXT_INTERRUPT]}    ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
-                .ipi_i           ( irq_i[CORE_SW_INTERRUPT]         ), // Shoult be SW interrupt
-                .time_irq_i      ( irq_i[CORE_TIM_INTERRUPT]        ), // Should be TIM interrupt
+                .irq_i           ( {0,irq_i[RVSOCKET_EXT_INTERRUPT]}    ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
+                .ipi_i           ( irq_i[RVSOCKET_SW_INTERRUPT]         ), // Shoult be SW interrupt
+                .time_irq_i      ( irq_i[RVSOCKET_TIM_INTERRUPT]        ), // Should be TIM interrupt
                 .debug_req_i     ( debug_req_core                   ),
 
                 .m_axi_awaddr   ( cv64a6_axi_awaddr                 ), // output wire [31 : 0] m_axi_awaddr
@@ -547,152 +1270,244 @@ module rv_socket # (
             `ASSIGN_AXI_BUS( rv_socket_data , cv64a6 );
             `SINK_AXI_MASTER_INTERFACE(rv_socket_instr);
 
-        end
+        end : core_cv64a6
+        CORE_CV64A6_ARA : begin : core_cv64a6_ara
 
+            // Declare AXI buses
+            // CVA6 only has one Master port (for both data and instruction)
+            `DECLARE_AXI_BUS(cv64a6    , LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
+            // Ara has only one data port
+            `DECLARE_AXI_BUS(ara_narrow, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
 
+            // Attach to socket
+            // Use instruction and data port for CVA6 and Ara, respectively
+            `ASSIGN_AXI_BUS( rv_socket_instr , cv64a6     );
+            `ASSIGN_AXI_BUS( rv_socket_data  , ara_narrow );
+
+            // CVA6 + Ara IP
+            custom_cv64a6_ara cv64a6_ara_core (
+                .clk_i             ( clk_i                         ),
+                .rst_ni            ( core_resetn_internal          ),
+                .boot_addr_i       ( extended_a64_boot_addr        ),
+                .hart_id_i         ( hart_id                       ),
+                // Interrupts
+                .irq_i             ( {1'b0,irq_i[RVSOCKET_EXT_INTERRUPT]} ), // Should be EXT interrupt. Bit zero is for M-mode, bit one is for S-mode
+                .ipi_i             ( irq_i[RVSOCKET_SW_INTERRUPT]         ), // Shoult be SW interrupt
+                .time_irq_i        ( irq_i[RVSOCKET_TIM_INTERRUPT]        ), // Should be TIM interrupt
+                .debug_req_i       ( debug_req_core                   ),
+                // CVA6 AXI master
+                .cva6_axi_awaddr   ( cv64a6_axi_awaddr   ),
+                .cva6_axi_awlen    ( cv64a6_axi_awlen    ),
+                .cva6_axi_awsize   ( cv64a6_axi_awsize   ),
+                .cva6_axi_awburst  ( cv64a6_axi_awburst  ),
+                .cva6_axi_awlock   ( cv64a6_axi_awlock   ),
+                .cva6_axi_awcache  ( cv64a6_axi_awcache  ),
+                .cva6_axi_awprot   ( cv64a6_axi_awprot   ),
+                .cva6_axi_awregion ( cv64a6_axi_awregion ),
+                .cva6_axi_awqos    ( cv64a6_axi_awqos    ),
+                .cva6_axi_awvalid  ( cv64a6_axi_awvalid  ),
+                .cva6_axi_awready  ( cv64a6_axi_awready  ),
+                .cva6_axi_awid     ( cv64a6_axi_awid     ),
+                .cva6_axi_wdata    ( cv64a6_axi_wdata    ),
+                .cva6_axi_wstrb    ( cv64a6_axi_wstrb    ),
+                .cva6_axi_wlast    ( cv64a6_axi_wlast    ),
+                .cva6_axi_wvalid   ( cv64a6_axi_wvalid   ),
+                .cva6_axi_wready   ( cv64a6_axi_wready   ),
+                .cva6_axi_bresp    ( cv64a6_axi_bresp    ),
+                .cva6_axi_bvalid   ( cv64a6_axi_bvalid   ),
+                .cva6_axi_bready   ( cv64a6_axi_bready   ),
+                .cva6_axi_bid      ( cv64a6_axi_bid      ),
+                .cva6_axi_araddr   ( cv64a6_axi_araddr   ),
+                .cva6_axi_arlen    ( cv64a6_axi_arlen    ),
+                .cva6_axi_arsize   ( cv64a6_axi_arsize   ),
+                .cva6_axi_arburst  ( cv64a6_axi_arburst  ),
+                .cva6_axi_arlock   ( cv64a6_axi_arlock   ),
+                .cva6_axi_arcache  ( cv64a6_axi_arcache  ),
+                .cva6_axi_arprot   ( cv64a6_axi_arprot   ),
+                .cva6_axi_arregion ( cv64a6_axi_arregion ),
+                .cva6_axi_arqos    ( cv64a6_axi_arqos    ),
+                .cva6_axi_arvalid  ( cv64a6_axi_arvalid  ),
+                .cva6_axi_arready  ( cv64a6_axi_arready  ),
+                .cva6_axi_arid     ( cv64a6_axi_arid     ),
+                .cva6_axi_rdata    ( cv64a6_axi_rdata    ),
+                .cva6_axi_rresp    ( cv64a6_axi_rresp    ),
+                .cva6_axi_rlast    ( cv64a6_axi_rlast    ),
+                .cva6_axi_rvalid   ( cv64a6_axi_rvalid   ),
+                .cva6_axi_rready   ( cv64a6_axi_rready   ),
+                .cva6_axi_rid      ( cv64a6_axi_rid      ),
+                // Ara AXI master
+                .ara_narrow_axi_awaddr    ( ara_narrow_axi_awaddr   ),
+                .ara_narrow_axi_awlen     ( ara_narrow_axi_awlen    ),
+                .ara_narrow_axi_awsize    ( ara_narrow_axi_awsize   ),
+                .ara_narrow_axi_awburst   ( ara_narrow_axi_awburst  ),
+                .ara_narrow_axi_awlock    ( ara_narrow_axi_awlock   ),
+                .ara_narrow_axi_awcache   ( ara_narrow_axi_awcache  ),
+                .ara_narrow_axi_awprot    ( ara_narrow_axi_awprot   ),
+                .ara_narrow_axi_awregion  ( ara_narrow_axi_awregion ),
+                .ara_narrow_axi_awqos     ( ara_narrow_axi_awqos    ),
+                .ara_narrow_axi_awvalid   ( ara_narrow_axi_awvalid  ),
+                .ara_narrow_axi_awready   ( ara_narrow_axi_awready  ),
+                .ara_narrow_axi_awid      ( ara_narrow_axi_awid     ),
+                .ara_narrow_axi_wdata     ( ara_narrow_axi_wdata    ),
+                .ara_narrow_axi_wstrb     ( ara_narrow_axi_wstrb    ),
+                .ara_narrow_axi_wlast     ( ara_narrow_axi_wlast    ),
+                .ara_narrow_axi_wvalid    ( ara_narrow_axi_wvalid   ),
+                .ara_narrow_axi_wready    ( ara_narrow_axi_wready   ),
+                .ara_narrow_axi_bresp     ( ara_narrow_axi_bresp    ),
+                .ara_narrow_axi_bvalid    ( ara_narrow_axi_bvalid   ),
+                .ara_narrow_axi_bready    ( ara_narrow_axi_bready   ),
+                .ara_narrow_axi_bid       ( ara_narrow_axi_bid      ),
+                .ara_narrow_axi_araddr    ( ara_narrow_axi_araddr   ),
+                .ara_narrow_axi_arlen     ( ara_narrow_axi_arlen    ),
+                .ara_narrow_axi_arsize    ( ara_narrow_axi_arsize   ),
+                .ara_narrow_axi_arburst   ( ara_narrow_axi_arburst  ),
+                .ara_narrow_axi_arlock    ( ara_narrow_axi_arlock   ),
+                .ara_narrow_axi_arcache   ( ara_narrow_axi_arcache  ),
+                .ara_narrow_axi_arprot    ( ara_narrow_axi_arprot   ),
+                .ara_narrow_axi_arregion  ( ara_narrow_axi_arregion ),
+                .ara_narrow_axi_arqos     ( ara_narrow_axi_arqos    ),
+                .ara_narrow_axi_arvalid   ( ara_narrow_axi_arvalid  ),
+                .ara_narrow_axi_arready   ( ara_narrow_axi_arready  ),
+                .ara_narrow_axi_arid      ( ara_narrow_axi_arid     ),
+                .ara_narrow_axi_rdata     ( ara_narrow_axi_rdata    ),
+                .ara_narrow_axi_rresp     ( ara_narrow_axi_rresp    ),
+                .ara_narrow_axi_rlast     ( ara_narrow_axi_rlast    ),
+                .ara_narrow_axi_rvalid    ( ara_narrow_axi_rvalid   ),
+                .ara_narrow_axi_rready    ( ara_narrow_axi_rready   ),
+                .ara_narrow_axi_rid       ( ara_narrow_axi_rid      )
+            );
+        end : core_cv64a6_ara
+    endcase
     endgenerate
 
+    // Sink unused interfaces for multi-core
+    if ( !(CORE_SELECTOR inside {CORE_DUAL_MICROBLAZEV_RV32}) ) begin : sink_multicore
+        `SINK_AXI_MASTER_INTERFACE(rv_socket_instr1);
+        `SINK_AXI_MASTER_INTERFACE(rv_socket_data1);
+    end : sink_multicore
 
-    //////////////////////////////////////////
-    //     ___                              //
-    //    / __|___ _ __  _ __  ___ _ _      //
-    //   | (__/ _ | '  \| '  \/ _ | ' \     //
-    //    \___\___|_|_|_|_|_|_\___|_||_|    //
-    //                                      //
-    //////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////////////////////
-    // Here we are allocating commong module and signals.                   //
-    //////////////////////////////////////////////////////////////////////////
-
-    ///////////////////////////////////////////////////////////////////////////
-    //  Cores (mem) to socket (AXI-Full) converters (Instruction and Data)   //
-    ///////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////
+    //  MEM to AXI-Full converters (Instruction and Data)  //
+    /////////////////////////////////////////////////////////
 
     // Few exceptions:
-    // - Microblaze V has its own interfaces and debug module
-    // - CVA6 Already has an AXI interface
-    // - TODO: Rocket
-    if ( !( CORE_SELECTOR inside {CORE_MICROBLAZEV, CORE_CV64A6} ) ) begin : mem_convert
-
-        // Connect memory interfaces to socket output memory ports
-        `ASSIGN_AXI_BUS( rv_socket_instr, core_instr_to_socket_instr );
-        `ASSIGN_AXI_BUS( rv_socket_data, core_data_to_socket_data );
+    // - MICROBLAZE-V have their own interfaces and debug module
+    // - CVA6 already has an AXI interface
+    // - CVA6+Ara already has two AXI interfaces
+    if ( !( CORE_SELECTOR inside {CORE_MICROBLAZEV_RV32, CORE_DUAL_MICROBLAZEV_RV32, CORE_MICROBLAZEV_RV64, CORE_CV64A6, CORE_CV64A6_ARA} ) ) begin : mem_to_axi
 
         // Convert instructions socket (AXI) to core (MEM)
         custom_axi_from_mem axi_from_mem_instr_u (
             // AXI side
-            .m_axi_awid     ( core_instr_to_socket_instr_axi_awid       ),
-            .m_axi_awaddr   ( core_instr_to_socket_instr_axi_awaddr     ),
-            .m_axi_awlen    ( core_instr_to_socket_instr_axi_awlen      ),
-            .m_axi_awsize   ( core_instr_to_socket_instr_axi_awsize     ),
-            .m_axi_awburst  ( core_instr_to_socket_instr_axi_awburst    ),
-            .m_axi_awlock   ( core_instr_to_socket_instr_axi_awlock     ),
-            .m_axi_awcache  ( core_instr_to_socket_instr_axi_awcache    ),
-            .m_axi_awprot   ( core_instr_to_socket_instr_axi_awprot     ),
-            .m_axi_awqos    ( core_instr_to_socket_instr_axi_awqos      ),
-            .m_axi_awregion ( core_instr_to_socket_instr_axi_awregion   ),
-            .m_axi_awvalid  ( core_instr_to_socket_instr_axi_awvalid    ),
-            .m_axi_awready  ( core_instr_to_socket_instr_axi_awready    ),
-            .m_axi_wdata    ( core_instr_to_socket_instr_axi_wdata      ),
-            .m_axi_wstrb    ( core_instr_to_socket_instr_axi_wstrb      ),
-            .m_axi_wlast    ( core_instr_to_socket_instr_axi_wlast      ),
-            .m_axi_wvalid   ( core_instr_to_socket_instr_axi_wvalid     ),
-            .m_axi_wready   ( core_instr_to_socket_instr_axi_wready     ),
-            .m_axi_bid      ( core_instr_to_socket_instr_axi_bid        ),
-            .m_axi_bresp    ( core_instr_to_socket_instr_axi_bresp      ),
-            .m_axi_bvalid   ( core_instr_to_socket_instr_axi_bvalid     ),
-            .m_axi_bready   ( core_instr_to_socket_instr_axi_bready     ),
-            .m_axi_araddr   ( core_instr_to_socket_instr_axi_araddr     ),
-            .m_axi_arlen    ( core_instr_to_socket_instr_axi_arlen      ),
-            .m_axi_arsize   ( core_instr_to_socket_instr_axi_arsize     ),
-            .m_axi_arburst  ( core_instr_to_socket_instr_axi_arburst    ),
-            .m_axi_arlock   ( core_instr_to_socket_instr_axi_arlock     ),
-            .m_axi_arcache  ( core_instr_to_socket_instr_axi_arcache    ),
-            .m_axi_arprot   ( core_instr_to_socket_instr_axi_arprot     ),
-            .m_axi_arqos    ( core_instr_to_socket_instr_axi_arqos      ),
-            .m_axi_arregion ( core_instr_to_socket_instr_axi_arregion   ),
-            .m_axi_arvalid  ( core_instr_to_socket_instr_axi_arvalid    ),
-            .m_axi_arready  ( core_instr_to_socket_instr_axi_arready    ),
-            .m_axi_arid     ( core_instr_to_socket_instr_axi_arid       ),
-            .m_axi_rid      ( core_instr_to_socket_instr_axi_rid        ),
-            .m_axi_rdata    ( core_instr_to_socket_instr_axi_rdata      ),
-            .m_axi_rresp    ( core_instr_to_socket_instr_axi_rresp      ),
-            .m_axi_rlast    ( core_instr_to_socket_instr_axi_rlast      ),
-            .m_axi_rvalid   ( core_instr_to_socket_instr_axi_rvalid     ),
-            .m_axi_rready   ( core_instr_to_socket_instr_axi_rready     ),
-
+            .m_axi_awid     ( rv_socket_instr_axi_awid       ),
+            .m_axi_awaddr   ( rv_socket_instr_axi_awaddr     ),
+            .m_axi_awlen    ( rv_socket_instr_axi_awlen      ),
+            .m_axi_awsize   ( rv_socket_instr_axi_awsize     ),
+            .m_axi_awburst  ( rv_socket_instr_axi_awburst    ),
+            .m_axi_awlock   ( rv_socket_instr_axi_awlock     ),
+            .m_axi_awcache  ( rv_socket_instr_axi_awcache    ),
+            .m_axi_awprot   ( rv_socket_instr_axi_awprot     ),
+            .m_axi_awqos    ( rv_socket_instr_axi_awqos      ),
+            .m_axi_awregion ( rv_socket_instr_axi_awregion   ),
+            .m_axi_awvalid  ( rv_socket_instr_axi_awvalid    ),
+            .m_axi_awready  ( rv_socket_instr_axi_awready    ),
+            .m_axi_wdata    ( rv_socket_instr_axi_wdata      ),
+            .m_axi_wstrb    ( rv_socket_instr_axi_wstrb      ),
+            .m_axi_wlast    ( rv_socket_instr_axi_wlast      ),
+            .m_axi_wvalid   ( rv_socket_instr_axi_wvalid     ),
+            .m_axi_wready   ( rv_socket_instr_axi_wready     ),
+            .m_axi_bid      ( rv_socket_instr_axi_bid        ),
+            .m_axi_bresp    ( rv_socket_instr_axi_bresp      ),
+            .m_axi_bvalid   ( rv_socket_instr_axi_bvalid     ),
+            .m_axi_bready   ( rv_socket_instr_axi_bready     ),
+            .m_axi_araddr   ( rv_socket_instr_axi_araddr     ),
+            .m_axi_arlen    ( rv_socket_instr_axi_arlen      ),
+            .m_axi_arsize   ( rv_socket_instr_axi_arsize     ),
+            .m_axi_arburst  ( rv_socket_instr_axi_arburst    ),
+            .m_axi_arlock   ( rv_socket_instr_axi_arlock     ),
+            .m_axi_arcache  ( rv_socket_instr_axi_arcache    ),
+            .m_axi_arprot   ( rv_socket_instr_axi_arprot     ),
+            .m_axi_arqos    ( rv_socket_instr_axi_arqos      ),
+            .m_axi_arregion ( rv_socket_instr_axi_arregion   ),
+            .m_axi_arvalid  ( rv_socket_instr_axi_arvalid    ),
+            .m_axi_arready  ( rv_socket_instr_axi_arready    ),
+            .m_axi_arid     ( rv_socket_instr_axi_arid       ),
+            .m_axi_rid      ( rv_socket_instr_axi_rid        ),
+            .m_axi_rdata    ( rv_socket_instr_axi_rdata      ),
+            .m_axi_rresp    ( rv_socket_instr_axi_rresp      ),
+            .m_axi_rlast    ( rv_socket_instr_axi_rlast      ),
+            .m_axi_rvalid   ( rv_socket_instr_axi_rvalid     ),
+            .m_axi_rready   ( rv_socket_instr_axi_rready     ),
             // MEM side
-            .clk_i              ( clk_i                 ),
-            .rst_ni             ( rst_ni                ),
-            .s_mem_req          ( core_instr_mem_req    ),
-            .s_mem_addr         ( core_instr_mem_addr   ),
-            .s_mem_we           ( core_instr_mem_we     ),  // RO Interface
-            .s_mem_wdata        ( core_instr_mem_wdata  ),  // RO Interface
-            .s_mem_be           ( core_instr_mem_be     ),  // RO Interface
-            .s_mem_gnt          ( core_instr_mem_gnt    ),
-            .s_mem_valid        ( core_instr_mem_valid  ),
-            .s_mem_rdata        ( core_instr_mem_rdata  ),
-            .s_mem_error        ( core_instr_mem_error  )
+            .clk_i          ( clk_i                          ),
+            .rst_ni         ( rst_ni                         ),
+            .s_mem_req      ( core_instr_mem_req             ),
+            .s_mem_addr     ( core_instr_mem_addr            ),
+            .s_mem_we       ( core_instr_mem_we              ),  // RO Interface
+            .s_mem_wdata    ( core_instr_mem_wdata           ),  // RO Interface
+            .s_mem_be       ( core_instr_mem_be              ),  // RO Interface
+            .s_mem_gnt      ( core_instr_mem_gnt             ),
+            .s_mem_valid    ( core_instr_mem_valid           ),
+            .s_mem_rdata    ( core_instr_mem_rdata           ),
+            .s_mem_error    ( core_instr_mem_error           )
         );
 
         // Convert instructions socket (AXI) to core (MEM)
         custom_axi_from_mem axi_from_mem_data_u (
             // AXI side
-            .m_axi_awid     ( core_data_to_socket_data_axi_awid       ),
-            .m_axi_awaddr   ( core_data_to_socket_data_axi_awaddr     ),
-            .m_axi_awlen    ( core_data_to_socket_data_axi_awlen      ),
-            .m_axi_awsize   ( core_data_to_socket_data_axi_awsize     ),
-            .m_axi_awburst  ( core_data_to_socket_data_axi_awburst    ),
-            .m_axi_awlock   ( core_data_to_socket_data_axi_awlock     ),
-            .m_axi_awcache  ( core_data_to_socket_data_axi_awcache    ),
-            .m_axi_awprot   ( core_data_to_socket_data_axi_awprot     ),
-            .m_axi_awqos    ( core_data_to_socket_data_axi_awqos      ),
-            .m_axi_awregion ( core_data_to_socket_data_axi_awregion   ),
-            .m_axi_awvalid  ( core_data_to_socket_data_axi_awvalid    ),
-            .m_axi_awready  ( core_data_to_socket_data_axi_awready    ),
-            .m_axi_wdata    ( core_data_to_socket_data_axi_wdata      ),
-            .m_axi_wstrb    ( core_data_to_socket_data_axi_wstrb      ),
-            .m_axi_wlast    ( core_data_to_socket_data_axi_wlast      ),
-            .m_axi_wvalid   ( core_data_to_socket_data_axi_wvalid     ),
-            .m_axi_wready   ( core_data_to_socket_data_axi_wready     ),
-            .m_axi_bid      ( core_data_to_socket_data_axi_bid        ),
-            .m_axi_bresp    ( core_data_to_socket_data_axi_bresp      ),
-            .m_axi_bvalid   ( core_data_to_socket_data_axi_bvalid     ),
-            .m_axi_bready   ( core_data_to_socket_data_axi_bready     ),
-            .m_axi_araddr   ( core_data_to_socket_data_axi_araddr     ),
-            .m_axi_arlen    ( core_data_to_socket_data_axi_arlen      ),
-            .m_axi_arsize   ( core_data_to_socket_data_axi_arsize     ),
-            .m_axi_arburst  ( core_data_to_socket_data_axi_arburst    ),
-            .m_axi_arlock   ( core_data_to_socket_data_axi_arlock     ),
-            .m_axi_arcache  ( core_data_to_socket_data_axi_arcache    ),
-            .m_axi_arprot   ( core_data_to_socket_data_axi_arprot     ),
-            .m_axi_arqos    ( core_data_to_socket_data_axi_arqos      ),
-            .m_axi_arregion ( core_data_to_socket_data_axi_arregion   ),
-            .m_axi_arvalid  ( core_data_to_socket_data_axi_arvalid    ),
-            .m_axi_arready  ( core_data_to_socket_data_axi_arready    ),
-            .m_axi_arid     ( core_data_to_socket_data_axi_arid       ),
-            .m_axi_rid      ( core_data_to_socket_data_axi_rid        ),
-            .m_axi_rdata    ( core_data_to_socket_data_axi_rdata      ),
-            .m_axi_rresp    ( core_data_to_socket_data_axi_rresp      ),
-            .m_axi_rlast    ( core_data_to_socket_data_axi_rlast      ),
-            .m_axi_rvalid   ( core_data_to_socket_data_axi_rvalid     ),
-            .m_axi_rready   ( core_data_to_socket_data_axi_rready     ),
-
+            .m_axi_awid     ( rv_socket_data_axi_awid       ),
+            .m_axi_awaddr   ( rv_socket_data_axi_awaddr     ),
+            .m_axi_awlen    ( rv_socket_data_axi_awlen      ),
+            .m_axi_awsize   ( rv_socket_data_axi_awsize     ),
+            .m_axi_awburst  ( rv_socket_data_axi_awburst    ),
+            .m_axi_awlock   ( rv_socket_data_axi_awlock     ),
+            .m_axi_awcache  ( rv_socket_data_axi_awcache    ),
+            .m_axi_awprot   ( rv_socket_data_axi_awprot     ),
+            .m_axi_awqos    ( rv_socket_data_axi_awqos      ),
+            .m_axi_awregion ( rv_socket_data_axi_awregion   ),
+            .m_axi_awvalid  ( rv_socket_data_axi_awvalid    ),
+            .m_axi_awready  ( rv_socket_data_axi_awready    ),
+            .m_axi_wdata    ( rv_socket_data_axi_wdata      ),
+            .m_axi_wstrb    ( rv_socket_data_axi_wstrb      ),
+            .m_axi_wlast    ( rv_socket_data_axi_wlast      ),
+            .m_axi_wvalid   ( rv_socket_data_axi_wvalid     ),
+            .m_axi_wready   ( rv_socket_data_axi_wready     ),
+            .m_axi_bid      ( rv_socket_data_axi_bid        ),
+            .m_axi_bresp    ( rv_socket_data_axi_bresp      ),
+            .m_axi_bvalid   ( rv_socket_data_axi_bvalid     ),
+            .m_axi_bready   ( rv_socket_data_axi_bready     ),
+            .m_axi_araddr   ( rv_socket_data_axi_araddr     ),
+            .m_axi_arlen    ( rv_socket_data_axi_arlen      ),
+            .m_axi_arsize   ( rv_socket_data_axi_arsize     ),
+            .m_axi_arburst  ( rv_socket_data_axi_arburst    ),
+            .m_axi_arlock   ( rv_socket_data_axi_arlock     ),
+            .m_axi_arcache  ( rv_socket_data_axi_arcache    ),
+            .m_axi_arprot   ( rv_socket_data_axi_arprot     ),
+            .m_axi_arqos    ( rv_socket_data_axi_arqos      ),
+            .m_axi_arregion ( rv_socket_data_axi_arregion   ),
+            .m_axi_arvalid  ( rv_socket_data_axi_arvalid    ),
+            .m_axi_arready  ( rv_socket_data_axi_arready    ),
+            .m_axi_arid     ( rv_socket_data_axi_arid       ),
+            .m_axi_rid      ( rv_socket_data_axi_rid        ),
+            .m_axi_rdata    ( rv_socket_data_axi_rdata      ),
+            .m_axi_rresp    ( rv_socket_data_axi_rresp      ),
+            .m_axi_rlast    ( rv_socket_data_axi_rlast      ),
+            .m_axi_rvalid   ( rv_socket_data_axi_rvalid     ),
+            .m_axi_rready   ( rv_socket_data_axi_rready     ),
             // MEM side
-            .clk_i              ( clk_i                     ),
-            .rst_ni             ( rst_ni                    ),
-            .s_mem_req          ( core_data_mem_req         ),
-            .s_mem_addr         ( core_data_mem_addr        ),
-            .s_mem_we           ( core_data_mem_we          ),
-            .s_mem_wdata        ( core_data_mem_wdata       ),
-            .s_mem_be           ( core_data_mem_be          ),
-            .s_mem_gnt          ( core_data_mem_gnt         ),
-            .s_mem_valid        ( core_data_mem_valid       ),
-            .s_mem_rdata        ( core_data_mem_rdata       ),
-            .s_mem_error        ( core_data_mem_error       )
+            .clk_i          ( clk_i                         ),
+            .rst_ni         ( rst_ni                        ),
+            .s_mem_req      ( core_data_mem_req             ),
+            .s_mem_addr     ( core_data_mem_addr            ),
+            .s_mem_we       ( core_data_mem_we              ),
+            .s_mem_wdata    ( core_data_mem_wdata           ),
+            .s_mem_be       ( core_data_mem_be              ),
+            .s_mem_gnt      ( core_data_mem_gnt             ),
+            .s_mem_valid    ( core_data_mem_valid           ),
+            .s_mem_rdata    ( core_data_mem_rdata           ),
+            .s_mem_error    ( core_data_mem_error           )
         );
-    end
+    end : mem_to_axi
 
     ///////////////////////////////////
     //    ___  ___ ___ _   _  ___    //
@@ -702,8 +1517,8 @@ module rv_socket # (
     //                               //
     ///////////////////////////////////
 
-    // This is only for PULP cores, that share a common debug module
-    // Other cores are required to instatiate their own DM
+    // Shared common debug modules, e.g PULP DTM
+    // Other cores should instatiate their own DM
     if ( CORE_SELECTOR inside {CORE_CV32E40P, CORE_IBEX} ) begin : dm_rv32_gen
 
         ///////////////////////////
@@ -730,6 +1545,7 @@ module rv_socket # (
             .dbg_slave_axi_awqos        ( rv_socket_dbg_slave_axi_awqos     ),
             .dbg_slave_axi_awvalid      ( rv_socket_dbg_slave_axi_awvalid   ),
             .dbg_slave_axi_awready      ( rv_socket_dbg_slave_axi_awready   ),
+            .dbg_slave_axi_awregion     ( rv_socket_dbg_slave_axi_awregion  ),
             .dbg_slave_axi_wdata        ( rv_socket_dbg_slave_axi_wdata     ),
             .dbg_slave_axi_wstrb        ( rv_socket_dbg_slave_axi_wstrb     ),
             .dbg_slave_axi_wlast        ( rv_socket_dbg_slave_axi_wlast     ),
@@ -750,6 +1566,7 @@ module rv_socket # (
             .dbg_slave_axi_arqos        ( rv_socket_dbg_slave_axi_arqos     ),
             .dbg_slave_axi_arvalid      ( rv_socket_dbg_slave_axi_arvalid   ),
             .dbg_slave_axi_arready      ( rv_socket_dbg_slave_axi_arready   ),
+            .dbg_slave_axi_arregion     ( rv_socket_dbg_slave_axi_arregion  ),
             .dbg_slave_axi_rid          ( rv_socket_dbg_slave_axi_rid       ),
             .dbg_slave_axi_rdata        ( rv_socket_dbg_slave_axi_rdata     ),
             .dbg_slave_axi_rresp        ( rv_socket_dbg_slave_axi_rresp     ),
@@ -799,13 +1616,12 @@ module rv_socket # (
             // To PULP core
             .debug_req_o            ( debug_req_core           )
         );
-
     end : dm_rv32_gen
-    else if ( CORE_SELECTOR inside {CORE_CV64A6} ) begin : dm_rv64_gen
+    else if ( CORE_SELECTOR inside {CORE_CV64A6, CORE_CV64A6_ARA} ) begin : dm_rv64_gen
 
-        // Debug Core built to use 64-bits interface.
-        // It is technically compatible with all execution-based debug-mode cores.
-        // In practice, it has only been used with CVA6
+        // Debug Core with 64-bits memory interface.
+        // It is technically compatible with all PULP cores.
+        // In practice, it has only been used with CVA6.
         //  BSCANE2 tap
         (* keep_hierarchy = "yes" *)  // DEBUG
         custom_rv64_dbg_bscane riscv_dbg_u (
@@ -826,6 +1642,7 @@ module rv_socket # (
             .dbg_slave_axi_awqos        ( rv_socket_dbg_slave_axi_awqos     ),
             .dbg_slave_axi_awvalid      ( rv_socket_dbg_slave_axi_awvalid   ),
             .dbg_slave_axi_awready      ( rv_socket_dbg_slave_axi_awready   ),
+            .dbg_slave_axi_awregion     ( rv_socket_dbg_slave_axi_awregion  ),
             .dbg_slave_axi_wdata        ( rv_socket_dbg_slave_axi_wdata     ),
             .dbg_slave_axi_wstrb        ( rv_socket_dbg_slave_axi_wstrb     ),
             .dbg_slave_axi_wlast        ( rv_socket_dbg_slave_axi_wlast     ),
@@ -846,6 +1663,7 @@ module rv_socket # (
             .dbg_slave_axi_arqos        ( rv_socket_dbg_slave_axi_arqos     ),
             .dbg_slave_axi_arvalid      ( rv_socket_dbg_slave_axi_arvalid   ),
             .dbg_slave_axi_arready      ( rv_socket_dbg_slave_axi_arready   ),
+            .dbg_slave_axi_arregion     ( rv_socket_dbg_slave_axi_arregion  ),
             .dbg_slave_axi_rid          ( rv_socket_dbg_slave_axi_rid       ),
             .dbg_slave_axi_rdata        ( rv_socket_dbg_slave_axi_rdata     ),
             .dbg_slave_axi_rresp        ( rv_socket_dbg_slave_axi_rresp     ),
@@ -895,7 +1713,6 @@ module rv_socket # (
             // To PULP core
             .debug_req_o            ( debug_req_core           )
         );
-
     end : dm_rv64_gen
     else begin : dm_not_gen
 
@@ -905,7 +1722,6 @@ module rv_socket # (
         // Sink unused interafces
         `SINK_AXI_MASTER_INTERFACE(rv_socket_dbg_master);
         `SINK_AXI_SLAVE_INTERFACE(rv_socket_dbg_slave);
-
     end : dm_not_gen
 
 endmodule : rv_socket

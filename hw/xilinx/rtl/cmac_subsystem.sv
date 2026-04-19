@@ -38,8 +38,8 @@
 //
 
 
-`include "uninasoc_axi.svh"
-`include "uninasoc_qsfp.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_qsfp.svh"
 
 module cmac_subsystem # (
     parameter int unsigned    MBUS_DATA_WIDTH   = 32,
@@ -136,20 +136,20 @@ module cmac_subsystem # (
     ////////////////////
 
     // AXI Lite bus from prot conv to CMAC XBAR (CSR PATH)
-    `DECLARE_AXILITE_BUS(prot_conv_to_cmac_xbar, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    `DECLARE_AXILITE_BUS(prot_conv_to_cmac_xbar, 32, LOCAL_ADDR_WIDTH)
 
     // CMAC XBAR slaves (CSR PATH)
-    `DECLARE_AXILITE_BUS_ARRAY(cmac_xbar_slaves, 2, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    `DECLARE_AXILITE_BUS_ARRAY(cmac_xbar_slaves, 2, 32, LOCAL_ADDR_WIDTH)
 
     // From CMAC XBAR to CMAC CSR (CMAC CSR PATH)
-    `DECLARE_AXILITE_BUS(cmac_xbar_to_cmac_csr, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    `DECLARE_AXILITE_BUS(cmac_xbar_to_cmac_csr, 32, LOCAL_ADDR_WIDTH)
     // From CMAC XBAR to FIFO clock conv (FIFO CSR PATH)
-    `DECLARE_AXILITE_BUS(cmac_xbar_to_fifo_clock_conv, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    `DECLARE_AXILITE_BUS(cmac_xbar_to_fifo_clock_conv, 32, LOCAL_ADDR_WIDTH)
 
     `CONCAT_AXILITE_SLAVES_ARRAY2(cmac_xbar_slaves, cmac_xbar_to_fifo_clock_conv, cmac_xbar_to_cmac_csr)
 
     // From FIFO clock conv to FIFO CSR (FIFO CSR PATH)
-    `DECLARE_AXILITE_BUS(clock_conv_to_fifo_csr, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    `DECLARE_AXILITE_BUS(clock_conv_to_fifo_csr, 32, LOCAL_ADDR_WIDTH)
 
     //////////////////////
     // AXI Stream buses //
@@ -171,7 +171,7 @@ module cmac_subsystem # (
     generate
         if ( MBUS_DATA_WIDTH == 64 ) begin
 
-            xlnx_axi_dwidth_from64_to32_converter csr_dwidth_conv_u (
+            xlnx_axi_dwidth_64_to_32_converter csr_dwidth_conv_u (
                 .s_axi_aclk     ( csr_clock_i       ),
                 .s_axi_aresetn  ( csr_reset_ni      ),
 
@@ -263,16 +263,14 @@ module cmac_subsystem # (
 
     endgenerate
 
+    // HBUS data path is DDR domain (e.g. 300 MHz). CMAC and AXI Stream FIFO run on gt_txusrclk2 (~322 MHz).
+    // Always bridge AXI512 between HBUS clock and CMAC clock here.
+    axi_clock_converter_wrapper #(
+        .LOCAL_DATA_WIDTH ( LOCAL_DATA_WIDTH ),
+        .LOCAL_ADDR_WIDTH ( LOCAL_ADDR_WIDTH ),
+        .LOCAL_ID_WIDTH   ( LOCAL_ID_WIDTH   )
 
-    generate
-        // Clock converter from HBUS to dwidth converter (DATA FIFO)
-        if (`HBUS_CLOCK_FREQ_MHZ != 322) begin
-            axi_clock_converter_wrapper #(
-                .LOCAL_DATA_WIDTH ( LOCAL_DATA_WIDTH ),
-                .LOCAL_ADDR_WIDTH ( LOCAL_ADDR_WIDTH ),
-                .LOCAL_ID_WIDTH   ( LOCAL_ID_WIDTH   )
-
-            ) fifo_clock_conv_u (
+    ) fifo_clock_conv_u (
                 .s_axi_aclk     ( data_clock_i        ),
                 .s_axi_aresetn  ( data_reset_ni       ),
 
@@ -359,14 +357,6 @@ module cmac_subsystem # (
                 .m_axi_rvalid   ( clock_conv_to_fifo_axi_rvalid    ),
                 .m_axi_rready   ( clock_conv_to_fifo_axi_rready    )
             );
-        end
-        else begin
-            `ASSIGN_AXI_BUS(clock_conv_to_fifo, s_data)
-        end
-
-
-
-    endgenerate
 
     // AXI4 to AXI Lite prot conv (from dwidth converter to CMAC XBAR CSR PATH)
     xlnx_axi4_to_axilite_d32_converter axi4_to_axilite_d32_converter_to_xbar_u (

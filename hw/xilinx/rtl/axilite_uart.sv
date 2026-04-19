@@ -1,14 +1,14 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
-// Description: AXI4 Uart - This module encapsulates the AXI lite uart. The uart is selected based on the SOC_CONFIG.
+// Description: AXI4 Uart - This module encapsulates the AXI lite uart. The uart is selected based on the SIMPLYV_PROFILE.
 //              EMBEDDED -> AXILITE UART
 //              HPC      -> VIRTUAL UART
 
 
 // Import packages
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 // Import headers
-`include "uninasoc_axi.svh"
+`include "simplyv_axi.svh"
 
 
 module axilite_uart # (
@@ -25,7 +25,7 @@ module axilite_uart # (
     input  logic [1:0]  int_ack_i,
 
     // AXI4 Slave interface
-    `DEFINE_AXILITE_SLAVE_PORTS(s, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXILITE_SLAVE_PORTS(s, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH),
 
     // EMBEDDED ONLY
     // RX and TX signas

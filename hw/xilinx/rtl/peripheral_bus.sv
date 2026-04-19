@@ -33,10 +33,10 @@
 //
 
 // Import packages
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 // Import headers
-`include "uninasoc_axi.svh"
+`include "simplyv_axi.svh"
 
 module peripheral_bus #(
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32,
@@ -199,7 +199,7 @@ module peripheral_bus #(
 
         // Output clock converter - convert from PBUS_DOMAIN to MAIN_DOMAIN (mainly used for interrupts)
         xpm_cdc_array_single #(
-            .DEST_SYNC_FF   ( 4             ),     // Number of sync flip-flops
+            .DEST_SYNC_FF   ( 8             ),     // Number of sync flip-flops
             .SRC_INPUT_REG  ( 1             ),     // Input register enable
             .WIDTH          ( NUM_IRQ       )      // Width of data to sync
         )
@@ -317,9 +317,7 @@ module peripheral_bus #(
 
         // Since the AXI data width converter has a reordering depth of 1 it doesn't have ID in its master ports - for more details see the documentation
         assign to_prot_conv_axi_awid = '0;
-        assign to_prot_conv_axi_bid  = '0;
         assign to_prot_conv_axi_arid = '0;
-        assign to_prot_conv_axi_rid  = '0;
     end : gen_dwidth_conv
     else begin : no_dwidth_conv
         `ASSIGN_AXI_BUS (to_prot_conv, to_dwidth_conv)

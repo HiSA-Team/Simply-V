@@ -1,8 +1,8 @@
 // Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
-// Description: Basic system variables for UninaSoC
+// Description: Basic system variables for Simply-V
 
-package uninasoc_pkg;
+package simplyv_pkg;
 
     ///////////////////////
     // SoC-level defines //
@@ -60,9 +60,12 @@ package uninasoc_pkg;
         CORE_PICORV32,
         CORE_CV32E40P,
         CORE_IBEX,
-        CORE_MICROBLAZEV,
+        CORE_MICROBLAZEV_RV32,
+        CORE_DUAL_MICROBLAZEV_RV32,
         // 64-bits Cores
-        CORE_CV64A6
+        CORE_MICROBLAZEV_RV64,
+        CORE_CV64A6,
+        CORE_CV64A6_ARA
     } core_selector_t;
 
     // Select core from macro
@@ -76,26 +79,29 @@ package uninasoc_pkg;
     // The PLIC forwards interrupts to the Masters (e.g. the Socket)
 
     // RISC-V cores standard interrupts
-    localparam int unsigned CORE_SW_INTERRUPT = 3;      // Inter Processor Interrupts
-    localparam int unsigned CORE_TIM_INTERRUPT = 7;     // Real-time Clock Timer
-    localparam int unsigned CORE_EXT_INTERRUPT = 11;    // PLIC-to-hart interrupts
+    localparam int unsigned RVSOCKET_SW_INTERRUPT = 3;      // Inter Processor Interrupts
+    localparam int unsigned RVSOCKET_TIM_INTERRUPT = 7;     // Real-time Clock Timer
+    localparam int unsigned RVSOCKET_EXT_INTERRUPT = 11;    // PLIC-to-hart interrupts
 
     // Peripheral Bus interrupts
     localparam int unsigned PBUS_GPIOIN_INTERRUPT = 0;      // GPIO In [embedded only]
     localparam int unsigned PBUS_TIM0_INTERRUPT = 1;        // Timer 0
     localparam int unsigned PBUS_TIM1_INTERRUPT = 2;        // Timer 1
     localparam int unsigned PBUS_UART_INTERRUPT = 3;        // UART
-    localparam int unsigned HBUS_CMAC_INTERRUPT = 0;        // CMAC
+    // Total number of interrupts
+    localparam int unsigned PBUS_NUM_INTERRUPTS = 4;
 
     // PLIC Interrupts mapping
     // We support 32 possible sources of platform interrupts, which are statically mapped
     // regardless of the configuration.
+    // TODO154: this is static for now, must generate by config
     localparam int unsigned PLIC_RESERVED_INTERRUPT = 0;    // PLIC line 0 is reserved
     localparam int unsigned PLIC_GPIOIN_INTERRUPT = 1;      // GPIO In (From PBUS)[embedded only]
     localparam int unsigned PLIC_TIM0_INTERRUPT = 2;        // Timer 0 (From PBUS)
     localparam int unsigned PLIC_TIM1_INTERRUPT = 3;        // Timer 1 (From PBUS)
     localparam int unsigned PLIC_UART_INTERRUPT = 4;        // UART    (From PBUS)
-    localparam int unsigned PLIC_CMAC_INTERRUPT = 5;        // CMAC
+    localparam int unsigned PLIC_HLS_INTERRUPT = 5;         // HLS     (From HLS core) [HPC only]
+    localparam int unsigned PLIC_CDMA_INTERRUPT = 6;        // CDMA    (From DMA IP)
 
     ///////////////
     // Functions //
@@ -104,12 +110,16 @@ package uninasoc_pkg;
     // This function is used to turn a core_selector id into the corresponding core name string
     function string core_selector_to_string(input int core_sel);
         case (core_sel)
-            CORE_PICORV32:     return "CORE_PICORV32";
-            CORE_CV32E40P:     return "CORE_CV32E40P";
-            CORE_IBEX:         return "CORE_IBEX";
-            CORE_MICROBLAZEV:  return "CORE_MICROBLAZEV";
-            default:           return $sformatf("UNKNOWN_CORE_%0d", core_sel);
+            CORE_PICORV32:               return "CORE_PICORV32";
+            CORE_CV32E40P:               return "CORE_CV32E40P";
+            CORE_IBEX:                   return "CORE_IBEX";
+            CORE_MICROBLAZEV_RV32:       return "CORE_MICROBLAZEV_RV32";
+            CORE_MICROBLAZEV_RV64:       return "CORE_MICROBLAZEV_RV64";
+            CORE_DUAL_MICROBLAZEV_RV32:  return "CORE_DUAL_MICROBLAZEV_RV32";
+            CORE_CV64A6:                 return "CORE_CV64A6";
+            CORE_CV64A6_ARA:             return "CORE_CV64A6_ARA";
+            default:                     return $sformatf("UNKNOWN_CORE_%0d", core_sel);
         endcase
     endfunction
 
-endpackage : uninasoc_pkg
+endpackage : simplyv_pkg

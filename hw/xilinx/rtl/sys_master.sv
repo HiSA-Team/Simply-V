@@ -34,11 +34,11 @@
 
 
 // Import packages
-import uninasoc_pkg::*;
+import simplyv_pkg::*;
 
 // Import headers
-`include "uninasoc_axi.svh"
-`include "uninasoc_pcie.svh"
+`include "simplyv_axi.svh"
+`include "simplyv_pcie.svh"
 
 module sys_master # (
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32,
@@ -635,8 +635,6 @@ module sys_master # (
 
         assign m_axi_awid = '0;
         assign m_axi_arid = '0;
-        assign m_axi_awregion = '0;
-        assign m_axi_arregion = '0;
 
     end: dwidth_converter
     else begin: no_dwidth_conversion
