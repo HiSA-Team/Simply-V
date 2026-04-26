@@ -37,6 +37,7 @@
 //
 //
 
+// TODO: Change the description and the description in the header of the file, now it is attached to the MBUS Completely
 
 `include "simplyv_axi.svh"
 `include "simplyv_qsfp.svh"
@@ -82,7 +83,7 @@ module cmac_subsystem # (
     `DEFINE_AXI_SLAVE_PORTS(s_csr, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
 
     // AXI4 DATA
-    `DEFINE_AXI_SLAVE_PORTS(s_data, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+    `DEFINE_AXI_SLAVE_PORTS(s_data, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
 
     // TODO: Interrupts are not supported now
     // Interrupt out from the AXI Stream FIFO
@@ -124,8 +125,8 @@ module cmac_subsystem # (
     // AXI4 buses //
     ////////////////
 
-    // AXI4 bus (512b) for read/write data from/to the AXIS FIFO from the clock converter (DATA FIFO)
-    `DECLARE_AXI_BUS(clock_conv_to_fifo, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
+    // AXI4 bus (MBUS_DATA_WIDTH) for read/write data from/to the AXIS FIFO from the clock converter (DATA FIFO)
+    `DECLARE_AXI_BUS(clock_conv_to_fifo, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
 
     // AXI4 bus from dwidth conv to prot conv (CSR PATH)
     `DECLARE_AXI_BUS(to_prot_conv_csr, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
@@ -155,12 +156,18 @@ module cmac_subsystem # (
     // AXI Stream buses //
     //////////////////////
 
-    // AXIS bus for data transmission from the AXIS FIFO to the CMAC
-    `DECLARE_AXIS_BUS(tx_fifo_to_cmac)
+    // AXIS bus for data transmission from the AXI Stream Dwidth Converter to the CMAC
+    `DECLARE_AXIS_BUS(tx_dwidth_converter_to_cmac, LOCAL_DATA_WIDTH)
 
-    // AXIS bus for data reception from the CMAC to the AXIS FIFO
-    `DECLARE_AXIS_BUS(rx_cmac_to_fifo)
+    // AXIS bus for data reception from the CMAC to the AXI Stream Dwidth Converter
+    `DECLARE_AXIS_BUS(rx_cmac_to_dwidth_converter, LOCAL_DATA_WIDTH)
 
+
+    // AXIS bus for data transmission from the AXI Stream FIFO to the AXI Stream Dwidth Converter
+    `DECLARE_AXIS_BUS(tx_fifo_to_dwidth_converter, MBUS_DATA_WIDTH)
+
+    // AXIS bus for data reception from the AXI Stream Dwidth Converter to the AXI Stream FIFO
+    `DECLARE_AXIS_BUS(rx_dwidth_converter_to_fifo, MBUS_DATA_WIDTH)
 
 
     ///////////////////////////
@@ -265,98 +272,99 @@ module cmac_subsystem # (
 
     // HBUS data path is DDR domain (e.g. 300 MHz). CMAC and AXI Stream FIFO run on gt_txusrclk2 (~322 MHz).
     // Always bridge AXI512 between HBUS clock and CMAC clock here.
+    // TODO: CHANGE THE DESCRIPTION AND THE DESCRIPTION IN THE HEADER OF THE FILE, NOW IT IS ATTACHED TO THE MBUS 
     axi_clock_converter_wrapper #(
-        .LOCAL_DATA_WIDTH ( LOCAL_DATA_WIDTH ),
-        .LOCAL_ADDR_WIDTH ( LOCAL_ADDR_WIDTH ),
-        .LOCAL_ID_WIDTH   ( LOCAL_ID_WIDTH   )
+        .LOCAL_DATA_WIDTH ( MBUS_DATA_WIDTH ),
+        .LOCAL_ADDR_WIDTH ( MBUS_ADDR_WIDTH ),
+        .LOCAL_ID_WIDTH   ( MBUS_ID_WIDTH   )
 
     ) fifo_clock_conv_u (
-                .s_axi_aclk     ( data_clock_i        ),
-                .s_axi_aresetn  ( data_reset_ni       ),
+            .s_axi_aclk     ( data_clock_i        ),
+            .s_axi_aresetn  ( data_reset_ni       ),
 
-                .m_axi_aclk     ( cmac_output_clock_322MHz ),
-                .m_axi_aresetn  ( ~cmac_output_reset_p     ),
+            .m_axi_aclk     ( cmac_output_clock_322MHz ),
+            .m_axi_aresetn  ( ~cmac_output_reset_p     ),
 
-                .s_axi_awid     ( s_data_axi_awid          ),
-                .s_axi_awaddr   ( s_data_axi_awaddr        ),
-                .s_axi_awlen    ( s_data_axi_awlen         ),
-                .s_axi_awsize   ( s_data_axi_awsize        ),
-                .s_axi_awburst  ( s_data_axi_awburst       ),
-                .s_axi_awlock   ( s_data_axi_awlock        ),
-                .s_axi_awcache  ( s_data_axi_awcache       ),
-                .s_axi_awprot   ( s_data_axi_awprot        ),
-                .s_axi_awqos    ( s_data_axi_awqos         ),
-                .s_axi_awvalid  ( s_data_axi_awvalid       ),
-                .s_axi_awready  ( s_data_axi_awready       ),
-                .s_axi_awregion ( s_data_axi_awregion      ),
-                .s_axi_wdata    ( s_data_axi_wdata         ),
-                .s_axi_wstrb    ( s_data_axi_wstrb         ),
-                .s_axi_wlast    ( s_data_axi_wlast         ),
-                .s_axi_wvalid   ( s_data_axi_wvalid        ),
-                .s_axi_wready   ( s_data_axi_wready        ),
-                .s_axi_bid      ( s_data_axi_bid           ),
-                .s_axi_bresp    ( s_data_axi_bresp         ),
-                .s_axi_bvalid   ( s_data_axi_bvalid        ),
-                .s_axi_bready   ( s_data_axi_bready        ),
-                .s_axi_arid     ( s_data_axi_arid          ),
-                .s_axi_araddr   ( s_data_axi_araddr        ),
-                .s_axi_arlen    ( s_data_axi_arlen         ),
-                .s_axi_arsize   ( s_data_axi_arsize        ),
-                .s_axi_arburst  ( s_data_axi_arburst       ),
-                .s_axi_arlock   ( s_data_axi_arlock        ),
-                .s_axi_arregion ( s_data_axi_arregion      ),
-                .s_axi_arcache  ( s_data_axi_arcache       ),
-                .s_axi_arprot   ( s_data_axi_arprot        ),
-                .s_axi_arqos    ( s_data_axi_arqos         ),
-                .s_axi_arvalid  ( s_data_axi_arvalid       ),
-                .s_axi_arready  ( s_data_axi_arready       ),
-                .s_axi_rid      ( s_data_axi_rid           ),
-                .s_axi_rdata    ( s_data_axi_rdata         ),
-                .s_axi_rresp    ( s_data_axi_rresp         ),
-                .s_axi_rlast    ( s_data_axi_rlast         ),
-                .s_axi_rvalid   ( s_data_axi_rvalid        ),
-                .s_axi_rready   ( s_data_axi_rready        ),
+            .s_axi_awid     ( s_data_axi_awid          ),
+            .s_axi_awaddr   ( s_data_axi_awaddr        ),
+            .s_axi_awlen    ( s_data_axi_awlen         ),
+            .s_axi_awsize   ( s_data_axi_awsize        ),
+            .s_axi_awburst  ( s_data_axi_awburst       ),
+            .s_axi_awlock   ( s_data_axi_awlock        ),
+            .s_axi_awcache  ( s_data_axi_awcache       ),
+            .s_axi_awprot   ( s_data_axi_awprot        ),
+            .s_axi_awqos    ( s_data_axi_awqos         ),
+            .s_axi_awvalid  ( s_data_axi_awvalid       ),
+            .s_axi_awready  ( s_data_axi_awready       ),
+            .s_axi_awregion ( s_data_axi_awregion      ),
+            .s_axi_wdata    ( s_data_axi_wdata         ),
+            .s_axi_wstrb    ( s_data_axi_wstrb         ),
+            .s_axi_wlast    ( s_data_axi_wlast         ),
+            .s_axi_wvalid   ( s_data_axi_wvalid        ),
+            .s_axi_wready   ( s_data_axi_wready        ),
+            .s_axi_bid      ( s_data_axi_bid           ),
+            .s_axi_bresp    ( s_data_axi_bresp         ),
+            .s_axi_bvalid   ( s_data_axi_bvalid        ),
+            .s_axi_bready   ( s_data_axi_bready        ),
+            .s_axi_arid     ( s_data_axi_arid          ),
+            .s_axi_araddr   ( s_data_axi_araddr        ),
+            .s_axi_arlen    ( s_data_axi_arlen         ),
+            .s_axi_arsize   ( s_data_axi_arsize        ),
+            .s_axi_arburst  ( s_data_axi_arburst       ),
+            .s_axi_arlock   ( s_data_axi_arlock        ),
+            .s_axi_arregion ( s_data_axi_arregion      ),
+            .s_axi_arcache  ( s_data_axi_arcache       ),
+            .s_axi_arprot   ( s_data_axi_arprot        ),
+            .s_axi_arqos    ( s_data_axi_arqos         ),
+            .s_axi_arvalid  ( s_data_axi_arvalid       ),
+            .s_axi_arready  ( s_data_axi_arready       ),
+            .s_axi_rid      ( s_data_axi_rid           ),
+            .s_axi_rdata    ( s_data_axi_rdata         ),
+            .s_axi_rresp    ( s_data_axi_rresp         ),
+            .s_axi_rlast    ( s_data_axi_rlast         ),
+            .s_axi_rvalid   ( s_data_axi_rvalid        ),
+            .s_axi_rready   ( s_data_axi_rready        ),
 
-                .m_axi_awid     ( clock_conv_to_fifo_axi_awid      ),
-                .m_axi_awaddr   ( clock_conv_to_fifo_axi_awaddr    ),
-                .m_axi_awlen    ( clock_conv_to_fifo_axi_awlen     ),
-                .m_axi_awsize   ( clock_conv_to_fifo_axi_awsize    ),
-                .m_axi_awburst  ( clock_conv_to_fifo_axi_awburst   ),
-                .m_axi_awlock   ( clock_conv_to_fifo_axi_awlock    ),
-                .m_axi_awcache  ( clock_conv_to_fifo_axi_awcache   ),
-                .m_axi_awprot   ( clock_conv_to_fifo_axi_awprot    ),
-                .m_axi_awregion ( clock_conv_to_fifo_axi_awregion  ),
-                .m_axi_awqos    ( clock_conv_to_fifo_axi_awqos     ),
-                .m_axi_awvalid  ( clock_conv_to_fifo_axi_awvalid   ),
-                .m_axi_awready  ( clock_conv_to_fifo_axi_awready   ),
-                .m_axi_wdata    ( clock_conv_to_fifo_axi_wdata     ),
-                .m_axi_wstrb    ( clock_conv_to_fifo_axi_wstrb     ),
-                .m_axi_wlast    ( clock_conv_to_fifo_axi_wlast     ),
-                .m_axi_wvalid   ( clock_conv_to_fifo_axi_wvalid    ),
-                .m_axi_wready   ( clock_conv_to_fifo_axi_wready    ),
-                .m_axi_bid      ( clock_conv_to_fifo_axi_bid       ),
-                .m_axi_bresp    ( clock_conv_to_fifo_axi_bresp     ),
-                .m_axi_bvalid   ( clock_conv_to_fifo_axi_bvalid    ),
-                .m_axi_bready   ( clock_conv_to_fifo_axi_bready    ),
-                .m_axi_arid     ( clock_conv_to_fifo_axi_arid      ),
-                .m_axi_araddr   ( clock_conv_to_fifo_axi_araddr    ),
-                .m_axi_arlen    ( clock_conv_to_fifo_axi_arlen     ),
-                .m_axi_arsize   ( clock_conv_to_fifo_axi_arsize    ),
-                .m_axi_arburst  ( clock_conv_to_fifo_axi_arburst   ),
-                .m_axi_arlock   ( clock_conv_to_fifo_axi_arlock    ),
-                .m_axi_arcache  ( clock_conv_to_fifo_axi_arcache   ),
-                .m_axi_arprot   ( clock_conv_to_fifo_axi_arprot    ),
-                .m_axi_arregion ( clock_conv_to_fifo_axi_arregion  ),
-                .m_axi_arqos    ( clock_conv_to_fifo_axi_arqos     ),
-                .m_axi_arvalid  ( clock_conv_to_fifo_axi_arvalid   ),
-                .m_axi_arready  ( clock_conv_to_fifo_axi_arready   ),
-                .m_axi_rid      ( clock_conv_to_fifo_axi_rid       ),
-                .m_axi_rdata    ( clock_conv_to_fifo_axi_rdata     ),
-                .m_axi_rresp    ( clock_conv_to_fifo_axi_rresp     ),
-                .m_axi_rlast    ( clock_conv_to_fifo_axi_rlast     ),
-                .m_axi_rvalid   ( clock_conv_to_fifo_axi_rvalid    ),
-                .m_axi_rready   ( clock_conv_to_fifo_axi_rready    )
-            );
+            .m_axi_awid     ( clock_conv_to_fifo_axi_awid      ),
+            .m_axi_awaddr   ( clock_conv_to_fifo_axi_awaddr    ),
+            .m_axi_awlen    ( clock_conv_to_fifo_axi_awlen     ),
+            .m_axi_awsize   ( clock_conv_to_fifo_axi_awsize    ),
+            .m_axi_awburst  ( clock_conv_to_fifo_axi_awburst   ),
+            .m_axi_awlock   ( clock_conv_to_fifo_axi_awlock    ),
+            .m_axi_awcache  ( clock_conv_to_fifo_axi_awcache   ),
+            .m_axi_awprot   ( clock_conv_to_fifo_axi_awprot    ),
+            .m_axi_awregion ( clock_conv_to_fifo_axi_awregion  ),
+            .m_axi_awqos    ( clock_conv_to_fifo_axi_awqos     ),
+            .m_axi_awvalid  ( clock_conv_to_fifo_axi_awvalid   ),
+            .m_axi_awready  ( clock_conv_to_fifo_axi_awready   ),
+            .m_axi_wdata    ( clock_conv_to_fifo_axi_wdata     ),
+            .m_axi_wstrb    ( clock_conv_to_fifo_axi_wstrb     ),
+            .m_axi_wlast    ( clock_conv_to_fifo_axi_wlast     ),
+            .m_axi_wvalid   ( clock_conv_to_fifo_axi_wvalid    ),
+            .m_axi_wready   ( clock_conv_to_fifo_axi_wready    ),
+            .m_axi_bid      ( clock_conv_to_fifo_axi_bid       ),
+            .m_axi_bresp    ( clock_conv_to_fifo_axi_bresp     ),
+            .m_axi_bvalid   ( clock_conv_to_fifo_axi_bvalid    ),
+            .m_axi_bready   ( clock_conv_to_fifo_axi_bready    ),
+            .m_axi_arid     ( clock_conv_to_fifo_axi_arid      ),
+            .m_axi_araddr   ( clock_conv_to_fifo_axi_araddr    ),
+            .m_axi_arlen    ( clock_conv_to_fifo_axi_arlen     ),
+            .m_axi_arsize   ( clock_conv_to_fifo_axi_arsize    ),
+            .m_axi_arburst  ( clock_conv_to_fifo_axi_arburst   ),
+            .m_axi_arlock   ( clock_conv_to_fifo_axi_arlock    ),
+            .m_axi_arcache  ( clock_conv_to_fifo_axi_arcache   ),
+            .m_axi_arprot   ( clock_conv_to_fifo_axi_arprot    ),
+            .m_axi_arregion ( clock_conv_to_fifo_axi_arregion  ),
+            .m_axi_arqos    ( clock_conv_to_fifo_axi_arqos     ),
+            .m_axi_arvalid  ( clock_conv_to_fifo_axi_arvalid   ),
+            .m_axi_arready  ( clock_conv_to_fifo_axi_arready   ),
+            .m_axi_rid      ( clock_conv_to_fifo_axi_rid       ),
+            .m_axi_rdata    ( clock_conv_to_fifo_axi_rdata     ),
+            .m_axi_rresp    ( clock_conv_to_fifo_axi_rresp     ),
+            .m_axi_rlast    ( clock_conv_to_fifo_axi_rlast     ),
+            .m_axi_rvalid   ( clock_conv_to_fifo_axi_rvalid    ),
+            .m_axi_rready   ( clock_conv_to_fifo_axi_rready    )
+        );
 
     // AXI4 to AXI Lite prot conv (from dwidth converter to CMAC XBAR CSR PATH)
     xlnx_axi4_to_axilite_d32_converter axi4_to_axilite_d32_converter_to_xbar_u (
@@ -530,18 +538,18 @@ module cmac_subsystem # (
         .s_axi_aresetn       ( ~cmac_output_reset_p        ),
 
         // RX AXI Strem interface
-        .axi_str_rxd_tdata   ( rx_cmac_to_fifo_axis_tdata  ),
-        .axi_str_rxd_tkeep   ( rx_cmac_to_fifo_axis_tkeep  ),
-        .axi_str_rxd_tlast   ( rx_cmac_to_fifo_axis_tlast  ),
-        .axi_str_rxd_tready  ( rx_cmac_to_fifo_axis_tready ),
-        .axi_str_rxd_tvalid  ( rx_cmac_to_fifo_axis_tvalid ),
+        .axi_str_rxd_tdata   ( rx_dwidth_converter_to_fifo_axis_tdata  ),
+        .axi_str_rxd_tkeep   ( rx_dwidth_converter_to_fifo_axis_tkeep  ),
+        .axi_str_rxd_tlast   ( rx_dwidth_converter_to_fifo_axis_tlast  ),
+        .axi_str_rxd_tready  ( rx_dwidth_converter_to_fifo_axis_tready ),
+        .axi_str_rxd_tvalid  ( rx_dwidth_converter_to_fifo_axis_tvalid ),
 
         // TX AXI Stream interface
-        .axi_str_txd_tdata   ( tx_fifo_to_cmac_axis_tdata  ),
-        .axi_str_txd_tkeep   ( tx_fifo_to_cmac_axis_tkeep  ),
-        .axi_str_txd_tlast   ( tx_fifo_to_cmac_axis_tlast  ),
-        .axi_str_txd_tready  ( tx_fifo_to_cmac_axis_tready ),
-        .axi_str_txd_tvalid  ( tx_fifo_to_cmac_axis_tvalid ),
+        .axi_str_txd_tdata   ( tx_fifo_to_dwidth_converter_axis_tdata  ),
+        .axi_str_txd_tkeep   ( tx_fifo_to_dwidth_converter_axis_tkeep  ),
+        .axi_str_txd_tlast   ( tx_fifo_to_dwidth_converter_axis_tlast  ),
+        .axi_str_txd_tready  ( tx_fifo_to_dwidth_converter_axis_tready ),
+        .axi_str_txd_tvalid  ( tx_fifo_to_dwidth_converter_axis_tvalid ),
 
         // AXI Lite (CSR) interface
         .s_axi_araddr        ( clock_conv_to_fifo_csr_axilite_araddr  ),     // 32 bit
@@ -607,6 +615,41 @@ module cmac_subsystem # (
         .interrupt              ( fifo_interrupt    )
     );
 
+    // AXI Stream Dwidth Converter (axis_dwidth_converter)
+    xlnx_axis_dwidth_to512_converter axis_dwidth_to512_converter_u (
+        .aclk            ( cmac_output_clock_322MHz    ),
+        .aresetn         ( ~cmac_output_reset_p        ),
+
+        .s_axis_tdata    ( tx_fifo_to_dwidth_converter_axis_tdata  ),
+        .s_axis_tkeep    ( tx_fifo_to_dwidth_converter_axis_tkeep  ),
+        .s_axis_tlast    ( tx_fifo_to_dwidth_converter_axis_tlast  ),
+        .s_axis_tvalid   ( tx_fifo_to_dwidth_converter_axis_tvalid ),
+        .s_axis_tready   ( tx_fifo_to_dwidth_converter_axis_tready ),
+
+        .m_axis_tdata    ( tx_dwidth_converter_to_cmac_axis_tdata  ),
+        .m_axis_tkeep    ( tx_dwidth_converter_to_cmac_axis_tkeep  ),
+        .m_axis_tlast    ( tx_dwidth_converter_to_cmac_axis_tlast  ),
+        .m_axis_tvalid   ( tx_dwidth_converter_to_cmac_axis_tvalid ),
+        .m_axis_tready   ( tx_dwidth_converter_to_cmac_axis_tready )
+    );
+
+    // AXI Stream Dwidth Converter (axis_dwidth_converter)
+    xlnx_axis_dwidth_from512_converter axis_dwidth_from512_converter_u (
+        .aclk            ( cmac_output_clock_322MHz    ),
+        .aresetn         ( ~cmac_output_reset_p        ),
+
+        .s_axis_tdata    ( rx_cmac_to_dwidth_converter_axis_tdata  ),
+        .s_axis_tkeep    ( rx_cmac_to_dwidth_converter_axis_tkeep  ),
+        .s_axis_tlast    ( rx_cmac_to_dwidth_converter_axis_tlast  ),
+        .s_axis_tvalid   ( rx_cmac_to_dwidth_converter_axis_tvalid ),
+        .s_axis_tready   ( rx_cmac_to_dwidth_converter_axis_tready ),
+
+        .m_axis_tdata    ( rx_dwidth_converter_to_fifo_axis_tdata  ),
+        .m_axis_tkeep    ( rx_dwidth_converter_to_fifo_axis_tkeep  ),
+        .m_axis_tlast    ( rx_dwidth_converter_to_fifo_axis_tlast  ),
+        .m_axis_tvalid   ( rx_dwidth_converter_to_fifo_axis_tvalid ),
+        .m_axis_tready   ( rx_dwidth_converter_to_fifo_axis_tready )
+    );
 
     // CMAC
     xlnx_cmac cmac_u (
@@ -623,19 +666,19 @@ module cmac_subsystem # (
         .gt_txp_out                ( qsfpx_txp_o                 ),
 
         // AXIS TX interface
-        .tx_axis_tdata             ( tx_fifo_to_cmac_axis_tdata  ),      // 512 bit
-        .tx_axis_tkeep             ( tx_fifo_to_cmac_axis_tkeep  ),      //  64 bit
-        .tx_axis_tlast             ( tx_fifo_to_cmac_axis_tlast  ),
-        .tx_axis_tready            ( tx_fifo_to_cmac_axis_tready ),
-        .tx_axis_tuser             ( tx_fifo_to_cmac_axis_tuser  ),
-        .tx_axis_tvalid            ( tx_fifo_to_cmac_axis_tvalid ),
+        .tx_axis_tdata             ( tx_dwidth_converter_to_cmac_axis_tdata  ),      // 512 bit
+        .tx_axis_tkeep             ( tx_dwidth_converter_to_cmac_axis_tkeep  ),      //  64 bit
+        .tx_axis_tlast             ( tx_dwidth_converter_to_cmac_axis_tlast  ),
+        .tx_axis_tready            ( tx_dwidth_converter_to_cmac_axis_tready ),
+        .tx_axis_tuser             ( 1'b0 ), // TODO: Check this
+        .tx_axis_tvalid            ( tx_dwidth_converter_to_cmac_axis_tvalid ),
 
         // AXIS RX interface
-        .rx_axis_tdata             ( rx_cmac_to_fifo_axis_tdata  ),      // 512 bit
-        .rx_axis_tkeep             ( rx_cmac_to_fifo_axis_tkeep  ),      //  64 bit
-        .rx_axis_tlast             ( rx_cmac_to_fifo_axis_tlast  ),
-        .rx_axis_tuser             ( rx_cmac_to_fifo_axis_tuser  ),
-        .rx_axis_tvalid            ( rx_cmac_to_fifo_axis_tvalid ),
+        .rx_axis_tdata             ( rx_cmac_to_dwidth_converter_axis_tdata  ),      // 512 bit
+        .rx_axis_tkeep             ( rx_cmac_to_dwidth_converter_axis_tkeep  ),      //  64 bit
+        .rx_axis_tlast             ( rx_cmac_to_dwidth_converter_axis_tlast  ),
+        .rx_axis_tuser             ( rx_cmac_to_dwidth_converter_axis_tuser  ),
+        .rx_axis_tvalid            ( rx_cmac_to_dwidth_converter_axis_tvalid ),
 
 
         // AXI Lite interface ( CSR space )

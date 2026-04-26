@@ -12,14 +12,10 @@
 #define _peripheral_DM_mem_end    0x0000000000020000u
 #define _peripheral_CLINT_start  0x0000000000030000u
 #define _peripheral_CLINT_end    0x0000000000040000u
-#define _peripheral_CDMA_start  0x0000000000040000u
-#define _peripheral_CDMA_end    0x0000000000050000u
-#define _peripheral_HLS_CONTROL_start  0x0000000000050000u
-#define _peripheral_HLS_CONTROL_end    0x0000000000060000u
+#define _peripheral_CMAC_DATA_start  0x0000000000080000u
+#define _peripheral_CMAC_DATA_end    0x0000000000090000u
 #define _peripheral_CMAC_CSR_start  0x0000000000100000u
 #define _peripheral_CMAC_CSR_end    0x0000000000140000u
-#define _peripheral_DDR4CH1_start  0x0000000001000000u
-#define _peripheral_DDR4CH1_end    0x0000000002000000u
 #define _peripheral_PLIC_start  0x0000000004000000u
 #define _peripheral_PLIC_end    0x0000000008000000u
 #define _peripheral_UART_start  0x0000000000020000u
@@ -28,10 +24,8 @@
 #define _peripheral_TIM0_end    0x0000000000020040u
 #define _peripheral_TIM1_start  0x0000000000020040u
 #define _peripheral_TIM1_end    0x0000000000020060u
-#define _peripheral_m_acc_start  0x0000000000080000u
-#define _peripheral_m_acc_end    0x0000000000090000u
-#define _peripheral_DDR4CH0_start  0x0000000000090000u
-#define _peripheral_DDR4CH0_end    0x00000000000a0000u
+#define _peripheral_DDR4CH1_start  0x0000000000090000u
+#define _peripheral_DDR4CH1_end    0x00000000000a0000u
 
 // Enabled devices
 #define TIM_IS_ENABLED 1

@@ -6,10 +6,9 @@
 #define XLNX_CMAC_H
 
 #include <stdint.h>
-
-
-extern const volatile uint32_t _peripheral_CMAC_CSR_start;
-extern const volatile uint32_t _peripheral_m_acc_start;
+#include <stddef.h>
+#include "io.h"
+#include "tinyIO.h"
 
 // CMAC CSR offsets
 #define CMAC_CSR_RSFEC_CONFIG_ENABLE                 0x0000107C
@@ -29,5 +28,10 @@ extern const volatile uint32_t _peripheral_m_acc_start;
 #define AXIS_FIFO_TX_DATA                            (0x0)
 #define AXIS_FIFO_RX_DATA                            (0x1000)
 
+
+void xlnx_cmac_init(uint32_t baseaddr);
+void xlnx_axis_fifo_init(uint32_t baseaddr);
+size_t xlnx_rx_axis_fifo_data(uint32_t baseaddr, uint32_t data_baseaddr, uint8_t *rx_buf, size_t rx_buf_size);
+size_t xlnx_tx_axis_fifo_data(uint32_t baseaddr, uint32_t data_baseaddr, const uint8_t *tx_buf, size_t tx_buf_size);
 
 #endif // XLNX_CMAC_H

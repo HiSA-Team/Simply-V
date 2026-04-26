@@ -11,7 +11,8 @@ create_ip -name axi_fifo_mm_s -vendor xilinx.com -library ip -version 4.3 -modul
 set_property -dict [list \
   CONFIG.C_DATA_INTERFACE_TYPE {1} \
   CONFIG.C_HAS_AXIS_TKEEP {true} \
-  CONFIG.C_S_AXI4_DATA_WIDTH {512} \
   CONFIG.C_USE_TX_CTRL {0} \
   CONFIG.C_AXI4_BASEADDR $base_address \
 ] [get_ips $::env(IP_NAME)]
+
+set_property CONFIG.C_S_AXI4_DATA_WIDTH $::env(MBUS_DATA_WIDTH) [get_ips $::env(IP_NAME)]

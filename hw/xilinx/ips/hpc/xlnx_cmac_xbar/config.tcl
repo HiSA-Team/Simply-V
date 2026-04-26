@@ -6,7 +6,7 @@
 #                  - AXI Stram FIFO
 
 # Set base address this is modified by config-based script
-set base_offset {0x40000}
+set base_offset {0x100000}
 set cmac_base_address [format 0x%X [expr $base_offset + 0x0]]
 set axis_fifo_base_address [format 0x%X [expr $base_offset + 0x10000]]
 

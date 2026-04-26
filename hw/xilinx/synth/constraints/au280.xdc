@@ -185,8 +185,8 @@ set_input_delay 0 [get_ports pcie_resetn_i]
 # MGT_SI570_CLOCK0   -> MGT Ref Clock 0 156.25MHz Default (Not User re-programmable)
 # QSFP0_CLOCK        -> MGT Ref Clock 1 User selectable by QSFP0_FS=0 161.132812 MHz and QSFP0_FS=1 156.250MHz; QSFP0_OEB must driven low to enable clock output
 #
-# set_property PACKAGE_PIN T43              [get_ports "MGT_SI570_CLOCK0_N"]                 ;# Bank 134 - MGTREFCLK0N_134
-# set_property PACKAGE_PIN T42              [get_ports "MGT_SI570_CLOCK0_P"]                 ;# Bank 134 - MGTREFCLK0P_134
+set_property PACKAGE_PIN T43              [get_ports qsfp0_156mhz_clock_ni] ;#"MGT_SI570_CLOCK0_N"]                 ;# Bank 134 - MGTREFCLK0N_134
+set_property PACKAGE_PIN T42              [get_ports qsfp0_156mhz_clock_pi] ;#"MGT_SI570_CLOCK0_P"]                 ;# Bank 134 - MGTREFCLK0P_134
 # set_property PACKAGE_PIN R41              [get_ports "QSFP0_CLOCK_N"]                      ;# Bank 134 - MGTREFCLK1N_134
 # set_property PACKAGE_PIN R40              [get_ports "QSFP0_CLOCK_P"]                      ;# Bank 134 - MGTREFCLK1P_134
 # # QSFP0_CLOCK control signals
@@ -219,6 +219,7 @@ set_input_delay 0 [get_ports pcie_resetn_i]
 # create_clock -period 10.000 -name pcie_ref_clk1   [get_ports "PCIE_CLK1_P"]
 # create_clock -period 10.000 -name async_ref_clk1  [get_ports "SYS_CLK5_P"]
 # create_clock -period 6.400  -name gt0refclk0      [get_ports "MGT_SI570_CLOCK0_P"]
+create_clock -period 6.400  -name qsfp0_156mhz_clock [get_ports qsfp0_156mhz_clock_pi]
 # create_clock -period 6.206  -name gt0refclk1      [get_ports "QSFP0_CLOCK_P"]
 # create_clock -period 6.400  -name gt1refclk0      [get_ports "MGT_SI570_CLOCK1_P"]
 # create_clock -period 6.206  -name gt1refclk1      [get_ports "QSFP1_CLOCK_P"]
@@ -967,22 +968,22 @@ set_property IOSTANDARD  DIFF_POD12_DCI    [ get_ports  {c1_ddr4_dqs_t[13]} ]   
 # #set_property PACKAGE_PIN T42              [get_ports "MGT_SI570_CLOCK0_C_P"]               ;# Bank 134 - MGTREFCLK0P_134
 # #set_property PACKAGE_PIN R41              [get_ports "QSFP0_CLOCK_N"]                      ;# Bank 134 - MGTREFCLK1N_134
 # #set_property PACKAGE_PIN R40              [get_ports "QSFP0_CLOCK_P"]                      ;# Bank 134 - MGTREFCLK1P_134
-# set_property PACKAGE_PIN L54              [get_ports "QSFP0_RX1_N"]                        ;# Bank 134 - MGTYRXN0_134
-# set_property PACKAGE_PIN K52              [get_ports "QSFP0_RX2_N"]                        ;# Bank 134 - MGTYRXN1_134
-# set_property PACKAGE_PIN J54              [get_ports "QSFP0_RX3_N"]                        ;# Bank 134 - MGTYRXN2_134
-# set_property PACKAGE_PIN H52              [get_ports "QSFP0_RX4_N"]                        ;# Bank 134 - MGTYRXN3_134
-# set_property PACKAGE_PIN L53              [get_ports "QSFP0_RX1_P"]                        ;# Bank 134 - MGTYRXP0_134
-# set_property PACKAGE_PIN K51              [get_ports "QSFP0_RX2_P"]                        ;# Bank 134 - MGTYRXP1_134
-# set_property PACKAGE_PIN J53              [get_ports "QSFP0_RX3_P"]                        ;# Bank 134 - MGTYRXP2_134
-# set_property PACKAGE_PIN H51              [get_ports "QSFP0_RX4_P"]                        ;# Bank 134 - MGTYRXP3_134
-# set_property PACKAGE_PIN L49              [get_ports "QSFP0_TX1_N"]                        ;# Bank 134 - MGTYTXN0_134
-# set_property PACKAGE_PIN L45              [get_ports "QSFP0_TX2_N"]                        ;# Bank 134 - MGTYTXN1_134
-# set_property PACKAGE_PIN K47              [get_ports "QSFP0_TX3_N"]                        ;# Bank 134 - MGTYTXN2_134
-# set_property PACKAGE_PIN J49              [get_ports "QSFP0_TX4_N"]                        ;# Bank 134 - MGTYTXN3_134
-# set_property PACKAGE_PIN L48              [get_ports "QSFP0_TX1_P"]                        ;# Bank 134 - MGTYTXP0_134
-# set_property PACKAGE_PIN L44              [get_ports "QSFP0_TX2_P"]                        ;# Bank 134 - MGTYTXP1_134
-# set_property PACKAGE_PIN K46              [get_ports "QSFP0_TX3_P"]                        ;# Bank 134 - MGTYTXP2_134
-# set_property PACKAGE_PIN J48              [get_ports "QSFP0_TX4_P"]                        ;# Bank 134 - MGTYTXP3_134
+set_property PACKAGE_PIN L54              [get_ports qsfp0_rxn_i[0]]  ;# "QSFP0_RX1_N"]       ;# Bank 134 - MGTYRXN0_134
+set_property PACKAGE_PIN K52              [get_ports qsfp0_rxn_i[1]]  ;# "QSFP0_RX2_N"]       ;# Bank 134 - MGTYRXN1_134
+set_property PACKAGE_PIN J54              [get_ports qsfp0_rxn_i[2]]  ;# "QSFP0_RX3_N"]       ;# Bank 134 - MGTYRXN2_134
+set_property PACKAGE_PIN H52              [get_ports qsfp0_rxn_i[3]]  ;# "QSFP0_RX4_N"]       ;# Bank 134 - MGTYRXN3_134
+set_property PACKAGE_PIN L53              [get_ports qsfp0_rxp_i[0]]  ;# "QSFP0_RX1_P"]       ;# Bank 134 - MGTYRXP0_134
+set_property PACKAGE_PIN K51              [get_ports qsfp0_rxp_i[1]]  ;# "QSFP0_RX2_P"]       ;# Bank 134 - MGTYRXP1_134
+set_property PACKAGE_PIN J53              [get_ports qsfp0_rxp_i[2]]  ;# "QSFP0_RX3_P"]       ;# Bank 134 - MGTYRXP2_134
+set_property PACKAGE_PIN H51              [get_ports qsfp0_rxp_i[3]]  ;# "QSFP0_RX4_P"]       ;# Bank 134 - MGTYRXP3_134
+set_property PACKAGE_PIN L49              [get_ports qsfp0_txn_o[0]]  ;# "QSFP0_TX1_N"]       ;# Bank 134 - MGTYTXN0_134
+set_property PACKAGE_PIN L45              [get_ports qsfp0_txn_o[1]]  ;# "QSFP0_TX2_N"]       ;# Bank 134 - MGTYTXN1_134
+set_property PACKAGE_PIN K47              [get_ports qsfp0_txn_o[2]]  ;# "QSFP0_TX3_N"]       ;# Bank 134 - MGTYTXN2_134
+set_property PACKAGE_PIN J49              [get_ports qsfp0_txn_o[3]]  ;# "QSFP0_TX4_N"]       ;# Bank 134 - MGTYTXN3_134
+set_property PACKAGE_PIN L48              [get_ports qsfp0_txp_o[0]]  ;# "QSFP0_TX1_P"]       ;# Bank 134 - MGTYTXP0_134
+set_property PACKAGE_PIN L44              [get_ports qsfp0_txp_o[1]]  ;# "QSFP0_TX2_P"]       ;# Bank 134 - MGTYTXP1_134
+set_property PACKAGE_PIN K46              [get_ports qsfp0_txp_o[2]]  ;# "QSFP0_TX3_P"]       ;# Bank 134 - MGTYTXP2_134
+set_property PACKAGE_PIN J48              [get_ports qsfp0_txp_o[3]]  ;# "QSFP0_TX4_P"]       ;# Bank 134 - MGTYTXP3_134
 # #set_property PACKAGE_PIN P43              [get_ports "MGT_SI570_CLOCK1_C_N"]               ;# Bank 135 - MGTREFCLK0N_135
 # #set_property PACKAGE_PIN P42              [get_ports "MGT_SI570_CLOCK1_C_P"]               ;# Bank 135 - MGTREFCLK0P_135
 # #set_property PACKAGE_PIN M43              [get_ports "QSFP1_CLOCK_N"]                      ;# Bank 135 - MGTREFCLK1N_135
@@ -2022,3 +2023,5 @@ set_property PACKAGE_PIN AL11             [get_ports pci_exp_txp_o[0]      ]    
 #set_property PACKAGE_PIN E7               [get_ports "Not Connected"]                      ;# Bank 235 - MGTYTXP1_235
 #set_property PACKAGE_PIN C7               [get_ports "Not Connected"]                      ;# Bank 235 - MGTYTXP2_235
 #set_property PACKAGE_PIN A6               [get_ports "Not Connected"]                      ;# Bank 235 - MGTYTXP3_235
+
+set_false_path -from clk_250_xlnx_clk_wiz_hpc -to txoutclk_out[0]
