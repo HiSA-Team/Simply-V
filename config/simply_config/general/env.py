@@ -15,7 +15,7 @@ class Env(metaclass=Singleton):
 	# init Env
 	def __init__(self):
 		self.SUPPORTED_PROFILES = ["hpc", "embedded"]
-		self.SUPPORTED_BOARDS = ["Nexys-A7-100T-Master", "Nexys-A7-50T-Master", "au250", "au280", "au50"]
+		self.SUPPORTED_BOARDS = ["Nexys-A7-100T-Master", "Nexys-A7-50T-Master", "Arty-A7-100T-Master", "au250", "au280", "au50"]
 		# Private variables never touch them, use the getters
 		self.bus_input_files: dict[str, str]
 		self._board = os.environ["BOARD"]
@@ -59,7 +59,7 @@ class Env(metaclass=Singleton):
 				return [0,1,2]
 			case "au50":
 				return [0,1]
-			case "Nexys-A7-100T-Master" | "Nexys-A7-50T-Master":
+			case "Nexys-A7-100T-Master" | "Nexys-A7-50T-Master" | "Arty-A7-100T-Master":
 				return [0]
 			case _:
 				assert False, f"BOARD CONFIGURATION CHANGED DURING EXECUTION: {self._board}"
@@ -67,7 +67,7 @@ class Env(metaclass=Singleton):
 
 	def get_supp_hbm(self) -> bool | None:
 		match self._board:
-			case "Nexys-A7-100T-Master" | "Nexys-A7-50T-Master" | "au250":
+			case "Nexys-A7-100T-Master" | "Nexys-A7-50T-Master" | "au250" | "Arty-A7-100T-Master":
 				return False
 			case "au280" | "au50":
 				return True
