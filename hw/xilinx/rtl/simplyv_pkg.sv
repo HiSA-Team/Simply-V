@@ -9,8 +9,8 @@ package simplyv_pkg;
     ///////////////////////
 
     // GPIO widths
-    localparam int unsigned GPIO_IN_WIDTH  = 16;
-    localparam int unsigned GPIO_OUT_WIDTH = 16;
+    localparam int unsigned GPIO_IN_WIDTH  = 4;
+    localparam int unsigned GPIO_OUT_WIDTH = 4;
 
     // MBUS widths
     localparam MBUS_DATA_WIDTH = `MBUS_DATA_WIDTH; // From SoC config

@@ -97,6 +97,14 @@ else # Default
         export XILINX_BOARD_PART=digilentinc.com:nexys-a7-50t:part0:1.3
         export XILINX_HW_DEVICE=xc7a50t_0
         export BOARD=Nexys-A7-50T-Master
+        
+    elif [[ ${BOARD_CONFIG} == "arty_a7_100t" ]]; then
+        # Arty A7-100T
+        export XILINX_PART_NUMBER=xc7a100tcsg324-1
+        export XILINX_BOARD_PART=digilentinc.com:arty-a7-100:part0:1.0
+        export XILINX_HW_DEVICE=xc7a100t_0
+        export BOARD=Arty-A7-100T-Master
+        
     else # Default
         # Nexsys A7-100T
         export XILINX_PART_NUMBER=xc7a100tcsg324-1
