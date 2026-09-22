@@ -72,8 +72,7 @@ module highperformance_bus #(
     `DEFINE_AXI_MASTER_PORTS(m_MBUS, MBUS_DATA_WIDTH, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH),
 
     // TODO: expose an array of NUM_ACC_MASTERS interfaces
-    // TODO: add this in doc and description
-    `DEFINE_AXI_MASTER_PORTS(m_acc, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH),
+    // `DEFINE_AXI_MASTER_PORTS(m_acc, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH),
 
     // AXI4 Slave interface from accelerators
     `DEFINE_AXI_SLAVE_PORTS(s_acc, HBUS_DATA_WIDTH, HBUS_ADDR_WIDTH, HBUS_ID_WIDTH),
@@ -510,7 +509,7 @@ module highperformance_bus #(
     ///////////////////
 
     // Connnect to config-generated buses
-    `ASSIGN_AXI_BUS(m_acc, HBUS_to_m_acc)
+    // `ASSIGN_AXI_BUS(m_acc, HBUS_to_m_acc)
     `ASSIGN_AXI_BUS(s_acc_to_HBUS, s_acc)
     `ASSIGN_AXI_BUS(MBUS_to_HBUS, dwidth_conv_to_HBUS)
     `ASSIGN_AXI_BUS(dwidth_conv_from_HBUS, HBUS_to_MBUS)

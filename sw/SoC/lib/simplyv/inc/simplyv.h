@@ -17,6 +17,9 @@
 // TinyIO for printf() and scanf()
 #include "tinyIO.h"
 
+// Xilinx CMAC
+#include "xlnx_cmac.h"
+
 // PBUS peripherals
 #ifdef GPIO_IN_IS_ENABLED
 #include "xlnx_gpio_in.h"
