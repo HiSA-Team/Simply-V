@@ -24,6 +24,8 @@ void _ext_handler(void) {
     // In this example, the core is connected to PLIC target 1 line.
     // Therefore, we need to access the PLIC claim/complete register 1 (base_addr + 0x200004).
     // The interrupt source ID is obtained from the claim register.
+    // The PLIC might not be in the configuration
+    #ifdef _peripheral_PLIC_start
     uint32_t interrupt_id = plic_claim();
     switch(interrupt_id){
         case 0x0: // unused
@@ -44,4 +46,5 @@ void _ext_handler(void) {
 
     // To notify the handler completion, a write-back on the claim/complete register is required.
     plic_complete(interrupt_id);
+    #endif // _peripheral_PLIC_start
 }

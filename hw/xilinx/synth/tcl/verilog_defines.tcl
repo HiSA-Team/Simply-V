@@ -9,6 +9,8 @@ set verilog_defines ""
 # HPC/EMBEDDED
 if { "$::env(SIMPLYV_PROFILE)" == "hpc" } {
     lappend verilog_defines HPC=1
+    # Board, i.e. BOARD_AU250 or BOARD_AU280
+    lappend verilog_defines BOARD_[string toupper $::env(BOARD)]=1
 } elseif { "$::env(SIMPLYV_PROFILE)" == "embedded" } {
     lappend verilog_defines EMBEDDED=1
 } else {

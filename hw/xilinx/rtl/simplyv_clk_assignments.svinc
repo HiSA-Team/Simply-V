@@ -4,34 +4,26 @@
 // Clocks declaration and assignments  //
 /////////////////////////////////////////
 
-assign main_clk = clk_20MHz;
-assign main_rstn = rstn_20MHz;
+assign main_clk = clk_100MHz;
+assign main_rstn = rstn_100MHz;
 logic clk_300MHz;
 logic rstn_300MHz;
 
 logic BRAM_clk;
-assign BRAM_clk = clk_20MHz;
+assign BRAM_clk = clk_100MHz;
 logic BRAM_rstn;
-assign BRAM_rstn = rstn_20MHz;
+assign BRAM_rstn = rstn_100MHz;
 logic DM_mem_clk;
-assign DM_mem_clk = clk_20MHz;
+assign DM_mem_clk = clk_100MHz;
 logic DM_mem_rstn;
-assign DM_mem_rstn = rstn_20MHz;
+assign DM_mem_rstn = rstn_100MHz;
 logic PBUS_clk;
-assign PBUS_clk = clk_10MHz;
+assign PBUS_clk = clk_100MHz;
 logic PBUS_rstn;
-assign PBUS_rstn = rstn_10MHz;
-logic CLINT_clk;
-assign CLINT_clk = clk_20MHz;
-logic CLINT_rstn;
-assign CLINT_rstn = rstn_20MHz;
-logic CDMA_clk;
-assign CDMA_clk = clk_20MHz;
-logic CDMA_rstn;
-assign CDMA_rstn = rstn_20MHz;
-logic PLIC_clk;
-assign PLIC_clk = clk_20MHz;
-logic PLIC_rstn;
-assign PLIC_rstn = rstn_20MHz;
+assign PBUS_rstn = rstn_100MHz;
+logic CMAC_CSR_clk;
+assign CMAC_CSR_clk = clk_100MHz;
+logic CMAC_CSR_rstn;
+assign CMAC_CSR_rstn = rstn_100MHz;
 
 logic HBUS_clk;

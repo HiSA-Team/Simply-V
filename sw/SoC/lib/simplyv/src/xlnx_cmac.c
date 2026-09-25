@@ -42,6 +42,28 @@ void xlnx_cmac_init(uint32_t baseaddr)
   iowrite32(baseaddr + CMAC_CSR_CONFIGURATION_TX_REG1, 0x1);
 }
 
+// Return the current value of STAT_RX_STATUS (the register bits are latched, so read it twice)
+uint32_t xlnx_cmac_rx_status(uint32_t baseaddr)
+{
+  (void)ioread32(baseaddr + CMAC_CSR_STAT_RX_STATUS);
+  return ioread32(baseaddr + CMAC_CSR_STAT_RX_STATUS);
+}
+
+// Latch the statistics counters into the STAT_* registers
+void xlnx_cmac_tick(uint32_t baseaddr)
+{
+  iowrite32(baseaddr + CMAC_CSR_TICK, 0x1);
+}
+
+// Read a 48-bit statistics counter (latched by the last xlnx_cmac_tick)
+uint64_t xlnx_cmac_read_stat(uint32_t baseaddr, uint32_t offset)
+{
+  uint32_t lsb = ioread32(baseaddr + offset);
+  uint32_t msb = ioread32(baseaddr + offset + 0x4) & 0xFFFFu;
+
+  return (((uint64_t)msb) << 32) | (uint64_t)lsb;
+}
+
 void xlnx_axis_fifo_init(uint32_t baseaddr)
 {
   (void)ioread32(baseaddr + AXIS_FIFO_INTERRUPT_STATUS_REG);

@@ -3,7 +3,7 @@
 #              This IP is used for accessing the CMAC subsystem register spaces
 #              For now two components are present:
 #                  - CMAC
-#                  - AXI Stram FIFO
+#                  - AXI Stram FIFO ([RDMA setup] now the RDMA RoCEv2 engine CSR)
 
 # Set base address this is modified by config-based script
 set base_offset {0x100000}

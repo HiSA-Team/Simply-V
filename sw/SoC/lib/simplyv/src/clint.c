@@ -8,6 +8,9 @@
 #include "io.h"
 #include <stdint.h>
 
+// Build the CLINT driver only if the CLINT is in the configuration
+#ifdef _peripheral_CLINT_start
+
 int clint_init()
 {
     // Clear MIE.MTIE (Machine Timer Interrupt)
@@ -102,3 +105,5 @@ int clint_sleep_us( uint32_t usec )
     // Compute number of ticks based on RTC frequency
     return clint_sleep_ticks ( (uint64_t)(usec * RTC_FREQ_MHz) );
 }
+
+#endif // _peripheral_CLINT_start

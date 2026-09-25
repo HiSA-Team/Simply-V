@@ -11,6 +11,9 @@
 #include "io.h"
 #include <stdint.h>
 
+// Build the PLIC driver only if the PLIC is in the configuration
+#ifdef _peripheral_PLIC_start
+
 // Number of configured sources
 static size_t sources = PLIC_MAX_SOURCES;
 
@@ -89,3 +92,5 @@ uint32_t plic_claim(){
 void plic_complete(uint32_t interrupt_id){
     iowrite32(PLIC_COMPLETE_CTX0, interrupt_id);
 }
+
+#endif // _peripheral_PLIC_start
