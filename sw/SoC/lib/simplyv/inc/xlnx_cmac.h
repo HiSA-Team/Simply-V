@@ -21,15 +21,23 @@
 #define CMAC_CSR_STAT_RX_STATUS                      0x00000204  // [0] stat_rx_status (link up), [1] stat_rx_aligned; latched, read twice
 #define CMAC_CSR_TICK                                0x000002B0  // write 1 to latch the statistics counters (pm_tick is tied to 0)
 // Statistics counters, 48 bits: LSB at the offset, MSB (bits [47:32]) at the offset + 4
+#define CMAC_CSR_STAT_TX_FRAME_ERROR                 0x00000458
 #define CMAC_CSR_STAT_TX_TOTAL_PACKETS               0x00000500
 #define CMAC_CSR_STAT_TX_TOTAL_GOOD_PACKETS          0x00000508
 #define CMAC_CSR_STAT_TX_TOTAL_BYTES                 0x00000510
+#define CMAC_CSR_STAT_TX_TOTAL_GOOD_BYTES            0x00000518
+#define CMAC_CSR_STAT_TX_PACKET_64_BYTES             0x00000520
+#define CMAC_CSR_STAT_TX_PACKET_SMALL                0x00000588  // shorter than 64 bytes
+#define CMAC_CSR_STAT_TX_BAD_FCS                     0x000005B8
 #define CMAC_CSR_STAT_RX_TOTAL_PACKETS               0x00000608
 #define CMAC_CSR_STAT_RX_TOTAL_GOOD_PACKETS          0x00000610
 #define CMAC_CSR_STAT_RX_TOTAL_BYTES                 0x00000618
 #define CMAC_CSR_STAT_RX_PACKET_64_BYTES             0x00000628
 #define CMAC_CSR_STAT_RX_PACKET_65_127_BYTES         0x00000630
 #define CMAC_CSR_STAT_RX_PACKET_1024_1518_BYTES      0x00000650
+#define CMAC_CSR_STAT_RX_PACKET_SMALL                0x00000690  // shorter than 64 bytes
+#define CMAC_CSR_STAT_RX_UNDERSIZE                   0x00000698
+#define CMAC_CSR_STAT_RX_FRAGMENT                    0x000006A0
 #define CMAC_CSR_STAT_RX_BAD_FCS                     0x000006C0
 
 // Fields of CMAC_CSR_STAT_RX_STATUS

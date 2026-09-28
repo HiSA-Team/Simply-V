@@ -93,7 +93,7 @@ size_t xlnx_rx_axis_fifo_data(uint32_t baseaddr, uint32_t data_baseaddr, uint8_t
 
   uint32_t rx_occupancy = ioread32(baseaddr + AXIS_FIFO_RX_OCCUPANCY_REG);
   uint32_t rx_len = ioread32(baseaddr + AXIS_FIFO_RX_LEN_REG);
-  
+
   if (rx_occupancy == 0u || rx_len == 0u) {
     return 0u;
   }

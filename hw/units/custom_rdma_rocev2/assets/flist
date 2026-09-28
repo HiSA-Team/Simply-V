@@ -26,6 +26,7 @@ axi_ram_xpm.sv
 axi_register.v
 axi_register_rd.v
 axi_register_wr.v
+cmac_pad.v
 crc.svh
 crc_byteEn.sv
 eth_arb_mux.v

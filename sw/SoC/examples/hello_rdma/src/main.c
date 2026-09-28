@@ -8,6 +8,13 @@
 //  NOTE: board B does not acknowledge the RDMA WRITE (the engine has no RoCE responder), so board A retransmits
 //        each packet up to 7 times (15000 cycles timeout) and then moves the QP to the ERROR state:
 //        board B receives RDMA_N_TRANSFERS * 8 RoCE packets (1098 bytes each with RDMA_LENGTH = 1024).
+//  Both roles latch the CMAC statistics once at start, so the counters only report this run (they count the frames
+//  between two ticks). Expected with the default values (one run of board A, board B already waiting):
+//  - Board A (before closing the QP): TX 1 ARP request (64 bytes), 1 CM reply, 16 RoCE packets; RX 1 ARP reply.
+//  - Board B: RX 1 ARP request (64 bytes), 2 CM replies (65-127 bytes, open and close), 16 RoCE packets
+//    (1024-1518 bytes); TX 1 ARP reply (64 bytes).
+//  Without the frame padding in the RDMA wrapper (cmac_pad), the ARP frames are 46 bytes on the wire and appear
+//  only in the "shorter than 64 bytes" counters.
 
 #include "simplyv.h"
 #include "rdma.h"
@@ -56,6 +63,72 @@ static void print_qp(const rdma_qp_info_t* qp)
          (unsigned long)qp->rem_psn, (unsigned long)qp->rem_acked_psn);
 }
 
+// CMAC statistics, between two ticks
+typedef struct {
+  uint32_t tx_packets;
+  uint32_t tx_good_packets;
+  uint32_t tx_bytes;
+  uint32_t tx_good_bytes;
+  uint32_t tx_64;
+  uint32_t tx_small;
+  uint32_t tx_bad_fcs;
+  uint32_t tx_frame_error;
+  uint32_t rx_packets;
+  uint32_t rx_good_packets;
+  uint32_t rx_bytes;
+  uint32_t rx_64;
+  uint32_t rx_65_127;
+  uint32_t rx_1024_1518;
+  uint32_t rx_small;
+  uint32_t rx_undersize;
+  uint32_t rx_fragment;
+  uint32_t rx_bad_fcs;
+} cmac_stats_t;
+
+// Latch the CMAC statistics and read them (only the 32 LSBs of the 48-bit counters)
+static void cmac_read_stats(cmac_stats_t* s)
+{
+  xlnx_cmac_tick(CMAC_BASEADDR);
+  s->tx_packets      = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_TOTAL_PACKETS);
+  s->tx_good_packets = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_TOTAL_GOOD_PACKETS);
+  s->tx_bytes        = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_TOTAL_BYTES);
+  s->tx_good_bytes   = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_TOTAL_GOOD_BYTES);
+  s->tx_64           = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_PACKET_64_BYTES);
+  s->tx_small        = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_PACKET_SMALL);
+  s->tx_bad_fcs      = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_BAD_FCS);
+  s->tx_frame_error  = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_FRAME_ERROR);
+  s->rx_packets      = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_TOTAL_PACKETS);
+  s->rx_good_packets = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_TOTAL_GOOD_PACKETS);
+  s->rx_bytes        = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_TOTAL_BYTES);
+  s->rx_64           = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_PACKET_64_BYTES);
+  s->rx_65_127       = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_PACKET_65_127_BYTES);
+  s->rx_1024_1518    = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_PACKET_1024_1518_BYTES);
+  s->rx_small        = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_PACKET_SMALL);
+  s->rx_undersize    = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_UNDERSIZE);
+  s->rx_fragment     = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_FRAGMENT);
+  s->rx_bad_fcs      = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_BAD_FCS);
+}
+
+static int cmac_stats_empty(const cmac_stats_t* s)
+{
+  return (s->tx_packets == 0u) && (s->tx_small == 0u) && (s->rx_packets == 0u) && (s->rx_small == 0u) &&
+         (s->rx_undersize == 0u) && (s->rx_fragment == 0u);
+}
+
+static void print_cmac_stats(const cmac_stats_t* s)
+{
+  printf("CMAC TX: %lu packets (%lu good, %lu of 64 bytes, %lu shorter than 64 bytes, %lu bad FCS, %lu frame errors), %lu bytes (%lu good)\n\r",
+         (unsigned long)s->tx_packets, (unsigned long)s->tx_good_packets, (unsigned long)s->tx_64,
+         (unsigned long)s->tx_small, (unsigned long)s->tx_bad_fcs, (unsigned long)s->tx_frame_error,
+         (unsigned long)s->tx_bytes, (unsigned long)s->tx_good_bytes);
+  printf("CMAC RX: %lu packets (%lu good, %lu of 64 bytes, %lu of 65-127 bytes, %lu of 1024-1518 bytes, %lu bad FCS), %lu bytes\n\r",
+         (unsigned long)s->rx_packets, (unsigned long)s->rx_good_packets, (unsigned long)s->rx_64,
+         (unsigned long)s->rx_65_127, (unsigned long)s->rx_1024_1518, (unsigned long)s->rx_bad_fcs,
+         (unsigned long)s->rx_bytes);
+  printf("CMAC RX shorter than 64 bytes: %lu (%lu undersize, %lu fragments)\n\r",
+         (unsigned long)s->rx_small, (unsigned long)s->rx_undersize, (unsigned long)s->rx_fragment);
+}
+
 // Initialize the CMAC and wait for the link (RX aligned)
 static int cmac_link_up()
 {
@@ -82,11 +155,15 @@ static void rdma_tx_test(const rdma_node_t* engine, const rdma_node_t* peer)
   size_t frame_size;
   rdma_cm_req_t req = { 0 };
   rdma_qp_info_t qp;
+  cmac_stats_t stats;
   uint32_t qpn = 0;
 
   req.peer_qpn   = PEER_QPN;
   req.peer_r_key = PEER_R_KEY;
   req.peer_addr  = PEER_ADDR;
+
+  // Latch the CMAC statistics once, to discard the frames of previous runs
+  cmac_read_stats(&stats);
 
   // Close the QPs left open by a previous run
   for (uint32_t i = 0; i < RDMA_N_QUEUE_PAIRS; i++) {
@@ -144,11 +221,9 @@ static void rdma_tx_test(const rdma_node_t* engine, const rdma_node_t* peer)
     print_qp(&qp);
   }
 
-  // CMAC TX statistics
-  xlnx_cmac_tick(CMAC_BASEADDR);
-  printf("CMAC TX: %lu packets, %lu bytes\n\r",
-         (unsigned long)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_TOTAL_PACKETS),
-         (unsigned long)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_TOTAL_BYTES));
+  // CMAC statistics of this run
+  cmac_read_stats(&stats);
+  print_cmac_stats(&stats);
 
   // Close the QP
   req.req_type = RDMA_CM_REQ_CLOSE_QP;
@@ -158,35 +233,30 @@ static void rdma_tx_test(const rdma_node_t* engine, const rdma_node_t* peer)
   printf("QP %lu closed\n\r", (unsigned long)qpn);
 }
 
-// Board B: print the CMAC statistics whenever they change
+// Board B: print the CMAC statistics of each 1-second window with traffic, and the totals since start
 static void rdma_rx_monitor()
 {
-  uint32_t prev_packets = 0;
-  uint32_t prev_tx_packets = 0;
+  cmac_stats_t stats;
+  uint32_t total_rx_packets = 0;
+  uint32_t total_rx_roce = 0;
+  uint32_t total_tx_packets = 0;
+
+  // Latch the CMAC statistics once, to discard the frames of previous runs
+  cmac_read_stats(&stats);
 
   printf("Waiting RX frames...\n\r");
   while (1) {
     delay_ms(1000);
-    // Latch the statistics counters
-    xlnx_cmac_tick(CMAC_BASEADDR);
-    uint32_t packets      = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_TOTAL_PACKETS);
-    uint32_t good_packets = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_TOTAL_GOOD_PACKETS);
-    uint32_t bytes        = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_TOTAL_BYTES);
-    uint32_t small        = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_PACKET_64_BYTES) +
-                            (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_PACKET_65_127_BYTES);
-    uint32_t roce_packets = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_PACKET_1024_1518_BYTES);
-    uint32_t bad_fcs      = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_RX_BAD_FCS);
-    uint32_t tx_packets   = (uint32_t)xlnx_cmac_read_stat(CMAC_BASEADDR, CMAC_CSR_STAT_TX_TOTAL_PACKETS);
-    if ((packets == prev_packets && tx_packets == prev_tx_packets) || (packets == 0u && tx_packets == 0u)) {
-      prev_packets    = packets;
-      prev_tx_packets = tx_packets;
+    cmac_read_stats(&stats);
+    if (cmac_stats_empty(&stats)) {
       continue;
     }
-    prev_packets    = packets;
-    prev_tx_packets = tx_packets;
-    printf("CMAC RX: %lu packets (%lu good, %lu bad FCS), %lu bytes, %lu of 64-127 bytes (ARP, CM), %lu of 1024-1518 bytes (RoCE) | TX: %lu packets\n\r",
-           (unsigned long)packets, (unsigned long)good_packets, (unsigned long)bad_fcs, (unsigned long)bytes,
-           (unsigned long)small, (unsigned long)roce_packets, (unsigned long)tx_packets);
+    total_rx_packets += stats.rx_packets;
+    total_rx_roce    += stats.rx_1024_1518;
+    total_tx_packets += stats.tx_packets;
+    print_cmac_stats(&stats);
+    printf("Total since start: RX %lu packets (%lu of 1024-1518 bytes), TX %lu packets\n\r\n\r",
+           (unsigned long)total_rx_packets, (unsigned long)total_rx_roce, (unsigned long)total_tx_packets);
   }
 }
 

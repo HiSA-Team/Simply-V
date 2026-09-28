@@ -14,6 +14,9 @@
 //              pulses CTRL.INJECT; the frame is then merged in the RX stream toward the engine, as if it came
 //              from the network. Frames from the MAC have priority and are never interrupted.
 //
+//              The frames toward the MAC are padded to the minimum Ethernet frame size (60 bytes + FCS) by cmac_pad,
+//              as in the upstream 100G example: the CMAC does not pad, and the engine sends 42-byte ARP frames.
+//
 //              CSR map (32-bit registers, only the address bits [8:2] are decoded):
 //                0x000  ID                   RO  32'h5244_4D41 ("RDMA")
 //                0x004  CTRL                 WO  [0] clear ARP cache (pulse), [1] QP spy request (pulse), [2] inject INJ_BUF (pulse)
@@ -293,6 +296,14 @@ module custom_top_wrapper # (
     logic                            rx_engine_axis_tready;
     logic                            rx_engine_axis_tlast;
     logic                            rx_engine_axis_tuser;
+
+    // TX stream from the engine (before padding)
+    logic [MAC_DATA_WIDTH   -1 : 0]  tx_engine_axis_tdata;
+    logic [MAC_DATA_WIDTH/8 -1 : 0]  tx_engine_axis_tkeep;
+    logic                            tx_engine_axis_tvalid;
+    logic                            tx_engine_axis_tready;
+    logic                            tx_engine_axis_tlast;
+    logic                            tx_engine_axis_tuser;
 
     /////////////////////////
     //  Local assignments  //
@@ -666,13 +677,13 @@ module custom_top_wrapper # (
         .rst_roce_eng               ( rst                   ),
         .flow_ctrl_pause            ( 1'b0                  ),
 
-        // Ethernet AXI-Stream TX
-        .m_network_tx_axis_tdata    ( m_eth_tx_axis_tdata   ),
-        .m_network_tx_axis_tkeep    ( m_eth_tx_axis_tkeep   ),
-        .m_network_tx_axis_tvalid   ( m_eth_tx_axis_tvalid  ),
-        .m_network_tx_axis_tready   ( m_eth_tx_axis_tready  ),
-        .m_network_tx_axis_tlast    ( m_eth_tx_axis_tlast   ),
-        .m_network_tx_axis_tuser    ( m_eth_tx_axis_tuser   ),
+        // Ethernet AXI-Stream TX (toward the padding)
+        .m_network_tx_axis_tdata    ( tx_engine_axis_tdata  ),
+        .m_network_tx_axis_tkeep    ( tx_engine_axis_tkeep  ),
+        .m_network_tx_axis_tvalid   ( tx_engine_axis_tvalid ),
+        .m_network_tx_axis_tready   ( tx_engine_axis_tready ),
+        .m_network_tx_axis_tlast    ( tx_engine_axis_tlast  ),
+        .m_network_tx_axis_tuser    ( tx_engine_axis_tuser  ),
 
         // Ethernet AXI-Stream RX (MAC + injector)
         .s_network_rx_axis_tdata    ( rx_engine_axis_tdata  ),
@@ -720,6 +731,30 @@ module custom_top_wrapper # (
         .psn_diff                   ( mon_psn_diff          ),
         .n_retransmit_triggers      ( mon_retransmit        ),
         .n_rnr_retransmit_triggers  ( mon_rnr_retransmit    )
+    );
+
+    // Pad the frames toward the MAC to 60 bytes (the CMAC adds the FCS but does not pad)
+    cmac_pad #(
+        .DATA_WIDTH     ( MAC_DATA_WIDTH        ),
+        .KEEP_WIDTH     ( MAC_DATA_WIDTH/8      ),
+        .USER_WIDTH     ( 1                     )
+    ) tx_cmac_pad_u (
+        .clk            ( clk_i                 ),
+        .rst            ( rst                   ),
+        // AXI input
+        .s_axis_tdata   ( tx_engine_axis_tdata  ),
+        .s_axis_tkeep   ( tx_engine_axis_tkeep  ),
+        .s_axis_tvalid  ( tx_engine_axis_tvalid ),
+        .s_axis_tready  ( tx_engine_axis_tready ),
+        .s_axis_tlast   ( tx_engine_axis_tlast  ),
+        .s_axis_tuser   ( tx_engine_axis_tuser  ),
+        // AXI output
+        .m_axis_tdata   ( m_eth_tx_axis_tdata   ),
+        .m_axis_tkeep   ( m_eth_tx_axis_tkeep   ),
+        .m_axis_tvalid  ( m_eth_tx_axis_tvalid  ),
+        .m_axis_tready  ( m_eth_tx_axis_tready  ),
+        .m_axis_tlast   ( m_eth_tx_axis_tlast   ),
+        .m_axis_tuser   ( m_eth_tx_axis_tuser   )
     );
 
 endmodule : custom_top_wrapper
