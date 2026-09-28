@@ -1,0 +1,93 @@
+#!/bin/bash
+# =============================================================================
+# Vivado wrapper for WSL (Windows Subsystem for Linux)
+#
+# Vivado only runs natively on Windows, but `make` (and this project's
+# Makefiles) run on WSL/Linux. This wrapper bridges the two: it translates
+# Linux paths and environment variables into a form Vivado (Windows) can
+# understand, then invokes the real Windows vivado.bat through cmd.exe.
+#
+# Setup (one time):
+#   1. Copy this file to somewhere in your WSL $PATH, e.g. ~/bin/vivado
+#      chmod +x ~/bin/vivado
+#      echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+#   2. Edit PROJROOT below to match the absolute WSL path of your clone.
+#   3. Edit VIVADO_WIN_PATH below to match your actual Vivado install path.
+#   4. Map your project folder to a short Windows drive letter (Vivado/Windows
+#      has a 260-character path limit, and WSL UNC paths are already long):
+#        cmd.exe /c "subst X: \\\\wsl.localhost\\<distro>\\home\\<user>\\<project-dir>"
+#      Adjust WIN_DRIVE below if you use a letter other than X:.
+#
+# Known limitation: this wrapper and Vivado's own hw_server (used for
+# programming/debugging the board) cannot both hold the JTAG interface at
+# the same time as OpenOCD when using a WinUSB driver (via Zadig) or
+# usbipd-win. See the project WSL_SETUP.md for details on switching between
+# them.
+# =============================================================================
+
+# --- Adjust these three lines for your machine ---
+PROJROOT="/home/YOUR_USERNAME/Simply-V"
+VIVADO_WIN_PATH="C:\\\\Xilinx\\\\Vivado\\\\2025.2\\\\bin\\\\vivado.bat"
+WIN_DRIVE="X:"
+# ---------------------------------------------------
+
+CURDIR="$(pwd)"
+RELPATH="${CURDIR#$PROJROOT}"
+WINPATH_BS="${WIN_DRIVE}${RELPATH//\//\\}"
+
+# Ensure the drive mapping exists before every call — `subst` is not
+# persistent across reboots, and a stale/missing mapping causes cryptic
+# "The system cannot find the drive specified" errors from cmd.exe.
+PROJROOT_UNC="$(wslpath -w "$PROJROOT")"
+SUBST_BAT="$(mktemp --suffix=.bat)"
+echo "subst ${WIN_DRIVE} \"${PROJROOT_UNC}\"" > "$SUBST_BAT"
+cmd.exe /c "$(wslpath -w "$SUBST_BAT")" >/dev/null 2>&1
+rm -f "$SUBST_BAT"
+
+# Translate every path-like env var rooted at the project directory, so
+# Vivado (reading these via $::env(...) in Tcl) sees Windows-style paths
+# instead of Linux ones it cannot resolve.
+for var in SIMPLYV_ROOT_DIR CONFIG_ROOT HW_ROOT HW_RTL_ROOT HW_UNITS_ROOT \
+           XILINX_ROOT XILINX_IPS_ROOT XILINX_SCRIPT_ROOT XILINX_SYNTH_ROOT \
+           XILINX_SYNTH_TCL_ROOT XILINX_SYNTH_XDC_ROOT SW_ROOT SW_HOST_ROOT \
+           SW_SOC_ROOT IP_DIR XILINX_BITSTREAM XILINX_PROBE_LTX; do
+    val="${!var}"
+    if [[ "$val" == "$PROJROOT"* ]]; then
+        rel="${val#$PROJROOT}"
+        export "$var=${WIN_DRIVE}${rel}"
+    fi
+done
+
+# IP_LIST_XCI is a space-separated list of full paths; translate each entry.
+if [ -n "$IP_LIST_XCI" ]; then
+    NEWLIST=""
+    for p in $IP_LIST_XCI; do
+        if [[ "$p" == "$PROJROOT"* ]]; then
+            rel="${p#$PROJROOT}"
+            NEWLIST="$NEWLIST ${WIN_DRIVE}${rel}"
+        else
+            NEWLIST="$NEWLIST $p"
+        fi
+    done
+    export IP_LIST_XCI="$NEWLIST"
+fi
+
+# Forward every current environment variable across the WSL/Windows boundary.
+if [ -z "$XILINX_FPGA_DEVICE" ]; then export XILINX_FPGA_DEVICE="*"; fi  # WSLENV drops empty variables; the Tcl scripts expect it to be defined
+export WSLENV=$(printenv | grep -v '^_=' | cut -d= -f1 | tr '\n' ':' | sed 's/:$//')
+
+# Translate any remaining path-like command-line arguments (e.g. -source
+# scripts pointed to by full Linux path).
+ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" == "$PROJROOT"* ]]; then
+        RELARG="${arg#$PROJROOT}"
+        ARGS+=("${WIN_DRIVE}${RELARG}")
+    elif [[ "$arg" == /home/* || "$arg" == /mnt/* ]]; then
+        ARGS+=("$(wslpath -w "$arg")")
+    else
+        ARGS+=("$arg")
+    fi
+done
+
+cmd.exe /c "pushd $WINPATH_BS && ${VIVADO_WIN_PATH} ${ARGS[@]}"
