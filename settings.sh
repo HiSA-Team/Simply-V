@@ -91,6 +91,9 @@ else # Default
     # Use wildcard instead device specific part number
     export XILINX_HW_SERVER_FPGA_PATH=xilinx_tcf/Digilent/*
 
+    # Frequency (MHz) of the board input oscillator, fed to the clock wizard
+    export BOARD_INPUT_CLK_MHZ=100.000
+
     if [[ ${BOARD_CONFIG} == "nexys_a7_50t" ]]; then
         # Nexys A7-50t
         export XILINX_PART_NUMBER=xc7a50ticsg324-1L
@@ -105,6 +108,14 @@ else # Default
         export XILINX_HW_DEVICE=xc7a100t_0
         export BOARD=Arty-A7-100T-Master
         
+    elif [[ ${BOARD_CONFIG} == "pynq_z1" ]]; then
+        # Pynq-Z1 (Zynq-7020, PL-only). The JTAG chain also has the ARM DAP at index 0
+        export XILINX_PART_NUMBER=xc7z020clg400-1
+        export XILINX_BOARD_PART=www.digilentinc.com:pynq-z1:part0:1.0
+        export XILINX_HW_DEVICE=xc7z020_1
+        export BOARD_INPUT_CLK_MHZ=125.000
+        export BOARD=Pynq-Z1-Master
+
     else # Default
         # Nexsys A7-100T
         export XILINX_PART_NUMBER=xc7a100tcsg324-1
