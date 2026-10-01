@@ -47,10 +47,13 @@ rm -f "$SUBST_BAT"
 # Translate every path-like env var rooted at the project directory, so
 # Vivado (reading these via $::env(...) in Tcl) sees Windows-style paths
 # instead of Linux ones it cannot resolve.
-for var in SIMPLYV_ROOT_DIR CONFIG_ROOT HW_ROOT HW_RTL_ROOT HW_UNITS_ROOT \
-           XILINX_ROOT XILINX_IPS_ROOT XILINX_SCRIPT_ROOT XILINX_SYNTH_ROOT \
-           XILINX_SYNTH_TCL_ROOT XILINX_SYNTH_XDC_ROOT SW_ROOT SW_HOST_ROOT \
-           SW_SOC_ROOT IP_DIR XILINX_BITSTREAM XILINX_PROBE_LTX; do
+PATH_VARS=(
+    SIMPLYV_ROOT_DIR CONFIG_ROOT HW_ROOT HW_RTL_ROOT HW_UNITS_ROOT
+    XILINX_ROOT XILINX_IPS_ROOT XILINX_SCRIPT_ROOT XILINX_SYNTH_ROOT
+    XILINX_SYNTH_TCL_ROOT XILINX_SYNTH_XDC_ROOT SW_ROOT SW_HOST_ROOT
+    SW_SOC_ROOT IP_DIR XILINX_BITSTREAM XILINX_PROBE_LTX
+)
+for var in "${PATH_VARS[@]}"; do
     val="${!var}"
     if [[ "$val" == "$PROJROOT"* ]]; then
         rel="${val#$PROJROOT}"
