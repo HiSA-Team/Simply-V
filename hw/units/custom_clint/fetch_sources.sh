@@ -23,7 +23,7 @@ cd assets/
 # Download Bender
 BENDER_VERSION=0.29.1
 printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Download Bender ${BENDER_VERSION}${NC}\n"
-curl --proto '=https' --tlsv1.2 https://pulp-platform.github.io/bender/init -sSf | sh	-s -- ${BENDER_VERSION}
+cp $(which bender) ./bender
 
 # Download dependencies (specify Target RTL and FPGA)
 printf "${YELLOW}[FETCH_SOURCES $IP_NAME] Resolve dependencies with Bender${NC}\n"

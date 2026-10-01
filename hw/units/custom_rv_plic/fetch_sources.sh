@@ -42,6 +42,9 @@ CLONE_DIR=otp
 git clone ${GIT_URL} -b ${GIT_TAG} --depth 1 ${CLONE_DIR}
 cd ${CLONE_DIR};
 
+# Ensure a working Bender is used instead of the broken auto-download (see project notes)
+sed -i "s#curl --proto '=https' --tlsv1.2 -sSf https://pulp-platform.github.io/bender/init | bash -s -- 0.27.0#cp $(which bender) ./bender#" Makefile 2>/dev/null || true
+
 echo -e "${YELLOW}[FETCH_SOURCES $IP_NAME] Use Bender to retrieve dependencies ${NC}"
 # Open-Titan peripherals (by PULP) requires a preliminar configuration and patching
 # Apply hjson configurations and patches
