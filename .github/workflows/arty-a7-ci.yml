@@ -103,6 +103,7 @@ jobs:
           exit 0
 
       - name: Restore cached built Xilinx IPs (avoids re-synthesizing all 34 IPs every run)
+        id: ips_cache
         uses: actions/cache@v4
         with:
           path: |
@@ -111,6 +112,12 @@ jobs:
             hw/xilinx/ips/embedded/*/build
             hw/xilinx/ips/hpc/*/build
           key: xilinx-ips-${{ hashFiles('hw/xilinx/ips/common/*/config.tcl', 'hw/xilinx/ips/embedded/*/config.tcl', 'hw/xilinx/ips/hpc/*/config.tcl', 'hw/units/*/fetch_sources.sh', 'hw/xilinx/synth/constraints/*.xdc') }}
+
+      - name: Mark restored IPs as up to date (actions/cache keeps original file dates, which make sees as older than the config.tcl files just rewritten by symlink resolution, causing an unnecessary rebuild)
+        if: steps.ips_cache.outputs.cache-hit == 'true'
+        run: |
+          find hw/xilinx/ips -maxdepth 1 -name '*.xci' -exec touch {} +
+          find hw/xilinx/ips/common hw/xilinx/ips/embedded hw/xilinx/ips/hpc -path '*/build/*' -exec touch {} \; 2>/dev/null || true
 
       - name: Build Xilinx IPs
         run: |
