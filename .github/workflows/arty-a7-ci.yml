@@ -1,0 +1,163 @@
+# =============================================================================
+# Simply-V — Arty-A7 CI/CD Workflow (WSL runner)
+#
+# Builds the bitstream and software for the Arty-A7 board, then runs a
+# Hardware-in-the-Loop (HIL) test: programs the physical board, loads
+# hello_world via JTAG/GDB, and checks the UART output for the expected
+# string. Simulation is not covered here (not supported on this board).
+#
+# Requires a self-hosted runner with:
+#   - If the runner is on WSL with Vivado installed on the Windows side: a
+#     `vivado` wrapper script in ~/bin that bridges calls to Windows Vivado
+#     (translates WSL paths/env vars to Windows form; see project notes)
+#   - The target board physically connected, for the hil_test job only
+# =============================================================================
+
+name: Arty-A7 Build & HIL Test
+
+on:
+  push:
+    branches: [ board/arty-a7 ]
+  pull_request:
+    branches: [ board/arty-a7 ]
+  workflow_dispatch:
+    inputs:
+      board:
+        description: "Target board, as accepted by settings.sh (e.g. arty_a7_100t)"
+        required: false
+
+env:
+  SIMPLYV_PROFILE: embedded
+  # Target board, as accepted by settings.sh; selectable from workflow_dispatch
+  BOARD_CONFIG: ${{ inputs.board || 'arty_a7_100t' }}
+
+jobs:
+  # Placeholder for future simulation support (not implemented yet):
+  # simulate:
+  #   runs-on: [self-hosted, arty-a7-wsl]
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         submodules: recursive
+  #     - name: Run simulation
+  #       run: |
+  #         source settings.sh $SIMPLYV_PROFILE $BOARD_CONFIG
+  #         make sim
+
+  build:
+    runs-on: [self-hosted, arty-a7-wsl]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Add local tools to PATH
+        run: |
+          echo "$HOME/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Restore cached RTL sources (hw/units/*/rtl)
+        uses: actions/cache@v4
+        with:
+          path: hw/units/*/rtl
+          key: units-rtl-${{ hashFiles('hw/units/*/fetch_sources.sh') }}
+
+      - name: Generate configuration
+        run: |
+          source settings.sh $SIMPLYV_PROFILE $BOARD_CONFIG
+          make config
+
+      - name: Skip custom_hls_conv_hbus (not used in embedded profile, requires Vitis HLS)
+        run: mkdir -p hw/units/custom_hls_conv_hbus/rtl
+
+      - name: Patch fetch_sources.sh to use installed Bender (0.31.0 fallback has a known bug on Ubuntu 26.04)
+        run: |
+          BENDER_BIN="$(which bender)"
+          for f in hw/units/*/fetch_sources.sh; do
+              sed -i -E "s#curl --proto '=https' --tlsv1\.2 https://pulp-platform\.github\.io/bender/init -sSf[[:space:]]*\|[[:space:]]*sh[[:space:]]+-s -- \\\$\{BENDER_VERSION\}#cp ${BENDER_BIN} ./bender#" "$f" 2>/dev/null || true
+          done
+
+      - name: Fetch RTL sources (only if cache miss)
+        run: |
+          source settings.sh $SIMPLYV_PROFILE $BOARD_CONFIG
+          cd hw/units
+          make -j1 units
+
+      - name: Restore cached built Xilinx IPs (avoids re-synthesizing all 34 IPs every run)
+        # Temporary workaround, until #55 provides a proper incremental build solution
+        id: ips_cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            hw/xilinx/ips/*.xci
+            hw/xilinx/ips/common/*/build
+            hw/xilinx/ips/embedded/*/build
+            hw/xilinx/ips/hpc/*/build
+          key: xilinx-ips-${{ hashFiles('hw/xilinx/ips/common/*/config.tcl', 'hw/xilinx/ips/embedded/*/config.tcl', 'hw/xilinx/ips/hpc/*/config.tcl', 'hw/units/*/fetch_sources.sh', 'hw/xilinx/synth/constraints/*.xdc') }}
+
+      - name: Mark restored IPs as up to date (actions/cache keeps original file dates, while a fresh git checkout gives config.tcl a newer one, so make thinks the cached IPs are stale and rebuilds them)
+        if: steps.ips_cache.outputs.cache-hit == 'true'
+        run: |
+          find hw/xilinx/ips -maxdepth 1 -name '*.xci' -exec touch {} +
+          find hw/xilinx/ips/common hw/xilinx/ips/embedded hw/xilinx/ips/hpc -path '*/build/*' -exec touch {} \; 2>/dev/null || true
+
+      - name: Build Xilinx IPs
+        run: |
+          source settings.sh $SIMPLYV_PROFILE $BOARD_CONFIG
+          cd hw/xilinx
+          make ips
+
+      - name: Build bitstream
+        run: |
+          source settings.sh $SIMPLYV_PROFILE $BOARD_CONFIG
+          cd hw/xilinx
+          make bitstream
+
+      - name: Compile hello_world
+        run: |
+          source settings.sh $SIMPLYV_PROFILE $BOARD_CONFIG
+          cd sw/SoC
+          make examples
+
+      - name: Upload bitstream and ELF as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs
+          path: |
+            hw/xilinx/build/simplyv.runs/impl_1/simplyv.bit
+            hw/xilinx/build/simplyv.runs/impl_1/simplyv.ltx
+            sw/SoC/examples/hello_world/bin/hello_world.elf
+
+  # ---------------------------------------------------------------------------
+  # HIL test: programs the physical target boards, runs hello_world through
+  # OpenOCD/GDB and checks the UART output. All the logic lives in
+  # hw/xilinx/scripts/utils/wsl/hil_hello_world_wsl.sh, which can also be run by hand with the board
+  # connected (see doc/WSL_SETUP.md, section 8). It needs the board plugged
+  # into the runner machine; without it this job fails, the build job is not
+  # affected.
+  # ---------------------------------------------------------------------------
+  hil_test:
+    needs: build
+    runs-on: [self-hosted, arty-a7-wsl]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add local tools to PATH
+        run: |
+          echo "$HOME/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          echo "$HOME/xpack-openocd-0.12.0-7/bin" >> $GITHUB_PATH
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+
+      - name: Program the board, run hello_world, check the UART
+        run: |
+          source settings.sh $SIMPLYV_PROFILE $BOARD_CONFIG
+          make config
+          bash hw/xilinx/scripts/utils/wsl/hil_hello_world_wsl.sh
