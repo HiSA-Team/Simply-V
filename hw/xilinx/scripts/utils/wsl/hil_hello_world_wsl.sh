@@ -8,7 +8,7 @@
 #
 # Usage (from the repository root, after `source settings.sh ...` and
 # `make config`, with the bitstream and hello_world.elf already built):
-#   bash ci/hil_hello_world_wsl.sh [BUSID]        # BUSID default: 1-4
+#   bash hw/xilinx/scripts/utils/wsl/hil_hello_world_wsl.sh [BUSID]        # BUSID default: 1-4
 #
 # Works the same way from the terminal and from the CI, so it can be tested
 # by hand with the board connected. See doc/WSL_SETUP.md, section 8, for the
