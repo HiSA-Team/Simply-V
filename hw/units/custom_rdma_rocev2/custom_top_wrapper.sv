@@ -1,11 +1,15 @@
 // Author: Manuel Maddaluno <manuel.maddaluno@unina.it>
-// Description: Top level wrapper for the RDMA RoCEv2 (lite) engine (network_wrapper_roce_generic).
+// Description: Top level wrapper for the RDMA RoCEv2 (lite) engine with the RDMA WRITE responder (RoCE_ext_network_wrapper,
+//              from SimplyV_Custom_RDMA/ext; the upstream engine is network_wrapper_roce_generic).
 //              The wrapper exposes:
 //                - an AXI-lite slave (s_ctrl) to the control/status registers (CSR) of the engine;
 //                - the Ethernet AXI-Stream TX/RX pair toward the MAC (e.g. the CMAC).
+//              The RDMA WRITE requests received from the network are written by the responder into a dedicated
+//              receive buffer (RX buffer, block RAM, RXBUF_BYTES), readable by the processor through the CSR.
+//              The responder tables (QP context, memory regions) are written by software at initialization.
 //
 //              Clock domain: a single clock (clk_i/rst_ni) drives the CSR, the RoCE engine (clk_mac, clk_stack
-//              and clk_roce_eng of network_wrapper_roce_generic) and the Ethernet AXI-Stream, i.e. the CMAC user clock.
+//              and clk_roce_eng of the engine), the RX buffer and the Ethernet AXI-Stream, i.e. the CMAC user clock.
 //
 //              NOTE: as-is, the engine has no memory interface: the payload comes from an internal data generator,
 //              the retransmission buffer is an internal RAM, and QPs are opened/closed/started through connection
@@ -17,10 +21,14 @@
 //              The frames toward the MAC are padded to the minimum Ethernet frame size (60 bytes + FCS) by cmac_pad,
 //              as in the upstream 100G example: the CMAC does not pad, and the engine sends 42-byte ARP frames.
 //
-//              CSR map (32-bit registers, only the address bits [8:2] are decoded):
+//              CSR map (32-bit registers, address bits [15:2] decoded, 64 KB window):
 //                0x000  ID                   RO  32'h5244_4D41 ("RDMA")
-//                0x004  CTRL                 WO  [0] clear ARP cache (pulse), [1] QP spy request (pulse), [2] inject INJ_BUF (pulse)
-//                0x008  STATUS               RO  [0] QP spy snapshot valid (cleared by a new spy request), [1] injector busy
+//                0x004  CTRL                 WO  [0] clear ARP cache (pulse), [1] QP spy request (pulse), [2] inject INJ_BUF (pulse),
+//                                                [3] engine reset (pulse: engine, RX/TX streams and RX buffer logic held in reset for
+//                                                ENGINE_RST_CYCLES; the CSR keep their values; use it with the link idle),
+//                                                [4] clear the RX buffer (pulse)
+//                0x008  STATUS               RO  [0] QP spy snapshot valid (cleared by a new spy request), [1] injector busy,
+//                                                [2] engine reset in progress, [3] RX buffer clear in progress
 //                0x00C  INJ_LEN              RW  [7:0] length in bytes of the frame in INJ_BUF (1 to 128)
 //                0x010  MAC_LO               RW  local MAC address [31:0]
 //                0x014  MAC_HI               RW  local MAC address [47:32] (in [15:0])
@@ -28,6 +36,7 @@
 //                0x01C  NET_CFG              RW  [15:0] RoCE UDP port, [18:16] PMTU, [22:20] priority tag
 //                0x020  MON_QPN              RW  [23:0] local QPN observed by the perf monitor
 //                0x024  MON_CFG              RW  [3:0] latency averaging (log2), [12:8] throughput averaging (log2)
+//                0x028  RXBUF_SIZE           RO  size of the RX buffer in bytes
 //                0x030  MON_XFER_TIME_AVG    RO  transfer time, average
 //                0x034  MON_XFER_TIME_MAVG   RO  transfer time, moving average
 //                0x038  MON_LATENCY_AVG      RO  latency, average
@@ -47,6 +56,10 @@
 //                0x074  SPY_REM_ADDR_HI      RO  remote virtual address [63:32]
 //                0x078  SPY_REM_IP           RO  remote IPv4 address
 //                0x100  INJ_BUF[0..31]       RW  frame to inject: byte n of the frame (wire order) is byte (n % 4) of word (n / 4)
+//                0x400  RESP[0..255]         RW  responder registers (QP context and MR tables, counters): register at byte
+//                                                offset X of RoCE_ext_responder is at 0x400 + X; full-word writes only (wstrb ignored)
+//                0x8000 RXBUF                RO  RX buffer, byte address A of the responder AXI master is at 0x8000 + A
+//                                                (one cycle more of read latency)
 //              Unmapped offsets read as zero and ignore writes (the response is always OKAY).
 //              The RW reset values are the ones of the upstream example design, so the engine is usable right after
 //              reset, without any software configuration.
@@ -70,6 +83,9 @@ module custom_top_wrapper # (
     parameter int unsigned  N_QUEUE_PAIRS                    = 4,
     // Retransmission buffer size (2**N bytes)
     parameter int unsigned  RETRANSMISSION_ADDR_BUFFER_WIDTH = 21,
+    // Responder: number of memory regions and RX buffer size in bytes (at most 32 KB, the CSR window)
+    parameter int unsigned  N_MR                             = 16,
+    parameter int unsigned  RXBUF_BYTES                      = 32768,
 
     // AXI-lite slave parameters
     localparam int unsigned LOCAL_AXILITE_DATA_WIDTH         = 32,
@@ -123,7 +139,11 @@ module custom_top_wrapper # (
 
     // CSR address decoding (byte offset = word index * 4)
     localparam int unsigned CSR_ADDR_LSB = 2;
-    localparam int unsigned CSR_ADDR_MSB = 8;
+    localparam int unsigned CSR_ADDR_MSB = 8;  // registers and injector buffer (0x000 - 0x1FC)
+    localparam int unsigned CSR_WIN_MSB  = 15; // 64 KB CSR window
+    // CSR regions (address bits [15:9])
+    localparam logic [6:0]  CSR_REGION_BASE  = 7'b0000000; // 0x0000 - 0x01FF registers, injector buffer
+    localparam logic [5:0]  CSR_REGION_RESP  = 6'b000001;  // 0x0400 - 0x07FF responder registers (bits [15:10])
 
     // CSR word indexes
     localparam logic [6:0]  CSR_ID                 = 7'h00; // 0x000
@@ -136,6 +156,7 @@ module custom_top_wrapper # (
     localparam logic [6:0]  CSR_NET_CFG            = 7'h07; // 0x01C
     localparam logic [6:0]  CSR_MON_QPN            = 7'h08; // 0x020
     localparam logic [6:0]  CSR_MON_CFG            = 7'h09; // 0x024
+    localparam logic [6:0]  CSR_RXBUF_SIZE         = 7'h0A; // 0x028
     localparam logic [6:0]  CSR_MON_XFER_TIME_AVG  = 7'h0C; // 0x030
     localparam logic [6:0]  CSR_MON_XFER_TIME_MAVG = 7'h0D; // 0x034
     localparam logic [6:0]  CSR_MON_LATENCY_AVG    = 7'h0E; // 0x038
@@ -163,8 +184,20 @@ module custom_top_wrapper # (
     localparam int unsigned CTRL_CLEAR_ARP_BIT    = 0;
     localparam int unsigned CTRL_SPY_REQ_BIT      = 1;
     localparam int unsigned CTRL_INJECT_BIT       = 2;
+    localparam int unsigned CTRL_ENGINE_RST_BIT   = 3;
+    localparam int unsigned CTRL_RXBUF_CLEAR_BIT  = 4;
     localparam int unsigned STATUS_SPY_VALID_BIT  = 0;
     localparam int unsigned STATUS_INJ_BUSY_BIT   = 1;
+    localparam int unsigned STATUS_ENGINE_RST_BIT = 2;
+    localparam int unsigned STATUS_RXBUF_BUSY_BIT = 3;
+
+    // Engine reset from the CSR: length in clock cycles
+    localparam int unsigned ENGINE_RST_CYCLES     = 16;
+    localparam int unsigned ENGINE_RST_CNT_W      = $clog2(ENGINE_RST_CYCLES+1);
+
+    // Responder AXI master toward the RX buffer
+    localparam int unsigned RESP_AXI_ADDR_WIDTH   = 32;
+    localparam int unsigned RESP_AXI_ID_WIDTH     = 4;
 
     // Injector buffer: 32 words (128 bytes), sent as INJ_BEATS beats of MAC_DATA_WIDTH bits
     localparam int unsigned INJ_BUF_WORDS  = 32;
@@ -188,20 +221,29 @@ module custom_top_wrapper # (
     //  Local signals  //
     /////////////////////
 
-    // Active-high reset for the engine
+    // Active-high resets: rst for the CSR, engine_rst for the engine, its streams and the RX buffer logic
     logic        rst;
+    logic        engine_rst;
+    logic        engine_rst_req_q;      // One-cycle pulse
+    logic [ENGINE_RST_CNT_W-1:0] engine_rst_cnt_q;
 
     // AXI-lite handshakes
     logic        aw_w_ready_q;
     logic        write_en;
     logic [6:0]  write_idx;
     logic        write_inj_buf;
+    logic        write_base;
+    logic        write_resp;
     logic [31:0] write_old_value;
     logic [31:0] write_new_value;
     logic        ar_ready_q;
     logic        read_en;
     logic [6:0]  read_idx;
     logic        read_inj_buf;
+    logic        read_base;
+    logic        read_resp;
+    logic        read_rxbuf;
+    logic        rxbuf_rd_pending_q;    // RX buffer read: data one cycle after the address
     logic [31:0] read_value;
 
     // Control registers
@@ -261,6 +303,33 @@ module custom_top_wrapper # (
     logic [8:0]  inj_bytes_left;
     logic        inj_last_beat;
 
+    // Responder registers
+    logic        resp_cfg_wr_en;
+    logic [31:0] resp_cfg_rd_data;
+
+    // RX buffer
+    logic        rxbuf_clear_q;         // One-cycle pulse
+    logic        rxbuf_clear_busy;
+    logic [31:0] rxbuf_rd_data;
+
+    // Responder AXI4 master (write channels) toward the RX buffer
+    logic [RESP_AXI_ID_WIDTH-1:0]    resp_axi_awid;
+    logic [RESP_AXI_ADDR_WIDTH-1:0]  resp_axi_awaddr;
+    logic [7:0]                      resp_axi_awlen;
+    logic [2:0]                      resp_axi_awsize;
+    logic [1:0]                      resp_axi_awburst;
+    logic                            resp_axi_awvalid;
+    logic                            resp_axi_awready;
+    logic [MAC_DATA_WIDTH-1:0]       resp_axi_wdata;
+    logic [MAC_DATA_WIDTH/8-1:0]     resp_axi_wstrb;
+    logic                            resp_axi_wlast;
+    logic                            resp_axi_wvalid;
+    logic                            resp_axi_wready;
+    logic [RESP_AXI_ID_WIDTH-1:0]    resp_axi_bid;
+    logic [1:0]                      resp_axi_bresp;
+    logic                            resp_axi_bvalid;
+    logic                            resp_axi_bready;
+
     // RW registers as seen on the bus
     logic [31:0] csr_mac_lo;
     logic [31:0] csr_mac_hi;
@@ -310,6 +379,7 @@ module custom_top_wrapper # (
     /////////////////////////
 
     assign rst         = ~rst_ni;
+    assign engine_rst  = rst | (engine_rst_cnt_q != '0);
 
     assign csr_mac_lo  = ctrl_local_mac_q[31:0];
     assign csr_mac_hi  = {16'b0, ctrl_local_mac_q[47:32]};
@@ -345,7 +415,12 @@ module custom_top_wrapper # (
 
     assign write_en  = aw_w_ready_q & s_ctrl_axilite_awvalid & s_ctrl_axilite_wvalid;
     assign write_idx = s_ctrl_axilite_awaddr[CSR_ADDR_MSB:CSR_ADDR_LSB];
-    assign write_inj_buf = (write_idx[6:5] == CSR_INJ_BUF_PAGE);
+    assign write_base = (s_ctrl_axilite_awaddr[CSR_WIN_MSB:CSR_ADDR_MSB+1] == CSR_REGION_BASE);
+    assign write_resp = (s_ctrl_axilite_awaddr[CSR_WIN_MSB:CSR_ADDR_MSB+2] == CSR_REGION_RESP);
+    assign write_inj_buf = write_base && (write_idx[6:5] == CSR_INJ_BUF_PAGE);
+
+    // Responder registers: full-word writes
+    assign resp_cfg_wr_en = write_en && write_resp;
 
     // Merge the written bytes (wstrb) with the current register value
     always_comb begin
@@ -384,6 +459,8 @@ module custom_top_wrapper # (
             mon_thr_avg_po2_q <= RST_THR_AVG_PO2;
             spy_qpn_q         <= RST_SPY_QPN;
             spy_req_q         <= 1'b0;
+            engine_rst_req_q  <= 1'b0;
+            rxbuf_clear_q     <= 1'b0;
             inj_len_q         <= '0;
             inj_start_q       <= 1'b0;
             for (int i = 0; i < INJ_BUF_WORDS; i++) inj_buf_q[i] <= '0;
@@ -393,8 +470,10 @@ module custom_top_wrapper # (
             ctrl_clear_arp_q <= 1'b0;
             spy_req_q        <= 1'b0;
             inj_start_q      <= 1'b0;
+            engine_rst_req_q <= 1'b0;
+            rxbuf_clear_q    <= 1'b0;
 
-            if (write_en) begin
+            if (write_en && write_base) begin
                 if (write_inj_buf)
                     inj_buf_q[write_idx[4:0]] <= write_new_value;
                 else begin
@@ -404,6 +483,8 @@ module custom_top_wrapper # (
                                 ctrl_clear_arp_q <= s_ctrl_axilite_wdata[CTRL_CLEAR_ARP_BIT];
                                 spy_req_q        <= s_ctrl_axilite_wdata[CTRL_SPY_REQ_BIT];
                                 inj_start_q      <= s_ctrl_axilite_wdata[CTRL_INJECT_BIT];
+                                engine_rst_req_q <= s_ctrl_axilite_wdata[CTRL_ENGINE_RST_BIT];
+                                rxbuf_clear_q    <= s_ctrl_axilite_wdata[CTRL_RXBUF_CLEAR_BIT];
                             end
                         end
                         CSR_INJ_LEN : inj_len_q               <= write_new_value[7:0];
@@ -428,6 +509,17 @@ module custom_top_wrapper # (
         end
     end
 
+    // Engine reset from the CSR (CTRL.ENGINE_RST): the engine, its streams and the RX buffer logic are held in reset
+    // for ENGINE_RST_CYCLES; the CSR keep their values
+    always_ff @(posedge clk_i or negedge rst_ni) begin
+        if (!rst_ni)
+            engine_rst_cnt_q <= '0;
+        else if (engine_rst_req_q)
+            engine_rst_cnt_q <= ENGINE_RST_CNT_W'(ENGINE_RST_CYCLES);
+        else if (engine_rst_cnt_q != '0)
+            engine_rst_cnt_q <= engine_rst_cnt_q - 1'b1;
+    end
+
     //////////////////////////
     //  AXI-lite read path  //
     //////////////////////////
@@ -437,11 +529,21 @@ module custom_top_wrapper # (
             ar_ready_q            <= 1'b0;
             s_ctrl_axilite_rvalid <= 1'b0;
             s_ctrl_axilite_rdata  <= '0;
+            rxbuf_rd_pending_q    <= 1'b0;
         end
         else begin
-            ar_ready_q <= s_ctrl_axilite_arvalid & ~ar_ready_q & ~s_ctrl_axilite_rvalid;
+            ar_ready_q <= s_ctrl_axilite_arvalid & ~ar_ready_q & ~s_ctrl_axilite_rvalid & ~rxbuf_rd_pending_q;
 
-            if (read_en) begin
+            rxbuf_rd_pending_q <= 1'b0;
+            if (read_en && read_rxbuf) begin
+                // RX buffer: the data comes one cycle later
+                rxbuf_rd_pending_q <= 1'b1;
+            end
+            else if (rxbuf_rd_pending_q) begin
+                s_ctrl_axilite_rvalid <= 1'b1;
+                s_ctrl_axilite_rdata  <= rxbuf_rd_data;
+            end
+            else if (read_en) begin
                 s_ctrl_axilite_rvalid <= 1'b1;
                 s_ctrl_axilite_rdata  <= read_value;
             end
@@ -456,19 +558,26 @@ module custom_top_wrapper # (
 
     assign read_en  = ar_ready_q & s_ctrl_axilite_arvalid;
     assign read_idx = s_ctrl_axilite_araddr[CSR_ADDR_MSB:CSR_ADDR_LSB];
-    assign read_inj_buf = (read_idx[6:5] == CSR_INJ_BUF_PAGE);
+    assign read_base  = (s_ctrl_axilite_araddr[CSR_WIN_MSB:CSR_ADDR_MSB+1] == CSR_REGION_BASE);
+    assign read_resp  = (s_ctrl_axilite_araddr[CSR_WIN_MSB:CSR_ADDR_MSB+2] == CSR_REGION_RESP);
+    assign read_rxbuf = s_ctrl_axilite_araddr[CSR_WIN_MSB];
+    assign read_inj_buf = read_base && (read_idx[6:5] == CSR_INJ_BUF_PAGE);
 
     // Read multiplexer
     always_comb begin
         read_value = '0;
-        if (read_inj_buf)
+        if (read_resp)
+            read_value = resp_cfg_rd_data;
+        else if (read_inj_buf)
             read_value = inj_buf_q[read_idx[4:0]];
-        else begin
+        else if (read_base) begin
             case (read_idx)
                 CSR_ID                 : read_value = CSR_ID_VALUE;
                 CSR_STATUS             : begin
                     read_value[STATUS_SPY_VALID_BIT] = spy_valid_q;
                     read_value[STATUS_INJ_BUSY_BIT]  = inj_busy_q;
+                    read_value[STATUS_ENGINE_RST_BIT] = engine_rst;
+                    read_value[STATUS_RXBUF_BUSY_BIT] = rxbuf_clear_busy;
                 end
                 CSR_INJ_LEN            : read_value = {24'b0, inj_len_q};
                 CSR_MAC_LO             : read_value = csr_mac_lo;
@@ -477,6 +586,7 @@ module custom_top_wrapper # (
                 CSR_NET_CFG            : read_value = csr_net_cfg;
                 CSR_MON_QPN            : read_value = csr_mon_qpn;
                 CSR_MON_CFG            : read_value = csr_mon_cfg;
+                CSR_RXBUF_SIZE         : read_value = 32'(RXBUF_BYTES);
                 CSR_MON_XFER_TIME_AVG  : read_value = mon_xfer_time_avg;
                 CSR_MON_XFER_TIME_MAVG : read_value = mon_xfer_time_mavg;
                 CSR_MON_LATENCY_AVG    : read_value = mon_latency_avg;
@@ -593,7 +703,7 @@ module custom_top_wrapper # (
         .DEPTH          ( 8                    )
     ) rx_mac_fifo_u (
         .clk            ( clk_i                ),
-        .rst            ( rst                  ),
+        .rst            ( engine_rst           ),
         // AXI input
         .s_axis_tdata   ( s_eth_rx_axis_tdata  ),
         .s_axis_tkeep   ( s_eth_rx_axis_tkeep  ),
@@ -631,7 +741,7 @@ module custom_top_wrapper # (
         .ARB_LSB_HIGH_PRIORITY  ( 1                )
     ) rx_arb_mux_u (
         .clk            ( clk_i                                      ),
-        .rst            ( rst                                        ),
+        .rst            ( engine_rst                                 ),
         // AXI inputs
         .s_axis_tdata   ( {inj_axis_tdata,  rx_fifo_axis_tdata}      ),
         .s_axis_tkeep   ( {inj_axis_tkeep,  rx_fifo_axis_tkeep}      ),
@@ -656,7 +766,7 @@ module custom_top_wrapper # (
     //  RDMA RoCE engine //
     ///////////////////////
 
-    network_wrapper_roce_generic #(
+    RoCE_ext_network_wrapper #(
         .MAC_DATA_WIDTH                     ( MAC_DATA_WIDTH                   ),
         .STACK_DATA_WIDTH                   ( MAC_DATA_WIDTH                   ),
         .QP_CH_DATA_WIDTH                   ( QP_CH_DATA_WIDTH                 ),
@@ -666,15 +776,18 @@ module custom_top_wrapper # (
         .RETRANSMISSION_ADDR_BUFFER_WIDTH   ( RETRANSMISSION_ADDR_BUFFER_WIDTH ),
         .ASYNC_MAC_STACK                    ( ASYNC_MAC_STACK                  ),
         .ENABLE_PFC                         ( ENABLE_PFC                       ),
-        .DEBUG                              ( DEBUG                            )
-    ) network_wrapper_roce_generic_u (
+        .DEBUG                              ( DEBUG                            ),
+        .N_MR                               ( N_MR                             ),
+        .AXI_ADDR_WIDTH                     ( RESP_AXI_ADDR_WIDTH              ),
+        .AXI_ID_WIDTH                       ( RESP_AXI_ID_WIDTH                )
+    ) roce_ext_network_wrapper_u (
         // Clocks and resets
         .clk_mac                    ( clk_i                 ),
-        .rst_mac                    ( rst                   ),
+        .rst_mac                    ( engine_rst            ),
         .clk_stack                  ( clk_i                 ),
-        .rst_stack                  ( rst                   ),
+        .rst_stack                  ( engine_rst            ),
         .clk_roce_eng               ( clk_i                 ),
-        .rst_roce_eng               ( rst                   ),
+        .rst_roce_eng               ( engine_rst            ),
         .flow_ctrl_pause            ( 1'b0                  ),
 
         // Ethernet AXI-Stream TX (toward the padding)
@@ -730,7 +843,70 @@ module custom_top_wrapper # (
         .latency_moving_avg         ( mon_latency_mavg      ),
         .psn_diff                   ( mon_psn_diff          ),
         .n_retransmit_triggers      ( mon_retransmit        ),
-        .n_rnr_retransmit_triggers  ( mon_rnr_retransmit    )
+        .n_rnr_retransmit_triggers  ( mon_rnr_retransmit    ),
+
+        // Responder registers
+        .resp_cfg_wr_en             ( resp_cfg_wr_en                                  ),
+        .resp_cfg_wr_addr           ( s_ctrl_axilite_awaddr[CSR_ADDR_MSB+1:CSR_ADDR_LSB] ),
+        .resp_cfg_wr_data           ( s_ctrl_axilite_wdata                            ),
+        .resp_cfg_rd_addr           ( s_ctrl_axilite_araddr[CSR_ADDR_MSB+1:CSR_ADDR_LSB] ),
+        .resp_cfg_rd_data           ( resp_cfg_rd_data                                ),
+
+        // Responder AXI4 master (write channels) toward the RX buffer
+        .m_axi_awid                 ( resp_axi_awid         ),
+        .m_axi_awaddr               ( resp_axi_awaddr       ),
+        .m_axi_awlen                ( resp_axi_awlen        ),
+        .m_axi_awsize               ( resp_axi_awsize       ),
+        .m_axi_awburst              ( resp_axi_awburst      ),
+        .m_axi_awlock               (                       ),
+        .m_axi_awcache              (                       ),
+        .m_axi_awprot               (                       ),
+        .m_axi_awvalid              ( resp_axi_awvalid      ),
+        .m_axi_awready              ( resp_axi_awready      ),
+        .m_axi_wdata                ( resp_axi_wdata        ),
+        .m_axi_wstrb                ( resp_axi_wstrb        ),
+        .m_axi_wlast                ( resp_axi_wlast        ),
+        .m_axi_wvalid               ( resp_axi_wvalid       ),
+        .m_axi_wready               ( resp_axi_wready       ),
+        .m_axi_bid                  ( resp_axi_bid          ),
+        .m_axi_bresp                ( resp_axi_bresp        ),
+        .m_axi_bvalid               ( resp_axi_bvalid       ),
+        .m_axi_bready               ( resp_axi_bready       )
+    );
+
+    // RX buffer: written by the responder, read by the processor through the CSR (0x8000 + byte address)
+    RoCE_ext_axi_bram #(
+        .DATA_WIDTH     ( MAC_DATA_WIDTH        ),
+        .ADDR_WIDTH     ( RESP_AXI_ADDR_WIDTH   ),
+        .ID_WIDTH       ( RESP_AXI_ID_WIDTH     ),
+        .MEM_BYTES      ( RXBUF_BYTES           )
+    ) rx_buffer_u (
+        .clk            ( clk_i                 ),
+        .rst            ( engine_rst            ),
+        // AXI4 slave (write channels)
+        .s_axi_awid     ( resp_axi_awid         ),
+        .s_axi_awaddr   ( resp_axi_awaddr       ),
+        .s_axi_awlen    ( resp_axi_awlen        ),
+        .s_axi_awsize   ( resp_axi_awsize       ),
+        .s_axi_awburst  ( resp_axi_awburst      ),
+        .s_axi_awvalid  ( resp_axi_awvalid      ),
+        .s_axi_awready  ( resp_axi_awready      ),
+        .s_axi_wdata    ( resp_axi_wdata        ),
+        .s_axi_wstrb    ( resp_axi_wstrb        ),
+        .s_axi_wlast    ( resp_axi_wlast        ),
+        .s_axi_wvalid   ( resp_axi_wvalid       ),
+        .s_axi_wready   ( resp_axi_wready       ),
+        .s_axi_bid      ( resp_axi_bid          ),
+        .s_axi_bresp    ( resp_axi_bresp        ),
+        .s_axi_bvalid   ( resp_axi_bvalid       ),
+        .s_axi_bready   ( resp_axi_bready       ),
+        // Read port (CSR)
+        .rd_en          ( read_en && read_rxbuf ),
+        .rd_addr        ( s_ctrl_axilite_araddr[CSR_WIN_MSB-1:CSR_ADDR_LSB] ),
+        .rd_data        ( rxbuf_rd_data         ),
+        // Clear
+        .clear_start    ( rxbuf_clear_q         ),
+        .clear_busy     ( rxbuf_clear_busy      )
     );
 
     // Pad the frames toward the MAC to 60 bytes (the CMAC adds the FCS but does not pad)
@@ -740,7 +916,7 @@ module custom_top_wrapper # (
         .USER_WIDTH     ( 1                     )
     ) tx_cmac_pad_u (
         .clk            ( clk_i                 ),
-        .rst            ( rst                   ),
+        .rst            ( engine_rst            ),
         // AXI input
         .s_axis_tdata   ( tx_engine_axis_tdata  ),
         .s_axis_tkeep   ( tx_engine_axis_tkeep  ),

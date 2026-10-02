@@ -43,7 +43,6 @@ icmp_ip_tx.v
 ip_eth_rx_test.v
 ip_eth_tx_test.v
 lfsr.v
-network_wrapper_roce_generic.sv
 priority_encoder.v
 qpn_fifo_init.sv
 RoCE_arb_mux.sv
@@ -67,6 +66,7 @@ RoCE_udp_rx_acks.sv
 RoCE_udp_tx.sv
 simple_dpram.v
 true_dpram.v
+udp_arb_mux.v
 udp_complete_opt.v
 udp_ip_rx_test.v
 udp_ip_tx_test.v
@@ -74,3 +74,9 @@ udp_mux.v
 udp_RoCE_connection_manager.sv
 udp_RoCE_connection_manager_rx.sv
 udp_RoCE_connection_manager_tx.sv
+ext/rtl/RoCE_ext_network_wrapper.sv
+ext/rtl/RoCE_ext_udp_rx_classifier.sv
+ext/rtl/RoCE_ext_responder.sv
+ext/rtl/RoCE_ext_payload_realign.sv
+ext/rtl/RoCE_ext_sync_fifo.sv
+ext/rtl/RoCE_ext_axi_bram.sv

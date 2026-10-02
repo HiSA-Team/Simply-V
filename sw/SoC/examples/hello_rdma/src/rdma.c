@@ -138,3 +138,84 @@ int rdma_qp_spy(uintptr_t baseaddr, uint32_t qpn, rdma_qp_info_t* info)
 
     return SIMPLYV_OK;
 }
+
+int rdma_engine_reset(uintptr_t baseaddr)
+{
+    iowrite32(baseaddr + RDMA_CTRL_REG, RDMA_CTRL_ENGINE_RESET);
+
+    uint32_t timeout = RDMA_POLL_TIMEOUT;
+    while ((ioread32(baseaddr + RDMA_STATUS_REG) & RDMA_STATUS_ENGINE_RESET) && (timeout > 0u)) {
+        timeout--;
+    }
+    return (timeout == 0u) ? SIMPLYV_ERROR : SIMPLYV_OK;
+}
+
+int rdma_rxbuf_clear(uintptr_t baseaddr)
+{
+    iowrite32(baseaddr + RDMA_CTRL_REG, RDMA_CTRL_RXBUF_CLEAR);
+
+    uint32_t timeout = RDMA_POLL_TIMEOUT;
+    while ((ioread32(baseaddr + RDMA_STATUS_REG) & RDMA_STATUS_RXBUF_BUSY) && (timeout > 0u)) {
+        timeout--;
+    }
+    return (timeout == 0u) ? SIMPLYV_ERROR : SIMPLYV_OK;
+}
+
+uint32_t rdma_rxbuf_read(uintptr_t baseaddr, uint32_t byte_offset)
+{
+    return ioread32(baseaddr + RDMA_RXBUF_BASE + (byte_offset & ~0x3u));
+}
+
+int rdma_resp_mr(uintptr_t baseaddr, const rdma_mr_t* mr)
+{
+    if (mr->index >= RDMA_N_MR) {
+        return SIMPLYV_ERROR;
+    }
+
+    // Invalid while it changes, valid last
+    iowrite32(baseaddr + RDMA_RESP_MR_REG(mr->index, RDMA_RESP_MR_CTRL), 0);
+    iowrite32(baseaddr + RDMA_RESP_MR_REG(mr->index, RDMA_RESP_MR_BASE_LO), (uint32_t)mr->base);
+    iowrite32(baseaddr + RDMA_RESP_MR_REG(mr->index, RDMA_RESP_MR_BASE_HI), (uint32_t)(mr->base >> 32));
+    iowrite32(baseaddr + RDMA_RESP_MR_REG(mr->index, RDMA_RESP_MR_LEN), mr->length);
+    iowrite32(baseaddr + RDMA_RESP_MR_REG(mr->index, RDMA_RESP_MR_CTRL),
+              ((uint32_t)mr->pd << 16) | ((uint32_t)mr->key << 8) |
+              (mr->perms & (RDMA_MR_REMOTE_WRITE | RDMA_MR_REMOTE_READ)) | RDMA_MR_VALID);
+
+    return SIMPLYV_OK;
+}
+
+int rdma_resp_qp(uintptr_t baseaddr, const rdma_resp_qp_t* qp)
+{
+    if ((qp->qpn < RDMA_FIRST_QPN) || (qp->qpn >= RDMA_FIRST_QPN + RDMA_N_QUEUE_PAIRS)) {
+        return SIMPLYV_ERROR;
+    }
+    uint32_t i = qp->qpn - RDMA_FIRST_QPN;
+
+    // Invalid while it changes, valid last (it also loads the start PSN as expected PSN)
+    iowrite32(baseaddr + RDMA_RESP_QP_REG(i, RDMA_RESP_QP_CTRL), 0);
+    iowrite32(baseaddr + RDMA_RESP_QP_REG(i, RDMA_RESP_QP_REM_QPN), qp->rem_qpn & 0xFFFFFFu);
+    iowrite32(baseaddr + RDMA_RESP_QP_REG(i, RDMA_RESP_QP_REM_IP), qp->rem_ip);
+    iowrite32(baseaddr + RDMA_RESP_QP_REG(i, RDMA_RESP_QP_START_PSN), qp->start_psn & 0xFFFFFFu);
+    iowrite32(baseaddr + RDMA_RESP_QP_REG(i, RDMA_RESP_QP_PD), qp->pd);
+    iowrite32(baseaddr + RDMA_RESP_QP_REG(i, RDMA_RESP_QP_CTRL), 1);
+
+    return SIMPLYV_OK;
+}
+
+void rdma_resp_enable(uintptr_t baseaddr, int enable)
+{
+    iowrite32(baseaddr + RDMA_RESP_CTRL_REG, enable ? 1u : 0u);
+}
+
+void rdma_resp_stats(uintptr_t baseaddr, rdma_resp_stats_t* stats)
+{
+    stats->write_pkts   = ioread32(baseaddr + RDMA_RESP_CNT_WRITE_PKTS_REG);
+    stats->write_bytes  = ioread32(baseaddr + RDMA_RESP_CNT_WRITE_BYTES_REG);
+    stats->acks         = ioread32(baseaddr + RDMA_RESP_CNT_ACK_REG);
+    stats->naks         = ioread32(baseaddr + RDMA_RESP_CNT_NAK_REG);
+    stats->dups         = ioread32(baseaddr + RDMA_RESP_CNT_DUP_REG);
+    stats->drops        = ioread32(baseaddr + RDMA_RESP_CNT_DROP_REG);
+    stats->dma_errors   = ioread32(baseaddr + RDMA_RESP_CNT_DMA_ERR_REG);
+    stats->last_nak     = ioread32(baseaddr + RDMA_RESP_LAST_NAK_REG);
+    stats->last_nak_qpn = ioread32(baseaddr + RDMA_RESP_LAST_NAK_QPN_REG);
+}

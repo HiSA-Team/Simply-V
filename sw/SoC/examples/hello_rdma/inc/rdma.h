@@ -4,6 +4,9 @@
 //  The engine has no host interface: QPs are opened/started/closed through connection manager (CM) requests over UDP.
 //  Here the CM requests are built in software and injected in the engine RX stream through the INJ_BUF CSR,
 //  as if they came from the network (i.e. from the remote peer).
+//  The engine includes an RDMA WRITE responder (SimplyV_Custom_RDMA/ext): the WRITE received from the network are
+//  checked against a QP table and a memory region (MR) table, written here at initialization, and stored in the RX
+//  buffer (block RAM) of the unit, readable through the CSR.
 
 #ifndef RDMA_H
 #define RDMA_H
@@ -26,6 +29,7 @@
 #define RDMA_NET_CFG_REG                (RDMA_CSR_OFFSET + 0x01C)
 #define RDMA_MON_QPN_REG                (RDMA_CSR_OFFSET + 0x020)
 #define RDMA_MON_CFG_REG                (RDMA_CSR_OFFSET + 0x024)
+#define RDMA_RXBUF_SIZE_REG             (RDMA_CSR_OFFSET + 0x028)
 #define RDMA_MON_XFER_TIME_AVG_REG      (RDMA_CSR_OFFSET + 0x030)
 #define RDMA_MON_XFER_TIME_MAVG_REG     (RDMA_CSR_OFFSET + 0x034)
 #define RDMA_MON_LATENCY_AVG_REG        (RDMA_CSR_OFFSET + 0x038)
@@ -45,6 +49,37 @@
 #define RDMA_SPY_REM_ADDR_HI_REG        (RDMA_CSR_OFFSET + 0x074)
 #define RDMA_SPY_REM_IP_REG             (RDMA_CSR_OFFSET + 0x078)
 #define RDMA_INJ_BUF                    (RDMA_CSR_OFFSET + 0x100)
+#define RDMA_RESP_BASE                  (RDMA_CSR_OFFSET + 0x400)   // responder registers
+#define RDMA_RXBUF_BASE                 (RDMA_CSR_OFFSET + 0x8000)  // RX buffer, read only (byte address A at + A)
+
+// Responder registers (see SimplyV_Custom_RDMA/ext/rtl/RoCE_ext_responder.sv)
+#define RDMA_RESP_CTRL_REG              (RDMA_RESP_BASE + 0x000)    // [0] enable
+#define RDMA_RESP_INFO_REG              (RDMA_RESP_BASE + 0x004)    // [15:0] first QPN, [23:16] QPs, [31:24] MRs
+#define RDMA_RESP_CNT_WRITE_PKTS_REG    (RDMA_RESP_BASE + 0x008)
+#define RDMA_RESP_CNT_WRITE_BYTES_REG   (RDMA_RESP_BASE + 0x00C)
+#define RDMA_RESP_CNT_ACK_REG           (RDMA_RESP_BASE + 0x010)
+#define RDMA_RESP_CNT_NAK_REG           (RDMA_RESP_BASE + 0x014)
+#define RDMA_RESP_CNT_DUP_REG           (RDMA_RESP_BASE + 0x018)
+#define RDMA_RESP_CNT_DROP_REG          (RDMA_RESP_BASE + 0x01C)
+#define RDMA_RESP_LAST_NAK_REG          (RDMA_RESP_BASE + 0x020)    // [31:24] syndrome, [23:0] PSN
+#define RDMA_RESP_LAST_NAK_QPN_REG      (RDMA_RESP_BASE + 0x024)
+#define RDMA_RESP_CNT_DMA_ERR_REG       (RDMA_RESP_BASE + 0x028)
+// QP i (QPN RDMA_FIRST_QPN + i): RDMA_RESP_QP_REG(i, RDMA_RESP_QP_*)
+#define RDMA_RESP_QP_REG(i, off)        (RDMA_RESP_BASE + 0x100 + 0x20 * (i) + (off))
+#define RDMA_RESP_QP_CTRL               0x00   // [0] valid: writing 1 (re)initializes the QP, so write it last
+#define RDMA_RESP_QP_REM_QPN            0x04
+#define RDMA_RESP_QP_REM_IP             0x08
+#define RDMA_RESP_QP_START_PSN          0x0C
+#define RDMA_RESP_QP_PD                 0x10
+#define RDMA_RESP_QP_EPSN               0x14   // read only: expected PSN
+#define RDMA_RESP_QP_MSN                0x18   // read only: completed WRITE messages
+#define RDMA_RESP_QP_IMM                0x1C   // read only: immediate data of the last WRITE with immediate
+// MR j: RDMA_RESP_MR_REG(j, RDMA_RESP_MR_*)
+#define RDMA_RESP_MR_REG(j, off)        (RDMA_RESP_BASE + 0x200 + 0x10 * (j) + (off))
+#define RDMA_RESP_MR_CTRL               0x0    // [0] valid, [1] remote write, [2] remote read, [15:8] key, [23:16] PD
+#define RDMA_RESP_MR_BASE_LO            0x4
+#define RDMA_RESP_MR_BASE_HI            0x8
+#define RDMA_RESP_MR_LEN                0xC
 
 // Register fields
 #define RDMA_ID                         0x52444D41u  // "RDMA"
@@ -52,7 +87,14 @@
 #define RDMA_CTRL_QP_SPY                0x2u
 #define RDMA_CTRL_INJECT                0x4u
 #define RDMA_STATUS_SPY_VALID           0x1u
+#define RDMA_CTRL_ENGINE_RESET          0x8u
+#define RDMA_CTRL_RXBUF_CLEAR           0x10u
 #define RDMA_STATUS_INJ_BUSY            0x2u
+#define RDMA_STATUS_ENGINE_RESET        0x4u
+#define RDMA_STATUS_RXBUF_BUSY          0x8u
+#define RDMA_MR_VALID                   0x1u
+#define RDMA_MR_REMOTE_WRITE            0x2u
+#define RDMA_MR_REMOTE_READ             0x4u
 #define RDMA_INJ_BUF_BYTES              128u
 
 // QP states (see RoCE_qp_state_module.sv)
@@ -64,6 +106,10 @@
 // QPs handled by the engine: RDMA_FIRST_QPN to RDMA_FIRST_QPN + RDMA_N_QUEUE_PAIRS - 1
 #define RDMA_FIRST_QPN                  256u
 #define RDMA_N_QUEUE_PAIRS              4u   // N_QUEUE_PAIRS of custom_top_wrapper
+#define RDMA_N_MR                       16u  // N_MR of custom_top_wrapper
+
+// R_Key of a memory region: {MR index [31:8], key [7:0]}
+#define RDMA_R_KEY(index, key)          ((((uint32_t)(index)) << 8) | (((uint32_t)(key)) & 0xFFu))
 
 // Connection manager (see udp_RoCE_connection_manager*.sv and Scripts/send_connection_info.py upstream)
 #define RDMA_CM_UDP_PORT                0x4321u  // UDP port of the engine CM
@@ -108,7 +154,61 @@ typedef struct {
     uint32_t rem_ip;
 } rdma_qp_info_t;
 
+// Responder: memory region (RETH virtual address = offset from base, accepted if offset + length <= length)
+typedef struct {
+    uint32_t index;         // MR index, < RDMA_N_MR
+    uint8_t  key;           // R_Key = RDMA_R_KEY(index, key)
+    uint8_t  pd;            // protection domain
+    uint32_t perms;         // RDMA_MR_REMOTE_WRITE | RDMA_MR_REMOTE_READ
+    uint64_t base;          // address of the first byte (RX buffer: byte offset)
+    uint32_t length;        // bytes
+} rdma_mr_t;
+
+// Responder: QP context written by software (the expected PSN and the MSN are kept by the hardware)
+typedef struct {
+    uint32_t qpn;           // local QPN, RDMA_FIRST_QPN to RDMA_FIRST_QPN + RDMA_N_QUEUE_PAIRS - 1
+    uint32_t rem_qpn;       // QPN of the requester (destination QPN of the ACKs)
+    uint32_t rem_ip;        // IPv4 address of the requester (the only source accepted)
+    uint32_t start_psn;     // first PSN expected
+    uint8_t  pd;            // protection domain
+} rdma_resp_qp_t;
+
+// Responder counters
+typedef struct {
+    uint32_t write_pkts;
+    uint32_t write_bytes;
+    uint32_t acks;
+    uint32_t naks;
+    uint32_t dups;
+    uint32_t drops;
+    uint32_t dma_errors;
+    uint32_t last_nak;      // [31:24] syndrome, [23:0] PSN
+    uint32_t last_nak_qpn;
+} rdma_resp_stats_t;
+
 // All the Functions returning int return SIMPLYV_ERROR in case of error and SIMPLYV_OK otherwise
+
+// Reset the engine (QPs, ARP cache, responder tables, RX/TX streams); the CSR (MAC, IP, ...) keep their values.
+// Use it with the link idle.
+int rdma_engine_reset(uintptr_t baseaddr);
+
+// Write zeros in the whole RX buffer
+int rdma_rxbuf_clear(uintptr_t baseaddr);
+
+// Read a 32-bit word of the RX buffer (byte_offset multiple of 4)
+uint32_t rdma_rxbuf_read(uintptr_t baseaddr, uint32_t byte_offset);
+
+// Responder: register a memory region
+int rdma_resp_mr(uintptr_t baseaddr, const rdma_mr_t* mr);
+
+// Responder: set up a QP context
+int rdma_resp_qp(uintptr_t baseaddr, const rdma_resp_qp_t* qp);
+
+// Responder: enable (1) or disable (0); when disabled the WRITE requests are dropped by the upstream stack
+void rdma_resp_enable(uintptr_t baseaddr, int enable);
+
+// Responder: read the counters
+void rdma_resp_stats(uintptr_t baseaddr, rdma_resp_stats_t* stats);
 
 // Set the local MAC and IPv4 addresses of the engine and clear its ARP cache
 void rdma_config(uintptr_t baseaddr, const rdma_node_t* local);
