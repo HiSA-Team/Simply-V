@@ -96,7 +96,6 @@ else # Default
         export XILINX_PART_NUMBER=xc7a50ticsg324-1L
         export XILINX_BOARD_PART=digilentinc.com:nexys-a7-50t:part0:1.3
         export XILINX_HW_DEVICE=xc7a50t_0
-        # Frequency (MHz) of the board input oscillator, fed to the clock wizard
         export BOARD_INPUT_CLK_MHZ=100.000
         export BOARD=Nexys-A7-50T-Master
         
@@ -105,12 +104,11 @@ else # Default
         export XILINX_PART_NUMBER=xc7a100tcsg324-1
         export XILINX_BOARD_PART=digilentinc.com:arty-a7-100:part0:1.0
         export XILINX_HW_DEVICE=xc7a100t_0
-        # Frequency (MHz) of the board input oscillator, fed to the clock wizard
         export BOARD_INPUT_CLK_MHZ=100.000
         export BOARD=Arty-A7-100T-Master
         
     elif [[ ${BOARD_CONFIG} == "pynq_z1" ]]; then
-        # Pynq-Z1 (Zynq-7020, PL-only). The JTAG chain also has the ARM DAP at index 0
+        # Pynq-Z1 (Zynq-7020, PL-only)
         export XILINX_PART_NUMBER=xc7z020clg400-1
         export XILINX_BOARD_PART=www.digilentinc.com:pynq-z1:part0:1.0
         export XILINX_HW_DEVICE=xc7z020_1
@@ -122,7 +120,6 @@ else # Default
         export XILINX_PART_NUMBER=xc7a100tcsg324-1
         export XILINX_BOARD_PART=digilentinc.com:nexys-a7-100t:part0:1.0
         export XILINX_HW_DEVICE=xc7a100t_0
-        # Frequency (MHz) of the board input oscillator, fed to the clock wizard
         export BOARD_INPUT_CLK_MHZ=100.000
         export BOARD=Nexys-A7-100T-Master
     fi
