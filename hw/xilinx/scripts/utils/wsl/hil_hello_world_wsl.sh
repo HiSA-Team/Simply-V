@@ -52,8 +52,9 @@ usbipd.exe unbind --busid "$BUSID" >/dev/null 2>&1
 echo "[HIL] 2/6 Release the core from reset (VIO)"
 vivado -mode batch \
     -source hw/xilinx/scripts/utils/open_hw_manager.tcl \
-    -source ci/vio_set1.tcl 2>&1 | tee "$VIO_LOG" | tail -3
-grep -q "vio_resetn set to 1" "$VIO_LOG" || fail "VIO reset (see $VIO_LOG)"
+    -source hw/xilinx/scripts/utils/vio_reset.tcl \
+    -tclargs vio_resetn 2>&1 | tee "$VIO_LOG" | tail -3
+grep -q "Setting probe vio_resetn to 1" "$VIO_LOG" || fail "VIO reset (see $VIO_LOG)"
 
 echo "[HIL] 3/6 Attach the board to WSL (usbipd)"
 usbipd.exe bind --busid "$BUSID" >/dev/null 2>&1   # needs an elevated session; no-op if already bound
