@@ -1,5 +1,5 @@
 # Author: Vincenzo Maisto <vincenzo.maisto2@unina.it>
-# Description: Utility script to toggle (1 -> 0) VIO probe
+# Description: Utility script to set a VIO probe to 1 and leave it there
 # Args:
 #  $1: VIO probe name
 
@@ -38,16 +38,6 @@ puts $hw_probe
 
 # Set 1
 set value 1
-puts "\[INFO\] Setting probe $probe_name to $value"
-set_property OUTPUT_VALUE $value [get_hw_probes $hw_probe]
-commit_hw_vio [get_hw_probes $hw_probe]
-
-# Wait 0.5s
-puts "\[INFO\] Waiting 0.5 seconds..."
-after 500
-
-# Set 0
-set value 0
 puts "\[INFO\] Setting probe $probe_name to $value"
 set_property OUTPUT_VALUE $value [get_hw_probes $hw_probe]
 commit_hw_vio [get_hw_probes $hw_probe]
