@@ -21,15 +21,11 @@ on:
   pull_request:
     branches: [ board/arty-a7 ]
   workflow_dispatch:
-    inputs:
-      board:
-        description: "Target board, as accepted by settings.sh (e.g. arty_a7_100t)"
-        required: false
 
 env:
   SIMPLYV_PROFILE: embedded
-  # Target board, as accepted by settings.sh; selectable from workflow_dispatch
-  BOARD_CONFIG: ${{ inputs.board || 'arty_a7_100t' }}
+  # Target board, as accepted by settings.sh
+  BOARD_CONFIG: arty_a7_100t
 
 jobs:
   # Placeholder for future simulation support (not implemented yet):
