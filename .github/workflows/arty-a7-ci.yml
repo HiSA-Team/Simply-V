@@ -82,7 +82,7 @@ jobs:
           make -j1 units
 
       - name: Restore cached built Xilinx IPs (avoids re-synthesizing all 34 IPs every run)
-        # Temporary workaround, until #55 provides a proper incremental build solution
+        # TODO55: temporary workaround, waiting for the IP selection feature (#55)
         id: ips_cache
         uses: actions/cache@v5
         with:
