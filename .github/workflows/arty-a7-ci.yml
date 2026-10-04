@@ -33,7 +33,7 @@ jobs:
   #   runs-on: [self-hosted, arty-a7-wsl]
   #   steps:
   #     - name: Checkout
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v6
   #       with:
   #         submodules: recursive
   #     - name: Run simulation
@@ -45,7 +45,7 @@ jobs:
     runs-on: [self-hosted, arty-a7-wsl]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
 
@@ -118,7 +118,7 @@ jobs:
           make examples
 
       - name: Upload bitstream and ELF as artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-outputs
           path: |
@@ -139,7 +139,7 @@ jobs:
     runs-on: [self-hosted, arty-a7-wsl]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Add local tools to PATH
         run: |
@@ -148,7 +148,7 @@ jobs:
           echo "$HOME/xpack-openocd-0.12.0-7/bin" >> $GITHUB_PATH
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: build-outputs
 
