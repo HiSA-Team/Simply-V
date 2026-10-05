@@ -219,3 +219,35 @@ void rdma_resp_stats(uintptr_t baseaddr, rdma_resp_stats_t* stats)
     stats->last_nak     = ioread32(baseaddr + RDMA_RESP_LAST_NAK_REG);
     stats->last_nak_qpn = ioread32(baseaddr + RDMA_RESP_LAST_NAK_QPN_REG);
 }
+
+void rdma_perf_config(uintptr_t baseaddr, uint32_t cfg)
+{
+    iowrite32(baseaddr + RDMA_PERF_CFG_REG, cfg);
+}
+
+void rdma_perf_clear(uintptr_t baseaddr)
+{
+    iowrite32(baseaddr + RDMA_CTRL_REG, RDMA_CTRL_PERF_CLEAR);
+}
+
+uint32_t rdma_perf_cycles(uintptr_t baseaddr)
+{
+    return ioread32(baseaddr + RDMA_PERF_CYCLES_REG);
+}
+
+void rdma_perf_read(uintptr_t baseaddr, rdma_perf_t* perf)
+{
+    perf->status     = ioread32(baseaddr + RDMA_PERF_STATUS_REG);
+    perf->req_count  = ioread32(baseaddr + RDMA_PERF_REQ_COUNT_REG);
+    perf->req_first  = ioread32(baseaddr + RDMA_PERF_REQ_FIRST_REG);
+    perf->req_last   = ioread32(baseaddr + RDMA_PERF_REQ_LAST_REG);
+    perf->rsp_count  = ioread32(baseaddr + RDMA_PERF_RSP_COUNT_REG);
+    perf->rsp_first  = ioread32(baseaddr + RDMA_PERF_RSP_FIRST_REG);
+    perf->rsp_last   = ioread32(baseaddr + RDMA_PERF_RSP_LAST_REG);
+    perf->nak_count  = ioread32(baseaddr + RDMA_PERF_NAK_COUNT_REG);
+    perf->lat_count  = ioread32(baseaddr + RDMA_PERF_LAT_COUNT_REG);
+    perf->lat_min    = ioread32(baseaddr + RDMA_PERF_LAT_MIN_REG);
+    perf->lat_max    = ioread32(baseaddr + RDMA_PERF_LAT_MAX_REG);
+    perf->lat_sum_lo = ioread32(baseaddr + RDMA_PERF_LAT_SUM_LO_REG);
+    perf->lat_sum_hi = ioread32(baseaddr + RDMA_PERF_LAT_SUM_HI_REG);
+}

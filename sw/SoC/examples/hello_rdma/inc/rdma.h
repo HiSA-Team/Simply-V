@@ -48,6 +48,21 @@
 #define RDMA_SPY_REM_ADDR_LO_REG        (RDMA_CSR_OFFSET + 0x070)
 #define RDMA_SPY_REM_ADDR_HI_REG        (RDMA_CSR_OFFSET + 0x074)
 #define RDMA_SPY_REM_IP_REG             (RDMA_CSR_OFFSET + 0x078)
+#define RDMA_PERF_CFG_REG               (RDMA_CSR_OFFSET + 0x080)
+#define RDMA_PERF_STATUS_REG            (RDMA_CSR_OFFSET + 0x084)
+#define RDMA_PERF_CYCLES_REG            (RDMA_CSR_OFFSET + 0x088)
+#define RDMA_PERF_REQ_COUNT_REG         (RDMA_CSR_OFFSET + 0x08C)
+#define RDMA_PERF_REQ_FIRST_REG         (RDMA_CSR_OFFSET + 0x090)
+#define RDMA_PERF_REQ_LAST_REG          (RDMA_CSR_OFFSET + 0x094)
+#define RDMA_PERF_RSP_COUNT_REG         (RDMA_CSR_OFFSET + 0x098)
+#define RDMA_PERF_RSP_FIRST_REG         (RDMA_CSR_OFFSET + 0x09C)
+#define RDMA_PERF_RSP_LAST_REG          (RDMA_CSR_OFFSET + 0x0A0)
+#define RDMA_PERF_NAK_COUNT_REG         (RDMA_CSR_OFFSET + 0x0A4)
+#define RDMA_PERF_LAT_COUNT_REG         (RDMA_CSR_OFFSET + 0x0A8)
+#define RDMA_PERF_LAT_MIN_REG           (RDMA_CSR_OFFSET + 0x0AC)
+#define RDMA_PERF_LAT_MAX_REG           (RDMA_CSR_OFFSET + 0x0B0)
+#define RDMA_PERF_LAT_SUM_LO_REG        (RDMA_CSR_OFFSET + 0x0B4)
+#define RDMA_PERF_LAT_SUM_HI_REG        (RDMA_CSR_OFFSET + 0x0B8)
 #define RDMA_INJ_BUF                    (RDMA_CSR_OFFSET + 0x100)
 #define RDMA_RESP_BASE                  (RDMA_CSR_OFFSET + 0x400)   // responder registers
 #define RDMA_RXBUF_BASE                 (RDMA_CSR_OFFSET + 0x8000)  // RX buffer, read only (byte address A at + A)
@@ -89,6 +104,7 @@
 #define RDMA_STATUS_SPY_VALID           0x1u
 #define RDMA_CTRL_ENGINE_RESET          0x8u
 #define RDMA_CTRL_RXBUF_CLEAR           0x10u
+#define RDMA_CTRL_PERF_CLEAR            0x20u
 #define RDMA_STATUS_INJ_BUSY            0x2u
 #define RDMA_STATUS_ENGINE_RESET        0x4u
 #define RDMA_STATUS_RXBUF_BUSY          0x8u
@@ -96,6 +112,13 @@
 #define RDMA_MR_REMOTE_WRITE            0x2u
 #define RDMA_MR_REMOTE_READ             0x4u
 #define RDMA_INJ_BUF_BYTES              128u
+#define RDMA_PERF_CFG_RXBUF_WRAP        0x1u   // responder addresses modulo the RX buffer size
+#define RDMA_PERF_CFG_RESPONDER         0x2u   // PERF role: responder (WRITE on RX, ACK on TX); 0: requester
+#define RDMA_PERF_STATUS_OVERFLOW       0x1u
+#define RDMA_PERF_STATUS_ORPHAN         0x2u
+
+// Engine clock (CMAC user clock): one PERF cycle is 3.103 ns
+#define RDMA_CLOCK_HZ                   322265625u
 
 // QP states (see RoCE_qp_state_module.sv)
 #define RDMA_QP_STATE_RESET             0u
@@ -186,6 +209,23 @@ typedef struct {
     uint32_t last_nak_qpn;
 } rdma_resp_stats_t;
 
+// PERF monitor snapshot (see custom_top_wrapper.sv: times in engine clock cycles, first byte to first byte)
+typedef struct {
+    uint32_t status;        // RDMA_PERF_STATUS_*, [25:16] WRITE waiting for their ACK
+    uint32_t req_count;     // WRITE packets
+    uint32_t req_first;     // cycle counter at the first WRITE
+    uint32_t req_last;      // cycle counter at the last WRITE
+    uint32_t rsp_count;     // ACK/NAK packets
+    uint32_t rsp_first;
+    uint32_t rsp_last;
+    uint32_t nak_count;
+    uint32_t lat_count;     // WRITE -> ACK/NAK pairs
+    uint32_t lat_min;
+    uint32_t lat_max;
+    uint32_t lat_sum_lo;
+    uint32_t lat_sum_hi;
+} rdma_perf_t;
+
 // All the Functions returning int return SIMPLYV_ERROR in case of error and SIMPLYV_OK otherwise
 
 // Reset the engine (QPs, ARP cache, responder tables, RX/TX streams); the CSR (MAC, IP, ...) keep their values.
@@ -221,5 +261,11 @@ int rdma_inject(uintptr_t baseaddr, const uint8_t* frame, size_t size);
 
 // Take a snapshot of the context of an engine QP
 int rdma_qp_spy(uintptr_t baseaddr, uint32_t qpn, rdma_qp_info_t* info);
+
+// PERF monitor: configuration (RDMA_PERF_CFG_*), clear, cycle counter, snapshot (read it with the traffic stopped)
+void rdma_perf_config(uintptr_t baseaddr, uint32_t cfg);
+void rdma_perf_clear(uintptr_t baseaddr);
+uint32_t rdma_perf_cycles(uintptr_t baseaddr);
+void rdma_perf_read(uintptr_t baseaddr, rdma_perf_t* perf);
 
 #endif // RDMA_H

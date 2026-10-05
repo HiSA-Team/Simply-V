@@ -31,7 +31,9 @@
 #define BOARD_B_MAC     { 0x00, 0x0A, 0x35, 0xDE, 0xAD, 0x02 }
 #define BOARD_B_IP      RDMA_IPV4(22, 1, 212, 11)
 
-// Transfers
+// Transfers. The responder of board B (RESP_ALIGNED_WRITES = 1, default) writes only payloads that start on a
+// 64-byte boundary: PEER_ADDR must be a multiple of 64, and so must RDMA_LENGTH when RDMA_N_TRANSFERS > 1 (the
+// data generator of board A writes the transfers back to back from PEER_ADDR); otherwise board B answers NAK 0x61.
 #define RDMA_LENGTH         1024u
 #define RDMA_N_TRANSFERS    2u
 // Responder of board B: memory region over the whole RX buffer, protection domain shared with the QP

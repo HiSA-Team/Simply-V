@@ -26,7 +26,7 @@
 //                0x004  CTRL                 WO  [0] clear ARP cache (pulse), [1] QP spy request (pulse), [2] inject INJ_BUF (pulse),
 //                                                [3] engine reset (pulse: engine, RX/TX streams and RX buffer logic held in reset for
 //                                                ENGINE_RST_CYCLES; the CSR keep their values; use it with the link idle),
-//                                                [4] clear the RX buffer (pulse)
+//                                                [4] clear the RX buffer (pulse), [5] clear the PERF monitor (pulse)
 //                0x008  STATUS               RO  [0] QP spy snapshot valid (cleared by a new spy request), [1] injector busy,
 //                                                [2] engine reset in progress, [3] RX buffer clear in progress
 //                0x00C  INJ_LEN              RW  [7:0] length in bytes of the frame in INJ_BUF (1 to 128)
@@ -34,8 +34,9 @@
 //                0x014  MAC_HI               RW  local MAC address [47:32] (in [15:0])
 //                0x018  IP                   RW  local IPv4 address
 //                0x01C  NET_CFG              RW  [15:0] RoCE UDP port, [18:16] PMTU, [22:20] priority tag
-//                0x020  MON_QPN              RW  [23:0] local QPN observed by the perf monitor
+//                0x020  MON_QPN              RW  [23:0] local QPN observed by the upstream perf monitor
 //                0x024  MON_CFG              RW  [3:0] latency averaging (log2), [12:8] throughput averaging (log2)
+//                                                (MON_*: upstream monitor, generated only with DEBUG=1, i.e. it reads 0 here)
 //                0x028  RXBUF_SIZE           RO  size of the RX buffer in bytes
 //                0x030  MON_XFER_TIME_AVG    RO  transfer time, average
 //                0x034  MON_XFER_TIME_MAVG   RO  transfer time, moving average
@@ -55,6 +56,27 @@
 //                0x070  SPY_REM_ADDR_LO      RO  remote virtual address [31:0]
 //                0x074  SPY_REM_ADDR_HI      RO  remote virtual address [63:32]
 //                0x078  SPY_REM_IP           RO  remote IPv4 address
+//                0x080  PERF_CFG             RW  [0] RX buffer wrap: responder addresses taken modulo RXBUF_BYTES (long
+//                                                runs over a larger MR, data overwritten), [1] PERF role: 0 requester
+//                                                (WRITE on TX, ACK/NAK on RX), 1 responder (WRITE on RX, ACK/NAK on TX)
+//                0x084  PERF_STATUS          RO  [0] overflow (more than PERF_FIFO_DEPTH WRITE waiting for their ACK),
+//                                                [1] ACK/NAK without a WRITE waiting, [25:16] WRITE waiting for their ACK
+//                0x088  PERF_CYCLES          RO  free-running clock cycle counter (clk_i)
+//                0x08C  PERF_REQ_COUNT       RO  WRITE packets (role direction) since the last clear
+//                0x090  PERF_REQ_FIRST       RO  PERF_CYCLES at the first byte of the first WRITE
+//                0x094  PERF_REQ_LAST        RO  PERF_CYCLES at the first byte of the last WRITE
+//                0x098  PERF_RSP_COUNT       RO  ACK/NAK packets (role direction) since the last clear
+//                0x09C  PERF_RSP_FIRST       RO  PERF_CYCLES at the first byte of the first ACK/NAK
+//                0x0A0  PERF_RSP_LAST        RO  PERF_CYCLES at the first byte of the last ACK/NAK
+//                0x0A4  PERF_NAK_COUNT       RO  NAK packets among them
+//                0x0A8  PERF_LAT_COUNT       RO  WRITE -> ACK/NAK pairs measured (the n-th ACK/NAK answers the n-th WRITE)
+//                0x0AC  PERF_LAT_MIN         RO  minimum WRITE -> ACK/NAK time, in clock cycles (first byte to first byte)
+//                0x0B0  PERF_LAT_MAX         RO  maximum
+//                0x0B4  PERF_LAT_SUM_LO      RO  sum [31:0]
+//                0x0B8  PERF_LAT_SUM_HI      RO  sum [63:32]
+//                PERF monitor: it observes the frames at the MAC boundary (TX after the padding, RX from the MAC), so
+//                on the requester it measures the round trip of each WRITE (network + remote responder) and on the
+//                responder the time from a WRITE in to its ACK out; read it with the traffic stopped.
 //                0x100  INJ_BUF[0..31]       RW  frame to inject: byte n of the frame (wire order) is byte (n % 4) of word (n / 4)
 //                0x400  RESP[0..255]         RW  responder registers (QP context and MR tables, counters): register at byte
 //                                                offset X of RoCE_ext_responder is at 0x400 + X; full-word writes only (wstrb ignored)
@@ -175,6 +197,21 @@ module custom_top_wrapper # (
     localparam logic [6:0]  CSR_SPY_REM_ADDR_LO    = 7'h1C; // 0x070
     localparam logic [6:0]  CSR_SPY_REM_ADDR_HI    = 7'h1D; // 0x074
     localparam logic [6:0]  CSR_SPY_REM_IP         = 7'h1E; // 0x078
+    localparam logic [6:0]  CSR_PERF_CFG           = 7'h20; // 0x080
+    localparam logic [6:0]  CSR_PERF_STATUS        = 7'h21; // 0x084
+    localparam logic [6:0]  CSR_PERF_CYCLES        = 7'h22; // 0x088
+    localparam logic [6:0]  CSR_PERF_REQ_COUNT     = 7'h23; // 0x08C
+    localparam logic [6:0]  CSR_PERF_REQ_FIRST     = 7'h24; // 0x090
+    localparam logic [6:0]  CSR_PERF_REQ_LAST      = 7'h25; // 0x094
+    localparam logic [6:0]  CSR_PERF_RSP_COUNT     = 7'h26; // 0x098
+    localparam logic [6:0]  CSR_PERF_RSP_FIRST     = 7'h27; // 0x09C
+    localparam logic [6:0]  CSR_PERF_RSP_LAST      = 7'h28; // 0x0A0
+    localparam logic [6:0]  CSR_PERF_NAK_COUNT     = 7'h29; // 0x0A4
+    localparam logic [6:0]  CSR_PERF_LAT_COUNT     = 7'h2A; // 0x0A8
+    localparam logic [6:0]  CSR_PERF_LAT_MIN       = 7'h2B; // 0x0AC
+    localparam logic [6:0]  CSR_PERF_LAT_MAX       = 7'h2C; // 0x0B0
+    localparam logic [6:0]  CSR_PERF_LAT_SUM_LO    = 7'h2D; // 0x0B4
+    localparam logic [6:0]  CSR_PERF_LAT_SUM_HI    = 7'h2E; // 0x0B8
     localparam logic [1:0]  CSR_INJ_BUF_PAGE       = 2'b10; // 0x100 - 0x17C, i.e. word indexes 7'h40 - 7'h5F
 
     // ID register value
@@ -186,10 +223,15 @@ module custom_top_wrapper # (
     localparam int unsigned CTRL_INJECT_BIT       = 2;
     localparam int unsigned CTRL_ENGINE_RST_BIT   = 3;
     localparam int unsigned CTRL_RXBUF_CLEAR_BIT  = 4;
+    localparam int unsigned CTRL_PERF_CLEAR_BIT   = 5;
     localparam int unsigned STATUS_SPY_VALID_BIT  = 0;
     localparam int unsigned STATUS_INJ_BUSY_BIT   = 1;
     localparam int unsigned STATUS_ENGINE_RST_BIT = 2;
     localparam int unsigned STATUS_RXBUF_BUSY_BIT = 3;
+
+    // PERF monitor: WRITE packets that can wait for their ACK/NAK (power of two)
+    localparam int unsigned PERF_FIFO_DEPTH       = 512;
+    localparam int unsigned PERF_PEND_W           = $clog2(PERF_FIFO_DEPTH) + 1;
 
     // Engine reset from the CSR: length in clock cycles
     localparam int unsigned ENGINE_RST_CYCLES     = 16;
@@ -266,6 +308,26 @@ module custom_top_wrapper # (
     logic [31:0] mon_retransmit;
     logic [31:0] mon_rnr_retransmit;
 
+    // PERF monitor (wrapper)
+    logic        perf_wrap_q;           // RX buffer wrap
+    logic        perf_role_q;           // 0: requester, 1: responder
+    logic        perf_clear_q;          // One-cycle pulse
+    logic [31:0] perf_cycles;
+    logic [31:0] perf_req_count;
+    logic [31:0] perf_req_first;
+    logic [31:0] perf_req_last;
+    logic [31:0] perf_rsp_count;
+    logic [31:0] perf_rsp_first;
+    logic [31:0] perf_rsp_last;
+    logic [31:0] perf_nak_count;
+    logic [31:0] perf_lat_count;
+    logic [31:0] perf_lat_min;
+    logic [31:0] perf_lat_max;
+    logic [63:0] perf_lat_sum;
+    logic        perf_err_overflow;
+    logic        perf_err_orphan;
+    logic [PERF_PEND_W-1:0] perf_pending;
+
     // QP spy request
     logic [23:0] spy_qpn_q;
     logic        spy_req_q;             // One-cycle pulse
@@ -338,6 +400,7 @@ module custom_top_wrapper # (
     logic [31:0] csr_mon_qpn;
     logic [31:0] csr_mon_cfg;
     logic [31:0] csr_spy_qpn;
+    logic [31:0] csr_perf_cfg;
 
     ////////////////////////
     //  AXI-Stream buses  //
@@ -388,6 +451,7 @@ module custom_top_wrapper # (
     assign csr_mon_qpn = {8'b0, mon_qpn_q};
     assign csr_mon_cfg = {19'b0, mon_thr_avg_po2_q, 4'b0, mon_lat_avg_po2_q};
     assign csr_spy_qpn = {8'b0, spy_qpn_q};
+    assign csr_perf_cfg = {30'b0, perf_role_q, perf_wrap_q};
 
     ///////////////////////////
     //  AXI-lite write path  //
@@ -436,6 +500,7 @@ module custom_top_wrapper # (
                 CSR_MON_QPN : write_old_value = csr_mon_qpn;
                 CSR_MON_CFG : write_old_value = csr_mon_cfg;
                 CSR_SPY_QPN : write_old_value = csr_spy_qpn;
+                CSR_PERF_CFG: write_old_value = csr_perf_cfg;
                 default     : write_old_value = '0;
             endcase
         end
@@ -461,6 +526,9 @@ module custom_top_wrapper # (
             spy_req_q         <= 1'b0;
             engine_rst_req_q  <= 1'b0;
             rxbuf_clear_q     <= 1'b0;
+            perf_wrap_q       <= 1'b0;
+            perf_role_q       <= 1'b0;
+            perf_clear_q      <= 1'b0;
             inj_len_q         <= '0;
             inj_start_q       <= 1'b0;
             for (int i = 0; i < INJ_BUF_WORDS; i++) inj_buf_q[i] <= '0;
@@ -472,6 +540,7 @@ module custom_top_wrapper # (
             inj_start_q      <= 1'b0;
             engine_rst_req_q <= 1'b0;
             rxbuf_clear_q    <= 1'b0;
+            perf_clear_q     <= 1'b0;
 
             if (write_en && write_base) begin
                 if (write_inj_buf)
@@ -485,6 +554,7 @@ module custom_top_wrapper # (
                                 inj_start_q      <= s_ctrl_axilite_wdata[CTRL_INJECT_BIT];
                                 engine_rst_req_q <= s_ctrl_axilite_wdata[CTRL_ENGINE_RST_BIT];
                                 rxbuf_clear_q    <= s_ctrl_axilite_wdata[CTRL_RXBUF_CLEAR_BIT];
+                                perf_clear_q     <= s_ctrl_axilite_wdata[CTRL_PERF_CLEAR_BIT];
                             end
                         end
                         CSR_INJ_LEN : inj_len_q               <= write_new_value[7:0];
@@ -502,6 +572,10 @@ module custom_top_wrapper # (
                             mon_thr_avg_po2_q <= write_new_value[12:8];
                         end
                         CSR_SPY_QPN : spy_qpn_q               <= write_new_value[23:0];
+                        CSR_PERF_CFG: begin
+                            perf_wrap_q <= write_new_value[0];
+                            perf_role_q <= write_new_value[1];
+                        end
                         default     : ; // Read-only or unmapped
                     endcase
                 end
@@ -605,6 +679,21 @@ module custom_top_wrapper # (
                 CSR_SPY_REM_ADDR_LO    : read_value = spy_rem_addr_q[31:0];
                 CSR_SPY_REM_ADDR_HI    : read_value = spy_rem_addr_q[63:32];
                 CSR_SPY_REM_IP         : read_value = spy_rem_ip_addr_q;
+                CSR_PERF_CFG           : read_value = csr_perf_cfg;
+                CSR_PERF_STATUS        : read_value = {6'b0, 10'(perf_pending), 14'b0, perf_err_orphan, perf_err_overflow};
+                CSR_PERF_CYCLES        : read_value = perf_cycles;
+                CSR_PERF_REQ_COUNT     : read_value = perf_req_count;
+                CSR_PERF_REQ_FIRST     : read_value = perf_req_first;
+                CSR_PERF_REQ_LAST      : read_value = perf_req_last;
+                CSR_PERF_RSP_COUNT     : read_value = perf_rsp_count;
+                CSR_PERF_RSP_FIRST     : read_value = perf_rsp_first;
+                CSR_PERF_RSP_LAST      : read_value = perf_rsp_last;
+                CSR_PERF_NAK_COUNT     : read_value = perf_nak_count;
+                CSR_PERF_LAT_COUNT     : read_value = perf_lat_count;
+                CSR_PERF_LAT_MIN       : read_value = perf_lat_min;
+                CSR_PERF_LAT_MAX       : read_value = perf_lat_max;
+                CSR_PERF_LAT_SUM_LO    : read_value = perf_lat_sum[31:0];
+                CSR_PERF_LAT_SUM_HI    : read_value = perf_lat_sum[63:32];
                 default                : read_value = '0;
             endcase
         end
@@ -885,7 +974,7 @@ module custom_top_wrapper # (
         .rst            ( engine_rst            ),
         // AXI4 slave (write channels)
         .s_axi_awid     ( resp_axi_awid         ),
-        .s_axi_awaddr   ( resp_axi_awaddr       ),
+        .s_axi_awaddr   ( perf_wrap_q ? (resp_axi_awaddr & RESP_AXI_ADDR_WIDTH'(RXBUF_BYTES - 1)) : resp_axi_awaddr ),
         .s_axi_awlen    ( resp_axi_awlen        ),
         .s_axi_awsize   ( resp_axi_awsize       ),
         .s_axi_awburst  ( resp_axi_awburst      ),
@@ -933,4 +1022,265 @@ module custom_top_wrapper # (
         .m_axis_tuser   ( m_eth_tx_axis_tuser   )
     );
 
+    // PERF monitor on the MAC side of the engine: TX after the padding (what enters the MAC), RX from the MAC
+    rdma_perf_mon #(
+        .DATA_WIDTH     ( MAC_DATA_WIDTH        ),
+        .FIFO_DEPTH     ( PERF_FIFO_DEPTH       )
+    ) perf_mon_u (
+        .clk_i          ( clk_i                 ),
+        .rst_i          ( rst                   ),
+        .clear_i        ( perf_clear_q | engine_rst ),
+        .role_i         ( perf_role_q           ),
+        .udp_port_i     ( ctrl_udp_port_q       ),
+        .tx_tdata_i     ( m_eth_tx_axis_tdata   ),
+        .tx_beat_i      ( m_eth_tx_axis_tvalid & m_eth_tx_axis_tready ),
+        .tx_tlast_i     ( m_eth_tx_axis_tlast   ),
+        .rx_tdata_i     ( s_eth_rx_axis_tdata   ),
+        .rx_beat_i      ( s_eth_rx_axis_tvalid & s_eth_rx_axis_tready ),
+        .rx_tlast_i     ( s_eth_rx_axis_tlast   ),
+        .cycles_o       ( perf_cycles           ),
+        .req_count_o    ( perf_req_count        ),
+        .req_first_o    ( perf_req_first        ),
+        .req_last_o     ( perf_req_last         ),
+        .rsp_count_o    ( perf_rsp_count        ),
+        .rsp_first_o    ( perf_rsp_first        ),
+        .rsp_last_o     ( perf_rsp_last         ),
+        .nak_count_o    ( perf_nak_count        ),
+        .lat_count_o    ( perf_lat_count        ),
+        .lat_min_o      ( perf_lat_min          ),
+        .lat_max_o      ( perf_lat_max          ),
+        .lat_sum_o      ( perf_lat_sum          ),
+        .err_overflow_o ( perf_err_overflow     ),
+        .err_orphan_o   ( perf_err_orphan       ),
+        .pending_o      ( perf_pending          )
+    );
+
 endmodule : custom_top_wrapper
+
+
+// Description: PERF monitor of custom_top_wrapper. It observes the Ethernet frames on the two streams at the MAC
+//              boundary (only their first beat, i.e. the first 64 bytes) and recognizes the RoCEv2 RDMA WRITE packets
+//              (Ethernet II, IPv4 without options, UDP to the RoCE port, BTH opcode 0x06-0x0B) and the ACK/NAK packets
+//              (BTH opcode 0x11, NAK when AETH syndrome[6:5] != 0).
+//              With the role it picks the request stream (WRITE) and the response stream (ACK/NAK):
+//                - requester (role 0): WRITE on TX, ACK/NAK on RX -> round trip of each WRITE;
+//                - responder (role 1): WRITE on RX, ACK/NAK on TX -> time from a WRITE in to its ACK out.
+//              Each WRITE pushes the cycle counter value at its first beat in a FIFO, each ACK/NAK pops it: the
+//              difference (cycles between the first byte of the WRITE and the first byte of its ACK/NAK) is
+//              accumulated in count, minimum, maximum and sum. Pairing in order assumes one ACK/NAK per WRITE, as
+//              in RC with AckReq on every packet and no loss: a PSN gap (silent drops after the NAK) breaks it.
+//              The two streams go through the same pipeline, so the latencies need no correction.
+module rdma_perf_mon #(
+    parameter int unsigned DATA_WIDTH = 512,
+    parameter int unsigned FIFO_DEPTH = 512,  // WRITE waiting for their ACK/NAK (power of two)
+    localparam int unsigned AW        = $clog2(FIFO_DEPTH)
+) (
+    input  logic                    clk_i,
+    input  logic                    rst_i,        // synchronous, active high: everything, cycle counter included
+    input  logic                    clear_i,      // synchronous, active high: statistics and stream state
+    input  logic                    role_i,       // 0: requester, 1: responder
+    input  logic [15:0]             udp_port_i,   // RoCE UDP port
+    // TX stream toward the MAC (observed)
+    input  logic [DATA_WIDTH-1:0]   tx_tdata_i,
+    input  logic                    tx_beat_i,    // tvalid & tready
+    input  logic                    tx_tlast_i,
+    // RX stream from the MAC (observed)
+    input  logic [DATA_WIDTH-1:0]   rx_tdata_i,
+    input  logic                    rx_beat_i,    // tvalid & tready
+    input  logic                    rx_tlast_i,
+    // Results
+    output logic [31:0]             cycles_o,
+    output logic [31:0]             req_count_o,
+    output logic [31:0]             req_first_o,
+    output logic [31:0]             req_last_o,
+    output logic [31:0]             rsp_count_o,
+    output logic [31:0]             rsp_first_o,
+    output logic [31:0]             rsp_last_o,
+    output logic [31:0]             nak_count_o,
+    output logic [31:0]             lat_count_o,
+    output logic [31:0]             lat_min_o,
+    output logic [31:0]             lat_max_o,
+    output logic [63:0]             lat_sum_o,
+    output logic                    err_overflow_o,
+    output logic                    err_orphan_o,
+    output logic [AW:0]             pending_o
+);
+
+    // Frame fields in the first beat (byte n of the frame is tdata[8n +: 8])
+    localparam int unsigned B_ETH_TYPE = 12;  // 2 bytes
+    localparam int unsigned B_IP_PROTO = 23;
+    localparam int unsigned B_UDP_DST  = 36;  // 2 bytes
+    localparam int unsigned B_BTH_OP   = 42;
+    localparam int unsigned B_AETH_SYN = 54;
+
+    // Free-running cycle counter
+    logic [31:0] cycles_q;
+    always_ff @(posedge clk_i) begin
+        if (rst_i) cycles_q <= '0;
+        else       cycles_q <= cycles_q + 1'b1;
+    end
+    assign cycles_o = cycles_q;
+
+    // Stage 0: start of frame on each stream
+    logic tx_sof_q, rx_sof_q;
+    always_ff @(posedge clk_i) begin
+        if (rst_i || clear_i) begin
+            tx_sof_q <= 1'b1;
+            rx_sof_q <= 1'b1;
+        end
+        else begin
+            if (tx_beat_i) tx_sof_q <= tx_tlast_i;
+            if (rx_beat_i) rx_sof_q <= rx_tlast_i;
+        end
+    end
+
+    // Stage 1: fields of the first beat and its timestamp
+    typedef struct packed {
+        logic        first;
+        logic [15:0] eth_type;
+        logic [7:0]  ip_proto;
+        logic [15:0] udp_dst;
+        logic [7:0]  opcode;
+        logic [7:0]  syndrome;
+        logic [31:0] ts;
+    } hdr_t;
+    hdr_t tx_s1_q, rx_s1_q;
+
+    function automatic hdr_t take_hdr(input logic beat_first, input logic [DATA_WIDTH-1:0] d, input logic [31:0] ts);
+        hdr_t h;
+        h.first    = beat_first;
+        h.eth_type = {d[8*B_ETH_TYPE +: 8], d[8*(B_ETH_TYPE+1) +: 8]};
+        h.ip_proto = d[8*B_IP_PROTO +: 8];
+        h.udp_dst  = {d[8*B_UDP_DST +: 8], d[8*(B_UDP_DST+1) +: 8]};
+        h.opcode   = d[8*B_BTH_OP +: 8];
+        h.syndrome = d[8*B_AETH_SYN +: 8];
+        h.ts       = ts;
+        return h;
+    endfunction
+
+    always_ff @(posedge clk_i) begin
+        if (rst_i || clear_i) begin
+            tx_s1_q.first <= 1'b0;
+            rx_s1_q.first <= 1'b0;
+        end
+        else begin
+            tx_s1_q <= take_hdr(tx_beat_i && tx_sof_q, tx_tdata_i, cycles_q);
+            rx_s1_q <= take_hdr(rx_beat_i && rx_sof_q, rx_tdata_i, cycles_q);
+        end
+    end
+
+    // Stage 2: classification
+    typedef struct packed {
+        logic        write;
+        logic        ack;     // ACK or NAK
+        logic        nak;
+        logic [31:0] ts;
+    } cls_t;
+    cls_t tx_s2_q, rx_s2_q;
+
+    function automatic cls_t classify(input hdr_t h, input logic [15:0] port);
+        cls_t c;
+        logic roce;
+        roce    = h.first && (h.eth_type == 16'h0800) && (h.ip_proto == 8'd17) && (h.udp_dst == port);
+        c.write = roce && (h.opcode >= 8'h06) && (h.opcode <= 8'h0B);
+        c.ack   = roce && (h.opcode == 8'h11);
+        c.nak   = roce && (h.opcode == 8'h11) && (h.syndrome[6:5] != 2'b00);
+        c.ts    = h.ts;
+        return c;
+    endfunction
+
+    always_ff @(posedge clk_i) begin
+        if (rst_i || clear_i) begin
+            tx_s2_q <= '0;
+            rx_s2_q <= '0;
+        end
+        else begin
+            tx_s2_q <= classify(tx_s1_q, udp_port_i);
+            rx_s2_q <= classify(rx_s1_q, udp_port_i);
+        end
+    end
+
+    // Stage 3: request/response events by role, counters, timestamp FIFO
+    logic        req_ev, rsp_ev, rsp_nak;
+    logic [31:0] req_ts, rsp_ts;
+    assign req_ev  = role_i ? rx_s2_q.write : tx_s2_q.write;
+    assign req_ts  = role_i ? rx_s2_q.ts    : tx_s2_q.ts;
+    assign rsp_ev  = role_i ? tx_s2_q.ack   : rx_s2_q.ack;
+    assign rsp_nak = role_i ? tx_s2_q.nak   : rx_s2_q.nak;
+    assign rsp_ts  = role_i ? tx_s2_q.ts    : rx_s2_q.ts;
+
+    logic [31:0] fifo_mem [FIFO_DEPTH];
+    logic [AW:0] wr_ptr_q, rd_ptr_q;
+    logic        fifo_full, fifo_empty, push, pop;
+    logic [31:0] fifo_rd_q;
+    assign fifo_empty = (wr_ptr_q == rd_ptr_q);
+    assign fifo_full  = (wr_ptr_q[AW] != rd_ptr_q[AW]) && (wr_ptr_q[AW-1:0] == rd_ptr_q[AW-1:0]);
+    assign push       = req_ev && !fifo_full;
+    assign pop        = rsp_ev && !fifo_empty;
+    assign pending_o  = wr_ptr_q - rd_ptr_q;
+
+    // Simple dual-port RAM, synchronous read (a WRITE and its ACK never fall in the same cycle)
+    always_ff @(posedge clk_i) begin
+        if (push) fifo_mem[wr_ptr_q[AW-1:0]] <= req_ts;
+        if (pop)  fifo_rd_q <= fifo_mem[rd_ptr_q[AW-1:0]];
+    end
+
+    // Stage 4: latency of the popped pair; stage 5: statistics
+    logic        s4_valid_q, s5_valid_q;
+    logic [31:0] s4_rsp_ts_q, s5_lat_q;
+
+    always_ff @(posedge clk_i) begin
+        if (rst_i || clear_i) begin
+            wr_ptr_q       <= '0;
+            rd_ptr_q       <= '0;
+            req_count_o    <= '0;
+            req_first_o    <= '0;
+            req_last_o     <= '0;
+            rsp_count_o    <= '0;
+            rsp_first_o    <= '0;
+            rsp_last_o     <= '0;
+            nak_count_o    <= '0;
+            err_overflow_o <= 1'b0;
+            err_orphan_o   <= 1'b0;
+            s4_valid_q     <= 1'b0;
+            s5_valid_q     <= 1'b0;
+            lat_count_o    <= '0;
+            lat_min_o      <= '1;
+            lat_max_o      <= '0;
+            lat_sum_o      <= '0;
+        end
+        else begin
+            // Requests
+            if (req_ev) begin
+                req_count_o <= req_count_o + 1'b1;
+                req_last_o  <= req_ts;
+                if (req_count_o == '0) req_first_o <= req_ts;
+                if (fifo_full) err_overflow_o <= 1'b1;
+            end
+            if (push) wr_ptr_q <= wr_ptr_q + 1'b1;
+
+            // Responses
+            if (rsp_ev) begin
+                rsp_count_o <= rsp_count_o + 1'b1;
+                rsp_last_o  <= rsp_ts;
+                if (rsp_count_o == '0) rsp_first_o <= rsp_ts;
+                if (rsp_nak) nak_count_o <= nak_count_o + 1'b1;
+                if (fifo_empty) err_orphan_o <= 1'b1;
+            end
+            if (pop) rd_ptr_q <= rd_ptr_q + 1'b1;
+
+            // Latency pipeline
+            s4_valid_q  <= pop;
+            s4_rsp_ts_q <= rsp_ts;
+            s5_valid_q  <= s4_valid_q;
+            s5_lat_q    <= s4_rsp_ts_q - fifo_rd_q;
+            if (s5_valid_q) begin
+                lat_count_o <= lat_count_o + 1'b1;
+                lat_sum_o   <= lat_sum_o + 64'(s5_lat_q);
+                if (s5_lat_q < lat_min_o) lat_min_o <= s5_lat_q;
+                if (s5_lat_q > lat_max_o) lat_max_o <= s5_lat_q;
+            end
+        end
+    end
+
+endmodule : rdma_perf_mon
