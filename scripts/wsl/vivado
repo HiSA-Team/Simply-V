@@ -18,11 +18,9 @@
 #        cmd.exe /c "subst X: \\\\wsl.localhost\\<distro>\\home\\<user>\\<project-dir>"
 #      Adjust WIN_DRIVE below if you use a letter other than X:.
 #
-# Known limitation: this wrapper and Vivado's own hw_server (used for
-# programming/debugging the board) cannot both hold the JTAG interface at
-# the same time as OpenOCD when using a WinUSB driver (via Zadig) or
-# usbipd-win. See the project WSL_SETUP.md for details on switching between
-# them.
+# Known limitation: while the board is attached to WSL with usbipd-win (for
+# OpenOCD), Vivado's hw_server (used for programming the board) cannot see
+# it. See the project WSL_SETUP.md for details on switching between them.
 # =============================================================================
 
 # --- Adjust these three lines for your machine ---

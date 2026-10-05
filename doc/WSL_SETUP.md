@@ -1,108 +1,12 @@
 # Running Simply-V from WSL (Windows Subsystem for Linux)
 
 This document describes the extra configuration needed to build and run
-Simply-V on the Arty-A7 board when `make` runs inside WSL (Ubuntu) but
-Vivado is only installed on the Windows side. It complements the standard
-Linux setup — the steps below assume you already have a working WSL/Ubuntu
-distribution.
+Simply-V when `make` runs inside WSL (Ubuntu) but Vivado is only installed
+on the Windows side. It complements the standard Linux setup: the steps below
+assume you already have a working WSL/Ubuntu distribution, with the RISC-V
+toolchain and OpenOCD installed as described in [`sw/doc`](../sw/doc).
 
-## 1. Bender
-
-The version of Bender that gets installed automatically by the fetch
-scripts (`bender-init`, via the fallback for unrecognized platforms) is
-**0.31.0** on Ubuntu 24.04/26.04. This version has a real bug: `bender
-script flist` (and `flist-plus`) silently returns an empty file list
-instead of erroring out, which makes RTL fetch for some units (`custom_clint`,
-`custom_rv32_dbg_bscane`, `custom_rv64_dbg_bscane`, `custom_rv_plic`, and
-others) appear to succeed while actually producing an empty `rtl/`
-directory.
-
-**Fix:** install Bender 0.32.1 explicitly, which does not have this bug:
-
-```bash
-curl --proto '=https' --tlsv1.2 -LsSf \
-  https://github.com/pulp-platform/bender/releases/download/v0.32.1/bender-installer.sh | sh
-source ~/.bashrc
-bender --version   # should print 0.32.1
-```
-
-Some `fetch_sources.sh` scripts (and, for `custom_rv_plic`, a nested
-Makefile inside the externally-cloned `opentitan_peripherals` repo) try to
-re-download their own copy of Bender via a `curl ... | bash` one-liner,
-which fails outright on this Ubuntu version. Where this caused a real,
-silent fetch failure, the download step was patched in-repo to copy the
-already-installed Bender binary instead (see `hw/units/custom_clint`,
-`custom_rv32_dbg_bscane`, `custom_rv64_dbg_bscane`, `custom_rv_plic` —
-look for `cp $(which bender) ./bender` in their `fetch_sources.sh`).
-The CI workflow additionally patches any remaining occurrence automatically
-before running `make units` (see `.github/workflows/arty-a7-ci.yml`).
-
-## 2. RISC-V toolchain
-
-Install via apt (the packaged toolchain uses the `riscv64-unknown-elf-`
-prefix, while the project's build scripts expect `riscv32-unknown-elf-`):
-
-```bash
-sudo apt install -y gcc-riscv64-unknown-elf gdb-multiarch
-```
-
-Create shims so the expected command names resolve to the installed tools:
-
-```bash
-mkdir -p ~/bin
-cat > ~/bin/riscv32-unknown-elf-gdb << 'EOF'
-#!/bin/bash
-exec gdb-multiarch "$@"
-EOF
-chmod +x ~/bin/riscv32-unknown-elf-gdb
-
-for tool in gcc g++ ar as objcopy objdump nm ranlib strip; do
-    cat > ~/bin/riscv32-unknown-elf-${tool} << EOF
-#!/bin/bash
-exec riscv64-unknown-elf-${tool} "\$@"
-EOF
-    chmod +x ~/bin/riscv32-unknown-elf-${tool}
-done
-```
-
-**Important:** `riscv64-unknown-elf-ld` defaults to 64-bit ELF emulation.
-When linking 32-bit object files (as this project's `embedded` profile
-does), it must be told explicitly to use the 32-bit emulation, or linking
-fails with `ABI is incompatible with that of the selected emulation`:
-
-```bash
-cat > ~/bin/riscv32-unknown-elf-ld << 'EOF'
-#!/bin/bash
-exec riscv64-unknown-elf-ld -m elf32lriscv "$@"
-EOF
-chmod +x ~/bin/riscv32-unknown-elf-ld
-```
-
-Add `~/bin` to `PATH` (`echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc`)
-and run `hash -r` after creating/editing any shim, since bash caches
-resolved command paths.
-
-## 3. OpenOCD
-
-The OpenOCD package from Ubuntu's own repositories
-(`sudo apt install openocd`) is built **without Telnet support**, and this
-project's `openocd.cfg` uses the `telnet port disabled` command, which
-does not exist in that build — OpenOCD exits immediately with `invalid
-command name "telnet"`.
-
-**Fix:** install the xPack OpenOCD build instead (same one used on
-Windows), which does include Telnet support:
-
-```bash
-cd ~
-curl -LO https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v0.12.0-7/xpack-openocd-0.12.0-7-linux-x64.tar.gz
-tar xzf xpack-openocd-0.12.0-7-linux-x64.tar.gz
-echo 'export PATH="$HOME/xpack-openocd-0.12.0-7/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-openocd --version   # should print the xPack build, not the distro one
-```
-
-## 4. Vivado bridge (WSL → Windows)
+## 1. Vivado bridge (WSL → Windows)
 
 Vivado only runs on Windows. `make` (running in WSL) invokes `vivado`
 directly, so a wrapper script named `vivado` must exist in your WSL
@@ -136,121 +40,77 @@ This wrapper solves three separate problems:
   paths. Backslashes are only needed for the `pushd` call used to set the
   working directory for `cmd.exe` itself.
 
-## 5. Symbolic links
+## 2. WSL resources
 
-Some `fetch_sources.sh` scripts create symbolic links (e.g.
-`hw/xilinx/ips/common/*/config.tcl -> ../tcl/custom_config.tcl`,
-`hw/units/custom_cv64a6/rtl/cv64a6_config_pkg.sv -> ../../assets/...`).
-These resolve fine within WSL itself, but Vivado (running on Windows,
-accessing the files through the WSL↔Windows bridge) cannot follow them
-and fails with `couldn't read file ... no such file or directory`.
+Vivado is memory hungry. Increase the resources given to WSL in the
+`.wslconfig` file in your Windows user folder (`%UserProfile%\.wslconfig`),
+namely the processors, the memory and the swap space. A swap of around 10 GB
+is standard for Vivado on Linux, and it applies here as well:
 
-Resolve all symlinks into real file copies before running `make ips`:
-
-```bash
-find . -type l | while read -r link; do
-    target=$(readlink -f "$link")
-    if [ -f "$target" ]; then
-        rm "$link"
-        cp "$target" "$link"
-    fi
-done
+```ini
+[wsl2]
+memory=<N>GB
+processors=<N>
+swap=10GB
 ```
 
-The CI workflow runs this automatically as a dedicated step. Note that
-running `git checkout -- <path>` afterwards will restore the symlinks
-(and can make `make` think the corresponding IPs need to be rebuilt from
-scratch) — avoid discarding changes under `hw/` this way once you've
-resolved the links for a WSL-based build.
+Then run `wsl --shutdown` from PowerShell and restart WSL to apply it.
 
-## 6. Programming the board and OpenOCD/JTAG access
+## 3. Programming the board and OpenOCD/JTAG access
 
-`make program_bitstream` (via Vivado/hw_server) and `openocd_run` both
-need exclusive access to the same USB JTAG interface on the board, but
-they require *different* Windows USB drivers:
-
-- Vivado/hw_server needs the standard Digilent driver.
-- OpenOCD needs a libusb-compatible driver (WinUSB), normally installed
-  by switching the driver for "Interface 0" of the board's USB device
-  with [Zadig](https://zadig.akeo.ie/).
-
-Two approaches, both requiring a manual switch between the two drivers:
-
-**Option A — Zadig (driver swap on the Windows side).**
-Use Zadig to set Interface 0's driver to WinUSB before running
-`openocd_run`, and switch it back to the default Digilent driver (e.g. by
-disabling/re-enabling the device in Device Manager, or reinstalling the
-driver) before using Vivado/hw_server again.
-
-**Option B — usbipd-win (attach the USB device to WSL directly).**
-[usbipd-win](https://github.com/dorssel/usbipd-win) shares a Windows USB
-device with the WSL2 kernel, so OpenOCD running inside WSL can access it
-as a native Linux USB device — no Zadig/WinUSB juggling needed for the
-WSL side.
+`make program_bitstream` (Vivado/hw_server, which runs on Windows) and
+`openocd_run` (OpenOCD, which runs inside WSL) both need the USB JTAG
+interface of the board. [usbipd-win](https://github.com/dorssel/usbipd-win)
+shares a Windows USB device with the WSL2 kernel, so OpenOCD running inside
+WSL can access it as a native Linux USB device.
 
 ```powershell
 # One-time setup (elevated PowerShell):
 winget install usbipd
-usbipd list                     # find the BUSID for the Digilent device
+usbipd list                     # find the BUSID of the board
 usbipd bind --busid <BUSID>     # one-time, persists across reboots
 
 # Every session:
 usbipd attach --wsl --busid <BUSID>
 ```
 
-Inside WSL, confirm the device is visible: `lsusb` should list an FTDI
-device (`0403:6010`).
+Inside WSL, confirm the device is visible: `lsusb` should list an FTDI device
+(for example `0403:6010`).
 
-**Caveat:** while a device is attached to WSL via `usbipd`, Windows
-(and therefore Vivado/hw_server) cannot see it. Before programming the
-board with Vivado, detach it first:
+**Caveat:** while a device is attached to WSL via `usbipd`, Windows (and
+therefore Vivado/hw_server) cannot see it. Before programming the board with
+Vivado, detach it first:
 
 ```powershell
 usbipd detach --busid <BUSID>
 ```
 
-then re-attach it (`usbipd attach --wsl --busid <BUSID>`) before using
-OpenOCD again. In practice this still means alternating between the two
-tools, similar to Option A, but without needing to touch Zadig each time.
+If Vivado still cannot see the board, release it completely with
+`usbipd unbind --busid <BUSID>` (elevated PowerShell), and run `usbipd bind`
+again before the next attach. Then re-attach the device
+(`usbipd attach --wsl --busid <BUSID>`) before using OpenOCD again.
 
-## 7. Typical workflow
-
-```bash
-source settings.sh embedded arty_a7_100t
-make config
-cd hw/units && make -j1 units   # -j1 avoids a Windows/WSL race condition
-                                 # seen with the default parallel build
-cd ../xilinx && make ips
-make bitstream
-make program_bitstream          # requires the Digilent driver (see §6)
-# switch USB access to OpenOCD (§6), then in one terminal:
-openocd -f scripts/load_binary/openocd.cfg
-# and in another:
-make gdb_run EXAMPLE=hello_world
-```
-
-## 8. Running the HIL test (board connected to the runner machine)
-
-`ci/hil_hello_world_wsl.sh` programs the board, releases the core from reset,
-attaches the USB device to WSL, runs hello_world through OpenOCD/GDB and
-checks the UART. The CI `hil_test` job simply calls it, and it can be run by
-hand from the repository root (after `source settings.sh ...`, `make config`
-and with the bitstream and `hello_world.elf` already built):
+## 4. Typical workflow
 
 ```bash
-bash ci/hil_hello_world_wsl.sh        # optional argument: usbipd BUSID, default 1-4
+source settings.sh embedded <board_config>
+make hw MAX_VIVADO_INSTANCES=<N>
+make -C hw/xilinx program_bitstream   # the board must be visible to Windows (see §3)
 ```
 
-Prerequisites on the machine that runs it:
+`make hw` runs the units and IP flows and then builds the bitstream.
+`MAX_VIVADO_INSTANCES` limits the number of parallel Vivado instances: choose
+a value adequate to the CPUs and memory given to WSL (not 1).
 
-- **usbipd-win** installed, with the right BUSID (`usbipd list`).
-  `usbipd bind` / `unbind` need an **elevated** session. The script calls
-  them, but from a non-elevated runner they fail: in that case bind the
-  device by hand once (`usbipd bind --busid 1-4`, elevated PowerShell) and
-  unbind it by hand before using Vivado again.
-- **xPack OpenOCD** first in `PATH` (section 3). The script refuses to run
-  with the Ubuntu package.
-- **Serial port access without sudo**: `sudo usermod -aG dialout $USER`, then
-  `wsl --shutdown` from PowerShell and restart WSL (and the runner).
-- The board must not be attached to WSL when Vivado programs it: the script
-  detaches it first, and again in its cleanup step.
+To run software, follow [`hw/xilinx/doc/PROGRAM_LOADING.md`](../hw/xilinx/doc/PROGRAM_LOADING.md).
+With the board attached to WSL (see §3), in one terminal:
+
+```bash
+make -C hw/xilinx openocd_run
+```
+
+and in another terminal:
+
+```bash
+make -C hw/xilinx gdb_run EXAMPLE=hello_world
+```
