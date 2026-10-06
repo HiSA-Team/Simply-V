@@ -6,10 +6,19 @@
 //                - the Ethernet AXI-Stream TX/RX pair toward the MAC (e.g. the CMAC).
 //              The RDMA WRITE requests received from the network are written by the responder into a dedicated
 //              receive buffer (RX buffer, block RAM, RXBUF_BYTES), readable by the processor through the CSR.
+//              The transmit buffer (TX buffer, block RAM, TXBUF_BYTES) holds the payload of the messages to send:
+//              the processor writes it through the CSR, the requester data source (RoCE_ext_tx_source) reads it
+//              through an AXI4 read port of 512 bits.
+//              TX data source of each QP (TX_CFG[3:0]): the internal data generator of the engine (default, started by
+//              the CM START requests) or the work request / payload ports of the engine, fed by RoCE_ext_tx_source:
+//              software posts one descriptor per RDMA WRITE (TX_DESC_*: TX buffer address, length, QP, remote
+//              address, immediate), the data source reads the payload from the TX buffer and hands the work request
+//              and the payload to the QP, in posting order.
 //              The responder tables (QP context, memory regions) are written by software at initialization.
 //
 //              Clock domain: a single clock (clk_i/rst_ni) drives the CSR, the RoCE engine (clk_mac, clk_stack
-//              and clk_roce_eng of the engine), the RX buffer and the Ethernet AXI-Stream, i.e. the CMAC user clock.
+//              and clk_roce_eng of the engine), the RX and TX buffers and the Ethernet AXI-Stream, i.e. the CMAC user
+//              clock.
 //
 //              NOTE: as-is, the engine has no memory interface: the payload comes from an internal data generator,
 //              the retransmission buffer is an internal RAM, and QPs are opened/closed/started through connection
@@ -38,6 +47,7 @@
 //                0x024  MON_CFG              RW  [3:0] latency averaging (log2), [12:8] throughput averaging (log2)
 //                                                (MON_*: upstream monitor, generated only with DEBUG=1, i.e. it reads 0 here)
 //                0x028  RXBUF_SIZE           RO  size of the RX buffer in bytes
+//                0x02C  TXBUF_SIZE           RO  size of the TX buffer in bytes
 //                0x030  MON_XFER_TIME_AVG    RO  transfer time, average
 //                0x034  MON_XFER_TIME_MAVG   RO  transfer time, moving average
 //                0x038  MON_LATENCY_AVG      RO  latency, average
@@ -74,14 +84,40 @@
 //                0x0B0  PERF_LAT_MAX         RO  maximum
 //                0x0B4  PERF_LAT_SUM_LO      RO  sum [31:0]
 //                0x0B8  PERF_LAT_SUM_HI      RO  sum [63:32]
+//                0x0C0  TX_CFG               RW  [N_QUEUE_PAIRS-1:0] TX data source of QP 256 + i (bit i): 0 data
+//                                                generator (reset), 1 TX data source ports; change it only while the QP
+//                                                has no transfer in progress (the source left out is held, not reset);
+//                                                [8] TX buffer read back: the reads of the buffer window return the TX
+//                                                buffer instead of the RX buffer (to check what was written)
+//                0x0C4  TX_DESC_LOCAL        RW  descriptor: byte address of the payload in the TX buffer (multiple of 64)
+//                0x0C8  TX_DESC_LEN          RW  descriptor: message length in bytes, multiple of 4 (4 to TXBUF_BYTES;
+//                                                the upstream requester sends no pad: the last len % 4 bytes would be lost)
+//                0x0CC  TX_DESC_REMOTE_LO    RW  descriptor: remote address [31:0], offset from the base VA of the QP
+//                0x0D0  TX_DESC_REMOTE_HI    RW  descriptor: remote address [63:32]
+//                0x0D4  TX_DESC_IMM          RW  descriptor: immediate data
+//                0x0D8  TX_DESC_POST         WO  [23:0] local QPN, [24] RDMA WRITE with immediate: a write posts the
+//                                                descriptor (TX_DESC_* above as they are; they keep their values)
+//                0x0DC  TX_STATUS            RO  [7:0] free descriptor slots, [8] busy (descriptors or data inside the
+//                                                data source), [18:16] last error: 1 QPN out of range, 2 QP on the data
+//                                                generator, 3 length 0, not a multiple of 4 or outside the TX buffer,
+//                                                4 TX buffer address
+//                                                not a multiple of 64, 5 no free slot, 6 TX buffer read error
+//                0x0E0  TX_POSTED            RO  descriptors accepted (errors 1 to 5: not accepted)
+//                0x0E4  TX_CONSUMED          RO  messages whose payload has been read from the TX buffer (its area can
+//                                                be written again)
+//                0x0E8  TX_ERRORS            RO  descriptors refused and messages with a read error
+//                                                (TX_*: cleared by the engine reset)
 //                PERF monitor: it observes the frames at the MAC boundary (TX after the padding, RX from the MAC), so
 //                on the requester it measures the round trip of each WRITE (network + remote responder) and on the
 //                responder the time from a WRITE in to its ACK out; read it with the traffic stopped.
 //                0x100  INJ_BUF[0..31]       RW  frame to inject: byte n of the frame (wire order) is byte (n % 4) of word (n / 4)
 //                0x400  RESP[0..255]         RW  responder registers (QP context and MR tables, counters): register at byte
 //                                                offset X of RoCE_ext_responder is at 0x400 + X; full-word writes only (wstrb ignored)
-//                0x8000 RXBUF                RO  RX buffer, byte address A of the responder AXI master is at 0x8000 + A
-//                                                (one cycle more of read latency)
+//                0x8000 RXBUF / TXBUF        RW  buffer window (one cycle more of read latency):
+//                                                - read: RX buffer, byte address A of the responder AXI master is at
+//                                                  0x8000 + A (TX buffer instead if TX_CFG[8] = 1);
+//                                                - write: TX buffer, byte A of the buffer is at 0x8000 + A (wstrb
+//                                                  honoured; the RX buffer is written only by the responder).
 //              Unmapped offsets read as zero and ignore writes (the response is always OKAY).
 //              The RW reset values are the ones of the upstream example design, so the engine is usable right after
 //              reset, without any software configuration.
@@ -101,13 +137,15 @@ module custom_top_wrapper # (
     parameter int unsigned  MAC_DATA_WIDTH                   = 512,
     // Data width of each QP channel (128 bits at 322 MHz is about 40 Gbps per QP, as in the upstream 100G example)
     parameter int unsigned  QP_CH_DATA_WIDTH                 = 128,
-    // Number of queue pairs (power of two, at least 2)
+    // Number of queue pairs (power of two, at least 2, at most 8: one TX_CFG bit each)
     parameter int unsigned  N_QUEUE_PAIRS                    = 4,
     // Retransmission buffer size (2**N bytes)
     parameter int unsigned  RETRANSMISSION_ADDR_BUFFER_WIDTH = 21,
     // Responder: number of memory regions and RX buffer size in bytes (at most 32 KB, the CSR window)
     parameter int unsigned  N_MR                             = 16,
     parameter int unsigned  RXBUF_BYTES                      = 32768,
+    // TX buffer size in bytes (at most 32 KB, the CSR window)
+    parameter int unsigned  TXBUF_BYTES                      = 32768,
 
     // AXI-lite slave parameters
     localparam int unsigned LOCAL_AXILITE_DATA_WIDTH         = 32,
@@ -179,6 +217,7 @@ module custom_top_wrapper # (
     localparam logic [6:0]  CSR_MON_QPN            = 7'h08; // 0x020
     localparam logic [6:0]  CSR_MON_CFG            = 7'h09; // 0x024
     localparam logic [6:0]  CSR_RXBUF_SIZE         = 7'h0A; // 0x028
+    localparam logic [6:0]  CSR_TXBUF_SIZE         = 7'h0B; // 0x02C
     localparam logic [6:0]  CSR_MON_XFER_TIME_AVG  = 7'h0C; // 0x030
     localparam logic [6:0]  CSR_MON_XFER_TIME_MAVG = 7'h0D; // 0x034
     localparam logic [6:0]  CSR_MON_LATENCY_AVG    = 7'h0E; // 0x038
@@ -212,6 +251,17 @@ module custom_top_wrapper # (
     localparam logic [6:0]  CSR_PERF_LAT_MAX       = 7'h2C; // 0x0B0
     localparam logic [6:0]  CSR_PERF_LAT_SUM_LO    = 7'h2D; // 0x0B4
     localparam logic [6:0]  CSR_PERF_LAT_SUM_HI    = 7'h2E; // 0x0B8
+    localparam logic [6:0]  CSR_TX_CFG             = 7'h30; // 0x0C0
+    localparam logic [6:0]  CSR_TX_DESC_LOCAL      = 7'h31; // 0x0C4
+    localparam logic [6:0]  CSR_TX_DESC_LEN        = 7'h32; // 0x0C8
+    localparam logic [6:0]  CSR_TX_DESC_REMOTE_LO  = 7'h33; // 0x0CC
+    localparam logic [6:0]  CSR_TX_DESC_REMOTE_HI  = 7'h34; // 0x0D0
+    localparam logic [6:0]  CSR_TX_DESC_IMM        = 7'h35; // 0x0D4
+    localparam logic [6:0]  CSR_TX_DESC_POST       = 7'h36; // 0x0D8
+    localparam logic [6:0]  CSR_TX_STATUS          = 7'h37; // 0x0DC
+    localparam logic [6:0]  CSR_TX_POSTED          = 7'h38; // 0x0E0
+    localparam logic [6:0]  CSR_TX_CONSUMED        = 7'h39; // 0x0E4
+    localparam logic [6:0]  CSR_TX_ERRORS          = 7'h3A; // 0x0E8
     localparam logic [1:0]  CSR_INJ_BUF_PAGE       = 2'b10; // 0x100 - 0x17C, i.e. word indexes 7'h40 - 7'h5F
 
     // ID register value
@@ -228,6 +278,10 @@ module custom_top_wrapper # (
     localparam int unsigned STATUS_INJ_BUSY_BIT   = 1;
     localparam int unsigned STATUS_ENGINE_RST_BIT = 2;
     localparam int unsigned STATUS_RXBUF_BUSY_BIT = 3;
+    localparam int unsigned TX_CFG_TXBUF_READ_BIT = 8;
+    localparam int unsigned TX_POST_IMM_BIT       = 24;
+    localparam int unsigned TX_STATUS_BUSY_BIT    = 8;
+    localparam int unsigned TX_STATUS_ERR_LSB     = 16;
 
     // PERF monitor: WRITE packets that can wait for their ACK/NAK (power of two)
     localparam int unsigned PERF_FIFO_DEPTH       = 512;
@@ -240,6 +294,14 @@ module custom_top_wrapper # (
     // Responder AXI master toward the RX buffer
     localparam int unsigned RESP_AXI_ADDR_WIDTH   = 32;
     localparam int unsigned RESP_AXI_ID_WIDTH     = 4;
+
+    // AXI4 read port of the TX buffer (toward the requester data source)
+    localparam int unsigned TXBUF_AXI_ADDR_WIDTH  = 32;
+    localparam int unsigned TXBUF_AXI_ID_WIDTH    = 4;
+
+    // Requester data source: descriptors waiting (power of two), AXI bursts read ahead
+    localparam int unsigned TX_DESC_FIFO_DEPTH    = 16;
+    localparam int unsigned TX_READ_AHEAD         = 4;
 
     // Injector buffer: 32 words (128 bytes), sent as INJ_BEATS beats of MAC_DATA_WIDTH bits
     localparam int unsigned INJ_BUF_WORDS  = 32;
@@ -284,8 +346,10 @@ module custom_top_wrapper # (
     logic        read_inj_buf;
     logic        read_base;
     logic        read_resp;
-    logic        read_rxbuf;
-    logic        rxbuf_rd_pending_q;    // RX buffer read: data one cycle after the address
+    logic        write_buf_win;         // buffer window (0x8000 - 0xFFFF): writes go to the TX buffer
+    logic        read_buf_win;          // buffer window: reads come from the RX buffer, or the TX buffer (TX_CFG[8])
+    logic        buf_rd_pending_q;      // buffer read: data one cycle after the address
+    logic        buf_rd_tx_q;           // the pending buffer read is from the TX buffer
     logic [31:0] read_value;
 
     // Control registers
@@ -374,6 +438,58 @@ module custom_top_wrapper # (
     logic        rxbuf_clear_busy;
     logic [31:0] rxbuf_rd_data;
 
+    // TX buffer
+    logic        tx_cfg_txbuf_read_q;   // TX_CFG[8]: reads of the buffer window from the TX buffer
+    logic [N_QUEUE_PAIRS-1:0] tx_cfg_qp_src_q; // TX_CFG[N_QUEUE_PAIRS-1:0]: TX data source per QP (0 data generator)
+
+    // Requester data source: descriptor registers, post pulse, status
+    logic [31:0] tx_desc_local_q;
+    logic [31:0] tx_desc_len_q;
+    logic [63:0] tx_desc_remote_q;
+    logic [31:0] tx_desc_imm_q;
+    logic        tx_post_q;             // One-cycle pulse
+    logic [23:0] tx_post_qpn_q;
+    logic        tx_post_imm_q;
+    logic [$clog2(TX_DESC_FIFO_DEPTH):0] tx_src_desc_free;
+    logic        tx_src_busy;
+    logic [31:0] tx_src_posted;
+    logic [31:0] tx_src_consumed;
+    logic [31:0] tx_src_errors;
+    logic [2:0]  tx_src_last_error;
+
+    // TX data source ports of the engine, one per QP (from RoCE_ext_tx_source). Element i is QP 256 + i: the arrays
+    // are [N_QUEUE_PAIRS-1:0] like the engine ports (unpacked arrays connect from the left)
+    logic        qp_wr_req_valid          [N_QUEUE_PAIRS-1:0];
+    logic        qp_wr_req_ready          [N_QUEUE_PAIRS-1:0];
+    logic        qp_wr_req_tx_type        [N_QUEUE_PAIRS-1:0];
+    logic        qp_wr_req_is_immediate   [N_QUEUE_PAIRS-1:0];
+    logic [31:0] qp_wr_req_immediate_data [N_QUEUE_PAIRS-1:0];
+    logic [23:0] qp_wr_req_loc_qp         [N_QUEUE_PAIRS-1:0];
+    logic [63:0] qp_wr_req_addr_offset    [N_QUEUE_PAIRS-1:0];
+    logic [31:0] qp_wr_req_dma_length     [N_QUEUE_PAIRS-1:0];
+    logic [QP_CH_DATA_WIDTH-1:0]   qp_axis_tdata [N_QUEUE_PAIRS-1:0];
+    logic [QP_CH_DATA_WIDTH/8-1:0] qp_axis_tkeep [N_QUEUE_PAIRS-1:0];
+    logic        qp_axis_tvalid           [N_QUEUE_PAIRS-1:0];
+    logic        qp_axis_tready           [N_QUEUE_PAIRS-1:0];
+    logic        qp_axis_tlast            [N_QUEUE_PAIRS-1:0];
+    logic        qp_axis_tuser            [N_QUEUE_PAIRS-1:0];
+    logic [31:0] txbuf_rd_data;
+
+    // TX buffer AXI4 read port (slave), toward the requester data source
+    logic [TXBUF_AXI_ID_WIDTH-1:0]   txbuf_axi_arid;
+    logic [TXBUF_AXI_ADDR_WIDTH-1:0] txbuf_axi_araddr;
+    logic [7:0]                      txbuf_axi_arlen;
+    logic [2:0]                      txbuf_axi_arsize;
+    logic [1:0]                      txbuf_axi_arburst;
+    logic                            txbuf_axi_arvalid;
+    logic                            txbuf_axi_arready;
+    logic [TXBUF_AXI_ID_WIDTH-1:0]   txbuf_axi_rid;
+    logic [MAC_DATA_WIDTH-1:0]       txbuf_axi_rdata;
+    logic [1:0]                      txbuf_axi_rresp;
+    logic                            txbuf_axi_rlast;
+    logic                            txbuf_axi_rvalid;
+    logic                            txbuf_axi_rready;
+
     // Responder AXI4 master (write channels) toward the RX buffer
     logic [RESP_AXI_ID_WIDTH-1:0]    resp_axi_awid;
     logic [RESP_AXI_ADDR_WIDTH-1:0]  resp_axi_awaddr;
@@ -401,6 +517,7 @@ module custom_top_wrapper # (
     logic [31:0] csr_mon_cfg;
     logic [31:0] csr_spy_qpn;
     logic [31:0] csr_perf_cfg;
+    logic [31:0] csr_tx_cfg;
 
     ////////////////////////
     //  AXI-Stream buses  //
@@ -452,6 +569,7 @@ module custom_top_wrapper # (
     assign csr_mon_cfg = {19'b0, mon_thr_avg_po2_q, 4'b0, mon_lat_avg_po2_q};
     assign csr_spy_qpn = {8'b0, spy_qpn_q};
     assign csr_perf_cfg = {30'b0, perf_role_q, perf_wrap_q};
+    assign csr_tx_cfg   = (32'(tx_cfg_txbuf_read_q) << TX_CFG_TXBUF_READ_BIT) | 32'(tx_cfg_qp_src_q);
 
     ///////////////////////////
     //  AXI-lite write path  //
@@ -482,6 +600,7 @@ module custom_top_wrapper # (
     assign write_base = (s_ctrl_axilite_awaddr[CSR_WIN_MSB:CSR_ADDR_MSB+1] == CSR_REGION_BASE);
     assign write_resp = (s_ctrl_axilite_awaddr[CSR_WIN_MSB:CSR_ADDR_MSB+2] == CSR_REGION_RESP);
     assign write_inj_buf = write_base && (write_idx[6:5] == CSR_INJ_BUF_PAGE);
+    assign write_buf_win = s_ctrl_axilite_awaddr[CSR_WIN_MSB];
 
     // Responder registers: full-word writes
     assign resp_cfg_wr_en = write_en && write_resp;
@@ -501,6 +620,12 @@ module custom_top_wrapper # (
                 CSR_MON_CFG : write_old_value = csr_mon_cfg;
                 CSR_SPY_QPN : write_old_value = csr_spy_qpn;
                 CSR_PERF_CFG: write_old_value = csr_perf_cfg;
+                CSR_TX_CFG  : write_old_value = csr_tx_cfg;
+                CSR_TX_DESC_LOCAL     : write_old_value = tx_desc_local_q;
+                CSR_TX_DESC_LEN       : write_old_value = tx_desc_len_q;
+                CSR_TX_DESC_REMOTE_LO : write_old_value = tx_desc_remote_q[31:0];
+                CSR_TX_DESC_REMOTE_HI : write_old_value = tx_desc_remote_q[63:32];
+                CSR_TX_DESC_IMM       : write_old_value = tx_desc_imm_q;
                 default     : write_old_value = '0;
             endcase
         end
@@ -529,6 +654,15 @@ module custom_top_wrapper # (
             perf_wrap_q       <= 1'b0;
             perf_role_q       <= 1'b0;
             perf_clear_q      <= 1'b0;
+            tx_cfg_txbuf_read_q <= 1'b0;
+            tx_cfg_qp_src_q   <= '0;
+            tx_desc_local_q   <= '0;
+            tx_desc_len_q     <= '0;
+            tx_desc_remote_q  <= '0;
+            tx_desc_imm_q     <= '0;
+            tx_post_q         <= 1'b0;
+            tx_post_qpn_q     <= '0;
+            tx_post_imm_q     <= 1'b0;
             inj_len_q         <= '0;
             inj_start_q       <= 1'b0;
             for (int i = 0; i < INJ_BUF_WORDS; i++) inj_buf_q[i] <= '0;
@@ -541,6 +675,7 @@ module custom_top_wrapper # (
             engine_rst_req_q <= 1'b0;
             rxbuf_clear_q    <= 1'b0;
             perf_clear_q     <= 1'b0;
+            tx_post_q        <= 1'b0;
 
             if (write_en && write_base) begin
                 if (write_inj_buf)
@@ -576,6 +711,20 @@ module custom_top_wrapper # (
                             perf_wrap_q <= write_new_value[0];
                             perf_role_q <= write_new_value[1];
                         end
+                        CSR_TX_CFG  : begin
+                            tx_cfg_qp_src_q     <= write_new_value[N_QUEUE_PAIRS-1:0];
+                            tx_cfg_txbuf_read_q <= write_new_value[TX_CFG_TXBUF_READ_BIT];
+                        end
+                        CSR_TX_DESC_LOCAL     : tx_desc_local_q         <= write_new_value;
+                        CSR_TX_DESC_LEN       : tx_desc_len_q           <= write_new_value;
+                        CSR_TX_DESC_REMOTE_LO : tx_desc_remote_q[31:0]  <= write_new_value;
+                        CSR_TX_DESC_REMOTE_HI : tx_desc_remote_q[63:32] <= write_new_value;
+                        CSR_TX_DESC_IMM       : tx_desc_imm_q           <= write_new_value;
+                        CSR_TX_DESC_POST      : begin
+                            tx_post_q     <= 1'b1;
+                            tx_post_qpn_q <= write_new_value[23:0];
+                            tx_post_imm_q <= write_new_value[TX_POST_IMM_BIT];
+                        end
                         default     : ; // Read-only or unmapped
                     endcase
                 end
@@ -603,19 +752,21 @@ module custom_top_wrapper # (
             ar_ready_q            <= 1'b0;
             s_ctrl_axilite_rvalid <= 1'b0;
             s_ctrl_axilite_rdata  <= '0;
-            rxbuf_rd_pending_q    <= 1'b0;
+            buf_rd_pending_q      <= 1'b0;
+            buf_rd_tx_q           <= 1'b0;
         end
         else begin
-            ar_ready_q <= s_ctrl_axilite_arvalid & ~ar_ready_q & ~s_ctrl_axilite_rvalid & ~rxbuf_rd_pending_q;
+            ar_ready_q <= s_ctrl_axilite_arvalid & ~ar_ready_q & ~s_ctrl_axilite_rvalid & ~buf_rd_pending_q;
 
-            rxbuf_rd_pending_q <= 1'b0;
-            if (read_en && read_rxbuf) begin
-                // RX buffer: the data comes one cycle later
-                rxbuf_rd_pending_q <= 1'b1;
+            buf_rd_pending_q <= 1'b0;
+            if (read_en && read_buf_win) begin
+                // RX or TX buffer: the data comes one cycle later
+                buf_rd_pending_q <= 1'b1;
+                buf_rd_tx_q      <= tx_cfg_txbuf_read_q;
             end
-            else if (rxbuf_rd_pending_q) begin
+            else if (buf_rd_pending_q) begin
                 s_ctrl_axilite_rvalid <= 1'b1;
-                s_ctrl_axilite_rdata  <= rxbuf_rd_data;
+                s_ctrl_axilite_rdata  <= buf_rd_tx_q ? txbuf_rd_data : rxbuf_rd_data;
             end
             else if (read_en) begin
                 s_ctrl_axilite_rvalid <= 1'b1;
@@ -634,7 +785,7 @@ module custom_top_wrapper # (
     assign read_idx = s_ctrl_axilite_araddr[CSR_ADDR_MSB:CSR_ADDR_LSB];
     assign read_base  = (s_ctrl_axilite_araddr[CSR_WIN_MSB:CSR_ADDR_MSB+1] == CSR_REGION_BASE);
     assign read_resp  = (s_ctrl_axilite_araddr[CSR_WIN_MSB:CSR_ADDR_MSB+2] == CSR_REGION_RESP);
-    assign read_rxbuf = s_ctrl_axilite_araddr[CSR_WIN_MSB];
+    assign read_buf_win = s_ctrl_axilite_araddr[CSR_WIN_MSB];
     assign read_inj_buf = read_base && (read_idx[6:5] == CSR_INJ_BUF_PAGE);
 
     // Read multiplexer
@@ -661,6 +812,7 @@ module custom_top_wrapper # (
                 CSR_MON_QPN            : read_value = csr_mon_qpn;
                 CSR_MON_CFG            : read_value = csr_mon_cfg;
                 CSR_RXBUF_SIZE         : read_value = 32'(RXBUF_BYTES);
+                CSR_TXBUF_SIZE         : read_value = 32'(TXBUF_BYTES);
                 CSR_MON_XFER_TIME_AVG  : read_value = mon_xfer_time_avg;
                 CSR_MON_XFER_TIME_MAVG : read_value = mon_xfer_time_mavg;
                 CSR_MON_LATENCY_AVG    : read_value = mon_latency_avg;
@@ -694,6 +846,20 @@ module custom_top_wrapper # (
                 CSR_PERF_LAT_MAX       : read_value = perf_lat_max;
                 CSR_PERF_LAT_SUM_LO    : read_value = perf_lat_sum[31:0];
                 CSR_PERF_LAT_SUM_HI    : read_value = perf_lat_sum[63:32];
+                CSR_TX_CFG             : read_value = csr_tx_cfg;
+                CSR_TX_DESC_LOCAL      : read_value = tx_desc_local_q;
+                CSR_TX_DESC_LEN        : read_value = tx_desc_len_q;
+                CSR_TX_DESC_REMOTE_LO  : read_value = tx_desc_remote_q[31:0];
+                CSR_TX_DESC_REMOTE_HI  : read_value = tx_desc_remote_q[63:32];
+                CSR_TX_DESC_IMM        : read_value = tx_desc_imm_q;
+                CSR_TX_STATUS          : begin
+                    read_value[7:0]                                   = 8'(tx_src_desc_free);
+                    read_value[TX_STATUS_BUSY_BIT]                    = tx_src_busy;
+                    read_value[TX_STATUS_ERR_LSB +: 3]                = tx_src_last_error;
+                end
+                CSR_TX_POSTED          : read_value = tx_src_posted;
+                CSR_TX_CONSUMED        : read_value = tx_src_consumed;
+                CSR_TX_ERRORS          : read_value = tx_src_errors;
                 default                : read_value = '0;
             endcase
         end
@@ -960,7 +1126,92 @@ module custom_top_wrapper # (
         .m_axi_bid                  ( resp_axi_bid          ),
         .m_axi_bresp                ( resp_axi_bresp        ),
         .m_axi_bvalid               ( resp_axi_bvalid       ),
-        .m_axi_bready               ( resp_axi_bready       )
+        .m_axi_bready               ( resp_axi_bready       ),
+
+        // TX data source of each QP: data generator or these ports (TX_CFG[N_QUEUE_PAIRS-1:0])
+        .qp_src_sel                 ( tx_cfg_qp_src_q          ),
+        .s_wr_req_valid             ( qp_wr_req_valid          ),
+        .s_wr_req_ready             ( qp_wr_req_ready          ),
+        .s_wr_req_tx_type           ( qp_wr_req_tx_type        ),
+        .s_wr_req_is_immediate      ( qp_wr_req_is_immediate   ),
+        .s_wr_req_immediate_data    ( qp_wr_req_immediate_data ),
+        .s_wr_req_loc_qp            ( qp_wr_req_loc_qp         ),
+        .s_wr_req_addr_offset       ( qp_wr_req_addr_offset    ),
+        .s_wr_req_dma_length        ( qp_wr_req_dma_length     ),
+        .s_qp_axis_tdata            ( qp_axis_tdata            ),
+        .s_qp_axis_tkeep            ( qp_axis_tkeep            ),
+        .s_qp_axis_tvalid           ( qp_axis_tvalid           ),
+        .s_qp_axis_tready           ( qp_axis_tready           ),
+        .s_qp_axis_tlast            ( qp_axis_tlast            ),
+        .s_qp_axis_tuser            ( qp_axis_tuser            )
+    );
+
+    // Requester data source: descriptors from the CSR, payload from the TX buffer (AXI4 read), work requests and
+    // payload to the QPs whose TX data source is the ports (TX_CFG)
+    RoCE_ext_tx_source #(
+        .AXI_DATA_WIDTH             ( MAC_DATA_WIDTH           ),
+        .AXI_ADDR_WIDTH             ( TXBUF_AXI_ADDR_WIDTH     ),
+        .AXI_ID_WIDTH               ( TXBUF_AXI_ID_WIDTH       ),
+        .AXI_MAX_BURST_LEN          ( 16                       ),
+        .QP_CH_DATA_WIDTH           ( QP_CH_DATA_WIDTH         ),
+        .N_QP                       ( N_QUEUE_PAIRS            ),
+        .BASE_QPN                   ( 256                      ),
+        .SRC_BYTES                  ( TXBUF_BYTES              ),
+        .DESC_FIFO_DEPTH            ( TX_DESC_FIFO_DEPTH       ),
+        .READ_AHEAD                 ( TX_READ_AHEAD            ),
+        .LEN_WIDTH                  ( $clog2(TXBUF_BYTES) + 1  ),
+        .LEN_MULTIPLE               ( 4                        )
+    ) tx_source_u (
+        .clk                        ( clk_i                    ),
+        .rst                        ( engine_rst               ),
+        // Descriptor post (CSR)
+        .s_post_valid               ( tx_post_q                ),
+        .s_post_local_addr          ( tx_desc_local_q          ),
+        .s_post_len                 ( tx_desc_len_q            ),
+        .s_post_qpn                 ( tx_post_qpn_q            ),
+        .s_post_remote_addr         ( tx_desc_remote_q         ),
+        .s_post_imm_en              ( tx_post_imm_q            ),
+        .s_post_imm_data            ( tx_desc_imm_q            ),
+        .qp_src_sel                 ( tx_cfg_qp_src_q          ),
+        // Status
+        .desc_free                  ( tx_src_desc_free         ),
+        .busy                       ( tx_src_busy              ),
+        .stat_posted                ( tx_src_posted            ),
+        .stat_consumed              ( tx_src_consumed          ),
+        .stat_errors                ( tx_src_errors            ),
+        .stat_last_error            ( tx_src_last_error        ),
+        // AXI4 master (read channels) toward the TX buffer
+        .m_axi_arid                 ( txbuf_axi_arid           ),
+        .m_axi_araddr               ( txbuf_axi_araddr         ),
+        .m_axi_arlen                ( txbuf_axi_arlen          ),
+        .m_axi_arsize               ( txbuf_axi_arsize         ),
+        .m_axi_arburst              ( txbuf_axi_arburst        ),
+        .m_axi_arlock               (                          ),
+        .m_axi_arcache              (                          ),
+        .m_axi_arprot               (                          ),
+        .m_axi_arvalid              ( txbuf_axi_arvalid        ),
+        .m_axi_arready              ( txbuf_axi_arready        ),
+        .m_axi_rid                  ( txbuf_axi_rid            ),
+        .m_axi_rdata                ( txbuf_axi_rdata          ),
+        .m_axi_rresp                ( txbuf_axi_rresp          ),
+        .m_axi_rlast                ( txbuf_axi_rlast          ),
+        .m_axi_rvalid               ( txbuf_axi_rvalid         ),
+        .m_axi_rready               ( txbuf_axi_rready         ),
+        // Work requests and payload, one port per QP
+        .m_wr_req_valid             ( qp_wr_req_valid          ),
+        .m_wr_req_ready             ( qp_wr_req_ready          ),
+        .m_wr_req_tx_type           ( qp_wr_req_tx_type        ),
+        .m_wr_req_is_immediate      ( qp_wr_req_is_immediate   ),
+        .m_wr_req_immediate_data    ( qp_wr_req_immediate_data ),
+        .m_wr_req_loc_qp            ( qp_wr_req_loc_qp         ),
+        .m_wr_req_addr_offset       ( qp_wr_req_addr_offset    ),
+        .m_wr_req_dma_length        ( qp_wr_req_dma_length     ),
+        .m_axis_tdata               ( qp_axis_tdata            ),
+        .m_axis_tkeep               ( qp_axis_tkeep            ),
+        .m_axis_tvalid              ( qp_axis_tvalid           ),
+        .m_axis_tready              ( qp_axis_tready           ),
+        .m_axis_tlast               ( qp_axis_tlast            ),
+        .m_axis_tuser               ( qp_axis_tuser            )
     );
 
     // RX buffer: written by the responder, read by the processor through the CSR (0x8000 + byte address)
@@ -990,12 +1241,45 @@ module custom_top_wrapper # (
         .s_axi_bvalid   ( resp_axi_bvalid       ),
         .s_axi_bready   ( resp_axi_bready       ),
         // Read port (CSR)
-        .rd_en          ( read_en && read_rxbuf ),
+        .rd_en          ( read_en && read_buf_win && !tx_cfg_txbuf_read_q ),
         .rd_addr        ( s_ctrl_axilite_araddr[CSR_WIN_MSB-1:CSR_ADDR_LSB] ),
         .rd_data        ( rxbuf_rd_data         ),
         // Clear
         .clear_start    ( rxbuf_clear_q         ),
         .clear_busy     ( rxbuf_clear_busy      )
+    );
+
+    // TX buffer: port A from the CSR (buffer window), port B AXI4 read from the requester data source
+    RoCE_ext_tx_bram #(
+        .DATA_WIDTH     ( MAC_DATA_WIDTH        ),
+        .ADDR_WIDTH     ( TXBUF_AXI_ADDR_WIDTH  ),
+        .ID_WIDTH       ( TXBUF_AXI_ID_WIDTH    ),
+        .MEM_BYTES      ( TXBUF_BYTES           )
+    ) tx_buffer_u (
+        .clk            ( clk_i                 ),
+        .rst            ( engine_rst            ),
+        // Port A (CSR): writes of the buffer window, reads of the buffer window with TX_CFG[8] = 1
+        .wr_en          ( write_en && write_buf_win ),
+        .wr_addr        ( s_ctrl_axilite_awaddr[CSR_WIN_MSB-1:CSR_ADDR_LSB] ),
+        .wr_data        ( s_ctrl_axilite_wdata  ),
+        .wr_strb        ( s_ctrl_axilite_wstrb  ),
+        .rd_en          ( read_en && read_buf_win && tx_cfg_txbuf_read_q ),
+        .rd_addr        ( s_ctrl_axilite_araddr[CSR_WIN_MSB-1:CSR_ADDR_LSB] ),
+        .rd_data        ( txbuf_rd_data         ),
+        // Port B: AXI4 slave (read channels)
+        .s_axi_arid     ( txbuf_axi_arid        ),
+        .s_axi_araddr   ( txbuf_axi_araddr      ),
+        .s_axi_arlen    ( txbuf_axi_arlen       ),
+        .s_axi_arsize   ( txbuf_axi_arsize      ),
+        .s_axi_arburst  ( txbuf_axi_arburst     ),
+        .s_axi_arvalid  ( txbuf_axi_arvalid     ),
+        .s_axi_arready  ( txbuf_axi_arready     ),
+        .s_axi_rid      ( txbuf_axi_rid         ),
+        .s_axi_rdata    ( txbuf_axi_rdata       ),
+        .s_axi_rresp    ( txbuf_axi_rresp       ),
+        .s_axi_rlast    ( txbuf_axi_rlast       ),
+        .s_axi_rvalid   ( txbuf_axi_rvalid      ),
+        .s_axi_rready   ( txbuf_axi_rready      )
     );
 
     // Pad the frames toward the MAC to 60 bytes (the CMAC adds the FCS but does not pad)

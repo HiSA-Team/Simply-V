@@ -2,18 +2,19 @@
 // Description:
 //  Board-to-board test of the RDMA RoCEv2 engine in the CMAC subsystem (two boards connected through QSFP0).
 //  - Board A (ROLE=TX, default): opens a QP toward the responder QP of board B (PEER_QPN, R_Key of its memory
-//    region) and starts RDMA_N_TRANSFERS RDMA WRITE of RDMA_LENGTH bytes. The CM requests are injected in the engine
-//    RX stream as if they came from board B.
+//    region), writes the message HELLO_MSG ("Hello World!") in its TX buffer and sends it with one RDMA WRITE through
+//    the TX data source of the engine (RoCE_ext_tx_source: QP switched to the TX data source ports, one descriptor
+//    posted with rdma_post_write). The CM requests are injected in the engine RX stream as if they came from board B.
 //  - Board B (ROLE=RX): sets up its responder (memory region RX_MR_INDEX over the whole RX buffer, QP PEER_QPN
-//    accepting the WRITE of board A), then prints the CMAC and responder statistics and checks the data received in
-//    the RX buffer (data generator pattern: 32-bit words 0, 1, 2, ...).
+//    accepting the WRITE of board A), then prints the CMAC and responder statistics and prints the bytes received in
+//    the RX buffer at PEER_ADDR as text, checking them against HELLO_MSG.
 //  Build with: make ROLE=TX (board A) or make ROLE=RX (board B). Run board B first, then board A; to repeat the
 //  test, restart both (both reset their engine at start, so the first QP of board A is always QPN 256 and board B
 //  expects PSN 0 again).
-//  Expected with the default values: board B writes 2 packets (2048 bytes) into the RX buffer and sends 2 ACKs;
-//  board A ends with the QP in RTS, acked PSN 1 and no retransmissions. On the wire: 2 RoCE packets of 1098 bytes
-//  (1024-1518 bytes counter) from A to B and 2 ACKs of 62 bytes + FCS (65-127 bytes counter) from B to A, plus the
-//  ARP frames and the CM replies of board A.
+//  Expected with the default values: board B writes 1 packet (12 bytes) into the RX buffer, sends 1 ACK and prints
+//  "Hello World!"; board A ends with the QP in RTS, acked PSN 0, 1 WRITE sent and 1 ACK received, no retransmissions.
+//  On the wire: 1 RoCE packet of 86 bytes + FCS (65-127 bytes counter) from A to B and 1 ACK of 62 bytes + FCS
+//  (65-127 bytes counter) from B to A, plus the ARP frames and the CM replies of board A.
 
 #include "simplyv.h"
 #include "rdma.h"
@@ -31,11 +32,15 @@
 #define BOARD_B_MAC     { 0x00, 0x0A, 0x35, 0xDE, 0xAD, 0x02 }
 #define BOARD_B_IP      RDMA_IPV4(22, 1, 212, 11)
 
-// Transfers. The responder of board B (RESP_ALIGNED_WRITES = 1, default) writes only payloads that start on a
-// 64-byte boundary: PEER_ADDR must be a multiple of 64, and so must RDMA_LENGTH when RDMA_N_TRANSFERS > 1 (the
-// data generator of board A writes the transfers back to back from PEER_ADDR); otherwise board B answers NAK 0x61.
-#define RDMA_LENGTH         1024u
-#define RDMA_N_TRANSFERS    2u
+// Message sent by board A with one RDMA WRITE through the TX data source: length a multiple of 4
+// (RDMA_TX_LEN_MULTIPLE, the upstream requester sends no pad), TX buffer offset a multiple of 64 (RDMA_TXBUF_ALIGN).
+// The responder of board B (RESP_ALIGNED_WRITES = 1, default) writes only payloads that start on a 64-byte
+// boundary: PEER_ADDR must be a multiple of 64, otherwise board B answers NAK 0x61.
+#define HELLO_MSG           "Hello World!"
+#define HELLO_LEN           ((uint32_t)(sizeof(HELLO_MSG) - 1u))   // 12 bytes, without the terminating zero
+#define TXBUF_OFFSET        0x0u                                   // where board A puts the message in its TX buffer
+#define EXPECTED_ACKED_PSN  0u                                     // one packet (HELLO_LEN <= PMTU), PSNs from 0
+#define RX_PRINT_MAX        64u                                    // board B prints at most these bytes
 // Responder of board B: memory region over the whole RX buffer, protection domain shared with the QP
 #define RX_MR_INDEX         0u
 #define RX_MR_KEY           0x5Au
@@ -156,7 +161,41 @@ static void cmac_link_up()
   printf("CMAC link up (STAT_RX_STATUS 0x%08lx)\n\r", (unsigned long)status);
 }
 
-// Board A: open a QP, start the RDMA WRITE, close the QP
+// Read len bytes (len <= RX_PRINT_MAX) of the RX or TX buffer from offset (32-bit reads: byte n is byte n % 4 of
+// word n / 4) into text, as a string with the non-printable bytes shown as '.'; return how many bytes differ from
+// HELLO_MSG (the bytes after HELLO_LEN count as different)
+static uint32_t buffer_text(uint32_t (*read_word)(uintptr_t, uint32_t), uint32_t offset, uint32_t len, char* text)
+{
+  uint32_t diff = (len > HELLO_LEN) ? (len - HELLO_LEN) : 0u;
+  uint32_t word = 0;
+  for (uint32_t i = 0; i < len; i++) {
+    uint32_t addr = offset + i;
+    if ((i == 0u) || ((addr & 3u) == 0u)) {
+      word = read_word(RDMA_BASEADDR, addr & ~3u);
+    }
+    uint8_t c = (uint8_t)(word >> (8u * (addr & 3u)));
+    text[i] = ((c >= 0x20u) && (c < 0x7Fu)) ? (char)c : '.';
+    if ((i < HELLO_LEN) && (c != (uint8_t)HELLO_MSG[i])) {
+      diff++;
+    }
+  }
+  text[len] = '\0';
+  return diff;
+}
+
+// Board A: copy a message into the TX buffer (32-bit writes: byte n of the message is byte n % 4 of word n / 4)
+static void txbuf_put(uint32_t offset, const char* msg, uint32_t len)
+{
+  for (uint32_t i = 0; i < len; i += 4u) {
+    uint32_t word = 0;
+    for (uint32_t b = 0; (b < 4u) && (i + b < len); b++) {
+      word |= (uint32_t)(uint8_t)msg[i + b] << (8u * b);
+    }
+    rdma_txbuf_write(RDMA_BASEADDR, offset + i, word);
+  }
+}
+
+// Board A: open a QP, send HELLO_MSG from the TX buffer with one RDMA WRITE, close the QP
 static void rdma_tx_test(const rdma_node_t* engine, const rdma_node_t* peer)
 {
   uint8_t frame[RDMA_CM_FRAME_BYTES];
@@ -164,6 +203,9 @@ static void rdma_tx_test(const rdma_node_t* engine, const rdma_node_t* peer)
   rdma_cm_req_t req = { 0 };
   rdma_qp_info_t qp;
   cmac_stats_t stats;
+  rdma_tx_stats_t tx;
+  rdma_perf_t perf;
+  char text[RX_PRINT_MAX + 1u];
   uint32_t qpn = 0;
 
   req.peer_qpn   = PEER_QPN;
@@ -198,29 +240,50 @@ static void rdma_tx_test(const rdma_node_t* engine, const rdma_node_t* peer)
     return;
   }
 
-  // Start the RDMA WRITE
-  printf("Starting %u RDMA WRITE of %u bytes on QP %lu...\n\r", RDMA_N_TRANSFERS, RDMA_LENGTH, (unsigned long)qpn);
-  iowrite32(RDMA_BASEADDR + RDMA_MON_QPN_REG, qpn);
-  req.req_type    = RDMA_CM_REQ_NULL;
-  req.qpn         = qpn;
-  req.start       = 1;
-  req.length      = RDMA_LENGTH;
-  req.n_transfers = RDMA_N_TRANSFERS;
-  frame_size = rdma_cm_frame(frame, engine, peer, &req);
-  rdma_inject(RDMA_BASEADDR, frame, frame_size);
+  // Message into the TX buffer, read back
+  txbuf_put(TXBUF_OFFSET, HELLO_MSG, HELLO_LEN);
+  if (buffer_text(rdma_txbuf_read, TXBUF_OFFSET, HELLO_LEN, text) != 0u) {
+    printf("ERROR: TX buffer read back \"%s\", expected \"%s\"\n\r", text, HELLO_MSG);
+  }
+  printf("TX buffer at 0x%lx: \"%s\" (%lu bytes)\n\r", (unsigned long)TXBUF_OFFSET, text, (unsigned long)HELLO_LEN);
 
-  // Wait for the transfers and their ACKs
+  // QP on the TX data source ports, PERF monitor as requester (WRITE sent, ACK/NAK received), one RDMA WRITE posted
+  rdma_tx_source(RDMA_BASEADDR, qpn, RDMA_TX_SRC_PORTS);
+  rdma_perf_config(RDMA_BASEADDR, 0);
+  rdma_perf_clear(RDMA_BASEADDR);
+  iowrite32(RDMA_BASEADDR + RDMA_MON_QPN_REG, qpn);
+  printf("Posting 1 RDMA WRITE of %lu bytes on QP %lu, to address 0x%lx of board B...\n\r", (unsigned long)HELLO_LEN,
+         (unsigned long)qpn, (unsigned long)PEER_ADDR);
+  if (rdma_post_write(RDMA_BASEADDR, qpn, TXBUF_OFFSET, HELLO_LEN, PEER_ADDR) != SIMPLYV_OK) {
+    printf("ERROR: descriptor not posted (arguments out of range or no free slot)\n\r");
+  } else if (rdma_tx_wait_idle(RDMA_BASEADDR) != SIMPLYV_OK) {
+    printf("ERROR: TX data source still busy\n\r");
+  }
+
+  // Wait for the ACK
   delay_ms(100);
+  rdma_tx_stats(RDMA_BASEADDR, &tx);
+  printf("TX data source: %lu posted, %lu read from the TX buffer, %lu errors (last error %lu)\n\r",
+         (unsigned long)tx.posted, (unsigned long)tx.consumed, (unsigned long)tx.errors, (unsigned long)tx.last_error);
+  rdma_perf_read(RDMA_BASEADDR, &perf);
+  printf("WRITE sent %lu, ACK/NAK received %lu (%lu NAK)", (unsigned long)perf.req_count,
+         (unsigned long)perf.rsp_count, (unsigned long)perf.nak_count);
+  if (perf.lat_count != 0u) {
+    printf(", round trip %lu cycles = %lu ns", (unsigned long)perf.lat_min, (unsigned long)(perf.lat_min * 3103u / 1000u));
+  }
+  printf("\n\r");
   uint32_t retransmissions = ioread32(RDMA_BASEADDR + RDMA_MON_RETRANSMIT_REG);
   printf("PSN difference (sent - acked): %lu\n\r", (unsigned long)ioread32(RDMA_BASEADDR + RDMA_MON_PSN_DIFF_REG));
   printf("Retransmission triggers:       %lu\n\r", (unsigned long)retransmissions);
   if (rdma_qp_spy(RDMA_BASEADDR, qpn, &qp) == SIMPLYV_OK) {
     print_qp(&qp);
-    // One packet per RDMA WRITE (RDMA_LENGTH <= PMTU), PSNs from 0
-    if ((qp.state == RDMA_QP_STATE_RTS) && (qp.rem_acked_psn == RDMA_N_TRANSFERS - 1u) && (retransmissions == 0u)) {
-      printf("OK: all the RDMA WRITE acknowledged by board B, no retransmission\n\r");
+    if ((qp.state == RDMA_QP_STATE_RTS) && (qp.rem_acked_psn == EXPECTED_ACKED_PSN) && (retransmissions == 0u) &&
+        (tx.consumed == 1u) && (tx.errors == 0u) && (perf.req_count == 1u) && (perf.rsp_count == 1u) &&
+        (perf.nak_count == 0u)) {
+      printf("OK: \"%s\" sent and acknowledged by board B, no retransmission\n\r", HELLO_MSG);
     } else {
-      printf("ERROR: expected QP in RTS, acked PSN %u and no retransmission\n\r", RDMA_N_TRANSFERS - 1u);
+      printf("ERROR: expected QP in RTS, acked PSN %u, 1 WRITE and 1 ACK, no NAK, no retransmission\n\r",
+             EXPECTED_ACKED_PSN);
     }
   }
 
@@ -228,9 +291,10 @@ static void rdma_tx_test(const rdma_node_t* engine, const rdma_node_t* peer)
   cmac_read_stats(&stats);
   print_cmac_stats(&stats);
 
-  // Close the QP
+  // QP back on the data generator, then close it
+  rdma_tx_source(RDMA_BASEADDR, qpn, RDMA_TX_SRC_GENERATOR);
   req.req_type = RDMA_CM_REQ_CLOSE_QP;
-  req.start    = 0;
+  req.qpn      = qpn;
   frame_size = rdma_cm_frame(frame, engine, peer, &req);
   rdma_inject(RDMA_BASEADDR, frame, frame_size);
   printf("QP %lu closed\n\r", (unsigned long)qpn);
@@ -273,33 +337,28 @@ static void print_resp_stats(const rdma_resp_stats_t* s)
   }
 }
 
-// Check the RX buffer: 32-bit words 0, 1, 2, ... (data generator of board A) over the bytes received
-static void check_rx_buffer(uint32_t bytes)
+// Board B: print the bytes just received at PEER_ADDR of the RX buffer as text, check them against HELLO_MSG
+static void print_rx_message(uint32_t bytes)
 {
-  uint32_t errors = 0;
-  for (uint32_t i = 0; i < bytes / 4u; i++) {
-    uint32_t word = rdma_rxbuf_read(RDMA_BASEADDR, 4u * i);
-    if (word != i) {
-      if (errors < 4u) {
-        printf("  RX buffer word %lu = 0x%08lx, expected 0x%08lx\n\r", (unsigned long)i, (unsigned long)word, (unsigned long)i);
-      }
-      errors++;
-    }
-  }
-  if (errors == 0u) {
-    printf("OK: RX buffer, %lu bytes as sent by board A\n\r", (unsigned long)bytes);
+  char text[RX_PRINT_MAX + 1u];
+  uint32_t n = (bytes < RX_PRINT_MAX) ? bytes : RX_PRINT_MAX;
+  uint32_t diff = buffer_text(rdma_rxbuf_read, PEER_ADDR, n, text);
+
+  printf("RX buffer at 0x%lx, %lu bytes received: \"%s\"\n\r", (unsigned long)PEER_ADDR, (unsigned long)bytes, text);
+  if ((bytes == HELLO_LEN) && (diff == 0u)) {
+    printf("OK: board B received \"%s\"\n\r", HELLO_MSG);
   } else {
-    printf("ERROR: RX buffer, %lu wrong words out of %lu\n\r", (unsigned long)errors, (unsigned long)(bytes / 4u));
+    printf("ERROR: expected \"%s\" (%lu bytes)\n\r", HELLO_MSG, (unsigned long)HELLO_LEN);
   }
 }
 
-// Board B: print the CMAC and responder statistics of each 1-second window with traffic, check the RX buffer
+// Board B: print the CMAC and responder statistics of each 1-second window with traffic and the message received
 static void rdma_rx_monitor()
 {
   cmac_stats_t stats;
   rdma_resp_stats_t resp;
   uint32_t total_rx_packets = 0;
-  uint32_t total_rx_roce = 0;
+  uint32_t total_rx_65_127 = 0;
   uint32_t total_tx_packets = 0;
   uint32_t checked_bytes = 0;
 
@@ -314,16 +373,16 @@ static void rdma_rx_monitor()
       continue;
     }
     total_rx_packets += stats.rx_packets;
-    total_rx_roce    += stats.rx_1024_1518;
+    total_rx_65_127  += stats.rx_65_127;
     total_tx_packets += stats.tx_packets;
     print_cmac_stats(&stats);
-    printf("Total since start: RX %lu packets (%lu of 1024-1518 bytes), TX %lu packets\n\r",
-           (unsigned long)total_rx_packets, (unsigned long)total_rx_roce, (unsigned long)total_tx_packets);
+    printf("Total since start: RX %lu packets (%lu of 65-127 bytes: WRITE and CM replies), TX %lu packets\n\r",
+           (unsigned long)total_rx_packets, (unsigned long)total_rx_65_127, (unsigned long)total_tx_packets);
     rdma_resp_stats(RDMA_BASEADDR, &resp);
     print_resp_stats(&resp);
     if (resp.write_bytes != checked_bytes) {
+      print_rx_message(resp.write_bytes - checked_bytes);
       checked_bytes = resp.write_bytes;
-      check_rx_buffer(checked_bytes);
     }
     printf("\n\r");
   }

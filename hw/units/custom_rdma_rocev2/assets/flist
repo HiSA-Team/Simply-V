@@ -80,3 +80,5 @@ ext/rtl/RoCE_ext_responder.sv
 ext/rtl/RoCE_ext_payload_realign.sv
 ext/rtl/RoCE_ext_sync_fifo.sv
 ext/rtl/RoCE_ext_axi_bram.sv
+ext/rtl/RoCE_ext_tx_bram.sv
+ext/rtl/RoCE_ext_tx_source.sv

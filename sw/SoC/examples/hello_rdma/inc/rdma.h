@@ -30,6 +30,7 @@
 #define RDMA_MON_QPN_REG                (RDMA_CSR_OFFSET + 0x020)
 #define RDMA_MON_CFG_REG                (RDMA_CSR_OFFSET + 0x024)
 #define RDMA_RXBUF_SIZE_REG             (RDMA_CSR_OFFSET + 0x028)
+#define RDMA_TXBUF_SIZE_REG             (RDMA_CSR_OFFSET + 0x02C)
 #define RDMA_MON_XFER_TIME_AVG_REG      (RDMA_CSR_OFFSET + 0x030)
 #define RDMA_MON_XFER_TIME_MAVG_REG     (RDMA_CSR_OFFSET + 0x034)
 #define RDMA_MON_LATENCY_AVG_REG        (RDMA_CSR_OFFSET + 0x038)
@@ -63,9 +64,22 @@
 #define RDMA_PERF_LAT_MAX_REG           (RDMA_CSR_OFFSET + 0x0B0)
 #define RDMA_PERF_LAT_SUM_LO_REG        (RDMA_CSR_OFFSET + 0x0B4)
 #define RDMA_PERF_LAT_SUM_HI_REG        (RDMA_CSR_OFFSET + 0x0B8)
+#define RDMA_TX_CFG_REG                 (RDMA_CSR_OFFSET + 0x0C0)
+#define RDMA_TX_DESC_LOCAL_REG          (RDMA_CSR_OFFSET + 0x0C4)   // descriptor: TX buffer byte offset
+#define RDMA_TX_DESC_LEN_REG            (RDMA_CSR_OFFSET + 0x0C8)   // descriptor: length in bytes
+#define RDMA_TX_DESC_REMOTE_LO_REG      (RDMA_CSR_OFFSET + 0x0CC)   // descriptor: remote address [31:0]
+#define RDMA_TX_DESC_REMOTE_HI_REG      (RDMA_CSR_OFFSET + 0x0D0)   // descriptor: remote address [63:32]
+#define RDMA_TX_DESC_IMM_REG            (RDMA_CSR_OFFSET + 0x0D4)   // descriptor: immediate data
+#define RDMA_TX_DESC_POST_REG           (RDMA_CSR_OFFSET + 0x0D8)   // [23:0] QPN, [24] immediate: write = post
+#define RDMA_TX_STATUS_REG              (RDMA_CSR_OFFSET + 0x0DC)
+#define RDMA_TX_POSTED_REG              (RDMA_CSR_OFFSET + 0x0E0)
+#define RDMA_TX_CONSUMED_REG            (RDMA_CSR_OFFSET + 0x0E4)
+#define RDMA_TX_ERRORS_REG              (RDMA_CSR_OFFSET + 0x0E8)
 #define RDMA_INJ_BUF                    (RDMA_CSR_OFFSET + 0x100)
 #define RDMA_RESP_BASE                  (RDMA_CSR_OFFSET + 0x400)   // responder registers
 #define RDMA_RXBUF_BASE                 (RDMA_CSR_OFFSET + 0x8000)  // RX buffer, read only (byte address A at + A)
+#define RDMA_TXBUF_BASE                 (RDMA_CSR_OFFSET + 0x8000)  // TX buffer, same window: the writes go to the
+                                                                    // TX buffer, the reads only with RDMA_TX_CFG_TXBUF_READ
 
 // Responder registers (see SimplyV_Custom_RDMA/ext/rtl/RoCE_ext_responder.sv)
 #define RDMA_RESP_CTRL_REG              (RDMA_RESP_BASE + 0x000)    // [0] enable
@@ -116,6 +130,25 @@
 #define RDMA_PERF_CFG_RESPONDER         0x2u   // PERF role: responder (WRITE on RX, ACK on TX); 0: requester
 #define RDMA_PERF_STATUS_OVERFLOW       0x1u
 #define RDMA_PERF_STATUS_ORPHAN         0x2u
+#define RDMA_TX_CFG_TXBUF_READ          0x100u // reads of the buffer window from the TX buffer (instead of RX)
+#define RDMA_TX_CFG_QP_SRC(qpn)         (1u << ((qpn) - RDMA_FIRST_QPN)) // TX data source of a QP: 1 = ports
+#define RDMA_TX_POST_IMM                0x01000000u // TX_DESC_POST: RDMA WRITE with immediate (TX_DESC_IMM)
+#define RDMA_TX_STATUS_FREE(s)          ((s) & 0xFFu)          // free descriptor slots
+#define RDMA_TX_STATUS_BUSY             0x100u                 // descriptors or payload inside the data source
+#define RDMA_TX_STATUS_ERROR(s)         (((s) >> 16) & 0x7u)   // last error, RDMA_TX_ERR_*
+
+// TX data source of a QP (TX_CFG[3:0])
+#define RDMA_TX_SRC_GENERATOR           0u   // internal data generator, started by the CM START requests (reset)
+#define RDMA_TX_SRC_PORTS               1u   // TX data source ports of the engine: messages posted with rdma_post_write()
+
+// Last error of the TX data source (TX_STATUS[18:16]); errors 1 to 5: the descriptor is not posted
+#define RDMA_TX_ERR_NONE                0u
+#define RDMA_TX_ERR_QPN                 1u   // QPN outside the engine QPs
+#define RDMA_TX_ERR_SOURCE              2u   // TX data source of the QP is the data generator
+#define RDMA_TX_ERR_LENGTH              3u   // length 0, not a multiple of 4, or the message does not fit in the TX buffer
+#define RDMA_TX_ERR_ALIGN               4u   // TX buffer offset not a multiple of RDMA_TXBUF_ALIGN
+#define RDMA_TX_ERR_FULL                5u   // no free descriptor slot
+#define RDMA_TX_ERR_READ                6u   // TX buffer read error (message sent anyway)
 
 // Engine clock (CMAC user clock): one PERF cycle is 3.103 ns
 #define RDMA_CLOCK_HZ                   322265625u
@@ -130,6 +163,10 @@
 #define RDMA_FIRST_QPN                  256u
 #define RDMA_N_QUEUE_PAIRS              4u   // N_QUEUE_PAIRS of custom_top_wrapper
 #define RDMA_N_MR                       16u  // N_MR of custom_top_wrapper
+#define RDMA_TXBUF_BYTES                32768u // TXBUF_BYTES of custom_top_wrapper
+#define RDMA_TXBUF_ALIGN                64u  // TX buffer offset of a message: multiple of 64 bytes (one 512-bit beat)
+#define RDMA_TX_DESC_SLOTS              16u  // descriptors that can wait in the TX data source
+#define RDMA_TX_LEN_MULTIPLE            4u   // message length: multiple of 4 bytes (the upstream requester sends no pad)
 
 // R_Key of a memory region: {MR index [31:8], key [7:0]}
 #define RDMA_R_KEY(index, key)          ((((uint32_t)(index)) << 8) | (((uint32_t)(key)) & 0xFFu))
@@ -209,6 +246,16 @@ typedef struct {
     uint32_t last_nak_qpn;
 } rdma_resp_stats_t;
 
+// TX data source counters (cleared by the engine reset)
+typedef struct {
+    uint32_t posted;        // descriptors accepted
+    uint32_t consumed;      // messages whose payload has been read from the TX buffer (area free again)
+    uint32_t errors;        // descriptors refused and messages with a read error
+    uint32_t free_slots;    // free descriptor slots
+    uint32_t busy;          // 1: descriptors or payload still inside the data source
+    uint32_t last_error;    // RDMA_TX_ERR_*
+} rdma_tx_stats_t;
+
 // PERF monitor snapshot (see custom_top_wrapper.sv: times in engine clock cycles, first byte to first byte)
 typedef struct {
     uint32_t status;        // RDMA_PERF_STATUS_*, [25:16] WRITE waiting for their ACK
@@ -237,6 +284,34 @@ int rdma_rxbuf_clear(uintptr_t baseaddr);
 
 // Read a 32-bit word of the RX buffer (byte_offset multiple of 4)
 uint32_t rdma_rxbuf_read(uintptr_t baseaddr, uint32_t byte_offset);
+
+// Write a 32-bit word of the TX buffer (byte_offset multiple of 4)
+void rdma_txbuf_write(uintptr_t baseaddr, uint32_t byte_offset, uint32_t value);
+
+// Read back a 32-bit word of the TX buffer (byte_offset multiple of 4), to check what was written
+uint32_t rdma_txbuf_read(uintptr_t baseaddr, uint32_t byte_offset);
+
+// Select the TX data source of an engine QP: RDMA_TX_SRC_GENERATOR or RDMA_TX_SRC_PORTS.
+// Change it only while the QP has no transfer in progress (the source left out is held, not reset).
+int rdma_tx_source(uintptr_t baseaddr, uint32_t qpn, uint32_t source);
+
+// Post an RDMA WRITE on an engine QP whose TX data source is RDMA_TX_SRC_PORTS: len bytes (multiple of
+// RDMA_TX_LEN_MULTIPLE) of the TX buffer from byte offset local_off (multiple of RDMA_TXBUF_ALIGN) to the remote
+// memory at remote_off, an offset from the base address the peer gave when the QP was opened. The messages leave in
+// posting order. The TX buffer area of a message can be written again once TX_CONSUMED counts it (rdma_tx_stats,
+// rdma_tx_wait_idle).
+// SIMPLYV_ERROR: arguments out of range or no free descriptor slot (nothing posted).
+int rdma_post_write(uintptr_t baseaddr, uint32_t qpn, uint32_t local_off, uint32_t len, uint64_t remote_off);
+
+// Same, RDMA WRITE with immediate data
+int rdma_post_write_imm(uintptr_t baseaddr, uint32_t qpn, uint32_t local_off, uint32_t len, uint64_t remote_off,
+                        uint32_t imm);
+
+// TX data source counters and status
+void rdma_tx_stats(uintptr_t baseaddr, rdma_tx_stats_t* stats);
+
+// Wait until every posted message has been read from the TX buffer; SIMPLYV_ERROR on timeout
+int rdma_tx_wait_idle(uintptr_t baseaddr);
 
 // Responder: register a memory region
 int rdma_resp_mr(uintptr_t baseaddr, const rdma_mr_t* mr);

@@ -166,6 +166,97 @@ uint32_t rdma_rxbuf_read(uintptr_t baseaddr, uint32_t byte_offset)
     return ioread32(baseaddr + RDMA_RXBUF_BASE + (byte_offset & ~0x3u));
 }
 
+void rdma_txbuf_write(uintptr_t baseaddr, uint32_t byte_offset, uint32_t value)
+{
+    iowrite32(baseaddr + RDMA_TXBUF_BASE + (byte_offset & ~0x3u), value);
+}
+
+uint32_t rdma_txbuf_read(uintptr_t baseaddr, uint32_t byte_offset)
+{
+    // The buffer window reads the TX buffer only while TX_CFG[8] is set: set it, read, restore the RX buffer
+    uint32_t cfg = ioread32(baseaddr + RDMA_TX_CFG_REG);
+    iowrite32(baseaddr + RDMA_TX_CFG_REG, cfg | RDMA_TX_CFG_TXBUF_READ);
+    uint32_t value = ioread32(baseaddr + RDMA_TXBUF_BASE + (byte_offset & ~0x3u));
+    iowrite32(baseaddr + RDMA_TX_CFG_REG, cfg & ~RDMA_TX_CFG_TXBUF_READ);
+    return value;
+}
+
+int rdma_tx_source(uintptr_t baseaddr, uint32_t qpn, uint32_t source)
+{
+    if ((qpn < RDMA_FIRST_QPN) || (qpn >= RDMA_FIRST_QPN + RDMA_N_QUEUE_PAIRS)) {
+        return SIMPLYV_ERROR;
+    }
+
+    uint32_t cfg = ioread32(baseaddr + RDMA_TX_CFG_REG);
+    if (source == RDMA_TX_SRC_PORTS) {
+        cfg |= RDMA_TX_CFG_QP_SRC(qpn);
+    }
+    else {
+        cfg &= ~RDMA_TX_CFG_QP_SRC(qpn);
+    }
+    iowrite32(baseaddr + RDMA_TX_CFG_REG, cfg);
+
+    return SIMPLYV_OK;
+}
+
+static int rdma_post(uintptr_t baseaddr, uint32_t qpn, uint32_t local_off, uint32_t len, uint64_t remote_off,
+                     int imm_en, uint32_t imm)
+{
+    if ((qpn < RDMA_FIRST_QPN) || (qpn >= RDMA_FIRST_QPN + RDMA_N_QUEUE_PAIRS) || (len == 0) ||
+        ((len % RDMA_TX_LEN_MULTIPLE) != 0) || (len > RDMA_TXBUF_BYTES) || (local_off > RDMA_TXBUF_BYTES - len) ||
+        ((local_off % RDMA_TXBUF_ALIGN) != 0)) {
+        return SIMPLYV_ERROR;
+    }
+    if (RDMA_TX_STATUS_FREE(ioread32(baseaddr + RDMA_TX_STATUS_REG)) == 0) {
+        return SIMPLYV_ERROR;
+    }
+
+    // The TX_DESC_* registers keep their values: the write of TX_DESC_POST posts them
+    iowrite32(baseaddr + RDMA_TX_DESC_LOCAL_REG, local_off);
+    iowrite32(baseaddr + RDMA_TX_DESC_LEN_REG, len);
+    iowrite32(baseaddr + RDMA_TX_DESC_REMOTE_LO_REG, (uint32_t)remote_off);
+    iowrite32(baseaddr + RDMA_TX_DESC_REMOTE_HI_REG, (uint32_t)(remote_off >> 32));
+    if (imm_en) {
+        iowrite32(baseaddr + RDMA_TX_DESC_IMM_REG, imm);
+    }
+    iowrite32(baseaddr + RDMA_TX_DESC_POST_REG, qpn | (imm_en ? RDMA_TX_POST_IMM : 0u));
+
+    return SIMPLYV_OK;
+}
+
+int rdma_post_write(uintptr_t baseaddr, uint32_t qpn, uint32_t local_off, uint32_t len, uint64_t remote_off)
+{
+    return rdma_post(baseaddr, qpn, local_off, len, remote_off, 0, 0);
+}
+
+int rdma_post_write_imm(uintptr_t baseaddr, uint32_t qpn, uint32_t local_off, uint32_t len, uint64_t remote_off,
+                        uint32_t imm)
+{
+    return rdma_post(baseaddr, qpn, local_off, len, remote_off, 1, imm);
+}
+
+void rdma_tx_stats(uintptr_t baseaddr, rdma_tx_stats_t* stats)
+{
+    uint32_t status = ioread32(baseaddr + RDMA_TX_STATUS_REG);
+
+    stats->posted     = ioread32(baseaddr + RDMA_TX_POSTED_REG);
+    stats->consumed   = ioread32(baseaddr + RDMA_TX_CONSUMED_REG);
+    stats->errors     = ioread32(baseaddr + RDMA_TX_ERRORS_REG);
+    stats->free_slots = RDMA_TX_STATUS_FREE(status);
+    stats->busy       = (status & RDMA_TX_STATUS_BUSY) ? 1u : 0u;
+    stats->last_error = RDMA_TX_STATUS_ERROR(status);
+}
+
+int rdma_tx_wait_idle(uintptr_t baseaddr)
+{
+    for (uint32_t t = 0; t < RDMA_POLL_TIMEOUT; t++) {
+        if ((ioread32(baseaddr + RDMA_TX_STATUS_REG) & RDMA_TX_STATUS_BUSY) == 0) {
+            return SIMPLYV_OK;
+        }
+    }
+    return SIMPLYV_ERROR;
+}
+
 int rdma_resp_mr(uintptr_t baseaddr, const rdma_mr_t* mr)
 {
     if (mr->index >= RDMA_N_MR) {
