@@ -11,6 +11,8 @@
 #     `vivado` wrapper script in ~/bin that bridges calls to Windows Vivado
 #     (translates WSL paths/env vars to Windows form; see project notes)
 #   - The target board physically connected, for the hil_test job only
+#
+# See doc/CI_RUNNER_SETUP.md for how to set up the runner.
 # =============================================================================
 
 name: Arty-A7 Build & HIL Test
