@@ -122,7 +122,7 @@ jobs:
   # HIL test: programs the physical target boards, runs hello_world through
   # OpenOCD/GDB and checks the UART output. All the logic lives in
   # hw/xilinx/scripts/utils/wsl/hil_hello_world_wsl.sh, which can also be run by hand with the board
-  # connected (see doc/WSL_SETUP.md, section 8). It needs the board plugged
+  # connected. It needs the board plugged
   # into the runner machine; without it this job fails, the build job is not
   # affected.
   # ---------------------------------------------------------------------------
