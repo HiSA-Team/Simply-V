@@ -155,5 +155,4 @@ jobs:
       - name: Program the board, run hello_world, check the UART
         run: |
           source settings.sh $SIMPLYV_PROFILE $BOARD_CONFIG
-          make config
-          bash hw/xilinx/scripts/utils/wsl/hil_hello_world_wsl.sh
+          make test_hil

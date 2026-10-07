@@ -28,4 +28,9 @@ clean:
 	${MAKE} -C ${HW_UNITS_ROOT} clean
 	${MAKE} -C ${SW_ROOT} clean
 
-.PHONY: config hw sw xilinx units
+# Hardware-in-the-loop test on a WSL runner: programs the board, runs hello_world
+# and checks the UART. The bitstream must be already built (or downloaded).
+test_hil: sw
+	bash ${XILINX_ROOT}/scripts/utils/wsl/hil_hello_world_wsl.sh
+
+.PHONY: config hw sw xilinx units test_hil
