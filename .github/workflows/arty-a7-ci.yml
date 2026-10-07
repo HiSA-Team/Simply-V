@@ -33,7 +33,7 @@ jobs:
   #   runs-on: [self-hosted, arty-a7-wsl]
   #   steps:
   #     - name: Checkout
-  #       uses: actions/checkout@v6
+  #       uses: actions/checkout@v7
   #       with:
   #         submodules: recursive
   #     - name: Run simulation
@@ -45,7 +45,7 @@ jobs:
     runs-on: [self-hosted, arty-a7-wsl]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
@@ -55,7 +55,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Restore cached RTL sources (hw/units/*/rtl)
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: hw/units/*/rtl
           key: units-rtl-${{ hashFiles('hw/units/*/fetch_sources.sh') }}
@@ -84,7 +84,7 @@ jobs:
       - name: Restore cached built Xilinx IPs (avoids re-synthesizing all 34 IPs every run)
         # TODO55: temporary workaround, waiting for the IP selection feature (#55)
         id: ips_cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: |
             hw/xilinx/ips/*.xci
@@ -139,7 +139,7 @@ jobs:
     runs-on: [self-hosted, arty-a7-wsl]
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Add local tools to PATH
         run: |
