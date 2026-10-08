@@ -107,13 +107,13 @@ else # Default
         export BOARD_INPUT_CLK_MHZ=100.000
         export BOARD=Arty-A7-100T-Master
         
-    elif [[ ${BOARD_CONFIG} == "pynq_z1" ]]; then
+    elif [[ ${BOARD_CONFIG} == "pynq_z1_pl_only" ]]; then
         # Pynq-Z1 (Zynq-7020, PL-only)
         export XILINX_PART_NUMBER=xc7z020clg400-1
         export XILINX_BOARD_PART=www.digilentinc.com:pynq-z1:part0:1.0
         export XILINX_HW_DEVICE=xc7z020_1
         export BOARD_INPUT_CLK_MHZ=125.000
-        export BOARD=Pynq-Z1-Master
+        export BOARD=Pynq-Z1-PL-Only-Master
 
     else # Default
         # Nexsys A7-100T

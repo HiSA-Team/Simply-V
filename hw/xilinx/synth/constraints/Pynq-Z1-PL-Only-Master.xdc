@@ -1,4 +1,4 @@
-## Pynq-Z1-Master.xdc
+## Pynq-Z1-PL-Only-Master.xdc
 ## Simply-V, embedded profile, PL-only.
 ## This file is a general .xdc for the PYNQ-Z1 board Rev. C (Digilent master XDC).
 ## To use it in a project:
