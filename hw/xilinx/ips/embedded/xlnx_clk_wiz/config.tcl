@@ -3,6 +3,7 @@ create_ip -name clk_wiz -vendor xilinx.com -library ip -version 6.0 -module_name
 
 # Configure IP
 set_property -dict [list CONFIG.CLK_IN1_BOARD_INTERFACE {Custom} \
+                        CONFIG.PRIM_IN_FREQ $::env(BOARD_INPUT_CLK_MHZ) \
                         CONFIG.RESET_BOARD_INTERFACE {Custom} \
                         CONFIG.RESET_TYPE {Active_Low} \
                         CONFIG.CLKOUT2_USED {true} \
