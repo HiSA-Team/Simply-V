@@ -14,7 +14,7 @@ from .singleton import Singleton
 class Env(metaclass=Singleton):
 	# init Env
 	def __init__(self):
-		self.SUPPORTED_PROFILES = ["hpc", "embedded"]
+		self.SUPPORTED_PROFILES = ["hpc", "embedded", "zynq"]
 		self.SUPPORTED_BOARDS = ["Nexys-A7-100T-Master", "Nexys-A7-50T-Master", "Arty-A7-100T-Master", "Pynq-Z1-PL-Only-Master", "Pynq-Z1-Master", "au250", "au280", "au50"]
 		# Private variables never touch them, use the getters
 		self.bus_input_files: dict[str, str]
@@ -83,7 +83,7 @@ class Env(metaclass=Singleton):
 
 	def get_def_clock_domains(self) -> list[str]:
 		match self._SIMPLYV_PROFILE:
-			case "embedded":
+			case "embedded" | "zynq":
 				return ["MBUS_10", "MBUS_20", "MBUS_50", "MBUS_100"]
 			case "hpc":
 				return ["MBUS_10", "MBUS_20", "MBUS_50", "MBUS_100", "MBUS_250"]

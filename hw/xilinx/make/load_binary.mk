@@ -28,7 +28,8 @@ LOAD_BINARY_READBACK ?= false
 # Call the specific load script based on the SIMPLYV_PROFILE (HPC or EMBEDDED)
 load_binary: load_binary_${SIMPLYV_PROFILE}
 
-# Write the binary to BRAM through jtag2axi
+# Write the binary to BRAM through jtag2axi (embedded and zynq profiles)
+load_binary_zynq: load_binary_embedded
 load_binary_embedded: ${BIN_PATH}
 	${XILINX_VIVADO} \
 		-source ${XILINX_SCRIPT_ROOT}/utils/open_hw_manager.tcl \

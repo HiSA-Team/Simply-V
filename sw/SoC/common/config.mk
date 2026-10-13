@@ -80,6 +80,6 @@ LDFLAGS ?= $(LIB_OBJ_LIST) -nostdlib \
 
 # Define IS_EMBEDDED macro
 MACRO_LIST =
-ifeq ($(SIMPLYV_PROFILE), embedded)
+ifneq ($(filter $(SIMPLYV_PROFILE),embedded zynq),)
 	MACRO_LIST += -DIS_EMBEDDED
 endif

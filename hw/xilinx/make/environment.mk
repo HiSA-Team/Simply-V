@@ -39,6 +39,9 @@ ifeq (${SIMPLYV_PROFILE}, hpc)
 else ifeq (${SIMPLYV_PROFILE}, embedded)
 #   Append embedded IPs
     IP_LIST += ${EMBEDDED_IP_LIST}
+else ifeq (${SIMPLYV_PROFILE}, zynq)
+#   Zynq extends embedded with the PS: append embedded IPs
+    IP_LIST += ${EMBEDDED_IP_LIST}
 else
 $(error "Unsupported config ${SIMPLYV_PROFILE}")
 endif

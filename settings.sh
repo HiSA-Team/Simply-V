@@ -50,6 +50,7 @@ export XILINX_PROJECT_NAME=simplyv
 
 # hpc      -> { au250           , au280 (Vivado 2023.1 only) , au50 (TBD)  }
 # embedded -> { nexys_a7_100t   , nexys_a7_50t                             }
+# zynq     -> { pynq_z1                                                   }
 
 # PS: Environmental variable BOARD should match the .xdc constraint file name.
 
@@ -84,6 +85,24 @@ if [[ ${SIMPLYV_PROFILE} == "hpc" ]]; then
     # Change default MAIN_CLOCK_DOMAIN
     sed -i -E "s/MAIN_CLOCK_DOMAIN.+/MAIN_CLOCK_DOMAIN,MBUS_100/g" ${CONFIG_SYSTEM}
 
+elif [[ ${SIMPLYV_PROFILE} == "zynq" ]]; then
+
+    # Embedded profile plus the Zynq Processing System (PS)
+    export SIMPLYV_PROFILE=zynq
+
+    # Use wildcard instead device specific part number
+    export XILINX_HW_SERVER_FPGA_PATH=xilinx_tcf/Digilent/*
+
+    # Pynq-Z1 (Zynq-7020, PS+PL), the only zynq board for now
+    export XILINX_PART_NUMBER=xc7z020clg400-1
+    export XILINX_BOARD_PART=www.digilentinc.com:pynq-z1:part0:1.0
+    export XILINX_HW_DEVICE=xc7z020_1
+    export BOARD_INPUT_CLK_MHZ=125.000
+    export BOARD=Pynq-Z1-Master
+
+    # Change default MAIN_CLOCK_DOMAIN
+    sed -i -E "s/MAIN_CLOCK_DOMAIN.+/MAIN_CLOCK_DOMAIN,MBUS_20/g" ${CONFIG_SYSTEM}
+
 else # Default
     # Set profile
     export SIMPLYV_PROFILE=embedded
@@ -111,14 +130,6 @@ else # Default
         export XILINX_BOARD_PART=www.digilentinc.com:pynq-z1:part0:1.0
         export XILINX_HW_DEVICE=xc7z020_1
         export BOARD=Pynq-Z1-PL-Only-Master
-
-    elif [[ ${BOARD_CONFIG} == "pynq_z1" ]]; then
-        # Pynq-Z1 (Zynq-7020, PS+PL)
-        export XILINX_PART_NUMBER=xc7z020clg400-1
-        export XILINX_BOARD_PART=www.digilentinc.com:pynq-z1:part0:1.0
-        export XILINX_HW_DEVICE=xc7z020_1
-        export BOARD_INPUT_CLK_MHZ=125.000
-        export BOARD=Pynq-Z1-Master
 
     else # Default
         # Nexsys A7-100T

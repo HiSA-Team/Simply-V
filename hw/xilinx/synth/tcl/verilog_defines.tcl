@@ -11,6 +11,10 @@ if { "$::env(SIMPLYV_PROFILE)" == "hpc" } {
     lappend verilog_defines HPC=1
 } elseif { "$::env(SIMPLYV_PROFILE)" == "embedded" } {
     lappend verilog_defines EMBEDDED=1
+} elseif { "$::env(SIMPLYV_PROFILE)" == "zynq" } {
+    # Zynq extends the embedded profile with the PS
+    lappend verilog_defines EMBEDDED=1
+    lappend verilog_defines ZYNQ=1
 } else {
     puts "Unsupported board $::env(SIMPLYV_PROFILE)"
     exit 1

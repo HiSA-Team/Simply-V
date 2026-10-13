@@ -39,7 +39,8 @@ NUM_BYTES ?= 16
 # Call the specific load script based on the SIMPLYV_PROFILE (HPC or EMBEDDED)
 readback: readback_${SIMPLYV_PROFILE}
 
-# Embedded profile
+# Embedded and zynq profiles
+readback_zynq: readback_embedded
 readback_embedded:
 	${XILINX_VIVADO_ENV} ${XILINX_VIVADO} \
 	-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
@@ -60,7 +61,8 @@ vio_%:
 # Program the bitstream based on the SoC profile
 program_bitstream: program_bitstream_${SIMPLYV_PROFILE}
 
-# Program bitstream for embedded profile
+# Program bitstream for embedded and zynq profiles
+program_bitstream_zynq: program_bitstream_embedded
 program_bitstream_embedded:
 	${XILINX_VIVADO} \
 		-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
