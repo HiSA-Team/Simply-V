@@ -57,6 +57,12 @@ ifneq (${BOARD},Pynq-Z1-PL-Only-Master)
     IP_LIST := $(filter-out xlnx_clk_wiz_125,${IP_LIST})
 endif
 
+# Remove the PS wrapper when the board has no Zynq-7000 PS
+# TODO55: quick workaround, the PS wrapper only builds for Zynq-7000 targets
+ifneq (${BOARD},Pynq-Z1-Master)
+    IP_LIST := $(filter-out xlnx_ps_wrapper,${IP_LIST})
+endif
+
 # List of IPs' xci files to import in main Vivado project
 IP_LIST_XCI = $(foreach ip,${IP_LIST},$(shell find ${XILINX_IPS_ROOT} -type f -path "*/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci"))
 
