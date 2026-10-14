@@ -1,14 +1,12 @@
 # Author: Federica Sarnataro
-# Description: Block Design wrapping the Zynq-7000 Processing System (PS7).
-#   The PS is configured with the board preset (DDR, MIO, clocks).
-#   The BD exposes:
-#     - M_AXI_GP0       : PS master port, towards the Simply-V MBUS
-#     - S_AXI_GP0       : PS slave port, from the Simply-V MBUS
-#     - FCLK_CLK0       : PS fabric clock
-#     - FCLK_RESET0_N   : PS fabric reset (active low)
-#     - M_AXI_GP0_ACLK  : clock input of M_AXI_GP0
-#     - S_AXI_GP0_ACLK  : clock input of S_AXI_GP0
-#     - DDR, FIXED_IO   : PS fixed I/O, to be routed to the top level
+# Description: Zynq-7000 Processing System (PS7), as a plain Xilinx IP.
+#   The PS is configured with the preset of the board part (DDR, MIO, clocks),
+#   read from the preset.xml next to the board.xml. Then the ports towards
+#   Simply-V are enabled:
+#     - M_AXI_GP0     : PS master port, towards the Simply-V MBUS
+#     - S_AXI_GP0     : PS slave port, from the Simply-V MBUS
+#     - FCLK_CLK0     : PS fabric clock, 125 MHz (input of xlnx_clk_wiz_zynq)
+#     - FCLK_RESET0_N : PS fabric reset (active low)
 #
 # TODO55: this IP lives in ips/common as a placeholder, but it only builds for
 #   Zynq-7000 targets (e.g. Pynq-Z1). The PS does not exist on other parts
@@ -16,37 +14,35 @@
 #   (#55) is available, this IP is filtered out in make/environment.mk for
 #   boards without a PS.
 
-# Create the Block Design, named as the IP
-create_bd_design $::env(IP_NAME)
+# Import IP
+create_ip -name processing_system7 -vendor xilinx.com -library ip -version 5.5 -module_name $::env(IP_NAME)
+set ps [get_ips $::env(IP_NAME)]
 
-# Add the Zynq-7000 PS
-set ps [create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 ps7]
+# Read the processing_system7 section of the board preset
+set board_dir [file dirname [get_property FILE_NAME [current_board_part]]]
+set fp [open [file join $board_dir preset.xml] r]
+set preset_xml [read $fp]
+close $fp
+set ps7_start [string first {name="processing_system7"} $preset_xml]
+set ps7_end   [string first {</ip>} $preset_xml $ps7_start]
+if { $ps7_start < 0 || $ps7_end < 0 } {
+    puts "\[ERROR\] No processing_system7 preset found in $board_dir/preset.xml"
+    exit 1
+}
+set ps7_preset [string range $preset_xml $ps7_start $ps7_end]
 
-# Apply the board preset and make DDR and FIXED_IO external
-apply_bd_automation -rule xilinx.com:bd_rule:processing_system7 \
-    -config {make_external "FIXED_IO, DDR" apply_board_preset "1" Master "Disable" Slave "Disable"} $ps
+# Apply the preset values that differ from the IP defaults
+foreach {-> name value} [regexp -all -inline {<user_parameter name="(CONFIG\.[^"]+)" value="([^"]*)"} $ps7_preset] {
+    if { [get_property $name $ps] ne $value } {
+        set_property $name $value $ps
+    }
+}
 
 # Enable the ports towards Simply-V
 set_property -dict [list \
-    CONFIG.PCW_USE_M_AXI_GP0 {1} \
-    CONFIG.PCW_USE_S_AXI_GP0 {1} \
-    CONFIG.PCW_EN_CLK0_PORT  {1} \
-    CONFIG.PCW_EN_RST0_PORT  {1} \
+    CONFIG.PCW_USE_M_AXI_GP0            {1}   \
+    CONFIG.PCW_USE_S_AXI_GP0            {1}   \
+    CONFIG.PCW_EN_CLK0_PORT             {1}   \
+    CONFIG.PCW_EN_RST0_PORT             {1}   \
+    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {125} \
 ] $ps
-
-# Make the AXI interfaces external, keeping the PS port names
-foreach intf {M_AXI_GP0 S_AXI_GP0} {
-    make_bd_intf_pins_external [get_bd_intf_pins ps7/$intf]
-    set_property name $intf [get_bd_intf_ports ${intf}_0]
-}
-
-# Make clocks and reset external, keeping the PS port names
-foreach pin {FCLK_CLK0 FCLK_RESET0_N M_AXI_GP0_ACLK S_AXI_GP0_ACLK} {
-    make_bd_pins_external [get_bd_pins ps7/$pin]
-    set_property name $pin [get_bd_ports ${pin}_0]
-}
-
-# Assign addresses, validate and save
-assign_bd_address
-validate_bd_design
-save_bd_design

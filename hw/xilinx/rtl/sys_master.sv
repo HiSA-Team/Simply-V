@@ -2,6 +2,7 @@
 // Author: Stefano Mercogliano <stefano.mercogliano@unina.it>
 // Description: Sys master - Instantiates the right masetr AXI based on the SoC profile and gives the clk and rst to the soc
 //              EMBEDDED -> Jtag2Axi
+//              ZYNQ     -> Jtag2Axi, clock and reset from the PS (FCLK_CLK0, FCLK_RESET0_N)
 //              HPC      -> XDMA
 //
 //
@@ -39,6 +40,9 @@ import simplyv_pkg::*;
 // Import headers
 `include "simplyv_axi.svh"
 `include "simplyv_pcie.svh"
+`ifdef ZYNQ
+`include "simplyv_ps7.svh"
+`endif
 
 module sys_master # (
     parameter int unsigned    LOCAL_DATA_WIDTH  = 32,
@@ -58,6 +62,12 @@ module sys_master # (
     input logic pcie_resetn_i,
     // PCIe interface
     `DEFINE_PCIE_PORTS,
+
+`ifdef ZYNQ
+    // ZYNQ ONLY
+    // PS fixed I/O (DDR and FIXED_IO)
+    `DEFINE_PS7_PORTS,
+`endif
 
     // Output clks
     output logic clk_10MHz_o,
@@ -489,6 +499,105 @@ module sys_master # (
     assign m_axi_awregion = '0;
     assign m_axi_arregion = '0;
 
+`ifdef ZYNQ
+    // ZYNQ: the clock wizard (xlnx_clk_wiz_zynq) is fed by the PS fabric clock
+    // (FCLK_CLK0, 125 MHz) instead of sys_clock_i, and reset by the PS fabric
+    // reset (FCLK_RESET0_N)
+    logic ps_fclk;
+    logic ps_fclk_resetn;
+
+    // PS wrapper (xlnx_ps_wrapper, Zynq-7000 PS7 IP)
+    // NOTE: for now only the fabric clock and reset are used, the PS AXI ports
+    //       (M_AXI_GP0, S_AXI_GP0) are tied off and not connected to the MBUS yet
+    xlnx_ps_wrapper ps_u (
+        // PS fixed I/O
+        .DDR_Addr           ( ps_ddr_addr          ),
+        .DDR_BankAddr       ( ps_ddr_ba            ),
+        .DDR_CAS_n          ( ps_ddr_cas_n         ),
+        .DDR_Clk_n          ( ps_ddr_ck_n          ),
+        .DDR_Clk            ( ps_ddr_ck_p          ),
+        .DDR_CKE            ( ps_ddr_cke           ),
+        .DDR_CS_n           ( ps_ddr_cs_n          ),
+        .DDR_DM             ( ps_ddr_dm            ),
+        .DDR_DQ             ( ps_ddr_dq            ),
+        .DDR_DQS_n          ( ps_ddr_dqs_n         ),
+        .DDR_DQS            ( ps_ddr_dqs_p         ),
+        .DDR_ODT            ( ps_ddr_odt           ),
+        .DDR_RAS_n          ( ps_ddr_ras_n         ),
+        .DDR_DRSTB          ( ps_ddr_reset_n       ),
+        .DDR_WEB            ( ps_ddr_we_n          ),
+        .DDR_VRN            ( ps_fixed_io_ddr_vrn  ),
+        .DDR_VRP            ( ps_fixed_io_ddr_vrp  ),
+        .MIO                ( ps_fixed_io_mio      ),
+        .PS_CLK             ( ps_fixed_io_ps_clk   ),
+        .PS_PORB            ( ps_fixed_io_ps_porb  ),
+        .PS_SRSTB           ( ps_fixed_io_ps_srstb ),
+
+        // USB0 (enabled by the board preset): no VBUS power fault
+        .USB0_VBUS_PWRFAULT ( 1'b0 ),
+        .USB0_PORT_INDCTL   (      ),
+        .USB0_VBUS_PWRSELECT(      ),
+
+        // Fabric clock and reset
+        .FCLK_CLK0          ( ps_fclk              ),
+        .FCLK_RESET0_N      ( ps_fclk_resetn       ),
+        .M_AXI_GP0_ACLK     ( ps_fclk              ),
+        .S_AXI_GP0_ACLK     ( ps_fclk              ),
+
+        // M_AXI_GP0 (PS master): tied off, outputs left open
+        .M_AXI_GP0_AWREADY  ( '0 ),
+        .M_AXI_GP0_WREADY   ( '0 ),
+        .M_AXI_GP0_BID      ( '0 ),
+        .M_AXI_GP0_BRESP    ( '0 ),
+        .M_AXI_GP0_BVALID   ( '0 ),
+        .M_AXI_GP0_ARREADY  ( '0 ),
+        .M_AXI_GP0_RID      ( '0 ),
+        .M_AXI_GP0_RDATA    ( '0 ),
+        .M_AXI_GP0_RRESP    ( '0 ),
+        .M_AXI_GP0_RLAST    ( '0 ),
+        .M_AXI_GP0_RVALID   ( '0 ),
+
+        // S_AXI_GP0 (PS slave): tied off, outputs left open
+        .S_AXI_GP0_AWID     ( '0 ),
+        .S_AXI_GP0_AWADDR   ( '0 ),
+        .S_AXI_GP0_AWLEN    ( '0 ),
+        .S_AXI_GP0_AWSIZE   ( '0 ),
+        .S_AXI_GP0_AWBURST  ( '0 ),
+        .S_AXI_GP0_AWLOCK   ( '0 ),
+        .S_AXI_GP0_AWCACHE  ( '0 ),
+        .S_AXI_GP0_AWPROT   ( '0 ),
+        .S_AXI_GP0_AWQOS    ( '0 ),
+        .S_AXI_GP0_AWVALID  ( '0 ),
+        .S_AXI_GP0_WID      ( '0 ),
+        .S_AXI_GP0_WDATA    ( '0 ),
+        .S_AXI_GP0_WSTRB    ( '0 ),
+        .S_AXI_GP0_WLAST    ( '0 ),
+        .S_AXI_GP0_WVALID   ( '0 ),
+        .S_AXI_GP0_BREADY   ( '0 ),
+        .S_AXI_GP0_ARID     ( '0 ),
+        .S_AXI_GP0_ARADDR   ( '0 ),
+        .S_AXI_GP0_ARLEN    ( '0 ),
+        .S_AXI_GP0_ARSIZE   ( '0 ),
+        .S_AXI_GP0_ARBURST  ( '0 ),
+        .S_AXI_GP0_ARLOCK   ( '0 ),
+        .S_AXI_GP0_ARCACHE  ( '0 ),
+        .S_AXI_GP0_ARPROT   ( '0 ),
+        .S_AXI_GP0_ARQOS    ( '0 ),
+        .S_AXI_GP0_ARVALID  ( '0 ),
+        .S_AXI_GP0_RREADY   ( '0 )
+    );
+
+    // PLL, for the 125 MHz PS fabric clock
+    xlnx_clk_wiz_zynq clkwiz_u (
+        .clk_in1  ( ps_fclk                       ),
+        .resetn   ( ps_fclk_resetn & ~sys_reset_i ),
+        .locked   ( locked                        ),
+        .clk_100  ( clk_100MHz_o                  ),
+        .clk_50   ( clk_50MHz_o                   ),
+        .clk_20   ( clk_20MHz_o                   ),
+        .clk_10   ( clk_10MHz_o                   )
+    );
+`else
     // PLL
 `ifdef CLK_WIZ_125
     // Board with a 125 MHz input clock
@@ -505,6 +614,7 @@ module sys_master # (
         .clk_20   ( clk_20MHz_o  ),
         .clk_10   ( clk_10MHz_o  )
     );
+`endif
 
     // The JTAG2AXI ip is always built with a 32-bits DWIDTH. We use a DWIDTH
     // converter if the SoC is built at 64 bits. While it is possible to build

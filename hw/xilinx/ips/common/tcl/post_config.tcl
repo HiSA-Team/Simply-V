@@ -1,12 +1,3 @@
-# Block Design (e.g. xlnx_ps_wrapper): generate the output products and the
-# HDL wrapper, then stop, since the .xci flow below does not apply to BDs
-if { [llength [get_files -quiet $::env(IP_NAME).bd]] > 0 } {
-    set bd_file [get_files $::env(IP_NAME).bd]
-    generate_target all $bd_file
-    make_wrapper -files $bd_file -top
-    return
-}
-
 # Generate
 generate_target {instantiation_template} [get_files $::env(IP_NAME).xci]
 generate_target all [get_files $::env(IP_NAME).xci]

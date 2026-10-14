@@ -69,6 +69,10 @@ import simplyv_pkg::*;
     `include "simplyv_ddr4.svh"
 `endif
 
+`ifdef ZYNQ
+    `include "simplyv_ps7.svh"
+`endif
+
 ///////////////////////
 // Module definition //
 ///////////////////////
@@ -87,6 +91,11 @@ module simplyv (
         // GPIOs
         input  logic [GPIO_IN_WIDTH  -1 : 0]  gpio_in_i,
         output logic [GPIO_OUT_WIDTH -1 : 0]  gpio_out_o
+        `ifdef ZYNQ
+        ,
+        // PS fixed I/O (DDR and FIXED_IO)
+        `DEFINE_PS7_PORTS
+        `endif
     `elsif HPC
         // DDR4 Channel 0 differential clock
         input logic clk_300mhz_0_p_i,
@@ -294,6 +303,10 @@ module simplyv (
         .pci_exp_rxp_i(pci_exp_rxp_i),
         .pci_exp_txn_o(pci_exp_txn_o),
         .pci_exp_txp_o(pci_exp_txp_o),
+`ifdef ZYNQ
+        // ZYNQ ONLY
+        `CONNECT_PS7_PORTS,
+`endif
         // Output clocks
         .clk_10MHz_o(clk_MBUS_10MHz),
         .clk_20MHz_o(clk_MBUS_20MHz),
