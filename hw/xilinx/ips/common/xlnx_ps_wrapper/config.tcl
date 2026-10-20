@@ -41,6 +41,7 @@ foreach {-> name value} [regexp -all -inline {<user_parameter name="(CONFIG\.[^"
 # Enable the ports towards Simply-V
 set_property -dict [list \
     CONFIG.PCW_USE_M_AXI_GP0            {1}   \
+    CONFIG.PCW_M_AXI_GP0_ENABLE_STATIC_REMAP {1} \
     CONFIG.PCW_USE_S_AXI_GP0            {1}   \
     CONFIG.PCW_EN_CLK0_PORT             {1}   \
     CONFIG.PCW_EN_RST0_PORT             {1}   \

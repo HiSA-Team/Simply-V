@@ -63,7 +63,7 @@ endif
 # Remove the PS wrapper and its clock wizard and converters when the board has no Zynq-7000 PS
 # TODO55: quick workaround, these IPs are only used with Zynq-7000 targets
 ifneq (${BOARD},Pynq-Z1-Master)
-    IP_LIST := $(filter-out xlnx_ps_wrapper xlnx_clk_wiz_zynq xlnx_axi3_to_axilite_d32_converter,${IP_LIST})
+    IP_LIST := $(filter-out xlnx_ps_wrapper xlnx_clk_wiz_zynq xlnx_axi3_to_axi4_d32_converter,${IP_LIST})
 endif
 
 # List of IPs' xci files to import in main Vivado project

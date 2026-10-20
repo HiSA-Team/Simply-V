@@ -508,8 +508,9 @@ module sys_master # (
     logic ps_fclk;
     logic ps_fclk_resetn;
 
-    // PS master (M_AXI_GP0, AXI3, 12-bit IDs) in the FCLK_CLK0 domain
-    logic [11:0] ps_gp0_awid;
+    // PS master (M_AXI_GP0, AXI3) in the FCLK_CLK0 domain
+    // With static remap (xlnx_ps_wrapper) the PS IDs are 6 bits wide and pass unchanged to the MBUS
+    logic [5:0]  ps_gp0_awid;
     logic [31:0] ps_gp0_awaddr;
     logic [3:0]  ps_gp0_awlen;
     logic [2:0]  ps_gp0_awsize;
@@ -520,17 +521,17 @@ module sys_master # (
     logic [3:0]  ps_gp0_awqos;
     logic        ps_gp0_awvalid;
     logic        ps_gp0_awready;
-    logic [11:0] ps_gp0_wid;
+    logic [5:0]  ps_gp0_wid;
     logic [31:0] ps_gp0_wdata;
     logic [3:0]  ps_gp0_wstrb;
     logic        ps_gp0_wlast;
     logic        ps_gp0_wvalid;
     logic        ps_gp0_wready;
-    logic [11:0] ps_gp0_bid;
+    logic [5:0]  ps_gp0_bid;
     logic [1:0]  ps_gp0_bresp;
     logic        ps_gp0_bvalid;
     logic        ps_gp0_bready;
-    logic [11:0] ps_gp0_arid;
+    logic [5:0]  ps_gp0_arid;
     logic [31:0] ps_gp0_araddr;
     logic [3:0]  ps_gp0_arlen;
     logic [2:0]  ps_gp0_arsize;
@@ -541,12 +542,17 @@ module sys_master # (
     logic [3:0]  ps_gp0_arqos;
     logic        ps_gp0_arvalid;
     logic        ps_gp0_arready;
-    logic [11:0] ps_gp0_rid;
+    logic [5:0]  ps_gp0_rid;
     logic [31:0] ps_gp0_rdata;
     logic [1:0]  ps_gp0_rresp;
     logic        ps_gp0_rlast;
     logic        ps_gp0_rvalid;
     logic        ps_gp0_rready;
+
+    initial begin : assert_ps_gp0_id_width
+        assert( LOCAL_ID_WIDTH == 6 )
+            else $error("MBUS_ID_WIDTH (%d) must be 6, the PS M_AXI_GP0 ID width with static remap", LOCAL_ID_WIDTH);
+    end : assert_ps_gp0_id_width
 
     // PS wrapper (xlnx_ps_wrapper, Zynq-7000 PS7 IP)
     // NOTE: S_AXI_GP0 (PS slave) is tied off, it is not connected to the MBUS yet
@@ -666,103 +672,56 @@ module sys_master # (
         .clk_10   ( clk_10MHz_o                   )
     );
 
-    // PS master path: M_AXI_GP0 (AXI3, ID 12, FCLK_CLK0) -> AXI4-Lite -> AXI4 (MBUS ID width) -> main clock
-    // NOTE: the AXI4-Lite step drops the 12-bit PS IDs, it only supports 32-bit data
-    `DECLARE_AXILITE_BUS(ps_gp0_to_axi4_converter, 32, 32);
+    // PS master path: M_AXI_GP0 (AXI3, FCLK_CLK0) -> AXI4 (MBUS ID width) -> main clock
     `DECLARE_AXI_BUS(ps_gp0_to_clock_converter, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
 
-    // AXI3 to AXI4-Lite converter, FCLK_CLK0 domain
-    xlnx_axi3_to_axilite_d32_converter ps_gp0_axi3_to_axilite_u (
+    // AXI3 to AXI4 converter, FCLK_CLK0 domain
+    // The PS sees the PL at 0x4000_0000 (M_AXI_GP0), the MBUS starts at 0x0:
+    // drop the top 2 address bits, so PS address 0x4000_0000 is MBUS address 0x0
+    xlnx_axi3_to_axi4_d32_converter ps_gp0_axi3_to_axi4_u (
         .aclk           ( ps_fclk        ),
         .aresetn        ( ps_fclk_resetn ),
         // From the PS (AXI3)
-        .s_axi_awid     ( ps_gp0_awid     ),
-        .s_axi_awaddr   ( ps_gp0_awaddr   ),
-        .s_axi_awlen    ( ps_gp0_awlen    ),
-        .s_axi_awsize   ( ps_gp0_awsize   ),
-        .s_axi_awburst  ( ps_gp0_awburst  ),
-        .s_axi_awlock   ( ps_gp0_awlock   ),
-        .s_axi_awcache  ( ps_gp0_awcache  ),
-        .s_axi_awprot   ( ps_gp0_awprot   ),
-        .s_axi_awqos    ( ps_gp0_awqos    ),
-        .s_axi_awvalid  ( ps_gp0_awvalid  ),
-        .s_axi_awready  ( ps_gp0_awready  ),
-        .s_axi_wid      ( ps_gp0_wid      ),
-        .s_axi_wdata    ( ps_gp0_wdata    ),
-        .s_axi_wstrb    ( ps_gp0_wstrb    ),
-        .s_axi_wlast    ( ps_gp0_wlast    ),
-        .s_axi_wvalid   ( ps_gp0_wvalid   ),
-        .s_axi_wready   ( ps_gp0_wready   ),
-        .s_axi_bid      ( ps_gp0_bid      ),
-        .s_axi_bresp    ( ps_gp0_bresp    ),
-        .s_axi_bvalid   ( ps_gp0_bvalid   ),
-        .s_axi_bready   ( ps_gp0_bready   ),
-        .s_axi_arid     ( ps_gp0_arid     ),
-        .s_axi_araddr   ( ps_gp0_araddr   ),
-        .s_axi_arlen    ( ps_gp0_arlen    ),
-        .s_axi_arsize   ( ps_gp0_arsize   ),
-        .s_axi_arburst  ( ps_gp0_arburst  ),
-        .s_axi_arlock   ( ps_gp0_arlock   ),
-        .s_axi_arcache  ( ps_gp0_arcache  ),
-        .s_axi_arprot   ( ps_gp0_arprot   ),
-        .s_axi_arqos    ( ps_gp0_arqos    ),
-        .s_axi_arvalid  ( ps_gp0_arvalid  ),
-        .s_axi_arready  ( ps_gp0_arready  ),
-        .s_axi_rid      ( ps_gp0_rid      ),
-        .s_axi_rdata    ( ps_gp0_rdata    ),
-        .s_axi_rresp    ( ps_gp0_rresp    ),
-        .s_axi_rlast    ( ps_gp0_rlast    ),
-        .s_axi_rvalid   ( ps_gp0_rvalid   ),
-        .s_axi_rready   ( ps_gp0_rready   ),
-        // To the AXI4 converter (AXI4-Lite)
-        .m_axi_awaddr   ( ps_gp0_to_axi4_converter_axilite_awaddr   ),
-        .m_axi_awprot   ( ps_gp0_to_axi4_converter_axilite_awprot   ),
-        .m_axi_awvalid  ( ps_gp0_to_axi4_converter_axilite_awvalid  ),
-        .m_axi_awready  ( ps_gp0_to_axi4_converter_axilite_awready  ),
-        .m_axi_wdata    ( ps_gp0_to_axi4_converter_axilite_wdata    ),
-        .m_axi_wstrb    ( ps_gp0_to_axi4_converter_axilite_wstrb    ),
-        .m_axi_wvalid   ( ps_gp0_to_axi4_converter_axilite_wvalid   ),
-        .m_axi_wready   ( ps_gp0_to_axi4_converter_axilite_wready   ),
-        .m_axi_bresp    ( ps_gp0_to_axi4_converter_axilite_bresp    ),
-        .m_axi_bvalid   ( ps_gp0_to_axi4_converter_axilite_bvalid   ),
-        .m_axi_bready   ( ps_gp0_to_axi4_converter_axilite_bready   ),
-        .m_axi_araddr   ( ps_gp0_to_axi4_converter_axilite_araddr   ),
-        .m_axi_arprot   ( ps_gp0_to_axi4_converter_axilite_arprot   ),
-        .m_axi_arvalid  ( ps_gp0_to_axi4_converter_axilite_arvalid  ),
-        .m_axi_arready  ( ps_gp0_to_axi4_converter_axilite_arready  ),
-        .m_axi_rdata    ( ps_gp0_to_axi4_converter_axilite_rdata    ),
-        .m_axi_rresp    ( ps_gp0_to_axi4_converter_axilite_rresp    ),
-        .m_axi_rvalid   ( ps_gp0_to_axi4_converter_axilite_rvalid   ),
-        .m_axi_rready   ( ps_gp0_to_axi4_converter_axilite_rready   )
-    );
-
-    // AXI4-Lite to AXI4 converter, FCLK_CLK0 domain
-    // The PS sees the PL at 0x4000_0000 (M_AXI_GP0), the MBUS starts at 0x0:
-    // drop the top 2 address bits, so PS address 0x4000_0000 is MBUS address 0x0
-    xlnx_axilite_to_axi4_d32_converter ps_gp0_axilite_to_axi4_u (
-        .aclk           ( ps_fclk        ),
-        .aresetn        ( ps_fclk_resetn ),
-        // From the AXI3 converter (AXI4-Lite)
-        .s_axi_awaddr   ( {2'b00, ps_gp0_to_axi4_converter_axilite_awaddr[29:0]} ),
-        .s_axi_awprot   ( ps_gp0_to_axi4_converter_axilite_awprot ),
-        .s_axi_awvalid  ( ps_gp0_to_axi4_converter_axilite_awvalid ),
-        .s_axi_awready  ( ps_gp0_to_axi4_converter_axilite_awready ),
-        .s_axi_wdata    ( ps_gp0_to_axi4_converter_axilite_wdata ),
-        .s_axi_wstrb    ( ps_gp0_to_axi4_converter_axilite_wstrb ),
-        .s_axi_wvalid   ( ps_gp0_to_axi4_converter_axilite_wvalid ),
-        .s_axi_wready   ( ps_gp0_to_axi4_converter_axilite_wready ),
-        .s_axi_bresp    ( ps_gp0_to_axi4_converter_axilite_bresp ),
-        .s_axi_bvalid   ( ps_gp0_to_axi4_converter_axilite_bvalid ),
-        .s_axi_bready   ( ps_gp0_to_axi4_converter_axilite_bready ),
-        .s_axi_araddr   ( {2'b00, ps_gp0_to_axi4_converter_axilite_araddr[29:0]} ),
-        .s_axi_arprot   ( ps_gp0_to_axi4_converter_axilite_arprot ),
-        .s_axi_arvalid  ( ps_gp0_to_axi4_converter_axilite_arvalid ),
-        .s_axi_arready  ( ps_gp0_to_axi4_converter_axilite_arready ),
-        .s_axi_rdata    ( ps_gp0_to_axi4_converter_axilite_rdata ),
-        .s_axi_rresp    ( ps_gp0_to_axi4_converter_axilite_rresp ),
-        .s_axi_rvalid   ( ps_gp0_to_axi4_converter_axilite_rvalid ),
-        .s_axi_rready   ( ps_gp0_to_axi4_converter_axilite_rready ),
+        .s_axi_awid     ( ps_gp0_awid                    ),
+        .s_axi_awaddr   ( {2'b00, ps_gp0_awaddr[29:0]}   ),
+        .s_axi_awlen    ( ps_gp0_awlen                   ),
+        .s_axi_awsize   ( ps_gp0_awsize                  ),
+        .s_axi_awburst  ( ps_gp0_awburst                 ),
+        .s_axi_awlock   ( ps_gp0_awlock                  ),
+        .s_axi_awcache  ( ps_gp0_awcache                 ),
+        .s_axi_awprot   ( ps_gp0_awprot                  ),
+        .s_axi_awqos    ( ps_gp0_awqos                   ),
+        .s_axi_awvalid  ( ps_gp0_awvalid                 ),
+        .s_axi_awready  ( ps_gp0_awready                 ),
+        .s_axi_wid      ( ps_gp0_wid                     ),
+        .s_axi_wdata    ( ps_gp0_wdata                   ),
+        .s_axi_wstrb    ( ps_gp0_wstrb                   ),
+        .s_axi_wlast    ( ps_gp0_wlast                   ),
+        .s_axi_wvalid   ( ps_gp0_wvalid                  ),
+        .s_axi_wready   ( ps_gp0_wready                  ),
+        .s_axi_bid      ( ps_gp0_bid                     ),
+        .s_axi_bresp    ( ps_gp0_bresp                   ),
+        .s_axi_bvalid   ( ps_gp0_bvalid                  ),
+        .s_axi_bready   ( ps_gp0_bready                  ),
+        .s_axi_arid     ( ps_gp0_arid                    ),
+        .s_axi_araddr   ( {2'b00, ps_gp0_araddr[29:0]}   ),
+        .s_axi_arlen    ( ps_gp0_arlen                   ),
+        .s_axi_arsize   ( ps_gp0_arsize                  ),
+        .s_axi_arburst  ( ps_gp0_arburst                 ),
+        .s_axi_arlock   ( ps_gp0_arlock                  ),
+        .s_axi_arcache  ( ps_gp0_arcache                 ),
+        .s_axi_arprot   ( ps_gp0_arprot                  ),
+        .s_axi_arqos    ( ps_gp0_arqos                   ),
+        .s_axi_arvalid  ( ps_gp0_arvalid                 ),
+        .s_axi_arready  ( ps_gp0_arready                 ),
+        .s_axi_rid      ( ps_gp0_rid                     ),
+        .s_axi_rdata    ( ps_gp0_rdata                   ),
+        .s_axi_rresp    ( ps_gp0_rresp                   ),
+        .s_axi_rlast    ( ps_gp0_rlast                   ),
+        .s_axi_rvalid   ( ps_gp0_rvalid                  ),
+        .s_axi_rready   ( ps_gp0_rready                  ),
         // To the clock converter (AXI4)
+        .m_axi_awid     ( ps_gp0_to_clock_converter_axi_awid     ),
         .m_axi_awaddr   ( ps_gp0_to_clock_converter_axi_awaddr   ),
         .m_axi_awlen    ( ps_gp0_to_clock_converter_axi_awlen    ),
         .m_axi_awsize   ( ps_gp0_to_clock_converter_axi_awsize   ),
@@ -779,9 +738,11 @@ module sys_master # (
         .m_axi_wlast    ( ps_gp0_to_clock_converter_axi_wlast    ),
         .m_axi_wvalid   ( ps_gp0_to_clock_converter_axi_wvalid   ),
         .m_axi_wready   ( ps_gp0_to_clock_converter_axi_wready   ),
+        .m_axi_bid      ( ps_gp0_to_clock_converter_axi_bid      ),
         .m_axi_bresp    ( ps_gp0_to_clock_converter_axi_bresp    ),
         .m_axi_bvalid   ( ps_gp0_to_clock_converter_axi_bvalid   ),
         .m_axi_bready   ( ps_gp0_to_clock_converter_axi_bready   ),
+        .m_axi_arid     ( ps_gp0_to_clock_converter_axi_arid     ),
         .m_axi_araddr   ( ps_gp0_to_clock_converter_axi_araddr   ),
         .m_axi_arlen    ( ps_gp0_to_clock_converter_axi_arlen    ),
         .m_axi_arsize   ( ps_gp0_to_clock_converter_axi_arsize   ),
@@ -793,16 +754,13 @@ module sys_master # (
         .m_axi_arqos    ( ps_gp0_to_clock_converter_axi_arqos    ),
         .m_axi_arvalid  ( ps_gp0_to_clock_converter_axi_arvalid  ),
         .m_axi_arready  ( ps_gp0_to_clock_converter_axi_arready  ),
+        .m_axi_rid      ( ps_gp0_to_clock_converter_axi_rid      ),
         .m_axi_rdata    ( ps_gp0_to_clock_converter_axi_rdata    ),
         .m_axi_rresp    ( ps_gp0_to_clock_converter_axi_rresp    ),
         .m_axi_rlast    ( ps_gp0_to_clock_converter_axi_rlast    ),
         .m_axi_rvalid   ( ps_gp0_to_clock_converter_axi_rvalid   ),
         .m_axi_rready   ( ps_gp0_to_clock_converter_axi_rready   )
     );
-
-    // No IDs on the AXI4-Lite side
-    assign ps_gp0_to_clock_converter_axi_awid = '0;
-    assign ps_gp0_to_clock_converter_axi_arid = '0;
 
     // Clock converter (clock bridge): FCLK_CLK0 (125 MHz) -> main clock
     axi_clock_converter_wrapper # (
