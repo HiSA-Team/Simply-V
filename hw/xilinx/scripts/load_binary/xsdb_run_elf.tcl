@@ -69,6 +69,10 @@ if { $init_ps == 1 } {
     ps7_init
     ps7_post_config
     after 1000
+    # Use only the Cortex-A9 #0: keep the Cortex-A9 #1 halted
+    puts "\[INFO\] Halting ARM Cortex-A9 MPCore #1"
+    targets -set -filter {name =~ "ARM Cortex-A9 MPCore #1"}
+    stop
 }
 
 # Filter and set target
