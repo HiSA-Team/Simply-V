@@ -549,10 +549,21 @@ module sys_master # (
     logic        ps_gp0_rvalid;
     logic        ps_gp0_rready;
 
+    // The PS M_AXI_GP0 IDs are 6 bits (static remap), the MBUS IDs are LOCAL_ID_WIDTH bits.
+    // The crossbar keeps only ID_WIDTH - log2(number of masters) bits per master, so on the Zynq-7000
+    // the MBUS needs at least 9 bits: this is checked in the configuration flow.
     initial begin : assert_ps_gp0_id_width
-        assert( LOCAL_ID_WIDTH == 6 )
-            else $error("MBUS_ID_WIDTH (%d) must be 6, the PS M_AXI_GP0 ID width with static remap", LOCAL_ID_WIDTH);
+        assert( LOCAL_ID_WIDTH >= 6 )
+            else $error("MBUS_ID_WIDTH (%d) must be at least 6, the PS M_AXI_GP0 ID width with static remap", LOCAL_ID_WIDTH);
     end : assert_ps_gp0_id_width
+
+    // Request IDs are zero-extended to the MBUS width, response IDs are cut back to the 6 PS bits
+    logic [LOCAL_ID_WIDTH-1:0] ps_gp0_ext_awid, ps_gp0_ext_wid, ps_gp0_ext_arid, ps_gp0_ext_bid, ps_gp0_ext_rid;
+    assign ps_gp0_ext_awid = {{(LOCAL_ID_WIDTH-6){1'b0}}, ps_gp0_awid};
+    assign ps_gp0_ext_wid  = {{(LOCAL_ID_WIDTH-6){1'b0}}, ps_gp0_wid};
+    assign ps_gp0_ext_arid = {{(LOCAL_ID_WIDTH-6){1'b0}}, ps_gp0_arid};
+    assign ps_gp0_bid      = ps_gp0_ext_bid[5:0];
+    assign ps_gp0_rid      = ps_gp0_ext_rid[5:0];
 
     // PS wrapper (xlnx_ps_wrapper, Zynq-7000 PS7 in a Block Design, packaged as an IP)
     // NOTE: S_AXI_GP0 (PS slave) is tied off, it is not connected to the MBUS yet
@@ -677,7 +688,7 @@ module sys_master # (
         .aclk           ( ps_fclk        ),
         .aresetn        ( ps_fclk_resetn ),
         // From the PS (AXI3)
-        .s_axi_awid     ( ps_gp0_awid                    ),
+        .s_axi_awid     ( ps_gp0_ext_awid                ),
         .s_axi_awaddr   ( {2'b00, ps_gp0_awaddr[29:0]}   ),
         .s_axi_awlen    ( ps_gp0_awlen                   ),
         .s_axi_awsize   ( ps_gp0_awsize                  ),
@@ -688,17 +699,17 @@ module sys_master # (
         .s_axi_awqos    ( ps_gp0_awqos                   ),
         .s_axi_awvalid  ( ps_gp0_awvalid                 ),
         .s_axi_awready  ( ps_gp0_awready                 ),
-        .s_axi_wid      ( ps_gp0_wid                     ),
+        .s_axi_wid      ( ps_gp0_ext_wid                 ),
         .s_axi_wdata    ( ps_gp0_wdata                   ),
         .s_axi_wstrb    ( ps_gp0_wstrb                   ),
         .s_axi_wlast    ( ps_gp0_wlast                   ),
         .s_axi_wvalid   ( ps_gp0_wvalid                  ),
         .s_axi_wready   ( ps_gp0_wready                  ),
-        .s_axi_bid      ( ps_gp0_bid                     ),
+        .s_axi_bid      ( ps_gp0_ext_bid                 ),
         .s_axi_bresp    ( ps_gp0_bresp                   ),
         .s_axi_bvalid   ( ps_gp0_bvalid                  ),
         .s_axi_bready   ( ps_gp0_bready                  ),
-        .s_axi_arid     ( ps_gp0_arid                    ),
+        .s_axi_arid     ( ps_gp0_ext_arid                ),
         .s_axi_araddr   ( {2'b00, ps_gp0_araddr[29:0]}   ),
         .s_axi_arlen    ( ps_gp0_arlen                   ),
         .s_axi_arsize   ( ps_gp0_arsize                  ),
@@ -709,7 +720,7 @@ module sys_master # (
         .s_axi_arqos    ( ps_gp0_arqos                   ),
         .s_axi_arvalid  ( ps_gp0_arvalid                 ),
         .s_axi_arready  ( ps_gp0_arready                 ),
-        .s_axi_rid      ( ps_gp0_rid                     ),
+        .s_axi_rid      ( ps_gp0_ext_rid                 ),
         .s_axi_rdata    ( ps_gp0_rdata                   ),
         .s_axi_rresp    ( ps_gp0_rresp                   ),
         .s_axi_rlast    ( ps_gp0_rlast                   ),
