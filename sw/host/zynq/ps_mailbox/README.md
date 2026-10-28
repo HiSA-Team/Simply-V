@@ -60,13 +60,8 @@ On the PS UART (115200 baud):
 ## Troubleshooting
 
 - **`Directory does not have write permission` when setting the workspace.**
-  Vitis on Windows refuses a workspace inside the WSL file system.
-  Move the workspace to a Windows folder with `SIMPLYV_PS_WORKSPACE`; from WSL, also pass the variable to Windows with `WSLENV`:
-  ```
-  export SIMPLYV_PS_WORKSPACE=C:/vitis_ws
-  export WSLENV=SIMPLYV_PS_WORKSPACE${WSLENV:+:$WSLENV}
-  ```
-  The ELF is then in `$SIMPLYV_PS_WORKSPACE/ps_mailbox/ps_mailbox/build/ps_mailbox.elf`.
+  This is a limitation of Vitis on Windows with WSL: Vitis refuses a workspace inside the WSL file system.
+  In this case, set `WS_DIR` in `build_ps_app.py` to a folder on the Windows file system, only locally.
 - **The build fails at random on Windows** (`ninja: build stopped: subcommand failed`, `CreateProcess`, `Access is denied` / error 5).
   This is likely caused by the antivirus locking files during the build.
   The script checks the output files and retries up to 5 times; if it still fails, run it again.

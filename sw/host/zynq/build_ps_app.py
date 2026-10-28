@@ -1,7 +1,7 @@
 # Build a bare-metal program for the Zynq-7000 PS (Cortex-A9 #0) with the Vitis Python API.
 # Usage: vitis -s sw/host/zynq/build_ps_app.py [program]   (default program: ps_mailbox)
 # Platform and BSP are generated from the Simply-V XSA; linker script and startup code come from Vitis.
-# Outputs go in sw/host/zynq/<program>/bin (ignored by git), or in $SIMPLYV_PS_WORKSPACE/<program>.
+# Outputs go in sw/host/zynq/<program>/bin (ignored by git).
 import glob
 import os
 import re
@@ -21,10 +21,7 @@ ZYNQ_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT     = os.path.abspath(os.path.join(ZYNQ_DIR, "..", "..", ".."))
 PROGRAM  = sys.argv[1] if len(sys.argv) > 1 else "ps_mailbox"
 SRC_DIR  = os.path.join(ZYNQ_DIR, PROGRAM, "src")
-# Vitis workspace: <program>/bin by default. SIMPLYV_PS_WORKSPACE moves it elsewhere
-# (Vitis on Windows refuses a workspace inside the WSL file system)
-WS_ROOT  = os.environ.get("SIMPLYV_PS_WORKSPACE", "")
-WS_DIR   = os.path.join(WS_ROOT, PROGRAM) if WS_ROOT else os.path.join(ZYNQ_DIR, PROGRAM, "bin")
+WS_DIR   = os.path.join(ZYNQ_DIR, PROGRAM, "bin")
 GEN_DIR  = os.path.join(WS_DIR, "gen")
 XSA      = os.path.join(ROOT, "hw", "xilinx", "ips", "common", "xlnx_ps_wrapper", "build", "xlnx_ps_wrapper.xsa")
 INC_DIRS = [os.path.join(ROOT, "sw", "SoC", "lib", "simplyv", "inc"),
