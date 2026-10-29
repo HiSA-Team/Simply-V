@@ -34,6 +34,6 @@ ips/xlnx_%.xci: ${XILINX_IPS_ROOT}/*/xlnx_%/config.tcl
 
 # For custom IPs, also depend on RTL wrapper
 ips/custom_%.xci: IP_DIR=$(firstword $(shell find ${XILINX_IPS_ROOT} -name 'custom_$*'))
-ips/custom_%.xci: ${XILINX_IPS_ROOT}/*/custom_%/config.tcl ${HW_UNITS_ROOT}/custom_%/custom_top_wrapper.sv
+ips/custom_%.xci: ${XILINX_IPS_ROOT}/*/custom_%/config.tcl ${HW_UNITS_ROOT}/custom_%/custom_top_wrapper.sv ${XILINX_ROOT}/rtl/headers/*.svh
 #	Call common recepie
 	$(build_ip)
