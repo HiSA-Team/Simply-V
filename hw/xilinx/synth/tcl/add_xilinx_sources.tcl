@@ -10,6 +10,8 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/generated/interconnects/mbus_interconnect.svinc       \
     $::env(XILINX_ROOT)/rtl/generated/interconnects/pbus_interconnect.svinc       \
     $::env(XILINX_ROOT)/rtl/generated/interconnects/hbus_interconnect.svinc       \
+    $::env(XILINX_ROOT)/rtl/generated/interconnects/mbus_crossbar.svinc           \
+    $::env(XILINX_ROOT)/rtl/generated/interconnects/pbus_crossbar.svinc           \
     $::env(XILINX_ROOT)/rtl/generated/clk_assignments/mbus_clk_assignments.svinc  \
     $::env(XILINX_ROOT)/rtl/generated/clk_assignments/hbus_clk_assignments.svinc  \
     $::env(XILINX_ROOT)/rtl/wrappers/axi_clock_converter_wrapper.sv               \
@@ -18,6 +20,9 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/wrappers/plic_wrapper.sv                              \
     $::env(XILINX_ROOT)/rtl/wrappers/clint_wrapper.sv                             \
     $::env(XILINX_ROOT)/rtl/wrappers/uart_wrapper.sv                              \
+    $::env(XILINX_ROOT)/rtl/simplyv_axi_err_slv.sv                                \
+    $::env(XILINX_ROOT)/rtl/simplyv_axi_xbar.sv                                   \
+    $::env(XILINX_ROOT)/rtl/simplyv_axilite_xbar.sv                               \
     $::env(XILINX_ROOT)/rtl/hbus.sv                                               \
     $::env(XILINX_ROOT)/rtl/pbus.sv                                               \
     $::env(XILINX_ROOT)/rtl/rv_socket.sv                                          \

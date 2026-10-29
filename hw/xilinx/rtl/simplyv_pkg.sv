@@ -36,6 +36,10 @@ package simplyv_pkg;
     // Main Crosbar slaves
     localparam int unsigned MBUS_NUM_MI = `MBUS_NUM_MI;
 
+    // Crossbar implementation: Xilinx axi_crossbar IP or in-tree RTL
+    typedef enum logic { XBAR_XILINX, XBAR_CUSTOM } xbar_impl_t;
+    localparam xbar_impl_t XBAR_IMPL = `XBAR_IMPL;
+
     /////////////////////////////
     // AXI Lite peripheral bus //
     /////////////////////////////

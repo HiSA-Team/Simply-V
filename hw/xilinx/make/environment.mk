@@ -86,6 +86,7 @@ XILINX_VIVADO_ENV =                                 \
     MBUS_DATA_WIDTH=${MBUS_DATA_WIDTH}              \
     MBUS_ADDR_WIDTH=${MBUS_ADDR_WIDTH}              \
     CORE_SELECTOR=${CORE_SELECTOR}                  \
+    XBAR_IMPL=${XBAR_IMPL}                          \
     VIO_RESETN_DEFAULT=${VIO_RESETN_DEFAULT}        \
     MBUS_NUM_SI=${MBUS_NUM_SI}                      \
     MBUS_NUM_MI=${MBUS_NUM_MI}                      \

@@ -32,6 +32,9 @@ HBUS_ID_WIDTH ?= 5
 # RV core
 CORE_SELECTOR ?= CORE_CV32E40P
 
+# Crossbar implementation (XILINX IP or CUSTOM RTL)
+XBAR_IMPL ?= XILINX
+
 # VIO resetn
 VIO_RESETN_DEFAULT ?= 1
 

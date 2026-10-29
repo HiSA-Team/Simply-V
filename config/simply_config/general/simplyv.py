@@ -25,6 +25,7 @@ from templates.ld_template import Ld_Template
 from peripherals.ddr4 import DDR4
 from peripherals.bram import Bram
 from templates.bus_interconnect_template import Bus_Interconnect_Template
+from templates.bus_crossbar_template import Bus_Crossbar_Template
 from pathlib import Path
 from factories.buses_factory import Buses_Factory
 from peripherals.peripheral import Peripheral
@@ -57,6 +58,7 @@ class SimplyV(metaclass=Singleton):
 		self.XLEN: int = system_data["XLEN"]
 		self.PHYSICAL_ADDR_WIDTH: int = system_data["PHYSICAL_ADDR_WIDTH"]
 		self.BOOT_MEMORY_BLOCK: str = system_data["BOOT_MEMORY_BLOCK"]
+		self.XBAR_IMPL: str = system_data["XBAR_IMPL"]
 		self.mbus: MBus
 
 		main_clock_frqz = self.buses_factory.extract_clock_frequency(self.MAIN_CLOCK_DOMAIN)
@@ -164,7 +166,8 @@ class SimplyV(metaclass=Singleton):
 	# SVINC files to use for crossbar ports declarations
 	# config.tcl files to automatically configure the Xilinx Interconnect IP
 	# CLOCK SVINC files (NonLeafBuses only) to configure the clock domains of the SOC
-	def config_bus(self, target_bus: str, outputs: list[str]) -> bool:
+	# CROSSBAR SVINC files (MBUS, PBUS) with the address map and the crossbar instance
+	def config_bus(self, target_bus: str, outputs: list[str], crossbar_svinc: str = None) -> bool:
 		for bus in self.buses:
 			if bus.FULL_NAME == target_bus.upper():
 				crossbar_template = Crossbar_Template(bus)
@@ -175,6 +178,8 @@ class SimplyV(metaclass=Singleton):
 				if isinstance(bus, NonLeafBus):
 					clock_template = Clocks_Template(bus)
 					clock_template.write_to_file(outputs[2])
+				if crossbar_svinc is not None:
+					Bus_Crossbar_Template(bus, self.XBAR_IMPL).write_to_file(crossbar_svinc)
 				return True
 
 		# return false if the bus wasn't found
@@ -189,7 +194,7 @@ class SimplyV(metaclass=Singleton):
 		content = makefile_path.read_text()
 
 		# System targets to replace
-		sys_targets = ["CORE_SELECTOR", "VIO_RESETN_DEFAULT", "XLEN", "PHYSICAL_ADDR_WIDTH"]
+		sys_targets = ["CORE_SELECTOR", "VIO_RESETN_DEFAULT", "XLEN", "PHYSICAL_ADDR_WIDTH", "XBAR_IMPL"]
 
 		# Replace system targets with "self" values
 		for t in sys_targets:
