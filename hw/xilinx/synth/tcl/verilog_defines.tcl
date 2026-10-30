@@ -37,6 +37,12 @@ foreach clock_domain $clock_domain_list {
     lappend verilog_defines $clock_domain=$clock_domain
 }
 
+# Clock wizard with 125 MHz input
+# TODO55: quick workaround, only the Pynq-Z1 PL-only board has a 125 MHz input clock
+if { "$::env(BOARD)" == "Pynq-Z1-PL-Only-Master" } {
+    lappend verilog_defines CLK_WIZ_125=1
+}
+
 # Info
 puts "\[INFO\] Verilog defines: $verilog_defines"
 

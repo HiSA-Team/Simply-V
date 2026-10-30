@@ -490,7 +490,13 @@ module sys_master # (
     assign m_axi_arregion = '0;
 
     // PLL
+`ifdef CLK_WIZ_125
+    // Board with a 125 MHz input clock
+    xlnx_clk_wiz_125 clkwiz_u (
+`else
+    // Board with a 100 MHz input clock
     xlnx_clk_wiz clkwiz_u (
+`endif
         .clk_in1  ( sys_clock_i  ),
         .resetn   ( ~sys_reset_i ),
         .locked   ( locked       ),

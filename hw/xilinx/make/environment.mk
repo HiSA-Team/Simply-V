@@ -51,6 +51,12 @@ ifeq ($(shell [ ${XILINX_VIVADO_VERSION} -lt 2024 ] && echo true),true)
     IP_LIST      = $(filter-out ${FILTER_IP},${TMP_IP_LIST})
 endif
 
+# Remove the 125 MHz clock wizard when the board is not the Pynq-Z1 PL-only
+# TODO55: quick workaround, this IP is only used with the Pynq-Z1 PL-only board
+ifneq (${BOARD},Pynq-Z1-PL-Only-Master)
+    IP_LIST := $(filter-out xlnx_clk_wiz_125,${IP_LIST})
+endif
+
 # List of IPs' xci files to import in main Vivado project
 IP_LIST_XCI = $(foreach ip,${IP_LIST},$(shell find ${XILINX_IPS_ROOT} -type f -path "*/${ip}/build/${ip}_prj.srcs/sources_1/ip/${ip}/${ip}.xci"))
 
