@@ -87,6 +87,17 @@ module simplyv (
         // GPIOs
         input  logic [GPIO_IN_WIDTH  -1 : 0]  gpio_in_i,
         output logic [GPIO_OUT_WIDTH -1 : 0]  gpio_out_o
+    `ifdef VERIFICATION
+        ,
+        // Testbench clocks, PLL lock, core reset and AXI master
+        input logic clk_10MHz_i,
+        input logic clk_20MHz_i,
+        input logic clk_50MHz_i,
+        input logic clk_100MHz_i,
+        input logic locked_i,
+        input logic vio_resetn_i,
+        `DEFINE_AXI_SLAVE_PORTS(jtag, 32, MBUS_ADDR_WIDTH, MBUS_ID_WIDTH)
+    `endif
     `elsif HPC
         // DDR4 Channel 0 differential clock
         input logic clk_300mhz_0_p_i,
@@ -186,6 +197,9 @@ module simplyv (
     // Modules //
     /////////////
 
+`ifdef VERIFICATION
+    assign vio_resetn = vio_resetn_i;
+`else
     // Virtual I/O
     xlnx_vio vio_inst (
       .clk        ( MBUS_clk        ),
@@ -193,6 +207,7 @@ module simplyv (
       .probe_out1 (                 ),
       .probe_in0  (                 )
     );
+`endif
 
     // MBUS Axi Crossbar
     `include "generated/interconnects/mbus_crossbar.svinc"
@@ -203,6 +218,53 @@ module simplyv (
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
     ) sys_master_u (
+`ifdef VERIFICATION
+        // Testbench clocks, PLL lock and AXI master
+        .clk_10MHz_i       ( clk_10MHz_i       ),
+        .clk_20MHz_i       ( clk_20MHz_i       ),
+        .clk_50MHz_i       ( clk_50MHz_i       ),
+        .clk_100MHz_i      ( clk_100MHz_i      ),
+        .locked_i          ( locked_i          ),
+        .jtag_axi_awid     ( jtag_axi_awid     ),
+        .jtag_axi_awaddr   ( jtag_axi_awaddr   ),
+        .jtag_axi_awlen    ( jtag_axi_awlen    ),
+        .jtag_axi_awsize   ( jtag_axi_awsize   ),
+        .jtag_axi_awburst  ( jtag_axi_awburst  ),
+        .jtag_axi_awlock   ( jtag_axi_awlock   ),
+        .jtag_axi_awcache  ( jtag_axi_awcache  ),
+        .jtag_axi_awprot   ( jtag_axi_awprot   ),
+        .jtag_axi_awqos    ( jtag_axi_awqos    ),
+        .jtag_axi_awvalid  ( jtag_axi_awvalid  ),
+        .jtag_axi_awready  ( jtag_axi_awready  ),
+        .jtag_axi_awregion ( jtag_axi_awregion ),
+        .jtag_axi_wdata    ( jtag_axi_wdata    ),
+        .jtag_axi_wstrb    ( jtag_axi_wstrb    ),
+        .jtag_axi_wlast    ( jtag_axi_wlast    ),
+        .jtag_axi_wvalid   ( jtag_axi_wvalid   ),
+        .jtag_axi_wready   ( jtag_axi_wready   ),
+        .jtag_axi_bid      ( jtag_axi_bid      ),
+        .jtag_axi_bresp    ( jtag_axi_bresp    ),
+        .jtag_axi_bvalid   ( jtag_axi_bvalid   ),
+        .jtag_axi_bready   ( jtag_axi_bready   ),
+        .jtag_axi_araddr   ( jtag_axi_araddr   ),
+        .jtag_axi_arlen    ( jtag_axi_arlen    ),
+        .jtag_axi_arsize   ( jtag_axi_arsize   ),
+        .jtag_axi_arburst  ( jtag_axi_arburst  ),
+        .jtag_axi_arlock   ( jtag_axi_arlock   ),
+        .jtag_axi_arcache  ( jtag_axi_arcache  ),
+        .jtag_axi_arprot   ( jtag_axi_arprot   ),
+        .jtag_axi_arqos    ( jtag_axi_arqos    ),
+        .jtag_axi_arvalid  ( jtag_axi_arvalid  ),
+        .jtag_axi_arready  ( jtag_axi_arready  ),
+        .jtag_axi_arid     ( jtag_axi_arid     ),
+        .jtag_axi_arregion ( jtag_axi_arregion ),
+        .jtag_axi_rid      ( jtag_axi_rid      ),
+        .jtag_axi_rdata    ( jtag_axi_rdata    ),
+        .jtag_axi_rresp    ( jtag_axi_rresp    ),
+        .jtag_axi_rlast    ( jtag_axi_rlast    ),
+        .jtag_axi_rvalid   ( jtag_axi_rvalid   ),
+        .jtag_axi_rready   ( jtag_axi_rready   ),
+`endif
         // EMBEDDED ONLY
         .sys_clock_i(sys_clock_i),
         .sys_reset_i(sys_reset_i),
