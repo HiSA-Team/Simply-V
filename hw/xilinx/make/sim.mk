@@ -58,6 +58,7 @@ sim_ip_sync = for c in ${XILINX_IPS_ROOT}/*/xlnx_*/config.tcl; do \
 	[ -f $$s ] && [ -f $$t ] || continue; \
 	if ! [ $$s -nt $$t ] && cmp -s $$c $$t; then touch -r $$s $$c; else touch $$c; fi; done
 sim:
+	@[ -f ${TEST_GOLDEN} ] || { echo "[sim] unknown TEST=${TEST}: no ${TEST_GOLDEN}"; exit 1; }
 	mkdir -p ${XILINX_SIM_BUILD_DIR}
 	exec 9>${SIM_LOCK}; \
 	flock -n 9 || { echo "[sim] another sim is running in this checkout"; exit 1; }; \
@@ -98,6 +99,63 @@ ${SIM_UNISIMS_DIR}:
 			-e "s/\b[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])? *!== *1'bz/1'b1/g" $$f > $@/$$(basename $$f); \
 	done
 
+# Program and golden of TEST: sw/SoC/examples/<TEST>, stimuli/golden/<TEST>.uart.golden and the
+# optional UART input stimuli/<TEST>.in. Shorter timer periods and one CDMA round in simulation.
+TEST_PROG_DIR := ${SIMPLYV_ROOT_DIR}/sw/SoC/examples/${TEST}
+TEST_BIN      := ${TEST_PROG_DIR}/bin/${TEST}.bin
+TEST_GOLDEN   := ${XILINX_SIM_ROOT}/stimuli/golden/${TEST}.uart.golden
+TEST_STIM     := $(wildcard ${XILINX_SIM_ROOT}/stimuli/${TEST}.in)
+TEST_EXTRA_MACROS_interrupts         := -DTIM0_COUNT_US=500u -DSLEEP_US=200u
+TEST_EXTRA_MACROS_xlnx_cdma_examples := -DNUM_ROUNDS=1u
+# Rebuilt on every run, libs included, for the core of this run
+${TEST_BIN}: FORCE
+	for d in ${TEST_PROG_DIR} ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/tinyio ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/simplyv; do \
+		${MAKE} -C $$d clean; done
+	${MAKE} -C ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/tinyio
+	${MAKE} -C ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/simplyv
+	${MAKE} -C ${TEST_PROG_DIR} bin/${TEST}.bin PROGRAM_NAME=${TEST} EXTRA_MACROS="${TEST_EXTRA_MACROS_${TEST}}"
+FORCE:
+
+# Uartlite bit period in ticks of its clock, from its config.tcl: 16x oversampling with the
+# divider rounded as the IP does (CALC_RATIO). Expanded only by the sim recipes
+SIM_UART_CFG = $(shell sed -n 's/.*CONFIG.$(1) {\([0-9]*\)}.*/\1/p' ${SIM_UART_TCL})
+SIM_UART_FREQ = $(call SIM_UART_CFG,C_S_AXI_ACLK_FREQ_HZ)
+SIM_UART_RATE = $(call SIM_UART_CFG,C_BAUDRATE)
+SIM_UART_CYCLES_PER_BIT = $(shell echo $$(( 16 * ((${SIM_UART_FREQ} + 8 * ${SIM_UART_RATE} - 1) / (16 * ${SIM_UART_RATE})) )))
+# Cycle cap of a run after the load, which ends as soon as the golden is matched: 32000 bit
+# periods, twice the longest test (xlnx_cdma_examples, UART bound: 10 bit periods per character)
+SIM_MAX_CYCLES ?= $(shell echo $$(( 32000 * ${SIM_UART_CYCLES_PER_BIT} )))
+
+SIM_FLIST   := ${XILINX_SIM_ROOT}/generated/simplyv.f
+SIM_DEFINES := EMBEDDED=1 VERIFICATION ASSERTS_OFF XBAR_IMPL=XBAR_${XBAR_IMPL} PBUS_ID_WIDTH=${MBUS_ID_WIDTH} \
+	$(foreach v,MBUS_DATA_WIDTH MBUS_ADDR_WIDTH MBUS_ID_WIDTH MBUS_NUM_SI MBUS_NUM_MI PBUS_NUM_SI PBUS_NUM_MI \
+	HBUS_NUM_SI HBUS_NUM_MI HBUS_ID_WIDTH CORE_SELECTOR MAIN_CLOCK_FREQ_MHZ,$(v)=${$(v)}) \
+	$(foreach d,${RANGE_CLOCK_DOMAINS},$(d)=$(d))
+# BRAM behavioural models read their .mif from the working directory
+SIM_MIFS    := $(foreach b,0 1,${XILINX_IPS_ROOT}/common/xlnx_bram_$(b)/build/xlnx_bram_$(b)_prj.gen/sources_1/ip/xlnx_bram_$(b)/xlnx_bram_$(b).mif)
+
+###########################
+# Embedded SoC: Verilator #
+###########################
+
+# One build per core and crossbar; the netlists need glbl, the patched unisims and, first
+# in the search path, the simplified LUT/FF primitives
+VL_DIR     := ${XILINX_SIM_BUILD_DIR}/verilator/${CORE_SELECTOR}_${XBAR_IMPL}
+# Evaluation threads: one is the fastest on the 32-bit cores
+VL_THREADS ?= 1
+sim_verilator: ${TEST_BIN} ${SIM_UNISIMS_DIR}
+	mkdir -p ${VL_DIR}
+	verilator --cc --exe --build -j 0 -O3 --no-timing --threads ${VL_THREADS} -Mdir ${VL_DIR} \
+		-Wno-fatal -Wno-lint -Wno-style -Wno-BLKANDNBLK -Wno-REDEFMACRO -Wno-TIMESCALEMOD -Wno-MODDUP \
+		-Wno-IEEEMAYDEPRECATE -Wno-SPECIFYIGN -Wno-STMTDLY -Wno-COMBDLY -Wno-UNOPTFLAT \
+		$(addprefix +define+,${SIM_DEFINES}) --top-module simplyv_sim_wrapper -f ${SIM_FLIST} \
+		${XSIM_ROOT}/data/verilog/src/glbl.v ${XSIM_ROOT}/data/ip/xpm/xpm_cdc/hdl/xpm_cdc.sv \
+		-y ${XILINX_SIM_ROOT}/verilator/prims -y ${SIM_UNISIMS_DIR} \
+		${XILINX_SIM_ROOT}/verilator/tb/simplyv/simplyv_tb.cpp -CFLAGS "-I${XILINX_SIM_ROOT}/verilator/vip \
+		-DSIM_UART_CYCLES_PER_BIT=${SIM_UART_CYCLES_PER_BIT} -DSIM_MAX_CYCLES=${SIM_MAX_CYCLES}L"
+	cp ${SIM_MIFS} ${VL_DIR}
+	cd ${VL_DIR} && ./Vsimplyv_sim_wrapper +BIN=${TEST_BIN} $(addprefix +STIMULUS=,${TEST_STIM}) ${TEST_GOLDEN}
+
 # Crossbar benches on xsim with the Xilinx AXI VIP, one directory per crossbar IP:
 # sim_xsim_<bus>_xbar runs xsim/tb/<bus>_xbar/ in build/xsim/<bus>_xbar/ on the crossbar of the
 # generated <bus>_crossbar.svinc, for XBAR_IMPL (e.g. make sim_xsim_xbar XBAR_IMPL=CUSTOM).
@@ -127,4 +185,4 @@ sim_xsim_%_xbar: ips/xlnx_%_crossbar.xci
 	grep -q 'XBAR\] .* PASS' ${XSIM_BUILD_DIR}/$*_xbar/$*_xbar.log && ! grep -qE 'ERROR|Error|Fatal|FATAL' ${XSIM_BUILD_DIR}/$*_xbar/$*_xbar.log
 
 # PHONIES
-.PHONY: sim_compile_simlib sim_xsim_xbar sim sim_config_regen
+.PHONY: sim_compile_simlib sim_xsim_xbar sim sim_config_regen sim_verilator FORCE

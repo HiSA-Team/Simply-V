@@ -1,4 +1,5 @@
 # Software build outputs
+bin/
 *.elf
 *.bin
 *.dump
