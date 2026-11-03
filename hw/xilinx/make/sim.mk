@@ -156,6 +156,26 @@ sim_verilator: ${TEST_BIN} ${SIM_UNISIMS_DIR}
 	cp ${SIM_MIFS} ${VL_DIR}
 	cd ${VL_DIR} && ./Vsimplyv_sim_wrapper +BIN=${TEST_BIN} $(addprefix +STIMULUS=,${TEST_STIM}) ${TEST_GOLDEN}
 
+######################
+# Embedded SoC: xsim #
+######################
+
+# Same filelist (incdirs as xvlog options), the netlists' unisims precompiled with Vivado.
+# The units hide the assertions xsim does not support behind VERILATOR/SYNTHESIS: with
+# VERILATOR the wrapper also instantiates glbl, so the bench is the only top
+XS_DIR := ${XILINX_SIM_BUILD_DIR}/xsim/simplyv
+sim_xsim: ${TEST_BIN}
+	mkdir -p ${XS_DIR}
+	cp ${SIM_MIFS} ${XS_DIR}
+	sed -e '/^#/d' -e 's/^+incdir+/-i /' ${SIM_FLIST} > ${XS_DIR}/simplyv.f
+	cd ${XS_DIR} && ${XSIM_ENV} xvlog -sv ${XSIM_LIBS} $(addprefix -d ,${SIM_DEFINES} VERILATOR SYNTHESIS) \
+		-d SIM_UART_CYCLES_PER_BIT=${SIM_UART_CYCLES_PER_BIT} -d SIM_MAX_CYCLES=${SIM_MAX_CYCLES} \
+		-f simplyv.f ${XSIM_ROOT}/data/verilog/src/glbl.v ${XILINX_SIM_ROOT}/xsim/tb/simplyv/simplyv_tb.sv
+	cd ${XS_DIR} && ${XSIM_ENV} xelab ${XSIM_LIBS} -L xpm -timescale 1ns/1ps -s simplyv simplyv_tb
+	cd ${XS_DIR} && ${XSIM_ENV} xsim simplyv -R --log simplyv.log -testplusarg BIN=${TEST_BIN} \
+		-testplusarg GOLDEN=${TEST_GOLDEN} $(addprefix -testplusarg STIMULUS=,${TEST_STIM})
+	grep -q '\[EMB\] PASS' ${XS_DIR}/simplyv.log
+
 # Crossbar benches on xsim with the Xilinx AXI VIP, one directory per crossbar IP:
 # sim_xsim_<bus>_xbar runs xsim/tb/<bus>_xbar/ in build/xsim/<bus>_xbar/ on the crossbar of the
 # generated <bus>_crossbar.svinc, for XBAR_IMPL (e.g. make sim_xsim_xbar XBAR_IMPL=CUSTOM).
@@ -185,4 +205,4 @@ sim_xsim_%_xbar: ips/xlnx_%_crossbar.xci
 	grep -q 'XBAR\] .* PASS' ${XSIM_BUILD_DIR}/$*_xbar/$*_xbar.log && ! grep -qE 'ERROR|Error|Fatal|FATAL' ${XSIM_BUILD_DIR}/$*_xbar/$*_xbar.log
 
 # PHONIES
-.PHONY: sim_compile_simlib sim_xsim_xbar sim sim_config_regen sim_verilator FORCE
+.PHONY: sim_compile_simlib sim_xsim_xbar sim sim_config_regen sim_verilator sim_xsim FORCE
