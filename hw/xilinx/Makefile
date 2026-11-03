@@ -52,11 +52,11 @@ clean:
 
 clean_ips/%.xci:
 	rm -rf ${XILINX_IPS_ROOT}/*/$*/build
-	rm -rf ${XILINX_IPS_ROOT}/$*.xci
+	rm -rf ${XILINX_IPS_ROOT}/$*.xci ${XILINX_IPS_ROOT}/$*.tcl
 
 clean_ips:
 	rm -rf ${XILINX_IPS_ROOT}/*/*/build
-	rm -rf ${XILINX_IPS_ROOT}/*.xci
+	rm -rf ${XILINX_IPS_ROOT}/*.xci ${XILINX_IPS_ROOT}/*.tcl
 
 ###########
 # PHONIES #

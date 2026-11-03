@@ -1,5 +1,8 @@
 # Description: Make target for simulation
-# TODO: The simulation flow is not yet supported, this file is just a placeholder
+# SoC simulation (make sim BACKEND=verilator|xsim TEST=<example>): see hw/xilinx/sim/README.md
+
+XILINX_SIM_ROOT      := ${XILINX_ROOT}/sim
+XILINX_SIM_BUILD_DIR := ${XILINX_SIM_ROOT}/build
 
 sim_compile_simlib:
 	${XILINX_VIVADO_BATCH} -source ${XILINX_SIM_TCL_ROOT}/compile_simlib.tcl
@@ -12,6 +15,88 @@ ${XILINX_IPS_ROOT}/%/questa/compile.do: ${XILINX_SIM_IP_ROOT}
 
 ${XILINX_SIM_IP_ROOT}/ips:
 	mkdir -p $@
+
+#######################
+# Embedded SoC: setup #
+#######################
+
+BACKEND ?= verilator
+TEST    ?= hello_world
+# Core override for one run (e.g. CI): CORE=ibex|cv32e40p|picorv32|cv64a6|cv64a6_ara
+CORE    ?=
+CORE_SELECTOR_ibex       := CORE_IBEX
+CORE_SELECTOR_cv32e40p   := CORE_CV32E40P
+CORE_SELECTOR_picorv32   := CORE_PICORV32
+CORE_SELECTOR_cv64a6     := CORE_CV64A6
+CORE_SELECTOR_cv64a6_ara := CORE_CV64A6_ARA
+PYTHON ?= python3
+
+# Xilinx IPs of the DUT: the embedded xlnx_* without the ones the VERIFICATION seam removes
+# (JTAG2AXI, VIO, clk_wiz), the clock converters (single clock in simulation), the 64-to-32
+# dwidth converter (hand-written model) and the IPs of the MicroBlaze-V cores, which are not
+# simulated (the cores, their debug modules and the AXI-Lite to AXI4 converter in rv_socket)
+SIM_IP_LIST := $(filter-out xlnx_jtag_axi xlnx_vio xlnx_clk_wiz xlnx_axi_d%_clock_converter \
+	xlnx_axi_dwidth_64_to_32_converter xlnx_axilite_to_axi4_d32_converter xlnx_microblazev_rv% \
+	xlnx_microblaze_debug_module_v xlnx_dual_microblaze_debug_module_v, \
+	$(filter xlnx_%,${IP_LIST}))
+
+# Two makes: the first regenerates the config from the CSVs with the simulation overlay, the
+# second re-reads config.mk. The tracked files the regen rewrites are saved before and
+# restored at the end, also on INT/TERM/HUP; a backup left by a killed run is restored first.
+# ips/<ip>.tcl holds the config.tcl the IP was built from: sim_ip_sync aligns the config.tcl
+# mtime to the stamp, so an IP is rebuilt only if its config changed (also when switching
+# sim/FPGA). The copy is trusted only if not older than the stamp, which a build that does
+# not write it (e.g. an older branch) touches.
+SIM_CFG_FILES  := hw/xilinx/make/config.mk sw/SoC/common/config.mk sw/SoC/lib/simplyv/inc/simplyv_conf.h \
+	$(patsubst ${SIMPLYV_ROOT_DIR}/%,%,$(wildcard ${SIMPLYV_ROOT_DIR}/sw/SoC/common/ld/*.ld \
+	${XILINX_ROOT}/rtl/generated/*/*.svinc ${XILINX_IPS_ROOT}/*/*/config.tcl))
+SIM_CFG_BACKUP := ${XILINX_SIM_BUILD_DIR}/config_backup.tar
+SIM_LOCK       := ${XILINX_SIM_BUILD_DIR}/sim.lock
+MAX_VIVADO_INSTANCES ?= 4
+sim_ip_sync = for c in ${XILINX_IPS_ROOT}/*/xlnx_*/config.tcl; do \
+	s=${XILINX_ROOT}/ips/$$(basename $$(dirname $$c)).xci; t=$${s%.xci}.tcl; \
+	[ -f $$s ] && [ -f $$t ] || continue; \
+	if ! [ $$s -nt $$t ] && cmp -s $$c $$t; then touch -r $$s $$c; else touch $$c; fi; done
+sim:
+	mkdir -p ${XILINX_SIM_BUILD_DIR}
+	exec 9>${SIM_LOCK}; \
+	flock -n 9 || { echo "[sim] another sim is running in this checkout"; exit 1; }; \
+	restore() { tar -C ${SIMPLYV_ROOT_DIR} -xf ${SIM_CFG_BACKUP} && rm -f ${SIM_CFG_BACKUP} && ${sim_ip_sync}; }; \
+	if [ -f ${SIM_CFG_BACKUP} ]; then \
+		echo "[sim] restoring the config saved by an interrupted run"; restore || exit 1; fi; \
+	tar -C ${SIMPLYV_ROOT_DIR} -cf ${SIM_CFG_BACKUP}.tmp ${SIM_CFG_FILES} || exit 1; \
+	mv ${SIM_CFG_BACKUP}.tmp ${SIM_CFG_BACKUP}; \
+	trap restore EXIT; trap 'exit 130' INT; trap 'exit 143' TERM; trap 'exit 129' HUP; \
+	${MAKE} sim_config_regen && ${sim_ip_sync} && \
+	${MAKE} -j ${MAX_VIVADO_INSTANCES} ips IP_LIST="${SIM_IP_LIST}" && ${MAKE} sim_${BACKEND}
+
+# Simulation overlay on the user CSVs: every MBUS slave on the main clock (one clock in
+# simulation, no PBUS clock converter), plus the CORE= and XBAR_IMPL= overrides
+SIM_SYSTEM_CSV := ${XILINX_SIM_BUILD_DIR}/config_system.csv
+comma := ,
+SIM_MBUS_CSV   := ${XILINX_SIM_BUILD_DIR}/config_mbus.csv
+# The uartlite runs at SIM_UART_BAUD, the highest baud rate within the 3% error the IP accepts
+# at 20 MHz: the simulation length is bound by the characters the firmware prints
+SIM_UART_TCL   := ${XILINX_IPS_ROOT}/embedded/xlnx_axi_uartlite/config.tcl
+SIM_UART_BAUD  ?= 128000
+sim_config_regen:
+	sed -e '$(if ${CORE},s/^CORE_SELECTOR.*/CORE_SELECTOR$(comma)${CORE_SELECTOR_${CORE}}/)' \
+		-e '$(if $(filter command line,$(origin XBAR_IMPL)),s/^XBAR_IMPL.*/XBAR_IMPL$(comma)${XBAR_IMPL}/)' \
+		${CONFIG_ROOT}/configs/common/config_system.csv > ${SIM_SYSTEM_CSV}
+	sed "/^RANGE_CLOCK_DOMAINS/s/MBUS_[0-9]*/$$(sed -n 's/^MAIN_CLOCK_DOMAIN, *//p' ${SIM_SYSTEM_CSV})/g" \
+		${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_mbus.csv > ${SIM_MBUS_CSV}
+	${MAKE} -C ${CONFIG_ROOT} config_mbus config_pbus config_sw config_xilinx config_sim PYTHON=${PYTHON} \
+		INPUT_SYSTEM_CSV=${SIM_SYSTEM_CSV} INPUT_MBUS_CSV=${SIM_MBUS_CSV} SIM_IPS="${SIM_IP_LIST}"
+	sed -i 's/C_BAUDRATE {[0-9]*}/C_BAUDRATE {${SIM_UART_BAUD}}/' ${SIM_UART_TCL}
+
+# Patched unisims for Verilator: the `=== 1'bz` input checks become constants
+SIM_UNISIMS_DIR := ${XILINX_SIM_BUILD_DIR}/unisims
+${SIM_UNISIMS_DIR}:
+	mkdir -p $@
+	for f in ${XSIM_ROOT}/data/verilog/src/unisims/*.v ${XSIM_ROOT}/data/verilog/src/retarget/*.v; do \
+		sed -E -e "s/\b[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])? *=== *1'bz/1'b0/g" \
+			-e "s/\b[A-Za-z_][A-Za-z0-9_]*(\[[^]]*\])? *!== *1'bz/1'b1/g" $$f > $@/$$(basename $$f); \
+	done
 
 # Crossbar benches on xsim with the Xilinx AXI VIP, one directory per crossbar IP:
 # sim_xsim_<bus>_xbar runs xsim/tb/<bus>_xbar/ in build/xsim/<bus>_xbar/ on the crossbar of the
@@ -42,4 +127,4 @@ sim_xsim_%_xbar: ips/xlnx_%_crossbar.xci
 	grep -q 'XBAR\] .* PASS' ${XSIM_BUILD_DIR}/$*_xbar/$*_xbar.log && ! grep -qE 'ERROR|Error|Fatal|FATAL' ${XSIM_BUILD_DIR}/$*_xbar/$*_xbar.log
 
 # PHONIES
-.PHONY: sim_compile_simlib sim_xsim_xbar
+.PHONY: sim_compile_simlib sim_xsim_xbar sim sim_config_regen

@@ -86,6 +86,11 @@ def parse_args():
 		action="store_true",
 		help="Generate reachability dump (CSV)"
 	)
+	parser.add_argument(
+		"--config_sim",
+		action="store_true",
+		help="Generate simulation-flow configuration outputs"
+	)
 
 
 	# =====================
@@ -125,6 +130,13 @@ def parse_args():
 	parser.add_argument("--ddr4_root", help="Root directory for DDR4 IP generation")
 	parser.add_argument("--bram_root", help="Root directory for BRAM IP generation")
 	parser.add_argument("--uart_root", help="Root directory for UART IP generation")
+
+	# =====================
+	# Simulation outputs
+	# =====================
+	parser.add_argument("--sim_flist", help="Output simulation filelist (.f)")
+	parser.add_argument("--sim_siminc_dir", help="Output sim-only include dir (prelude + renamed unit wrappers)")
+	parser.add_argument("--sim_ips", default="", help="Xilinx IPs of the simulated DUT (space-separated)")
 
 	# =====================
 	# Dump output
@@ -285,6 +297,21 @@ def main(logger):
 
 		system.dump_reachability(args.dump_path)
 		logger.simplyv_info("Reachability dump generated at " + args.dump_path)
+
+	# Triggered by Makefile: config_sim or all
+	# =====================
+	# Simulation
+	# =====================
+	if args.config_sim:
+		if not all([args.sim_flist, args.sim_siminc_dir]):
+			raise ValueError(
+				"config_sim requires --sim_flist and --sim_siminc_dir"
+			)
+
+		system.config_sim(args.sim_flist, args.sim_siminc_dir, args.sim_ips.split())
+		outputs = [args.sim_flist, args.sim_siminc_dir]
+		logger.simplyv_info("Simulation configs succesfully generated!")
+		logger.simplyv_info("Simulation output files: " + str(outputs))
 
 
 if __name__ == "__main__":

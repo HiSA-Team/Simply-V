@@ -43,6 +43,10 @@ OUTPUT_UART_ROOT := ${XILINX_IPS_ROOT}/embedded
 # Generated from "config_dump"
 OUTPUT_DUMP := ${CONFIG_ROOT}/memory_map.csv
 
+# Generated from "config_sim"
+OUTPUT_SIM_FLIST   := ${XILINX_ROOT}/sim/generated/simplyv.f
+OUTPUT_SIM_SIMINC  := ${XILINX_ROOT}/sim/generated/siminc
+
 
 ###########################
 ###  	CMD PARAMS      ###
@@ -91,6 +95,12 @@ CONFIG_HW_ARGS = \
 CONFIG_DUMP_ARGS = \
 	--config_dump \
 	--dump_path ${OUTPUT_DUMP}
+
+CONFIG_SIM_ARGS = \
+	--config_sim \
+	--sim_flist ${OUTPUT_SIM_FLIST} \
+	--sim_siminc_dir ${OUTPUT_SIM_SIMINC} \
+	--sim_ips "${SIM_IPS}"
 
 
 ###########################
@@ -146,6 +156,15 @@ config_dump:
 
 
 ############################################################
+###					  SIM TARGET						 ###
+############################################################
+
+config_sim:
+	@mkdir -p ${XILINX_ROOT}/sim/generated
+	@${PYTHON} ${SIMPLY_CONFIG} ${INPUT_ARGS} ${CONFIG_SIM_ARGS}
+
+
+############################################################
 ###                     HELP TARGET                      ###
 ############################################################
 
@@ -164,6 +183,7 @@ help:
 	@echo "  config_sw      Generate software configuration files"
 	@echo "  config_xilinx  Generate Xilinx-specific configuration files (HW flow)"
 	@echo "  config_dump    Generate reachability dump of the configured peripherals (CSV)"
+	@echo "  config_sim     Generate simulation-flow configuration files (filelist of the simulated DUT)"
 	@echo ""
 	@echo "Simply-Config application help:"
 	@echo "------------------------------------------------------------"

@@ -14,6 +14,7 @@
 # through the "simply_config.py" file that launches the correct methods based on the makefile target that
 # launched the whole configuration
 
+import os
 import re
 from buses.nonleafbus import NonLeafBus
 from .error import Conflict_Error, Unsupported_Value_Error
@@ -26,6 +27,7 @@ from peripherals.ddr4 import DDR4
 from peripherals.bram import Bram
 from templates.bus_interconnect_template import Bus_Interconnect_Template
 from templates.bus_crossbar_template import Bus_Crossbar_Template
+from templates.sim_template import Sim_Flist_Template
 from pathlib import Path
 from factories.buses_factory import Buses_Factory
 from peripherals.peripheral import Peripheral
@@ -184,6 +186,87 @@ class SimplyV(metaclass=Singleton):
 
 		# return false if the bus wasn't found
 		return False
+
+
+	# Generate the simulation filelist (Verilator and xsim) and the sim-only include dir
+	# ($unit-scope prelude and the unit wrappers renamed to their IP names).
+	# sim_ips: the Xilinx IPs of the DUT, as funcsim netlists (BRAM as Xilinx behavioural model)
+	def config_sim(self, flist_path: str, siminc_dir: str, sim_ips: list[str]) -> None:
+		root = os.environ.get("SIMPLYV_ROOT_DIR")
+		if root is None:
+			raise ValueError("SIMPLYV_ROOT_DIR not set: source settings.sh first")
+
+		# Sim cone: core unit first, then the SoC units and the debug module (none on picorv32).
+		# Order is the incdir search order: custom_axi_from_mem's assertions.svh must come first
+		core_unit = "custom_" + self.CORE_SELECTOR.removeprefix("CORE_").lower()
+		cone_units = [core_unit, "custom_axi_from_mem", "custom_clint", "custom_rv_plic"]
+		if core_unit != "custom_picorv32":
+			cone_units.append(f"custom_rv{self.XLEN}_dbg_bscane")
+		if not os.path.isdir(os.path.join(root, "hw", "units", core_unit)):
+			raise ValueError(f"{self.CORE_SELECTOR} has no simulation cone")
+
+		# 1. Prelude: puts the $unit-scope typedefs in front of every compilation
+		os.makedirs(siminc_dir, exist_ok=True)
+		headers_root = os.path.join(root, "hw", "xilinx", "rtl", "headers")
+		prelude_path = os.path.join(siminc_dir, "_prelude.sv")
+		Path(prelude_path).write_text(
+			"// Auto-generated: puts the $unit-scope typedefs in front of every compilation\n"
+			'`include "simplyv_axi.svh"\n'
+			'`include "simplyv_mem.svh"\n')
+
+		# 2. Unit wrappers renamed custom_top_wrapper -> <unit>, the IP name the RTL instantiates
+		wrappers_dir = os.path.join(siminc_dir, "wrappers")
+		os.makedirs(wrappers_dir, exist_ok=True)
+		wrapper_files = []
+		for unit in cone_units:
+			text = Path(root, "hw", "units", unit, "custom_top_wrapper.sv").read_text()
+			dest = os.path.join(wrappers_dir, f"{unit}.sv")
+			Path(dest).write_text(re.sub(r"\bcustom_top_wrapper\b", unit, text))
+			wrapper_files.append(dest)
+
+		# 3. Xilinx IPs, from their OOC builds: funcsim netlists; BRAM has an encrypted core, so
+		# it takes the plaintext behavioural model (one shared blk_mem_gen)
+		sim_dir = os.path.join(root, "hw", "xilinx", "sim")
+		ips_root = Path(root, "hw", "xilinx", "ips")
+		def gen_dir(ip):
+			ip_dir = next(ips_root.glob(f"*/{ip}"), None)
+			if ip_dir is None:
+				raise ValueError(f"{ip} not found in {ips_root}")
+			return ip_dir / "build" / f"{ip}_prj.gen" / "sources_1" / "ip" / ip
+		ip_files = [str(gen_dir(ip) / "sim" / f"{ip}.v") if ip.startswith("xlnx_bram_")
+					else str(gen_dir(ip) / f"{ip}_sim_netlist.v") for ip in sim_ips]
+		bram_ips = [ip for ip in sim_ips if ip.startswith("xlnx_bram_")]
+		if bram_ips:
+			ip_files.append(str(gen_dir(bram_ips[0]) / "simulation" / "blk_mem_gen_v8_4.v"))
+		# xlnx_axi_dwidth_64_to_32_converter has no plaintext model: hand-written one
+		if self.XLEN == 64:
+			ip_files.append(os.path.join(sim_dir, "models", "xlnx_axi_dwidth_64_to_32_converter.sv"))
+
+		xilinx_rtl = os.path.join(root, "hw", "xilinx", "rtl")
+		unit_rtl = {u: os.path.join(root, "hw", "units", u, "rtl") for u in cone_units}
+		# Core unit last: CVA6 vendors incompatible copies of the headers and cells the other units
+		# share, and the first copy wins (incdir search, filelist dedup)
+		incdirs = [unit_rtl[u] for u in cone_units[1:]] + [unit_rtl[core_unit], xilinx_rtl, headers_root]
+		rtl_roots = [unit_rtl[u] for u in cone_units[1:]] + [unit_rtl[core_unit], xilinx_rtl]
+
+		exclude_patterns = [
+				r"pad_functional",
+				r"reg_test\.sv$",
+				r"axi_test\.sv$",
+				r"hbus\.sv$",						# HPC-only bus
+				r"hls_conv2d_wrapper\.sv$",			# HPC-only
+				r"ddr4_channel_wrapper\.sv$",		# HPC-only
+				r"virtual_uart\.sv$",				# HPC-only (ifdef HPC in uart_wrapper.sv)
+			]
+
+		flist_template = Sim_Flist_Template(
+				incdirs=incdirs,
+				prelude_files=[prelude_path],
+				rtl_roots=rtl_roots,
+				exclude_patterns=exclude_patterns,
+				extra_files=wrapper_files + ip_files + [os.path.join(sim_dir, "simplyv_sim_wrapper.sv")],
+			)
+		flist_template.write_to_file(flist_path)
 
 
 

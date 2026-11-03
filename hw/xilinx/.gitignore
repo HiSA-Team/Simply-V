@@ -1,5 +1,6 @@
-# Phony xci IP files
+# Phony xci IP files and the config.tcl they were built from
 *.xci
+ips/*.tcl
 
 # Xilinx local artifacts
 .Xil

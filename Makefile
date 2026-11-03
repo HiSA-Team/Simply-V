@@ -29,3 +29,8 @@ clean:
 	${MAKE} -C ${SW_ROOT} clean
 
 .PHONY: config hw sw xilinx units
+
+# Simulation (BACKEND, TEST, CORE and XBAR_IMPL are passed through): see hw/xilinx/sim/README.md
+sim:
+	${MAKE} -C ${XILINX_ROOT} sim
+.PHONY: sim
