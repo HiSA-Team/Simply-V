@@ -6,12 +6,13 @@
 # "SimplyV" calls the "init_configurations" functions to trigger
 # all the recursive checks and configuration of the whole hierarchy
 
+from math import ceil, log2
 from general.addr_range import Addr_Ranges
 from .bus import Bus
 from general.env import Env
 from .nonleafbus import NonLeafBus
 from general.singleton import SingletonABCMeta
-from general.error import Conflict_Error
+from general.error import Conflict_Error, Out_Of_Range_Error
 
 #Only one MBUS should be created
 class MBus(NonLeafBus, metaclass=SingletonABCMeta):
@@ -30,6 +31,14 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 				axi_data_width, clock_domain, clock_frequency, None)
 		# Env is the class that manages all the "settings.sh" related values (project's paths and profile configuration)
 		self.env_global = Env.get_instance()
+
+		# Zynq-7000: the PS M_AXI_GP0 IDs are 6 bits (static remap), and the crossbar keeps only
+		# ID_WIDTH - ceil(log2(NUM_SI)) bits of each master ID, so all the 6 PS bits must fit
+		if self.env_global.get_simplyv_profile() == "zynq":
+			PS_ID_WIDTH = 6
+			min_ID_WIDTH = ceil(log2(self.NUM_SI)) + PS_ID_WIDTH
+			if self.ID_WIDTH < min_ID_WIDTH:
+				raise Out_Of_Range_Error("ID_WIDTH", self.ID_WIDTH, min_ID_WIDTH, 32)
 
 		if self.env_global.get_simplyv_profile()=="hpc":
 			self.LEGAL_PERIPHERALS = self.LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL")
