@@ -33,7 +33,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 obj/startup.o:
 	@echo "[OBJ] Creating OBJs from $(STARTUP_DIR)/startup.s"
 	$(MKDIR)
-	$(CC) -o obj/startup.o $(STARTUP_DIR)/startup.s $(LIB_INC_LIST) $(CFLAGS)
+	$(CC) -o obj/startup.o $(STARTUP_DIR)/startup.s $(LIB_INC_LIST) $(CFLAGS) $(EXTRA_ASFLAGS)
 
 bin/$(PROGRAM_NAME).elf: $(OBJS) obj/startup.o
 	@echo "[ELF] Creating elf file"

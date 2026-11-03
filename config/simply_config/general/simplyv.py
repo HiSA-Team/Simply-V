@@ -246,7 +246,12 @@ class SimplyV(metaclass=Singleton):
 		unit_rtl = {u: os.path.join(root, "hw", "units", u, "rtl") for u in cone_units}
 		# Core unit last: CVA6 vendors incompatible copies of the headers and cells the other units
 		# share, and the first copy wins (incdir search, filelist dedup)
-		incdirs = [unit_rtl[u] for u in cone_units[1:]] + [unit_rtl[core_unit], xilinx_rtl, headers_root]
+		incdirs = [unit_rtl[u] for u in cone_units[1:]] + [unit_rtl[core_unit], xilinx_rtl, headers_root, siminc_dir]
+		# cv32e40p's FPU includes "common_cells/<header>", the units ship them flat in rtl/
+		common_cells = os.path.join(siminc_dir, "common_cells")
+		if os.path.lexists(common_cells):
+			os.remove(common_cells)
+		os.symlink(unit_rtl[cone_units[1]], common_cells)
 		rtl_roots = [unit_rtl[u] for u in cone_units[1:]] + [unit_rtl[core_unit], xilinx_rtl]
 
 		exclude_patterns = [
@@ -258,6 +263,26 @@ class SimplyV(metaclass=Singleton):
 				r"ddr4_channel_wrapper\.sv$",		# HPC-only
 				r"virtual_uart\.sv$",				# HPC-only (ifdef HPC in uart_wrapper.sv)
 			]
+		# CVA6 (and Ara) vendor their SoC, FPGA-board and TB files flat into rtl/: unused here,
+		# and some reference undefined macros or duplicate peripherals
+		if self.CORE_SELECTOR in ("CORE_CV64A6", "CORE_CV64A6_ARA"):
+			exclude_patterns += [
+					r"ariane_xilinx\.sv$",				# CVA6 FPGA board top
+					r"ariane_peripherals_xilinx\.sv$",	# CVA6 FPGA peripherals
+					r"fan_ctrl\.sv$",					# CVA6 FPGA fan controller
+					r"/ariane\.sv$",					# CVA6 SoC top (cva6 is instantiated directly)
+					r"rvfi_tracer\.sv$",				# CVA6 TB tracer
+					r"SimDTM\.sv$", r"SimJTAG\.sv$",	# CVA6 TB DPI stubs
+					r"/uart\.sv$",						# CVA6 TB uart
+					r"/clint\.sv$",						# CVA6 clint (custom_clint is used)
+					r"axi_lite_interface\.sv$",			# only used by the CVA6 clint
+					r"axi_intf\.sv$",					# CVA6 TB AXI interface
+				]
+		# Ara: unused SRAM and BRAM-logger cells that do not parse or miss their packages,
+		# and the xpm variant of tc_sram (the behavioural one is used)
+		if self.CORE_SELECTOR == "CORE_CV64A6_ARA":
+			exclude_patterns += [r"/SyncTpRam\.sv$", r"/AxiBramLogger\.sv$", r"/BramLogger\.sv$",
+								 r"/BramDwc\.sv$", r"/TdpBramArray\.sv$", r"/tc_sram_xilinx\.sv$"]
 
 		flist_template = Sim_Flist_Template(
 				incdirs=incdirs,

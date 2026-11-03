@@ -72,7 +72,8 @@ sim:
 	${MAKE} -j ${MAX_VIVADO_INSTANCES} ips IP_LIST="${SIM_IP_LIST}" && ${MAKE} sim_${BACKEND}
 
 # Simulation overlay on the user CSVs: every MBUS slave on the main clock (one clock in
-# simulation, no PBUS clock converter), plus the CORE= and XBAR_IMPL= overrides
+# simulation, no PBUS clock converter), plus the CORE= and XBAR_IMPL= overrides. CORE= also
+# sets what sys_parser requires: VIO_RESETN_DEFAULT=0 on picorv32, XLEN=64 on the CVA6 cores
 SIM_SYSTEM_CSV := ${XILINX_SIM_BUILD_DIR}/config_system.csv
 comma := ,
 SIM_MBUS_CSV   := ${XILINX_SIM_BUILD_DIR}/config_mbus.csv
@@ -83,6 +84,8 @@ SIM_UART_BAUD  ?= 128000
 sim_config_regen:
 	sed -e '$(if ${CORE},s/^CORE_SELECTOR.*/CORE_SELECTOR$(comma)${CORE_SELECTOR_${CORE}}/)' \
 		-e '$(if $(filter command line,$(origin XBAR_IMPL)),s/^XBAR_IMPL.*/XBAR_IMPL$(comma)${XBAR_IMPL}/)' \
+		-e '$(if $(filter picorv32,${CORE}),s/^VIO_RESETN_DEFAULT.*/VIO_RESETN_DEFAULT$(comma)0/)' \
+		-e '$(if $(filter cv64a6 cv64a6_ara,${CORE}),s/^XLEN.*/XLEN$(comma)64/)' \
 		${CONFIG_ROOT}/configs/common/config_system.csv > ${SIM_SYSTEM_CSV}
 	sed "/^RANGE_CLOCK_DOMAINS/s/MBUS_[0-9]*/$$(sed -n 's/^MAIN_CLOCK_DOMAIN, *//p' ${SIM_SYSTEM_CSV})/g" \
 		${CONFIG_ROOT}/configs/${SIMPLYV_PROFILE}/config_mbus.csv > ${SIM_MBUS_CSV}
@@ -107,13 +110,16 @@ TEST_GOLDEN   := ${XILINX_SIM_ROOT}/stimuli/golden/${TEST}.uart.golden
 TEST_STIM     := $(wildcard ${XILINX_SIM_ROOT}/stimuli/${TEST}.in)
 TEST_EXTRA_MACROS_interrupts         := -DTIM0_COUNT_US=500u -DSLEEP_US=200u
 TEST_EXTRA_MACROS_xlnx_cdma_examples := -DNUM_ROUNDS=1u
-# Rebuilt on every run, libs included, for the core of this run
+# Rebuilt on every run, libs included, for the core of this run: XLEN, and on picorv32 no
+# RVC and no interrupt CSRs in startup.s
+TEST_SW_FLAGS := XLEN=${XLEN} $(if $(filter CORE_PICORV32,${CORE_SELECTOR}),C_EXTENSION=N)
 ${TEST_BIN}: FORCE
 	for d in ${TEST_PROG_DIR} ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/tinyio ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/simplyv; do \
 		${MAKE} -C $$d clean; done
-	${MAKE} -C ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/tinyio
-	${MAKE} -C ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/simplyv
-	${MAKE} -C ${TEST_PROG_DIR} bin/${TEST}.bin PROGRAM_NAME=${TEST} EXTRA_MACROS="${TEST_EXTRA_MACROS_${TEST}}"
+	${MAKE} -C ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/tinyio ${TEST_SW_FLAGS}
+	${MAKE} -C ${SIMPLYV_ROOT_DIR}/sw/SoC/lib/simplyv ${TEST_SW_FLAGS}
+	${MAKE} -C ${TEST_PROG_DIR} bin/${TEST}.bin PROGRAM_NAME=${TEST} EXTRA_MACROS="${TEST_EXTRA_MACROS_${TEST}}" \
+		${TEST_SW_FLAGS} $(if $(filter CORE_PICORV32,${CORE_SELECTOR}),EXTRA_ASFLAGS=-Wa$(comma)--defsym$(comma)CORE_PICORV32=1)
 FORCE:
 
 # Uartlite bit period in ticks of its clock, from its config.tcl: 16x oversampling with the
@@ -143,11 +149,13 @@ SIM_MIFS    := $(foreach b,0 1,${XILINX_IPS_ROOT}/common/xlnx_bram_$(b)/build/xl
 VL_DIR     := ${XILINX_SIM_BUILD_DIR}/verilator/${CORE_SELECTOR}_${XBAR_IMPL}
 # Evaluation threads: one is the fastest on the 32-bit cores
 VL_THREADS ?= 1
+# Ara's simd_mul hits an internal error of the DFG optimiser (Verilator 5.051)
+VL_FLAGS   := $(if $(filter CORE_CV64A6_ARA,${CORE_SELECTOR}),-fno-dfg)
 sim_verilator: ${TEST_BIN} ${SIM_UNISIMS_DIR}
 	mkdir -p ${VL_DIR}
-	verilator --cc --exe --build -j 0 -O3 --no-timing --threads ${VL_THREADS} -Mdir ${VL_DIR} \
+	verilator --cc --exe --build -j 0 -O3 --no-timing --threads ${VL_THREADS} ${VL_FLAGS} -Mdir ${VL_DIR} \
 		-Wno-fatal -Wno-lint -Wno-style -Wno-BLKANDNBLK -Wno-REDEFMACRO -Wno-TIMESCALEMOD -Wno-MODDUP \
-		-Wno-IEEEMAYDEPRECATE -Wno-SPECIFYIGN -Wno-STMTDLY -Wno-COMBDLY -Wno-UNOPTFLAT \
+		-Wno-IEEEMAYDEPRECATE -Wno-SPECIFYIGN -Wno-STMTDLY -Wno-COMBDLY -Wno-UNOPTFLAT -Wno-ENUMVALUE \
 		$(addprefix +define+,${SIM_DEFINES}) --top-module simplyv_sim_wrapper -f ${SIM_FLIST} \
 		${XSIM_ROOT}/data/verilog/src/glbl.v ${XSIM_ROOT}/data/ip/xpm/xpm_cdc/hdl/xpm_cdc.sv \
 		-y ${XILINX_SIM_ROOT}/verilator/prims -y ${SIM_UNISIMS_DIR} \
