@@ -29,8 +29,8 @@ set_property -dict { PACKAGE_PIN N16   IOSTANDARD LVCMOS33 } [get_ports { gpio_o
 set_property -dict { PACKAGE_PIN M14   IOSTANDARD LVCMOS33 } [get_ports { gpio_out_o[3] }]; #IO_L23P_T3_35 Sch=led[3]
 
 ## Buttons
-## Reset: BTN0 drives the clock wizard reset (its 'locked' output generates the system resets)
-set_property -dict { PACKAGE_PIN D19   IOSTANDARD LVCMOS33 } [get_ports { sys_reset_i }]; #IO_L4P_T0_35 Sch=btn[0]
+## Reset: on the PS+PL board the reset comes from the PS (FCLK_RESET0_N), BTN0 is not used
+#set_property -dict { PACKAGE_PIN D19   IOSTANDARD LVCMOS33 } [get_ports { sys_reset_i }]; #IO_L4P_T0_35 Sch=btn[0]
 set_property -dict { PACKAGE_PIN D20   IOSTANDARD LVCMOS33 } [get_ports { gpio_in_i[2] }]; #IO_L4N_T0_35 Sch=btn[1]
 set_property -dict { PACKAGE_PIN L20   IOSTANDARD LVCMOS33 } [get_ports { gpio_in_i[3] }]; #IO_L9N_T1_DQS_AD3N_35 Sch=btn[2]
 #set_property -dict { PACKAGE_PIN L19   IOSTANDARD LVCMOS33 } [get_ports { btn[3] }]; #IO_L9P_T1_DQS_AD3P_35 Sch=btn[3]

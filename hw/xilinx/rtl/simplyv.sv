@@ -82,7 +82,10 @@ module simplyv (
     `ifdef EMBEDDED
         // Clock and reset
         input logic sys_clock_i,
+        `ifndef ZYNQ
+        // On Zynq the reset comes from the PS (FCLK_RESET0_N), not from a button
         input logic sys_reset_i,
+        `endif
 
         // UART interface
         input  logic                        uart_rx_i,

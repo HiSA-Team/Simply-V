@@ -670,7 +670,7 @@ module sys_master # (
     // PLL, for the 125 MHz PS fabric clock
     xlnx_clk_wiz_zynq clkwiz_u (
         .clk_in1  ( ps_fclk                       ),
-        .resetn   ( ps_fclk_resetn & ~sys_reset_i ),
+        .resetn   ( ps_fclk_resetn                ),
         .locked   ( locked                        ),
         .clk_100  ( clk_100MHz_o                  ),
         .clk_50   ( clk_50MHz_o                   ),
