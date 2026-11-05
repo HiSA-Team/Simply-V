@@ -918,6 +918,8 @@ module sys_master # (
     // 2. AXI4 to AXI4-Lite converter (as in front of the PBUS): it stores the MBUS ID of each
     //    transaction and returns it in the response, so the 6-bit IDs of the PS never cut the
     //    master number away. One transaction at a time.
+    //    It is here, in RTL, and not in the PS Block Design (which only holds the AXI4-Lite to AXI3
+    //    converter, as it does for M_AXI_GP0), so that xlnx_ps_wrapper does not depend on MBUS_ID_WIDTH.
     xlnx_axi4_to_axilite_d32_converter ps_sgp0_axi4_to_axilite_u (
         .aclk           ( ps_fclk        ),
         .aresetn        ( ps_fclk_resetn ),
