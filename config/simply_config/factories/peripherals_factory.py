@@ -18,6 +18,7 @@ from peripherals.hls import HLS
 from peripherals.plic import PLIC
 from peripherals.clint import CLINT
 from peripherals.cdma import CDMA
+from peripherals.psddr import PSDDR
 from general.addr_range import Addr_Ranges
 from general.error import Unsupported_Value_Error, Conflict_Error
 
@@ -44,6 +45,7 @@ class Peripherals_Factory(Factory):
 			"HLSCONTROL": HLS,
 			"CLINT":      CLINT,
 			"CDMA":       CDMA,
+			"PSDDR":      PSDDR,
 			"HBM":        HBM,
 		}
 

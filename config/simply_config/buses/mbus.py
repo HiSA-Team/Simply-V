@@ -39,6 +39,8 @@ class MBus(NonLeafBus, metaclass=SingletonABCMeta):
 			min_ID_WIDTH = ceil(log2(self.NUM_SI)) + PS_ID_WIDTH
 			if self.ID_WIDTH < min_ID_WIDTH:
 				raise Out_Of_Range_Error("ID_WIDTH", self.ID_WIDTH, min_ID_WIDTH, 32)
+			# The PS DDR, reached through the PS slave port S_AXI_GP0
+			self.LEGAL_PERIPHERALS = self.LEGAL_PERIPHERALS + ("PSDDR",)
 
 		if self.env_global.get_simplyv_profile()=="hpc":
 			self.LEGAL_PERIPHERALS = self.LEGAL_PERIPHERALS + ("DDR4CH", "HLSCONTROL")

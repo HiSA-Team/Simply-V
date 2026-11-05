@@ -6,7 +6,8 @@
 #   towards Simply-V are enabled:
 #     - M_AXI_GP0     : PS master port, towards the Simply-V MBUS, at 0x4000_0000 (1 GB),
 #                       converted from AXI3 to AXI4 inside the Block Design
-#     - S_AXI_GP0     : PS slave port, from the Simply-V MBUS
+#     - S_AXI_GP0     : PS slave port, from the Simply-V MBUS,
+#                       AXI4-Lite, converted to AXI3 inside the Block Design
 #     - FCLK_CLK0     : PS fabric clock, 125 MHz (input of xlnx_clk_wiz_zynq)
 #     - FCLK_RESET0_N : PS fabric reset (active low)
 #   The hardware platform (.xsa) of the PS is exported for the PS software.
@@ -36,9 +37,7 @@ set_property -dict [list \
     CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ      {125} \
 ] $ps
 
-# Make the clocks, reset and S_AXI_GP0 external, keeping the PS port names
-make_bd_intf_pins_external [get_bd_intf_pins ps7/S_AXI_GP0]
-set_property name S_AXI_GP0 [get_bd_intf_ports S_AXI_GP0_0]
+# Make the clocks and reset external, keeping the PS port names
 foreach pin {FCLK_CLK0 FCLK_RESET0_N M_AXI_GP0_ACLK S_AXI_GP0_ACLK} {
     make_bd_pins_external [get_bd_pins ps7/$pin]
     set_property name $pin [get_bd_ports ${pin}_0]
@@ -61,6 +60,24 @@ connect_bd_net [get_bd_ports FCLK_RESET0_N]  [get_bd_pins m_axi_gp0_rst/ext_rese
 connect_bd_net [get_bd_pins m_axi_gp0_rst/peripheral_aresetn] [get_bd_pins m_axi_gp0_axi3_to_axi4/aresetn]
 make_bd_intf_pins_external [get_bd_intf_pins m_axi_gp0_axi3_to_axi4/M_AXI]
 set_property name M_AXI_GP0 [get_bd_intf_ports M_AXI_0]
+
+# S_AXI_GP0: AXI4-Lite to AXI3 converter inside the Block Design, so that this IP exports AXI4-Lite,
+# in the S_AXI_GP0_ACLK domain. The MBUS IDs are stored outside, by xlnx_axi4_to_axilite_d32_converter
+set sgp0_conv [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 s_axi_gp0_axilite_to_axi3]
+set_property -dict [list \
+    CONFIG.SI_PROTOCOL      {AXI4LITE}   \
+    CONFIG.MI_PROTOCOL      {AXI3}       \
+    CONFIG.READ_WRITE_MODE  {READ_WRITE} \
+] $sgp0_conv
+connect_bd_intf_net [get_bd_intf_pins s_axi_gp0_axilite_to_axi3/M_AXI] [get_bd_intf_pins ps7/S_AXI_GP0]
+connect_bd_net [get_bd_ports S_AXI_GP0_ACLK] [get_bd_pins s_axi_gp0_axilite_to_axi3/aclk]
+# Converter reset: FCLK_RESET0_N synchronized to its clock (S_AXI_GP0_ACLK) by a proc_sys_reset
+set sgp0_rst [create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 s_axi_gp0_rst]
+connect_bd_net [get_bd_ports S_AXI_GP0_ACLK] [get_bd_pins s_axi_gp0_rst/slowest_sync_clk]
+connect_bd_net [get_bd_ports FCLK_RESET0_N]  [get_bd_pins s_axi_gp0_rst/ext_reset_in]
+connect_bd_net [get_bd_pins s_axi_gp0_rst/peripheral_aresetn] [get_bd_pins s_axi_gp0_axilite_to_axi3/aresetn]
+make_bd_intf_pins_external [get_bd_intf_pins s_axi_gp0_axilite_to_axi3/S_AXI]
+set_property name S_AXI_GP0 [get_bd_intf_ports S_AXI_0]
 
 # Address map: Simply-V in the whole M_AXI_GP0 window (base first, then range)
 assign_bd_address
