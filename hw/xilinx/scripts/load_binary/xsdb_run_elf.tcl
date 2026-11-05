@@ -79,8 +79,12 @@ if { $init_ps == 1 } {
 puts "\[INFO\] Selecting target Hart #0"
 targets -set -filter {name  =~ "*Hart #0*"}
 # Reset target core
-puts "\[INFO\] Resetting target"
-rst -processor
+# Zynq-7000: after ps7_post_config the CPU is already halted at 0x0, and a second
+# rst -processor lets it run again, so that it can no longer be halted: skip it
+if { $init_ps == 0 } {
+    puts "\[INFO\] Resetting target"
+    rst -processor
+}
 # Load elf into memory
 puts "\[INFO\] Downloading elf $ELF_FILE"
 dow $ELF_FILE
