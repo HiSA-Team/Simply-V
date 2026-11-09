@@ -7,17 +7,10 @@
 #include "simplyv_conf.h"
 #include "ps_mailbox.h"
 
-// Number of mailbox reads before giving up
-#define TIMEOUT_POLLS (5000000u)
-
-static int wait_for(volatile uint32_t *mbox, uint32_t word, uint32_t magic)
+// Wait for a flag written by the CPU. No timeout: the CPU can be loaded after the PS
+static void wait_for(volatile uint32_t *mbox, uint32_t word, uint32_t magic)
 {
-    for (uint32_t i = 0; i < TIMEOUT_POLLS; i++) {
-        if (mbox[word] == magic) {
-            return 1;
-        }
-    }
-    return 0;
+    while (mbox[word] != magic);
 }
 
 int main(void)
@@ -29,10 +22,7 @@ int main(void)
     xil_printf("[PS] Mailbox at 0x%08x, waiting for the CPU\r\n", (uint32_t)(uintptr_t)mbox);
 
     // 1. Wait for the CPU
-    if (!wait_for(mbox, MBOX_CPU_READY, MBOX_MAGIC_CPU_READY)) {
-        xil_printf("[PS] ERROR: the CPU is not ready\r\n");
-        return 1;
-    }
+    wait_for(mbox, MBOX_CPU_READY, MBOX_MAGIC_CPU_READY);
 
     // 2. Write the value, then the flag
     mbox[MBOX_PS_VALUE] = MBOX_PS_TEST_VALUE;
@@ -41,10 +31,7 @@ int main(void)
     xil_printf("[PS] Wrote to the CPU: 0x%08x\r\n", MBOX_PS_TEST_VALUE);
 
     // 3. Wait for the CPU answer and check it
-    if (!wait_for(mbox, MBOX_CPU_VALID, MBOX_MAGIC_VALID)) {
-        xil_printf("[PS] ERROR: no answer from the CPU\r\n");
-        return 1;
-    }
+    wait_for(mbox, MBOX_CPU_VALID, MBOX_MAGIC_VALID);
     value = mbox[MBOX_CPU_VALUE];
     xil_printf("[PS] Read from the CPU: 0x%08x\r\n", value);
 
