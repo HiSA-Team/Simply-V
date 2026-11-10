@@ -39,6 +39,7 @@ xsdb hw/xilinx/scripts/load_binary/xsdb_run_elf.tcl \
     sw/host/zynq/ps_mailbox/bin/ps_mailbox/build/ps_mailbox.elf
 ```
 The script resets the system, programs the bitstream, initializes the PS (`ps7_init`, `ps7_post_config`), keeps the Cortex-A9 #1 halted, runs the CPU program on Simply-V and then the PS program on the Cortex-A9 #0.
+This works with Microblaze-V. With the other CPUs (e.g. `CORE_CV32E40P`), use the PS-first or the PL-first sequence in `hw/xilinx/doc/PROGRAM_LOADING.md`, with `EXAMPLE=ps_mailbox`.
 
 ## Expected output
 
