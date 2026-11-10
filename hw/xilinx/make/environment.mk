@@ -84,6 +84,8 @@ IMPL_STRATEGY      ?= "Performance_ExtraTimingOpt"
 
 # Implementation artifacts
 XILINX_BITSTREAM ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl_1/${XILINX_PROJECT_NAME}.bit
+# Zynq-7000 only: PS init script, generated with the PS IP (xlnx_ps_wrapper)
+XILINX_PS7_INIT ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.gen/sources_1/ip/xlnx_ps_wrapper/src/xlnx_ps_wrapper_bd_ps7_0/ps7_init.tcl
 XILINX_PROBE_LTX ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl_1/${XILINX_PROJECT_NAME}.ltx
 
 # Wheter to build for development or deployment (0|1)
