@@ -41,8 +41,10 @@ The following table details the supported properties.
 | PHYSICAL_ADDR_WIDTH $^1$| Select the phyisical address width | (32..64)
 | BOOT_MEMORY_BLOCK $^2$ | Select memory device to use for boot | [BRAM_\<n\>, DDR4CH_\<n\>]
 | MAIN_CLOCK_DOMAIN     | Clock domain of the core + MBUS                           | (10, 20, 50, 100) for embedded. (10, 20, 50, 100, 250) for hpc
+| XBAR_IMPL $^3$        | MBUS and PBUS crossbar: Xilinx axi_crossbar IP or in-tree RTL | [XILINX, CUSTOM]
 > $^1$ If XLEN=32 it must equal 32. If XLEN=64, it must be > 32. For `embedded` profile, due to limitations in the JTAG to AXI Master IP [PG174](https://docs.amd.com/v/u/en-US/pg174-jtag-axi), PHYSICAL_ADDR_WIDTH allowed values are only [32,64].
 > $^2$ Assuming the target memory is instantiated
+> $^3$ CUSTOM supports one address range per slave (ADDR_RANGES = 1)
 
 
 ### Notes for CORE_SELECTOR

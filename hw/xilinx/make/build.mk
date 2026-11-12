@@ -13,7 +13,10 @@ IP_NAMES ?= $(addprefix ips/, $(addsuffix .xci, ${IP_LIST}))
 ips: ${IP_NAMES}
 
 # Common recipe for building IPs
+# ips/<ip>.tcl, written after the ips/<ip>.xci stamp, is a copy of the config.tcl the IP
+# was built from. Both are removed first, so an interrupted build is redone
 define build_ip
+	rm -f $@ $(@:.xci=.tcl);                                 \
 	mkdir -p ${IP_DIR}/build;                                \
 	cd	   ${IP_DIR}/build;                                  \
 	export IP_DIR=${IP_DIR};                                 \
@@ -24,6 +27,7 @@ define build_ip
 		-source ${IP_DIR}/config.tcl                         \
 		-source ${XILINX_IPS_ROOT}/common/tcl/post_config.tcl
 	touch $@
+	cp ${IP_DIR}/config.tcl $(@:.xci=.tcl)
 endef
 
 # For Xilinx IPs
@@ -34,6 +38,6 @@ ips/xlnx_%.xci: ${XILINX_IPS_ROOT}/*/xlnx_%/config.tcl
 
 # For custom IPs, also depend on RTL wrapper
 ips/custom_%.xci: IP_DIR=$(firstword $(shell find ${XILINX_IPS_ROOT} -name 'custom_$*'))
-ips/custom_%.xci: ${XILINX_IPS_ROOT}/*/custom_%/config.tcl ${HW_UNITS_ROOT}/custom_%/custom_top_wrapper.sv
+ips/custom_%.xci: ${XILINX_IPS_ROOT}/*/custom_%/config.tcl ${HW_UNITS_ROOT}/custom_%/custom_top_wrapper.sv ${XILINX_ROOT}/rtl/headers/*.svh
 #	Call common recepie
 	$(build_ip)

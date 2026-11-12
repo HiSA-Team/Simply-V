@@ -83,3 +83,5 @@ MACRO_LIST =
 ifeq ($(SIMPLYV_PROFILE), embedded)
 	MACRO_LIST += -DIS_EMBEDDED
 endif
+# Extra macros from the caller (e.g. the sim flow)
+MACRO_LIST += $(EXTRA_MACROS)

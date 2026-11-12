@@ -32,8 +32,13 @@ xlnx_gpio_out_t gpio_out = {
 };
 #endif // IS_EMBEDDED
 
-// Timer0 count in microseconds
+// Timer0 count and main-loop sleep in microseconds
+#ifndef TIM0_COUNT_US
 #define TIM0_COUNT_US (500000u)
+#endif
+#ifndef SLEEP_US
+#define SLEEP_US (3000000u)
+#endif
 // Reset counter value for one interrupt each 0.5 seconds
 #define TIM0_COUNT_TICKS (TIM0_COUNT_US * TIM_0_FREQ_MHz)
 
@@ -204,7 +209,7 @@ int main()
     // TODO: use atomics to sync with handlers
     while ( (timer_interrupt_count + ext_interrupt_count) < MAX_INTERRUPTS ) {
         // Sleep with CLINT
-        uint32_t sleep_us = 3000000u;
+        uint32_t sleep_us = SLEEP_US;
         printf("[main] Interrupts are not done, sleeping for %u us...\r\n", sleep_us);
         retval = clint_sleep_us( sleep_us );
         if ( retval != SIMPLYV_OK ) {

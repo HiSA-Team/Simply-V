@@ -15,10 +15,12 @@ INPUT_SYSTEM_CSV ?= ${CONFIG_ROOT}/configs/common/config_system.csv
 OUTPUT_MBUS_CROSSBAR        := ${XILINX_ROOT}/ips/common/xlnx_mbus_crossbar/config.tcl
 OUTPUT_MBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/mbus_interconnect.svinc
 OUTPUT_MBUS_CLK_ASSIGNMENTS := ${XILINX_ROOT}/rtl/generated/clk_assignments/mbus_clk_assignments.svinc
+OUTPUT_MBUS_XBAR            := ${XILINX_ROOT}/rtl/generated/interconnects/mbus_crossbar.svinc
 
 # Generated from "config_pbus"
 OUTPUT_PBUS_CROSSBAR        := ${XILINX_ROOT}/ips/common/xlnx_pbus_crossbar/config.tcl
 OUTPUT_PBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/pbus_interconnect.svinc
+OUTPUT_PBUS_XBAR            := ${XILINX_ROOT}/rtl/generated/interconnects/pbus_crossbar.svinc
 
 # Generated from "config_hbus"
 OUTPUT_HBUS_CROSSBAR        := ${XILINX_ROOT}/ips/hpc/xlnx_hbus_crossbar/config.tcl
@@ -41,6 +43,10 @@ OUTPUT_UART_ROOT := ${XILINX_IPS_ROOT}/embedded
 # Generated from "config_dump"
 OUTPUT_DUMP := ${CONFIG_ROOT}/memory_map.csv
 
+# Generated from "config_sim"
+OUTPUT_SIM_FLIST   := ${XILINX_ROOT}/sim/generated/simplyv.f
+OUTPUT_SIM_SIMINC  := ${XILINX_ROOT}/sim/generated/siminc
+
 
 ###########################
 ###  	CMD PARAMS      ###
@@ -58,12 +64,14 @@ CONFIG_MBUS_ARGS = \
 	--config_mbus \
 	--mbus_tcl ${OUTPUT_MBUS_CROSSBAR} \
 	--mbus_interconnect ${OUTPUT_MBUS_INTERCONNECT} \
-	--mbus_clock ${OUTPUT_MBUS_CLK_ASSIGNMENTS}
+	--mbus_clock ${OUTPUT_MBUS_CLK_ASSIGNMENTS} \
+	--mbus_crossbar ${OUTPUT_MBUS_XBAR}
 
 CONFIG_PBUS_ARGS = \
 	--config_pbus \
 	--pbus_tcl ${OUTPUT_PBUS_CROSSBAR} \
-	--pbus_interconnect ${OUTPUT_PBUS_INTERCONNECT}
+	--pbus_interconnect ${OUTPUT_PBUS_INTERCONNECT} \
+	--pbus_crossbar ${OUTPUT_PBUS_XBAR}
 
 CONFIG_HBUS_ARGS = \
 	--config_hbus \
@@ -87,6 +95,12 @@ CONFIG_HW_ARGS = \
 CONFIG_DUMP_ARGS = \
 	--config_dump \
 	--dump_path ${OUTPUT_DUMP}
+
+CONFIG_SIM_ARGS = \
+	--config_sim \
+	--sim_flist ${OUTPUT_SIM_FLIST} \
+	--sim_siminc_dir ${OUTPUT_SIM_SIMINC} \
+	--sim_ips "${SIM_IPS}"
 
 
 ###########################
@@ -142,6 +156,15 @@ config_dump:
 
 
 ############################################################
+###					  SIM TARGET						 ###
+############################################################
+
+config_sim:
+	@mkdir -p ${XILINX_ROOT}/sim/generated
+	@${PYTHON} ${SIMPLY_CONFIG} ${INPUT_ARGS} ${CONFIG_SIM_ARGS}
+
+
+############################################################
 ###                     HELP TARGET                      ###
 ############################################################
 
@@ -160,6 +183,7 @@ help:
 	@echo "  config_sw      Generate software configuration files"
 	@echo "  config_xilinx  Generate Xilinx-specific configuration files (HW flow)"
 	@echo "  config_dump    Generate reachability dump of the configured peripherals (CSV)"
+	@echo "  config_sim     Generate simulation-flow configuration files (filelist of the simulated DUT)"
 	@echo ""
 	@echo "Simply-Config application help:"
 	@echo "------------------------------------------------------------"

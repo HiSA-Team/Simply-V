@@ -114,6 +114,8 @@ _reset_handler:
   # Enable Interrupts #
   #####################
 
+  # picorv32 has no mtvec/mstatus/mie (assembled with -Wa,--defsym,CORE_PICORV32=1)
+.ifndef CORE_PICORV32
   # Set mtvec to vectored mode
   la a0, _vector_table_start  # Load vector table base address
   li a1, 1                    # Set vectored mode bit
@@ -125,6 +127,7 @@ _reset_handler:
 
   # Disable all interrupt lines in mie register
   csrs mie, zero
+.endif
 
   ########
   # Tail #

@@ -80,7 +80,7 @@ module custom_top_wrapper # (
         .FPU_OTHERS_LAT         ( FPU_OTHERS_LAT    ),  // Floating-Point COMParison/CONVersion computing lanes pipeline registers number
         .ZFINX                  ( ZFINX             ),  // Float-in-General Purpose registers
         .NUM_MHPMCOUNTERS       ( NUM_MHPMCOUNTERS  )
-    ) (
+    ) cv32e40p_u (
         // Clock and Reset
         .clk_i                  ( clk_i               ),
         .rst_ni                 ( rst_ni              ),

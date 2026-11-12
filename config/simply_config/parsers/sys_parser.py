@@ -10,6 +10,7 @@ class Sys_Parser(Parser):
 	mandatory_properties = Parser.mandatory_properties + ("CORE_SELECTOR", "MAIN_CLOCK_DOMAIN", "PHYSICAL_ADDR_WIDTH",
 														  "VIO_RESETN_DEFAULT", "XLEN", "BOOT_MEMORY_BLOCK")
 
+	optional_defaults = Parser.optional_defaults | {"XBAR_IMPL": "XILINX"}
 
 	type_parsers: dict[str, Callable[[str], Any]]= Parser.type_parsers | {
 			"XLEN": int,
@@ -40,6 +41,10 @@ class Sys_Parser(Parser):
 				(d["CORE_SELECTOR"] == "CORE_PICORV32") and (d["VIO_RESETN_DEFAULT"] != 0),
 				Conflict_Error("CORE_SELECTOR", "VIO_RESETN_DEFAULT", \
 				   "CORE_PICORV32 only supports VIO_RESETN_DEFAULT == 0")
+				),
+			lambda d: (
+				d["XBAR_IMPL"] not in ("XILINX", "CUSTOM"),
+				Conflict_Error("XBAR_IMPL", "XBAR_IMPL", "Allowed values: XILINX, CUSTOM")
 				)
 		]
 

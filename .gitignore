@@ -11,3 +11,6 @@ build*/
 tmp*
 backup*
 *.log
+
+# CVA6 RVFI trace dumps (cv64a6 simulation)
+*.dasm

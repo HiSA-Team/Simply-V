@@ -73,6 +73,16 @@ module sys_master # (
     output logic rstn_100MHz_o,
     output logic rstn_250MHz_o,      // HPC ONLY
 
+`ifdef VERIFICATION
+    // Testbench clocks, PLL lock and AXI master (in place of clk_wiz and JTAG2AXI)
+    input logic clk_10MHz_i,
+    input logic clk_20MHz_i,
+    input logic clk_50MHz_i,
+    input logic clk_100MHz_i,
+    input logic locked_i,
+    `DEFINE_AXI_SLAVE_PORTS(jtag, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH),
+`endif
+
     // AXI Master interface
     `DEFINE_AXI_MASTER_PORTS(m, LOCAL_DATA_WIDTH, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH)
 );
@@ -486,9 +496,13 @@ module sys_master # (
     assign pci_exp_txn_o = '0;
     assign pci_exp_txp_o = '0;
 
-    assign m_axi_awregion = '0;
-    assign m_axi_arregion = '0;
-
+`ifdef VERIFICATION
+    assign clk_10MHz_o  = clk_10MHz_i;
+    assign clk_20MHz_o  = clk_20MHz_i;
+    assign clk_50MHz_o  = clk_50MHz_i;
+    assign clk_100MHz_o = clk_100MHz_i;
+    assign locked       = locked_i;
+`else
     // PLL
     xlnx_clk_wiz clkwiz_u (
         .clk_in1  ( sys_clock_i  ),
@@ -499,6 +513,7 @@ module sys_master # (
         .clk_20   ( clk_20MHz_o  ),
         .clk_10   ( clk_10MHz_o  )
     );
+`endif
 
     // The JTAG2AXI ip is always built with a 32-bits DWIDTH. We use a DWIDTH
     // converter if the SoC is built at 64 bits. While it is possible to build
@@ -506,6 +521,9 @@ module sys_master # (
     // script, which we want to avoid.
     `DECLARE_AXI_BUS(jtag_to_axi_dwidth_converter, 32, LOCAL_ADDR_WIDTH, LOCAL_ID_WIDTH);
 
+`ifdef VERIFICATION
+    `ASSIGN_AXI_BUS(jtag_to_axi_dwidth_converter, jtag);
+`else
     // JTAG2AXI Master
     xlnx_jtag_axi jtag_axi_u (
         .aclk           ( main_clk      ), // input wire aclk
@@ -548,6 +566,7 @@ module sys_master # (
         .m_axi_rvalid   ( jtag_to_axi_dwidth_converter_axi_rvalid  ), // input wire m_axi_rvalid
         .m_axi_rready   ( jtag_to_axi_dwidth_converter_axi_rready  )  // output wire m_axi_rready
     );
+`endif
 
     // In order to comply with the load binary script, we need a 32 to 64 dwidth converter
     if( MBUS_DATA_WIDTH == 64 ) begin: dwidth_converter
@@ -635,6 +654,8 @@ module sys_master # (
 
         assign m_axi_awid = '0;
         assign m_axi_arid = '0;
+        assign m_axi_awregion = '0;
+        assign m_axi_arregion = '0;
 
     end: dwidth_converter
     else begin: no_dwidth_conversion
