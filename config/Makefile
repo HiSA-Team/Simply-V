@@ -15,10 +15,12 @@ INPUT_SYSTEM_CSV ?= ${CONFIG_ROOT}/configs/common/config_system.csv
 OUTPUT_MBUS_CROSSBAR        := ${XILINX_ROOT}/ips/common/xlnx_mbus_crossbar/config.tcl
 OUTPUT_MBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/mbus_interconnect.svinc
 OUTPUT_MBUS_CLK_ASSIGNMENTS := ${XILINX_ROOT}/rtl/generated/clk_assignments/mbus_clk_assignments.svinc
+OUTPUT_MBUS_XBAR            := ${XILINX_ROOT}/rtl/generated/interconnects/mbus_crossbar.svinc
 
 # Generated from "config_pbus"
 OUTPUT_PBUS_CROSSBAR        := ${XILINX_ROOT}/ips/common/xlnx_pbus_crossbar/config.tcl
 OUTPUT_PBUS_INTERCONNECT    := ${XILINX_ROOT}/rtl/generated/interconnects/pbus_interconnect.svinc
+OUTPUT_PBUS_XBAR            := ${XILINX_ROOT}/rtl/generated/interconnects/pbus_crossbar.svinc
 
 # Generated from "config_hbus"
 OUTPUT_HBUS_CROSSBAR        := ${XILINX_ROOT}/ips/hpc/xlnx_hbus_crossbar/config.tcl
@@ -58,12 +60,14 @@ CONFIG_MBUS_ARGS = \
 	--config_mbus \
 	--mbus_tcl ${OUTPUT_MBUS_CROSSBAR} \
 	--mbus_interconnect ${OUTPUT_MBUS_INTERCONNECT} \
-	--mbus_clock ${OUTPUT_MBUS_CLK_ASSIGNMENTS}
+	--mbus_clock ${OUTPUT_MBUS_CLK_ASSIGNMENTS} \
+	--mbus_crossbar ${OUTPUT_MBUS_XBAR}
 
 CONFIG_PBUS_ARGS = \
 	--config_pbus \
 	--pbus_tcl ${OUTPUT_PBUS_CROSSBAR} \
-	--pbus_interconnect ${OUTPUT_PBUS_INTERCONNECT}
+	--pbus_interconnect ${OUTPUT_PBUS_INTERCONNECT} \
+	--pbus_crossbar ${OUTPUT_PBUS_XBAR}
 
 CONFIG_HBUS_ARGS = \
 	--config_hbus \

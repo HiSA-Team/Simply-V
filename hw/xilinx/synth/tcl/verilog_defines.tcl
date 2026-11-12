@@ -30,6 +30,8 @@ lappend verilog_defines HBUS_NUM_SI=$::env(HBUS_NUM_SI)
 lappend verilog_defines HBUS_ID_WIDTH=$::env(HBUS_ID_WIDTH)
 # Core selection
 lappend verilog_defines CORE_SELECTOR=$::env(CORE_SELECTOR)
+# Crossbar implementation
+lappend verilog_defines XBAR_IMPL=XBAR_$::env(XBAR_IMPL)
 # Clock domains
 lappend verilog_defines MAIN_CLOCK_FREQ_MHZ=$::env(MAIN_CLOCK_FREQ_MHZ)
 set clock_domain_list [split $::env(RANGE_CLOCK_DOMAINS) " "]

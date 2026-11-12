@@ -35,6 +35,9 @@ class Parser(metaclass=SingletonABCMeta):
 	# they MUST return True in case of FAIL of the check
 	intra_rules: list[Callable[[dict], tuple[bool, Exception]]] = []
 
+	# Properties that may be missing from the .csv; filled with these values before validation
+	optional_defaults: dict[str, Any] = {}
+
 	def __init__(self):
 		self.logger = Logger.get_instance()
 
@@ -70,6 +73,7 @@ class Parser(metaclass=SingletonABCMeta):
 				raise exception
 
 	def _validate_values(self, data: dict) -> None:
+		for k, v in self.optional_defaults.items(): data.setdefault(k, v)
 		self._validate_mandatory(data)
 		self._cast_and_validate(data)
 		self._check_intra(data)

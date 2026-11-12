@@ -394,51 +394,7 @@ module peripheral_bus #(
     );
 
     // AXI Lite crossbar
-    xlnx_pbus_crossbar pbus_xbar_u (
-        .aclk           ( PBUS_clock_i  ),
-        .aresetn        ( PBUS_reset_ni ),
-
-        .s_axi_awaddr   ( PBUS_masters_axilite_awaddr   ),
-        .s_axi_awprot   ( PBUS_masters_axilite_awprot   ),
-        .s_axi_awvalid  ( PBUS_masters_axilite_awvalid  ),
-        .s_axi_awready  ( PBUS_masters_axilite_awready  ),
-        .s_axi_wdata    ( PBUS_masters_axilite_wdata    ),
-        .s_axi_wstrb    ( PBUS_masters_axilite_wstrb    ),
-        .s_axi_wvalid   ( PBUS_masters_axilite_wvalid   ),
-        .s_axi_wready   ( PBUS_masters_axilite_wready   ),
-        .s_axi_bresp    ( PBUS_masters_axilite_bresp    ),
-        .s_axi_bvalid   ( PBUS_masters_axilite_bvalid   ),
-        .s_axi_bready   ( PBUS_masters_axilite_bready   ),
-        .s_axi_araddr   ( PBUS_masters_axilite_araddr   ),
-        .s_axi_arprot   ( PBUS_masters_axilite_arprot   ),
-        .s_axi_arvalid  ( PBUS_masters_axilite_arvalid  ),
-        .s_axi_arready  ( PBUS_masters_axilite_arready  ),
-        .s_axi_rdata    ( PBUS_masters_axilite_rdata    ),
-        .s_axi_rresp    ( PBUS_masters_axilite_rresp    ),
-        .s_axi_rvalid   ( PBUS_masters_axilite_rvalid   ),
-        .s_axi_rready   ( PBUS_masters_axilite_rready   ),
-
-        .m_axi_awaddr   ( PBUS_slaves_axilite_awaddr    ),
-        .m_axi_awprot   ( PBUS_slaves_axilite_awprot    ),
-        .m_axi_awvalid  ( PBUS_slaves_axilite_awvalid   ),
-        .m_axi_awready  ( PBUS_slaves_axilite_awready   ),
-        .m_axi_wdata    ( PBUS_slaves_axilite_wdata     ),
-        .m_axi_wstrb    ( PBUS_slaves_axilite_wstrb     ),
-        .m_axi_wvalid   ( PBUS_slaves_axilite_wvalid    ),
-        .m_axi_wready   ( PBUS_slaves_axilite_wready    ),
-        .m_axi_bresp    ( PBUS_slaves_axilite_bresp     ),
-        .m_axi_bvalid   ( PBUS_slaves_axilite_bvalid    ),
-        .m_axi_bready   ( PBUS_slaves_axilite_bready    ),
-        .m_axi_araddr   ( PBUS_slaves_axilite_araddr    ),
-        .m_axi_arprot   ( PBUS_slaves_axilite_arprot    ),
-        .m_axi_arvalid  ( PBUS_slaves_axilite_arvalid   ),
-        .m_axi_arready  ( PBUS_slaves_axilite_arready   ),
-        .m_axi_rdata    ( PBUS_slaves_axilite_rdata     ),
-        .m_axi_rresp    ( PBUS_slaves_axilite_rresp     ),
-        .m_axi_rvalid   ( PBUS_slaves_axilite_rvalid    ),
-        .m_axi_rready   ( PBUS_slaves_axilite_rready    )
-
-    );
+    `include "generated/interconnects/pbus_crossbar.svinc"
 
     /////////////////////
     // AXI-lite Slaves //
