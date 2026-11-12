@@ -6,8 +6,7 @@ The Simply-V CPU reaches it through the `PSDDR` range of the MBUS and the PS sla
 The CPU side is in `sw/SoC/examples/ps_ddr`.
 
 The PS writes 8 words, the CPU reads and checks them and writes back their bitwise NOT, then the PS reads and checks them.
-The CPU writes the DDR without passing through the PS caches, so the PS flushes its words after writing and invalidates the CPU words before reading.
-The PS words and the CPU words are in different 32-byte cache lines.
+The CPU writes the DDR without passing through the PS caches, so the PS makes the shared area not cacheable (one 1 MB MMU section, with `Xil_SetTlbAttributes`) before using it.
 
 ## Build
 

@@ -4,9 +4,7 @@
 //   Used by sw/SoC/examples/ps_ddr (CPU side) and sw/host/zynq/ps_ddr (PS side).
 //   Both sides see it at _peripheral_PSDDR_start: the MBUS range PSDDR has the same
 //   addresses as the PS DDR, reached through the PS slave port S_AXI_GP0.
-//   The words written by the CPU and the ones written by the PS are in different
-//   cache lines (32 bytes on the Cortex-A9), so that the PS can invalidate the CPU
-//   lines without losing its own writes.
+//   The PS makes the area not cacheable, so the words are simply one after the other.
 
 #ifndef PS_DDR_H
 #define PS_DDR_H
@@ -16,14 +14,12 @@
 
 // Word offsets from _peripheral_PSDDR_start
 enum {
-    // Cache lines 0-1: written by the CPU
-    PS_DDR_CPU_READY = 0,   // CPU: area cleared, waiting for the PS
-    PS_DDR_CPU_VALID = 1,   // CPU: PS_DDR_CPU_DATA is valid
-    PS_DDR_CPU_DATA  = 8,   // CPU: bitwise NOT of the PS words (8 words)
-    // Cache lines 2-3: written by the PS
-    PS_DDR_PS_VALID  = 16,  // PS : PS_DDR_PS_DATA is valid
-    PS_DDR_PS_DATA   = 24,  // PS : test words (8 words)
-    PS_DDR_NUM_WORDS = 32
+    PS_DDR_CPU_READY = 0,                                   // CPU: area cleared, waiting for the PS
+    PS_DDR_CPU_VALID = 1,                                   // CPU: PS_DDR_CPU_DATA is valid
+    PS_DDR_PS_VALID  = 2,                                   // PS : PS_DDR_PS_DATA is valid
+    PS_DDR_CPU_DATA  = 3,                                   // CPU: bitwise NOT of the PS words
+    PS_DDR_PS_DATA   = PS_DDR_CPU_DATA + PS_DDR_NUM_DATA,   // PS : test words
+    PS_DDR_NUM_WORDS = PS_DDR_PS_DATA + PS_DDR_NUM_DATA
 };
 
 // Magic values for the flags
