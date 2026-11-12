@@ -23,20 +23,17 @@ int main()
     mbox[MBOX_PS_VALID]  = 0;
     mbox[MBOX_CPU_VALUE] = 0;
     mbox[MBOX_CPU_VALID] = 0;
-    __asm__ volatile ("fence" ::: "memory");
     mbox[MBOX_CPU_READY] = MBOX_MAGIC_CPU_READY;
 
     printf("[CPU] Mailbox at 0x%08x, waiting for the PS\n\r", (uint32_t)(uintptr_t)mbox);
 
     // Wait for the PS value
     while ( mbox[MBOX_PS_VALID] != MBOX_MAGIC_VALID );
-    __asm__ volatile ("fence" ::: "memory");
     value = mbox[MBOX_PS_VALUE];
     printf("[CPU] Read from the PS: 0x%08x\n\r", value);
 
     // Answer with the bitwise NOT
     mbox[MBOX_CPU_VALUE] = ~value;
-    __asm__ volatile ("fence" ::: "memory");
     mbox[MBOX_CPU_VALID] = MBOX_MAGIC_VALID;
     printf("[CPU] Wrote to the PS: 0x%08x\n\r", ~value);
 

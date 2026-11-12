@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include "xil_printf.h"
 #include "xil_cache.h"
-#include "xpseudo_asm.h"
 #include "simplyv_conf.h"
 #include "ps_ddr.h"
 
@@ -36,7 +35,6 @@ int main(void)
         shm[PS_DDR_PS_DATA + i] = PS_DDR_PS_WORD(i);
     }
     Xil_DCacheFlushRange((INTPTR)&shm[PS_DDR_PS_DATA], PS_DDR_NUM_DATA * sizeof(uint32_t));
-    dsb();
     shm[PS_DDR_PS_VALID] = PS_DDR_MAGIC_VALID;
     Xil_DCacheFlushRange((INTPTR)&shm[PS_DDR_PS_VALID], sizeof(uint32_t));
     xil_printf("[PS] Wrote %u words to the DDR\r\n", PS_DDR_NUM_DATA);

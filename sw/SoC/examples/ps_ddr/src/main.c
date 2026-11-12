@@ -24,14 +24,12 @@ int main()
     for ( uint32_t i = 0; i < PS_DDR_NUM_WORDS; i++ ) {
         shm[i] = 0;
     }
-    __asm__ volatile ("fence" ::: "memory");
     shm[PS_DDR_CPU_READY] = PS_DDR_MAGIC_CPU_READY;
 
     printf("[CPU] Shared area in the PS DDR at 0x%08x, waiting for the PS\n\r", (uint32_t)(uintptr_t)shm);
 
     // Wait for the PS words, check and print them
     while ( shm[PS_DDR_PS_VALID] != PS_DDR_MAGIC_VALID );
-    __asm__ volatile ("fence" ::: "memory");
     for ( uint32_t i = 0; i < PS_DDR_NUM_DATA; i++ ) {
         value = shm[PS_DDR_PS_DATA + i];
         printf("[CPU] Read from the PS DDR [%u]: 0x%08x\n\r", i, value);
@@ -42,7 +40,6 @@ int main()
     }
 
     // Tell the PS that the answer is ready
-    __asm__ volatile ("fence" ::: "memory");
     shm[PS_DDR_CPU_VALID] = PS_DDR_MAGIC_VALID;
 
     if ( errors == 0 ) {

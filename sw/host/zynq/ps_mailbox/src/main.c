@@ -26,7 +26,6 @@ int main(void)
 
     // 2. Write the value, then the flag
     mbox[MBOX_PS_VALUE] = MBOX_PS_TEST_VALUE;
-    __asm__ volatile ("dsb" ::: "memory");
     mbox[MBOX_PS_VALID] = MBOX_MAGIC_VALID;
     xil_printf("[PS] Wrote to the CPU: 0x%08x\r\n", MBOX_PS_TEST_VALUE);
 
