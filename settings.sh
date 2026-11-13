@@ -97,7 +97,6 @@ elif [[ ${SIMPLYV_PROFILE} == "zynq" ]]; then
     export XILINX_PART_NUMBER=xc7z020clg400-1
     export XILINX_BOARD_PART=www.digilentinc.com:pynq-z1:part0:1.0
     export XILINX_HW_DEVICE=xc7z020_1
-    export BOARD_INPUT_CLK_MHZ=125.000
     export BOARD=Pynq-Z1-Master
 
     # Change default MAIN_CLOCK_DOMAIN
