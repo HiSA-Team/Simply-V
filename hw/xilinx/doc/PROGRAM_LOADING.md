@@ -36,6 +36,47 @@ Or explicitly pick your ELF:
 make gdb_run ELF_PATH=<path-to-elf>
 ```
 
+## Zynq-7000 (PS+PL)
+
+On the `zynq` profile, Simply-V gets its clock from the PS, so the PS must be initialized (`ps7_init`, `ps7_post_config`) after the bitstream.
+This is done with XSDB and `scripts/load_binary/xsdb_run_elf.tcl`, where any argument can be `-` to skip that step.
+
+With Microblaze-V, `xsdb_run_elf.tcl` can program the bitstream and run both the CPU and the PS programs in one go (see `sw/host/zynq/ps_mailbox`).
+With the other CPUs (e.g. `CORE_CV32E40P`), the CPU program is loaded with OpenOCD and GDB, and the PS program with XSDB, in one of the two sequences below.
+OpenOCD and XSDB use the same JTAG cable: close one before starting the other.
+
+### PS-first sequence
+
+1. Program the bitstream, initialize the PS and run the PS program with XSDB:
+``` bash
+xsdb scripts/load_binary/xsdb_run_elf.tcl - \
+    build/simplyv.runs/impl_1/simplyv.bit \
+    build/simplyv.gen/sources_1/ip/xlnx_ps_wrapper/src/xlnx_ps_wrapper_bd_ps7_0/ps7_init.tcl \
+    <path-to-ps-elf>
+```
+2. XSDB exits leaving the PS running: make sure that `hw_server` is closed.
+3. Load and run the CPU program:
+``` bash
+make openocd_run
+make gdb_run EXAMPLE=<example>
+```
+
+### PL-first sequence
+
+1. Program the bitstream and initialize the PS (`program_bitstream_zynq`):
+``` bash
+make program_bitstream
+```
+2. Load the CPU program, let it run and exit from GDB (`GDB_MODE=detach`), then close OpenOCD:
+``` bash
+make openocd_run
+make gdb_run EXAMPLE=<example> GDB_MODE=detach
+```
+3. Run the PS program with XSDB, without programming the bitstream again:
+``` bash
+xsdb scripts/load_binary/xsdb_run_elf.tcl - - - <path-to-ps-elf>
+```
+
 ## Load a binary file
 
 Since not all CPUs supported by `CORE_SELECTOR` have a backend or dedicated loading infrastructure (e.g. `CORE_PICORV32`), memory can also be programmed with a flat binary using _Xilinx jtag2axi_ or _Xilinx DMA_ IPs, both integrated into our `rtl/sys_master` component. This binary loading process is straightforward, as it directly writes bytes into memory.

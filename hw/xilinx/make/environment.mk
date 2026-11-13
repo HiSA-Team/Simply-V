@@ -39,6 +39,9 @@ ifeq (${SIMPLYV_PROFILE}, hpc)
 else ifeq (${SIMPLYV_PROFILE}, embedded)
 #   Append embedded IPs
     IP_LIST += ${EMBEDDED_IP_LIST}
+else ifeq (${SIMPLYV_PROFILE}, zynq)
+#   Zynq extends embedded with the PS: append embedded IPs
+    IP_LIST += ${EMBEDDED_IP_LIST}
 else
 $(error "Unsupported config ${SIMPLYV_PROFILE}")
 endif
@@ -49,6 +52,18 @@ ifeq ($(shell [ ${XILINX_VIVADO_VERSION} -lt 2024 ] && echo true),true)
     FILTER_IP    = xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v xlnx_dual_microblaze_debug_module_v
     TMP_IP_LIST  = ${IP_LIST}
     IP_LIST      = $(filter-out ${FILTER_IP},${TMP_IP_LIST})
+endif
+
+# Remove the 125 MHz clock wizard when the board is not the Pynq-Z1 PL-only
+# TODO55: quick workaround, this IP is only used with the Pynq-Z1 PL-only board
+ifneq (${BOARD},Pynq-Z1-PL-Only-Master)
+    IP_LIST := $(filter-out xlnx_clk_wiz_125,${IP_LIST})
+endif
+
+# Remove the PS wrapper and its clock wizard when the board has no Zynq-7000 PS
+# TODO55: quick workaround, these IPs are only used with Zynq-7000 targets
+ifneq (${BOARD},Pynq-Z1-Master)
+    IP_LIST := $(filter-out xlnx_ps_wrapper xlnx_clk_wiz_zynq,${IP_LIST})
 endif
 
 # List of IPs' xci files to import in main Vivado project
@@ -69,6 +84,8 @@ IMPL_STRATEGY      ?= "Performance_ExtraTimingOpt"
 
 # Implementation artifacts
 XILINX_BITSTREAM ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl_1/${XILINX_PROJECT_NAME}.bit
+# Zynq-7000 only: PS init script, generated with the PS IP (xlnx_ps_wrapper)
+XILINX_PS7_INIT ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.gen/sources_1/ip/xlnx_ps_wrapper/src/xlnx_ps_wrapper_bd_ps7_0/ps7_init.tcl
 XILINX_PROBE_LTX ?= ${XILINX_PROJECT_BUILD_DIR}/${XILINX_PROJECT_NAME}.runs/impl_1/${XILINX_PROJECT_NAME}.ltx
 
 # Wheter to build for development or deployment (0|1)

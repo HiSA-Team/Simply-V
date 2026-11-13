@@ -28,7 +28,8 @@ LOAD_BINARY_READBACK ?= false
 # Call the specific load script based on the SIMPLYV_PROFILE (HPC or EMBEDDED)
 load_binary: load_binary_${SIMPLYV_PROFILE}
 
-# Write the binary to BRAM through jtag2axi
+# Write the binary to BRAM through jtag2axi (embedded and zynq profiles)
+load_binary_zynq: load_binary_embedded
 load_binary_embedded: ${BIN_PATH}
 	${XILINX_VIVADO} \
 		-source ${XILINX_SCRIPT_ROOT}/utils/open_hw_manager.tcl \
@@ -77,9 +78,12 @@ ifeq (${CORE_SELECTOR},CORE_MICROBLAZEV_RV64)
 	GDB_PORT = 3005
 endif
 
+# GDB_MODE=detach: load the ELF, let the CPU run and detach GDB (OpenOCD backend)
+GDB_MODE ?=
+
 # Use GDB to load the ELF and run (open the backend in a shell before)
 gdb_run:
-	${XILINX_SCRIPTS_LOAD_ROOT}/run_gdb.sh ${ELF_PATH} ${GDB_HOST}:${GDB_PORT} ${XLEN}
+	${XILINX_SCRIPTS_LOAD_ROOT}/run_gdb.sh ${ELF_PATH} ${GDB_HOST}:${GDB_PORT} ${XLEN} ${GDB_MODE}
 
 # Run XSBD to load the ELF and run directly
 xsdb_run_elf:
