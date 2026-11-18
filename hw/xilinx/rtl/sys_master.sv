@@ -987,6 +987,9 @@ module sys_master # (
 `ifdef CLK_WIZ_125
     // Board with a 125 MHz input clock
     xlnx_clk_wiz_125 clkwiz_u (
+`elsif CLK_WIZ_25
+    // Board with a 25 MHz input clock
+    xlnx_clk_wiz_25 clkwiz_u (
 `else
     // Board with a 100 MHz input clock
     xlnx_clk_wiz clkwiz_u (

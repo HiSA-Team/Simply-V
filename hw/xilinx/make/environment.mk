@@ -60,6 +60,12 @@ ifneq (${BOARD},Pynq-Z1-PL-Only-Master)
     IP_LIST := $(filter-out xlnx_clk_wiz_125,${IP_LIST})
 endif
 
+# Remove the 25 MHz clock wizard when the board is not the KR260 PL-only
+# TODO55: quick workaround, this IP is only used with the KR260 PL-only board
+ifneq (${BOARD},KR260-PL-Only-Master)
+    IP_LIST := $(filter-out xlnx_clk_wiz_25,${IP_LIST})
+endif
+
 # Remove the PS wrapper and its clock wizard when the board has no Zynq-7000 PS
 # TODO55: quick workaround, these IPs are only used with Zynq-7000 targets
 ifneq (${BOARD},Pynq-Z1-Master)

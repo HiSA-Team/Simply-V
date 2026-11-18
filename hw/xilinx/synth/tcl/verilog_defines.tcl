@@ -47,6 +47,12 @@ if { "$::env(BOARD)" == "Pynq-Z1-PL-Only-Master" } {
     lappend verilog_defines CLK_WIZ_125=1
 }
 
+# Clock wizard with 25 MHz input
+# TODO55: quick workaround, only the KR260 PL-only board has a 25 MHz input clock
+if { "$::env(BOARD)" == "KR260-PL-Only-Master" } {
+    lappend verilog_defines CLK_WIZ_25=1
+}
+
 # Info
 puts "\[INFO\] Verilog defines: $verilog_defines"
 
