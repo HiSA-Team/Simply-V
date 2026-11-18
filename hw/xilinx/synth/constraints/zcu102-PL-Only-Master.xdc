@@ -5,10 +5,6 @@
 ## Clock signal - 125 MHz PL oscillator 
 create_clock -add -name sys_clk_pin -period 8.000 -waveform {0.000 4.000} [get_ports { sys_clock_p_i }];
 
-## As we are using a Global Clock buffer between HDGC pin and MMCM/PLL 
-## To avoid a placement error when routing BUFG into MMCM/PLL the following constraint is needed: 
-set_property CLOCK_DEDICATED_ROUTE ANY_CMT_COLUMN [get_nets -of_objects [get_pins -hier bufg_u/O]]
-
 #Other net   PACKAGE_PIN W17      - SYSMON_DXN                Bank   0 - DXN
 #Other net   PACKAGE_PIN T18      - FPGA_SYSMON_AVCC          Bank   0 - VCCADC
 #Other net   PACKAGE_PIN T17      - SYSMON_AGND               Bank   0 - GNDADC
