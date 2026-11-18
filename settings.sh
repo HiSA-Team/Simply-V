@@ -130,6 +130,14 @@ else # Default
         export XILINX_HW_DEVICE=xc7z020_1
         export BOARD=Pynq-Z1-PL-Only-Master
 
+    elif [[ ${BOARD_CONFIG} == "kr260_pl_only" ]]; then
+        # Kria KR260 (K26 SOM, Zynq UltraScale+, PL-only): 25 MHz clock from the carrier (pin C3), no PS
+        export XILINX_HW_SERVER_FPGA_PATH=xilinx_tcf/Xilinx/*
+        export XILINX_PART_NUMBER=xck26-sfvc784-2LV-c
+        export XILINX_BOARD_PART=xilinx.com:kr260_som:part0:1.1
+        export XILINX_HW_DEVICE=xck26_0
+        export BOARD=KR260-PL-Only-Master
+
     else # Default
         # Nexsys A7-100T
         export XILINX_PART_NUMBER=xc7a100tcsg324-1

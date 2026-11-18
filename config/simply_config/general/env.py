@@ -15,7 +15,7 @@ class Env(metaclass=Singleton):
 	# init Env
 	def __init__(self):
 		self.SUPPORTED_PROFILES = ["hpc", "embedded", "zynq"]
-		self.SUPPORTED_BOARDS = ["Nexys-A7-100T-Master", "Nexys-A7-50T-Master", "Arty-A7-100T-Master", "Pynq-Z1-PL-Only-Master", "Pynq-Z1-Master", "au250", "au280", "au50"]
+		self.SUPPORTED_BOARDS = ["Nexys-A7-100T-Master", "Nexys-A7-50T-Master", "Arty-A7-100T-Master", "Pynq-Z1-PL-Only-Master", "Pynq-Z1-Master", "KR260-PL-Only-Master", "au250", "au280", "au50"]
 		# Private variables never touch them, use the getters
 		self.bus_input_files: dict[str, str]
 		self._board = os.environ["BOARD"]
@@ -64,6 +64,9 @@ class Env(metaclass=Singleton):
 			case "Pynq-Z1-PL-Only-Master":
 				# PL-only: the PS is not instantiated, so the DDR3 wired to it is not reachable
 				return []
+			case "KR260-PL-Only-Master":
+				# PL-only: the PS is not used, its DDR is not reachable
+				return []
 			case "Pynq-Z1-Master":
 				# PS+PL: the DDR3 will be reachable through the PS AXI slave port (not connected yet)
 				return []
@@ -73,7 +76,7 @@ class Env(metaclass=Singleton):
 
 	def get_supp_hbm(self) -> bool | None:
 		match self._board:
-			case "Nexys-A7-100T-Master" | "Nexys-A7-50T-Master" | "au250" | "Arty-A7-100T-Master" | "Pynq-Z1-PL-Only-Master" | "Pynq-Z1-Master":
+			case "Nexys-A7-100T-Master" | "Nexys-A7-50T-Master" | "au250" | "Arty-A7-100T-Master" | "Pynq-Z1-PL-Only-Master" | "Pynq-Z1-Master" | "KR260-PL-Only-Master":
 				return False
 			case "au280" | "au50":
 				return True
