@@ -7,6 +7,7 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/headers/simplyv_axi.svh                               \
     $::env(XILINX_ROOT)/rtl/headers/simplyv_pcie.svh                              \
     $::env(XILINX_ROOT)/rtl/headers/simplyv_ddr4.svh                              \
+    $::env(XILINX_ROOT)/rtl/headers/simplyv_ps7.svh                               \
     $::env(XILINX_ROOT)/rtl/generated/interconnects/mbus_interconnect.svinc       \
     $::env(XILINX_ROOT)/rtl/generated/interconnects/pbus_interconnect.svinc       \
     $::env(XILINX_ROOT)/rtl/generated/interconnects/hbus_interconnect.svinc       \

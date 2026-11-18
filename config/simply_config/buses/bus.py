@@ -69,11 +69,11 @@ class Bus(Node):
 		if self.PROTOCOL not in self.LEGAL_PROTOCOLS:
 			raise Unsupported_Value_Error("PROTOCOL", self.PROTOCOL, self.LEGAL_PROTOCOLS, f"for {self.FULL_NAME}")
 
-		# Check ID_WIDTH
+		# Check ID_WIDTH: the crossbar keeps ID_WIDTH - ceil(log2(NUM_SI)) bits of each master ID
 		THREAD_ID_WIDTH = 2 # CVA6 requires this for atomics
-		min_ID_WIDTH = ceil(log2(self.NUM_SI +1)) + THREAD_ID_WIDTH
+		min_ID_WIDTH = ceil(log2(self.NUM_SI)) + THREAD_ID_WIDTH
 		max_ID_WIDTH = 32 # from AXI spec
-		if min_ID_WIDTH > self.ID_WIDTH > max_ID_WIDTH:
+		if not (min_ID_WIDTH <= self.ID_WIDTH <= max_ID_WIDTH):
 			raise Out_Of_Range_Error("ID_WIDTH", self.ID_WIDTH, min_ID_WIDTH, max_ID_WIDTH)
 
 	# functions used from children classes to implement the "COMPOSITE INTERFACE" functions

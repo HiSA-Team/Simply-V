@@ -69,6 +69,10 @@ import simplyv_pkg::*;
     `include "simplyv_ddr4.svh"
 `endif
 
+`ifdef ZYNQ
+    `include "simplyv_ps7.svh"
+`endif
+
 ///////////////////////
 // Module definition //
 ///////////////////////
@@ -78,7 +82,10 @@ module simplyv (
     `ifdef EMBEDDED
         // Clock and reset
         input logic sys_clock_i,
+        `ifndef ZYNQ
+        // On Zynq the reset comes from the PS (FCLK_RESET0_N), not from a button
         input logic sys_reset_i,
+        `endif
 
         // UART interface
         input  logic                        uart_rx_i,
@@ -87,6 +94,11 @@ module simplyv (
         // GPIOs
         input  logic [GPIO_IN_WIDTH  -1 : 0]  gpio_in_i,
         output logic [GPIO_OUT_WIDTH -1 : 0]  gpio_out_o
+        `ifdef ZYNQ
+        ,
+        // PS fixed I/O (DDR and FIXED_IO)
+        `DEFINE_PS7_PORTS
+        `endif
     `elsif HPC
         // DDR4 Channel 0 differential clock
         input logic clk_300mhz_0_p_i,
@@ -294,6 +306,90 @@ module simplyv (
         .pci_exp_rxp_i(pci_exp_rxp_i),
         .pci_exp_txn_o(pci_exp_txn_o),
         .pci_exp_txp_o(pci_exp_txp_o),
+`ifdef ZYNQ
+        // ZYNQ ONLY
+        `CONNECT_PS7_PORTS,
+        // PS master (M_AXI_GP0) to the MBUS
+        .ps_m_axi_awid     ( PS_MASTER_to_MBUS_axi_awid     ),
+        .ps_m_axi_awaddr   ( PS_MASTER_to_MBUS_axi_awaddr   ),
+        .ps_m_axi_awlen    ( PS_MASTER_to_MBUS_axi_awlen    ),
+        .ps_m_axi_awsize   ( PS_MASTER_to_MBUS_axi_awsize   ),
+        .ps_m_axi_awburst  ( PS_MASTER_to_MBUS_axi_awburst  ),
+        .ps_m_axi_awlock   ( PS_MASTER_to_MBUS_axi_awlock   ),
+        .ps_m_axi_awcache  ( PS_MASTER_to_MBUS_axi_awcache  ),
+        .ps_m_axi_awprot   ( PS_MASTER_to_MBUS_axi_awprot   ),
+        .ps_m_axi_awqos    ( PS_MASTER_to_MBUS_axi_awqos    ),
+        .ps_m_axi_awvalid  ( PS_MASTER_to_MBUS_axi_awvalid  ),
+        .ps_m_axi_awready  ( PS_MASTER_to_MBUS_axi_awready  ),
+        .ps_m_axi_awregion ( PS_MASTER_to_MBUS_axi_awregion ),
+        .ps_m_axi_wdata    ( PS_MASTER_to_MBUS_axi_wdata    ),
+        .ps_m_axi_wstrb    ( PS_MASTER_to_MBUS_axi_wstrb    ),
+        .ps_m_axi_wlast    ( PS_MASTER_to_MBUS_axi_wlast    ),
+        .ps_m_axi_wvalid   ( PS_MASTER_to_MBUS_axi_wvalid   ),
+        .ps_m_axi_wready   ( PS_MASTER_to_MBUS_axi_wready   ),
+        .ps_m_axi_bid      ( PS_MASTER_to_MBUS_axi_bid      ),
+        .ps_m_axi_bresp    ( PS_MASTER_to_MBUS_axi_bresp    ),
+        .ps_m_axi_bvalid   ( PS_MASTER_to_MBUS_axi_bvalid   ),
+        .ps_m_axi_bready   ( PS_MASTER_to_MBUS_axi_bready   ),
+        .ps_m_axi_arid     ( PS_MASTER_to_MBUS_axi_arid     ),
+        .ps_m_axi_araddr   ( PS_MASTER_to_MBUS_axi_araddr   ),
+        .ps_m_axi_arlen    ( PS_MASTER_to_MBUS_axi_arlen    ),
+        .ps_m_axi_arsize   ( PS_MASTER_to_MBUS_axi_arsize   ),
+        .ps_m_axi_arburst  ( PS_MASTER_to_MBUS_axi_arburst  ),
+        .ps_m_axi_arlock   ( PS_MASTER_to_MBUS_axi_arlock   ),
+        .ps_m_axi_arregion ( PS_MASTER_to_MBUS_axi_arregion ),
+        .ps_m_axi_arcache  ( PS_MASTER_to_MBUS_axi_arcache  ),
+        .ps_m_axi_arprot   ( PS_MASTER_to_MBUS_axi_arprot   ),
+        .ps_m_axi_arqos    ( PS_MASTER_to_MBUS_axi_arqos    ),
+        .ps_m_axi_arvalid  ( PS_MASTER_to_MBUS_axi_arvalid  ),
+        .ps_m_axi_arready  ( PS_MASTER_to_MBUS_axi_arready  ),
+        .ps_m_axi_rid      ( PS_MASTER_to_MBUS_axi_rid      ),
+        .ps_m_axi_rdata    ( PS_MASTER_to_MBUS_axi_rdata    ),
+        .ps_m_axi_rresp    ( PS_MASTER_to_MBUS_axi_rresp    ),
+        .ps_m_axi_rlast    ( PS_MASTER_to_MBUS_axi_rlast    ),
+        .ps_m_axi_rvalid   ( PS_MASTER_to_MBUS_axi_rvalid   ),
+        .ps_m_axi_rready   ( PS_MASTER_to_MBUS_axi_rready   ),
+        // PS slave (S_AXI_GP0): MBUS range PSDDR, towards the PS DDR
+        .ps_s_axi_awid     ( MBUS_to_PSDDR_axi_awid     ),
+        .ps_s_axi_awaddr   ( MBUS_to_PSDDR_axi_awaddr   ),
+        .ps_s_axi_awlen    ( MBUS_to_PSDDR_axi_awlen    ),
+        .ps_s_axi_awsize   ( MBUS_to_PSDDR_axi_awsize   ),
+        .ps_s_axi_awburst  ( MBUS_to_PSDDR_axi_awburst  ),
+        .ps_s_axi_awlock   ( MBUS_to_PSDDR_axi_awlock   ),
+        .ps_s_axi_awcache  ( MBUS_to_PSDDR_axi_awcache  ),
+        .ps_s_axi_awprot   ( MBUS_to_PSDDR_axi_awprot   ),
+        .ps_s_axi_awqos    ( MBUS_to_PSDDR_axi_awqos    ),
+        .ps_s_axi_awvalid  ( MBUS_to_PSDDR_axi_awvalid  ),
+        .ps_s_axi_awready  ( MBUS_to_PSDDR_axi_awready  ),
+        .ps_s_axi_awregion ( MBUS_to_PSDDR_axi_awregion ),
+        .ps_s_axi_wdata    ( MBUS_to_PSDDR_axi_wdata    ),
+        .ps_s_axi_wstrb    ( MBUS_to_PSDDR_axi_wstrb    ),
+        .ps_s_axi_wlast    ( MBUS_to_PSDDR_axi_wlast    ),
+        .ps_s_axi_wvalid   ( MBUS_to_PSDDR_axi_wvalid   ),
+        .ps_s_axi_wready   ( MBUS_to_PSDDR_axi_wready   ),
+        .ps_s_axi_bid      ( MBUS_to_PSDDR_axi_bid      ),
+        .ps_s_axi_bresp    ( MBUS_to_PSDDR_axi_bresp    ),
+        .ps_s_axi_bvalid   ( MBUS_to_PSDDR_axi_bvalid   ),
+        .ps_s_axi_bready   ( MBUS_to_PSDDR_axi_bready   ),
+        .ps_s_axi_arid     ( MBUS_to_PSDDR_axi_arid     ),
+        .ps_s_axi_araddr   ( MBUS_to_PSDDR_axi_araddr   ),
+        .ps_s_axi_arlen    ( MBUS_to_PSDDR_axi_arlen    ),
+        .ps_s_axi_arsize   ( MBUS_to_PSDDR_axi_arsize   ),
+        .ps_s_axi_arburst  ( MBUS_to_PSDDR_axi_arburst  ),
+        .ps_s_axi_arlock   ( MBUS_to_PSDDR_axi_arlock   ),
+        .ps_s_axi_arregion ( MBUS_to_PSDDR_axi_arregion ),
+        .ps_s_axi_arcache  ( MBUS_to_PSDDR_axi_arcache  ),
+        .ps_s_axi_arprot   ( MBUS_to_PSDDR_axi_arprot   ),
+        .ps_s_axi_arqos    ( MBUS_to_PSDDR_axi_arqos    ),
+        .ps_s_axi_arvalid  ( MBUS_to_PSDDR_axi_arvalid  ),
+        .ps_s_axi_arready  ( MBUS_to_PSDDR_axi_arready  ),
+        .ps_s_axi_rid      ( MBUS_to_PSDDR_axi_rid      ),
+        .ps_s_axi_rdata    ( MBUS_to_PSDDR_axi_rdata    ),
+        .ps_s_axi_rresp    ( MBUS_to_PSDDR_axi_rresp    ),
+        .ps_s_axi_rlast    ( MBUS_to_PSDDR_axi_rlast    ),
+        .ps_s_axi_rvalid   ( MBUS_to_PSDDR_axi_rvalid   ),
+        .ps_s_axi_rready   ( MBUS_to_PSDDR_axi_rready   ),
+`endif
         // Output clocks
         .clk_10MHz_o(clk_MBUS_10MHz),
         .clk_20MHz_o(clk_MBUS_20MHz),

@@ -39,7 +39,8 @@ NUM_BYTES ?= 16
 # Call the specific load script based on the SIMPLYV_PROFILE (HPC or EMBEDDED)
 readback: readback_${SIMPLYV_PROFILE}
 
-# Embedded profile
+# Embedded and zynq profiles
+readback_zynq: readback_embedded
 readback_embedded:
 	${XILINX_VIVADO_ENV} ${XILINX_VIVADO} \
 	-source ${XILINX_SCRIPTS_UTILS_ROOT}/open_hw_manager.tcl \
@@ -60,6 +61,12 @@ vio_%:
 # Program the bitstream based on the SoC profile
 program_bitstream: program_bitstream_${SIMPLYV_PROFILE}
 
+# Program bitstream for zynq profile: Simply-V has no clock before the PS init,
+# so XSDB programs the bitstream and initializes the PS (no ELF for the CPU and the PS).
+# Then OpenOCD and GDB can connect to the CPU (PL-first sequence)
+program_bitstream_zynq:
+	${XSDB} ${XILINX_SCRIPTS_LOAD_ROOT}/xsdb_run_elf.tcl - ${XILINX_BITSTREAM} ${XILINX_PS7_INIT} -
+
 # Program bitstream for embedded profile
 program_bitstream_embedded:
 	${XILINX_VIVADO} \
@@ -79,4 +86,4 @@ program_bitstream_hpc:
 	sudo ${XILINX_SCRIPTS_UTILS_ROOT}/pcie_hot_reset.sh ${PCIE_BDF}
 
 # PHONIES
-.PHONY: open_prj open_gui start_hw_server open_hw_manager open_ila program_bitstream program_bitstream_embedded program_bitstream_hpc
+.PHONY: open_prj open_gui start_hw_server open_hw_manager open_ila program_bitstream program_bitstream_embedded program_bitstream_hpc program_bitstream_zynq
