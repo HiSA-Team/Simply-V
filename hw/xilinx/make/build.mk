@@ -32,6 +32,9 @@ ips/xlnx_%.xci: ${XILINX_IPS_ROOT}/*/xlnx_%/config.tcl
 #	Call common recepie
 	$(build_ip)
 
+# MIG configuration also depends on its project files
+ips/xlnx_ddr2_mig.xci: $(wildcard ${XILINX_IPS_ROOT}/embedded/xlnx_ddr2_mig/*.prj)
+
 # For custom IPs, also depend on RTL wrapper
 ips/custom_%.xci: IP_DIR=$(firstword $(shell find ${XILINX_IPS_ROOT} -name 'custom_$*'))
 ips/custom_%.xci: ${XILINX_IPS_ROOT}/*/custom_%/config.tcl ${HW_UNITS_ROOT}/custom_%/custom_top_wrapper.sv
