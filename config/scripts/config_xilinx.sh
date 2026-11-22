@@ -148,8 +148,8 @@ done
 # CACHE CONFIG #
 #################
 
-# Name prefix of the DDR4 memory blocks handled by the HPC system cache
-ddr_prefix=DDR4CH
+# Name prefix of the DDR memory blocks handled by the system cache
+ddr_prefix=DDR
 
 # Extract all slave names from the main CSV
 slaves=$(grep "RANGE_NAMES" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}')
@@ -165,7 +165,7 @@ cnt=0
 
 # Iterate over all slave names
 for slave in ${slaves[*]}; do
-    # Check if this slave is DDR4
+    # Check if this slave is DDR2 or DDR4
     if [[ "$slave" == "$ddr_prefix"* ]]; then
         # Remove possible 0x prefix from base address
         ddr_base_hex=${range_base_addrs[$cnt]#0x}
@@ -176,7 +176,7 @@ for slave in ${slaves[*]}; do
         ddr_high=$(( ddr_base + (1 << range_width) - 1 ))
 
         # Path to the system cache TCL config
-        cache_config=${XILINX_IPS_ROOT}/hpc/xlnx_system_cache_0/config.tcl
+        cache_config=${XILINX_IPS_ROOT}/common/xlnx_system_cache_0/config.tcl
 
         # Update CACHE_BASEADDR in TCL
         sed -E -i "s#(set CACHE_BASEADDR)[[:space:]]*\{[^}]+\}#\1 {0x$(printf '%x' $ddr_base)}#g" "${cache_config}"
