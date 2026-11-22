@@ -125,6 +125,7 @@ module simplyv (
     logic clk_20MHz;
     logic clk_50MHz;
     logic clk_100MHz;
+    logic clk_200MHz;
     logic clk_250MHz;      // HPC ONLY
     // Clint real-time clock
     logic clint_rtc;
@@ -135,6 +136,7 @@ module simplyv (
     logic rstn_20MHz;
     logic rstn_50MHz;
     logic rstn_100MHz;
+    logic rstn_200MHz;
     logic rstn_250MHz;     // HPC ONLY
 
     // VIO Signals
@@ -286,12 +288,14 @@ module simplyv (
         .clk_20MHz_o(clk_20MHz),
         .clk_50MHz_o(clk_50MHz),
         .clk_100MHz_o(clk_100MHz),
+        .clk_200MHz_o(clk_200MHz),
         .clk_250MHz_o(clk_250MHz),      // HPC ONLY
         // Output resets
         .rstn_10MHz_o(rstn_10MHz),
         .rstn_20MHz_o(rstn_20MHz),
         .rstn_50MHz_o(rstn_50MHz),
         .rstn_100MHz_o(rstn_100MHz),
+        .rstn_200MHz_o(rstn_200MHz),
         .rstn_250MHz_o(rstn_250MHz),      // HPC ONLY
         // AXI Master
         .m_axi_awid     ( SYS_MASTER_to_MBUS_axi_awid     ),
