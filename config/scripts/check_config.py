@@ -160,6 +160,12 @@ def check_intra_config(config : configuration.Configuration, config_file_name: s
             return False
         # Check valid clock domains
         for i in range(len(config.RANGE_CLOCK_DOMAINS)):
+            # DDR2 uses the MIG clock, independently of the SoC clock wizard.
+            if config.RANGE_NAMES[i] == "DDR2":
+                if config.RANGE_CLOCK_DOMAINS[i] <= 0:
+                    print_error("The DDR2 clock frequency must be positive")
+                    return False
+                continue
             # Check if the clock frequency is valid (DDR has its own clock domain)
             # TOD143: decide a prefix for HBUS-attached accelerators here, maybe ACC_* or HBUS_*
             exclude_list = ["DDR4CH0", "DDR4CH1", "DDR4CH2", "HBUS", "HLS_CONTROL"]

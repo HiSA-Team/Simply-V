@@ -148,8 +148,8 @@ done
 # CACHE CONFIG #
 #################
 
-# Name of the DDR memory block
-ddr_prefix=DDR
+# Name prefix of the DDR4 memory blocks handled by the HPC system cache
+ddr_prefix=DDR4CH
 
 # Extract all slave names from the main CSV
 slaves=$(grep "RANGE_NAMES" ${CONFIG_MAIN_CSV} | awk -F "," '{print $2}')
@@ -165,7 +165,7 @@ cnt=0
 
 # Iterate over all slave names
 for slave in ${slaves[*]}; do
-    # Check if this slave is DDR
+    # Check if this slave is DDR4
     if [[ "$slave" == "$ddr_prefix"* ]]; then
         # Remove possible 0x prefix from base address
         ddr_base_hex=${range_base_addrs[$cnt]#0x}
