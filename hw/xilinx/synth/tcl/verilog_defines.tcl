@@ -37,6 +37,26 @@ foreach clock_domain $clock_domain_list {
     lappend verilog_defines $clock_domain=$clock_domain
 }
 
+# Clock wizard with 125 MHz input
+# TODO55: quick workaround, only the Pynq-Z1 PL-only board has a 125 MHz input clock
+# the workaround is used also for zcu102
+if { "$::env(BOARD)" in {"Pynq-Z1-PL-Only-Master" "zcu102-PL-Only-Master"} } {
+    lappend verilog_defines CLK_WIZ_125=1
+}
+
+# Notice in zcu102 board the 125Mhz Clock is differential so another workaround
+# is needed for adapting the top-level entity interface
+if { "$::env(BOARD)" == "zcu102-PL-Only-Master" } {
+    lappend verilog_defines HAS_DIFF_CLK=1
+}
+
+# for zcu102 board the 125Mhz Clock comes from a clock pin in a High-Density (HD) bank
+# since HDGC pins can't drive an MMCM directly a global buffer is needed
+if { "$::env(BOARD)" == "zcu102-PL-Only-Master" } {
+    lappend verilog_defines HAS_HDGC_CLK=1
+}
+
+
 # Info
 puts "\[INFO\] Verilog defines: $verilog_defines"
 

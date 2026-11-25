@@ -47,8 +47,17 @@ endif
 # TODO55: quick workaround for PR 146, extend this for all selectable IPs
 ifeq ($(shell [ ${XILINX_VIVADO_VERSION} -lt 2024 ] && echo true),true)
     FILTER_IP    = xlnx_microblazev_rv32 xlnx_microblazev_rv64 xlnx_microblaze_debug_module_v xlnx_dual_microblaze_debug_module_v
-    TMP_IP_LIST  = ${IP_LIST}
+    TMP_IP_LIST  := ${IP_LIST}
     IP_LIST      = $(filter-out ${FILTER_IP},${TMP_IP_LIST})
+endif
+
+# Remove the 125 MHz clock wizard when the board is not the Pynq-Z1 PL-only
+# TODO55: quick workaround, this IP is only used with the Pynq-Z1 PL-only board
+# Also used in Zcu102
+ifneq (${BOARD},Pynq-Z1-PL-Only-Master)
+ifneq (${BOARD},zcu102-PL-Only-Master)
+    IP_LIST := $(filter-out xlnx_clk_wiz_125,${IP_LIST})
+endif
 endif
 
 # List of IPs' xci files to import in main Vivado project
