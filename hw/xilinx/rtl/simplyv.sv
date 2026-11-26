@@ -988,20 +988,19 @@ module simplyv (
 
     logic ddr2_clk;
     logic ddr2_rst;
-    logic ddr2_init_calib_complete;
 
-    ddr2_channel_wrapper # (
+    ddr_wrapper # (
+        .DDR_TYPE           ( "DDR2"          ),
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
-    ) ddr2_channel_wrapper_u (
+    ) ddr_wrapper_embedded_u (
         .clock_i               ( main_clk                 ),
         .reset_ni              ( main_rstn                ),
         .sys_clk_i             ( clk_200MHz               ),
         .sys_reset_ni          ( rstn_200MHz              ),
         .ddr_clk_o             ( ddr2_clk                 ),
         .ddr_rst_o             ( ddr2_rst                 ),
-        .init_calib_complete_o ( ddr2_init_calib_complete ),
         // DDR2 physical interface
         .ddr2_dq                ( ddr2_dq                  ),
         .ddr2_dqs_n             ( ddr2_dqs_n               ),
@@ -1070,12 +1069,13 @@ module simplyv (
     logic ddr4ch1_rst300MHz;
 
     // DDR channel 1 on MBUS
-    ddr4_channel_wrapper # (
+    ddr_wrapper # (
+        .DDR_TYPE           ( "DDR4"          ),
         .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH1
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
-    ) ddr4_channel_1_wrapper_u (
+    ) ddr_wrapper_ddr4ch1_u (
         .clock_i              ( main_clk          ),
         .reset_ni             ( main_rstn         ),
         // DDR4 differential clock
@@ -1099,23 +1099,6 @@ module simplyv (
         .cx_ddr4_reset_n      ( c1_ddr4_reset_n   ),
         .cx_ddr4_ck_t         ( c1_ddr4_ck_t      ),
         .cx_ddr4_ck_c         ( c1_ddr4_ck_c      ),
-        // AXILITE interface - for ECC status and control - not connected
-        .s_ctrl_axilite_awvalid  ( 1'b0  ),
-        .s_ctrl_axilite_awready  (       ),
-        .s_ctrl_axilite_awaddr   ( 32'd0 ),
-        .s_ctrl_axilite_wvalid   ( 1'b0  ),
-        .s_ctrl_axilite_wready   (       ),
-        .s_ctrl_axilite_wdata    ( 32'd0 ),
-        .s_ctrl_axilite_bvalid   (       ),
-        .s_ctrl_axilite_bready   ( 1'b1  ),
-        .s_ctrl_axilite_bresp    (       ),
-        .s_ctrl_axilite_arvalid  ( 1'b0  ),
-        .s_ctrl_axilite_arready  (       ),
-        .s_ctrl_axilite_araddr   ( 31'd0 ),
-        .s_ctrl_axilite_rvalid   (       ),
-        .s_ctrl_axilite_rready   ( 1'b1  ),
-        .s_ctrl_axilite_rdata    (       ),
-        .s_ctrl_axilite_rresp    (       ),
         // Slave interface
         .s_axi_awid           ( MBUS_to_DDR4CH1_axi_awid     ),
         .s_axi_awaddr         ( MBUS_to_DDR4CH1_axi_awaddr   ),

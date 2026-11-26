@@ -22,6 +22,7 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/peripheral_bus.sv               \
     $::env(XILINX_ROOT)/rtl/ddr4_channel_wrapper.sv         \
     $::env(XILINX_ROOT)/rtl/ddr2_channel_wrapper.sv         \
+    $::env(XILINX_ROOT)/rtl/ddr_wrapper.sv                \
     $::env(XILINX_ROOT)/rtl/plic_wrapper.sv                 \
     $::env(XILINX_ROOT)/rtl/clint_wrapper.sv                \
     $::env(XILINX_ROOT)/rtl/simplyv.sv                      \
