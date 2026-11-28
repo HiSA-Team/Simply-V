@@ -88,11 +88,11 @@ device_dict = {
     "memory": [],
 }
 
-# For each range_name, if it's  memory device (BRAM, HBM or starts with DDR4CH) add it to the map
+# For each memory device (BRAM, HBM, DDR2 or DDR4CH*) add it to the map
 for name, base_addr, addr_width in zip(range_names, range_base_addr, range_addr_width):
     # memory blocks
     # TODO77: extend for multiple BRAMs
-    if name in ["BRAM", "HBM"] or name.startswith("DDR4CH"):
+    if name in ["BRAM", "HBM", "DDR2"] or name.startswith("DDR4CH"):
         device_dict["memory"].append(
             {
                 "device": name,

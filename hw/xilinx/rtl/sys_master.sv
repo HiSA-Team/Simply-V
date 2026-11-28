@@ -64,6 +64,7 @@ module sys_master # (
     output logic clk_20MHz_o,
     output logic clk_50MHz_o,
     output logic clk_100MHz_o,
+    output logic clk_200MHz_o,
     output logic clk_250MHz_o,      // HPC ONLY
 
     // Output rsts for each clock domain (sync to the respective clock)
@@ -71,6 +72,7 @@ module sys_master # (
     output logic rstn_20MHz_o,
     output logic rstn_50MHz_o,
     output logic rstn_100MHz_o,
+    output logic rstn_200MHz_o,
     output logic rstn_250MHz_o,      // HPC ONLY
 
     // AXI Master interface
@@ -159,6 +161,16 @@ module sys_master # (
         .src_arst  ( locked        ),
         .dest_clk  ( clk_100MHz_o  ),
         .dest_arst ( rstn_100MHz_o )
+    );
+
+    // MIG reset: assert on board reset or loss of lock; release at 200 MHz.
+    xpm_cdc_async_rst #(
+        .DEST_SYNC_FF    ( 4 ),
+        .RST_ACTIVE_HIGH ( 0 )
+    ) xpm_cdc_async_rst_200MHz_u (
+        .src_arst  ( locked & ~sys_reset_i ),
+        .dest_clk  ( clk_200MHz_o          ),
+        .dest_arst ( rstn_200MHz_o         )
     );
 
     // Reset sync for 250M Hz clock
@@ -497,7 +509,8 @@ module sys_master # (
         .clk_100  ( clk_100MHz_o ),
         .clk_50   ( clk_50MHz_o  ),
         .clk_20   ( clk_20MHz_o  ),
-        .clk_10   ( clk_10MHz_o  )
+        .clk_10   ( clk_10MHz_o  ),
+        .clk_200  ( clk_200MHz_o )
     );
 
     // The JTAG2AXI ip is always built with a 32-bits DWIDTH. We use a DWIDTH

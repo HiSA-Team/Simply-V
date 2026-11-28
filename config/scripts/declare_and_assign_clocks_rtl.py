@@ -43,9 +43,9 @@ logic HBUS_clk;
 def declare_and_assign_clocks_rtl(config: configuration.Configuration) -> list:
     # Get (name: clock) data structure
     clock_domains = []
-    # Navigate the 2 lists. Skip HBUS or DDR4CH* because they have their clock
+    # Navigate the 2 lists. Skip HBUS and DDR memories, which have their own clock
     for clock, name in zip(mbus_config.RANGE_CLOCK_DOMAINS, mbus_config.RANGE_NAMES):
-        if name == "HBUS" or name.startswith("DDR4CH"):
+        if name in ["HBUS", "DDR2"] or name.startswith("DDR4CH"):
             continue
         clock_domains.append(
             {

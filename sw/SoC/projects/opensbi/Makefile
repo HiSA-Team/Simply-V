@@ -59,7 +59,8 @@ opensbi:
 install: pull-opensbi
 	$(PYTHON) $(SW_SOC_ROOT)/projects/opensbi/scripts/create_config.py \
 		$(CONFIG_ROOT)/configs/$(SIMPLYV_PROFILE)/config_main_bus.csv \
-		$(SW_SOC_ROOT)/projects/opensbi/simply-v/config.mk
+		$(SW_SOC_ROOT)/projects/opensbi/simply-v/config.mk \
+		$(SW_SOC_ROOT)/projects/opensbi/common/config.ld
 	cp -vr simply-v $(OPENSBI_DIR)/platform/
 
 # pull-opensbi: retrieve opensbi code

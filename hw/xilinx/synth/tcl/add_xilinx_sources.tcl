@@ -7,6 +7,7 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/simplyv_axi.svh                 \
     $::env(XILINX_ROOT)/rtl/simplyv_pcie.svh                \
     $::env(XILINX_ROOT)/rtl/simplyv_ddr4.svh                \
+    $::env(XILINX_ROOT)/rtl/simplyv_ddr2.svh                \
     $::env(XILINX_ROOT)/rtl/mbus_buses.svinc                \
     $::env(XILINX_ROOT)/rtl/pbus_buses.svinc                \
     $::env(XILINX_ROOT)/rtl/hbus_buses.svinc                \
@@ -20,6 +21,8 @@ set src_file_list [ list \
     $::env(XILINX_ROOT)/rtl/axilite_uart.sv                 \
     $::env(XILINX_ROOT)/rtl/peripheral_bus.sv               \
     $::env(XILINX_ROOT)/rtl/ddr4_channel_wrapper.sv         \
+    $::env(XILINX_ROOT)/rtl/ddr2_channel_wrapper.sv         \
+    $::env(XILINX_ROOT)/rtl/ddr_wrapper.sv                \
     $::env(XILINX_ROOT)/rtl/plic_wrapper.sv                 \
     $::env(XILINX_ROOT)/rtl/clint_wrapper.sv                \
     $::env(XILINX_ROOT)/rtl/simplyv.sv                      \

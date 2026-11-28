@@ -60,7 +60,11 @@
 #define configMAX_PRIORITIES                       5U
 #define configMINIMAL_STACK_SIZE                   256U
 #define configMAX_TASK_NAME_LEN                    8U
+#if __riscv_xlen == 64
 #define configTICK_TYPE_WIDTH_IN_BITS              TICK_TYPE_WIDTH_64_BITS
+#else
+#define configTICK_TYPE_WIDTH_IN_BITS              TICK_TYPE_WIDTH_32_BITS
+#endif
 #define configIDLE_SHOULD_YIELD                    1
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES      1U
 #define configQUEUE_REGISTRY_SIZE                  0U

@@ -16,6 +16,8 @@
 #define _peripheral_CDMA_end    0x0000000000050000u
 #define _peripheral_PLIC_start  0x0000000004000000u
 #define _peripheral_PLIC_end    0x0000000008000000u
+#define _peripheral_DDR2_start  0x0000000080000000u
+#define _peripheral_DDR2_end    0x0000000088000000u
 #define _peripheral_UART_start  0x0000000000020000u
 #define _peripheral_UART_end    0x0000000000020010u
 #define _peripheral_GPIO_out_start  0x0000000000020200u

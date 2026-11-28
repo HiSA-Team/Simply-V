@@ -55,6 +55,7 @@ import simplyv_pkg::*;
 ////////////////////
 
 `include "simplyv_axi.svh"
+`include "simplyv_ddr2.svh"
 
 `ifdef HPC
     `include "simplyv_pcie.svh"
@@ -71,6 +72,9 @@ module simplyv (
         // Clock and reset
         input logic sys_clock_i,
         input logic sys_reset_i,
+
+        // DDR2 memory interface
+        `DEFINE_DDR2_PORTS,
 
         // UART interface
         input  logic                        uart_rx_i,
@@ -125,6 +129,7 @@ module simplyv (
     logic clk_20MHz;
     logic clk_50MHz;
     logic clk_100MHz;
+    logic clk_200MHz;
     logic clk_250MHz;      // HPC ONLY
     // Clint real-time clock
     logic clint_rtc;
@@ -135,6 +140,7 @@ module simplyv (
     logic rstn_20MHz;
     logic rstn_50MHz;
     logic rstn_100MHz;
+    logic rstn_200MHz;
     logic rstn_250MHz;     // HPC ONLY
 
     // VIO Signals
@@ -286,12 +292,14 @@ module simplyv (
         .clk_20MHz_o(clk_20MHz),
         .clk_50MHz_o(clk_50MHz),
         .clk_100MHz_o(clk_100MHz),
+        .clk_200MHz_o(clk_200MHz),
         .clk_250MHz_o(clk_250MHz),      // HPC ONLY
         // Output resets
         .rstn_10MHz_o(rstn_10MHz),
         .rstn_20MHz_o(rstn_20MHz),
         .rstn_50MHz_o(rstn_50MHz),
         .rstn_100MHz_o(rstn_100MHz),
+        .rstn_200MHz_o(rstn_200MHz),
         .rstn_250MHz_o(rstn_250MHz),      // HPC ONLY
         // AXI Master
         .m_axi_awid     ( SYS_MASTER_to_MBUS_axi_awid     ),
@@ -971,8 +979,86 @@ module simplyv (
         .cdma_tvect_out ()
     );
 
-// In HPC profile
-`ifdef HPC
+// Profile-specific peripherals
+`ifdef EMBEDDED
+
+    //////////////////
+    // DDR2 memory //
+    //////////////////
+
+    logic ddr2_clk;
+    logic ddr2_rst;
+
+    ddr_wrapper # (
+        .DDR_TYPE           ( "DDR2"          ),
+        .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
+        .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
+        .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
+    ) ddr_wrapper_embedded_u (
+        .clock_i               ( main_clk                 ),
+        .reset_ni              ( main_rstn                ),
+        .sys_clk_i             ( clk_200MHz               ),
+        .sys_reset_ni          ( rstn_200MHz              ),
+        .ddr_clk_o             ( ddr2_clk                 ),
+        .ddr_rst_o             ( ddr2_rst                 ),
+        // DDR2 physical interface
+        .ddr2_dq                ( ddr2_dq                  ),
+        .ddr2_dqs_n             ( ddr2_dqs_n               ),
+        .ddr2_dqs_p             ( ddr2_dqs_p               ),
+        .ddr2_addr              ( ddr2_addr                ),
+        .ddr2_ba                ( ddr2_ba                  ),
+        .ddr2_ras_n             ( ddr2_ras_n               ),
+        .ddr2_cas_n             ( ddr2_cas_n               ),
+        .ddr2_we_n              ( ddr2_we_n                ),
+        .ddr2_ck_p              ( ddr2_ck_p                ),
+        .ddr2_ck_n              ( ddr2_ck_n                ),
+        .ddr2_cke               ( ddr2_cke                 ),
+        .ddr2_cs_n              ( ddr2_cs_n                ),
+        .ddr2_dm                ( ddr2_dm                  ),
+        .ddr2_odt               ( ddr2_odt                 ),
+        // AXI slave interface from MBUS
+        .s_axi_awid             ( MBUS_to_DDR2_axi_awid       ),
+        .s_axi_awaddr           ( MBUS_to_DDR2_axi_awaddr     ),
+        .s_axi_awlen            ( MBUS_to_DDR2_axi_awlen      ),
+        .s_axi_awsize           ( MBUS_to_DDR2_axi_awsize     ),
+        .s_axi_awburst          ( MBUS_to_DDR2_axi_awburst    ),
+        .s_axi_awlock           ( MBUS_to_DDR2_axi_awlock     ),
+        .s_axi_awcache          ( MBUS_to_DDR2_axi_awcache    ),
+        .s_axi_awprot           ( MBUS_to_DDR2_axi_awprot     ),
+        .s_axi_awregion         ( MBUS_to_DDR2_axi_awregion   ),
+        .s_axi_awqos            ( MBUS_to_DDR2_axi_awqos      ),
+        .s_axi_awvalid          ( MBUS_to_DDR2_axi_awvalid    ),
+        .s_axi_awready          ( MBUS_to_DDR2_axi_awready    ),
+        .s_axi_wdata            ( MBUS_to_DDR2_axi_wdata      ),
+        .s_axi_wstrb            ( MBUS_to_DDR2_axi_wstrb      ),
+        .s_axi_wlast            ( MBUS_to_DDR2_axi_wlast      ),
+        .s_axi_wvalid           ( MBUS_to_DDR2_axi_wvalid     ),
+        .s_axi_wready           ( MBUS_to_DDR2_axi_wready     ),
+        .s_axi_bid              ( MBUS_to_DDR2_axi_bid        ),
+        .s_axi_bresp            ( MBUS_to_DDR2_axi_bresp      ),
+        .s_axi_bvalid           ( MBUS_to_DDR2_axi_bvalid     ),
+        .s_axi_bready           ( MBUS_to_DDR2_axi_bready     ),
+        .s_axi_arid             ( MBUS_to_DDR2_axi_arid       ),
+        .s_axi_araddr           ( MBUS_to_DDR2_axi_araddr     ),
+        .s_axi_arlen            ( MBUS_to_DDR2_axi_arlen      ),
+        .s_axi_arsize           ( MBUS_to_DDR2_axi_arsize     ),
+        .s_axi_arburst          ( MBUS_to_DDR2_axi_arburst    ),
+        .s_axi_arlock           ( MBUS_to_DDR2_axi_arlock     ),
+        .s_axi_arcache          ( MBUS_to_DDR2_axi_arcache    ),
+        .s_axi_arprot           ( MBUS_to_DDR2_axi_arprot     ),
+        .s_axi_arregion         ( MBUS_to_DDR2_axi_arregion   ),
+        .s_axi_arqos            ( MBUS_to_DDR2_axi_arqos      ),
+        .s_axi_arvalid          ( MBUS_to_DDR2_axi_arvalid    ),
+        .s_axi_arready          ( MBUS_to_DDR2_axi_arready    ),
+        .s_axi_rid              ( MBUS_to_DDR2_axi_rid        ),
+        .s_axi_rdata            ( MBUS_to_DDR2_axi_rdata      ),
+        .s_axi_rresp            ( MBUS_to_DDR2_axi_rresp      ),
+        .s_axi_rlast            ( MBUS_to_DDR2_axi_rlast      ),
+        .s_axi_rvalid           ( MBUS_to_DDR2_axi_rvalid     ),
+        .s_axi_rready           ( MBUS_to_DDR2_axi_rready     )
+    );
+
+`elsif HPC
 
     ////////////////////
     // DDR4 Channel 1 //
@@ -983,12 +1069,13 @@ module simplyv (
     logic ddr4ch1_rst300MHz;
 
     // DDR channel 1 on MBUS
-    ddr4_channel_wrapper # (
+    ddr_wrapper # (
+        .DDR_TYPE           ( "DDR4"          ),
         .ENABLE_CACHE       ( 1               ), // Always enabled for DDR4CH1
         .LOCAL_DATA_WIDTH   ( MBUS_DATA_WIDTH ),
         .LOCAL_ADDR_WIDTH   ( MBUS_ADDR_WIDTH ),
         .LOCAL_ID_WIDTH     ( MBUS_ID_WIDTH   )
-    ) ddr4_channel_1_wrapper_u (
+    ) ddr_wrapper_ddr4ch1_u (
         .clock_i              ( main_clk          ),
         .reset_ni             ( main_rstn         ),
         // DDR4 differential clock
@@ -1012,23 +1099,6 @@ module simplyv (
         .cx_ddr4_reset_n      ( c1_ddr4_reset_n   ),
         .cx_ddr4_ck_t         ( c1_ddr4_ck_t      ),
         .cx_ddr4_ck_c         ( c1_ddr4_ck_c      ),
-        // AXILITE interface - for ECC status and control - not connected
-        .s_ctrl_axilite_awvalid  ( 1'b0  ),
-        .s_ctrl_axilite_awready  (       ),
-        .s_ctrl_axilite_awaddr   ( 32'd0 ),
-        .s_ctrl_axilite_wvalid   ( 1'b0  ),
-        .s_ctrl_axilite_wready   (       ),
-        .s_ctrl_axilite_wdata    ( 32'd0 ),
-        .s_ctrl_axilite_bvalid   (       ),
-        .s_ctrl_axilite_bready   ( 1'b1  ),
-        .s_ctrl_axilite_bresp    (       ),
-        .s_ctrl_axilite_arvalid  ( 1'b0  ),
-        .s_ctrl_axilite_arready  (       ),
-        .s_ctrl_axilite_araddr   ( 31'd0 ),
-        .s_ctrl_axilite_rvalid   (       ),
-        .s_ctrl_axilite_rready   ( 1'b1  ),
-        .s_ctrl_axilite_rdata    (       ),
-        .s_ctrl_axilite_rresp    (       ),
         // Slave interface
         .s_axi_awid           ( MBUS_to_DDR4CH1_axi_awid     ),
         .s_axi_awaddr         ( MBUS_to_DDR4CH1_axi_awaddr   ),
