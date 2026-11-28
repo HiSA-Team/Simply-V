@@ -11,18 +11,18 @@ SECTIONS
     .text __payload_start : {
         KEEP(*(.text._start))
         *(.text*)
-    } > DDR4CH1
+    } > OPENSBI_MEMORY
 
     .rodata : ALIGN(8) {
         *(.rodata*)
-    } > DDR4CH1
+    } > OPENSBI_MEMORY
 
     .data : {
         *(.data*)
-    } > DDR4CH1
+    } > OPENSBI_MEMORY
 
     .bss (NOLOAD) : ALIGN(8) {
         *(.bss*)
         *(COMMON)
-    } > DDR4CH1
+    } > OPENSBI_MEMORY
 }

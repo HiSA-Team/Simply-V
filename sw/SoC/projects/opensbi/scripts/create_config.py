@@ -1,11 +1,12 @@
 # Author: Giuseppe Capasso <giuseppe.capasso17@studenti.unina.it>
 # Description:
-#   Generate config.mk to ensure proper `FW_TEXT_START` variable for OpenSBI:
+#   Generate OpenSBI firmware and payload memory configuration.
 # Note:
 #   Addresses overlaps are not sanitized.
 # Args:
 #   1: [IN] Input configuration file for main bus
-#   5: [OUT] Output config file
+#   2: [OUT] OpenSBI config file
+#   3: [OUT] Payload linker config file
 
 ####################
 # Import libraries #
@@ -23,19 +24,16 @@ def get_value_by_property(reader, property_name: str) -> str:
     return next(value for property, value in reader if property == property_name)
 
 # CSV configuration file path
-if len(sys.argv) != (1 + 2):
-    print(f"""Usage: {sys.argv[0]}  <CONFIG_MAIN_BUS_CSV> <OUTPUT_CONFIG_FILE>""")
+if len(sys.argv) != (1 + 3):
+    print(f"""Usage: {sys.argv[0]}  <CONFIG_MAIN_BUS_CSV> <OUTPUT_CONFIG_FILE> <OUTPUT_PAYLOAD_LD_FILE>""")
     sys.exit(1)
 
 # first parameter is ignored, since it contains the script path
-_, config_main_bus, config_file = sys.argv
+_, config_main_bus, config_file, payload_config_file = sys.argv
 
 ###############
 # Read config #
 ###############
-
-# Read system CSV file
-OPENSBI_BOOT_MEMORY_BLOCK = "DDR4CH1"
 
 # Read CSV file
 with open(config_main_bus, "r") as file:
@@ -44,6 +42,9 @@ with open(config_main_bus, "r") as file:
     range_names = get_value_by_property(reader, "RANGE_NAMES").split()
     range_base_addr = get_value_by_property(reader, "RANGE_BASE_ADDR").split()
     range_addr_width = get_value_by_property(reader, "RANGE_ADDR_WIDTH").split()
+
+# Select the DDR memory present in the SoC configuration.
+OPENSBI_BOOT_MEMORY_BLOCK = "DDR2" if "DDR2" in range_names else "DDR4CH1"
 
 # Make sure BOOT_MEMORY_BLOCK is enabled
 assert( OPENSBI_BOOT_MEMORY_BLOCK in range_names )
@@ -77,3 +78,17 @@ rendered = config_template_str.format(
 # Write the output
 with open(config_file, "w") as f:
     f.write(rendered)
+
+# Use the same memory region for the supervisor payload.
+payload_config_template_str = """/* Auto-generated with {current_file_path} */
+REGION_ALIAS("OPENSBI_MEMORY", {memory_name});
+__payload_offset = 0x200000;
+__stack_top = ORIGIN(OPENSBI_MEMORY) + LENGTH(OPENSBI_MEMORY);
+__payload_start = ORIGIN(OPENSBI_MEMORY) + __payload_offset;
+"""
+
+with open(payload_config_file, "w") as f:
+    f.write(payload_config_template_str.format(
+        current_file_path=os.path.basename(__file__),
+        memory_name=OPENSBI_BOOT_MEMORY_BLOCK,
+    ))
