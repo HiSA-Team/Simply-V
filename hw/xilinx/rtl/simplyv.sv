@@ -73,8 +73,10 @@ module simplyv (
         input logic sys_clock_i,
         input logic sys_reset_i,
 
-        // DDR2 memory interface
-        `DEFINE_DDR2_PORTS,
+        `ifdef DDR2_IS_SUPPORTED
+            // DDR2 memory interface
+            `DEFINE_DDR2_PORTS,
+        `endif
 
         // UART interface
         input  logic                        uart_rx_i,
@@ -981,6 +983,7 @@ module simplyv (
 
 // Profile-specific peripherals
 `ifdef EMBEDDED
+`ifdef DDR2_IS_SUPPORTED
 
     //////////////////
     // DDR2 memory //
@@ -997,7 +1000,7 @@ module simplyv (
     ) ddr_wrapper_embedded_u (
         .clock_i               ( main_clk                 ),
         .reset_ni              ( main_rstn                ),
-        .sys_clk_i             ( clk_200MHz               ),
+        .clk_200mhz_i          ( clk_200MHz               ),
         .sys_reset_ni          ( rstn_200MHz              ),
         .ddr_clk_o             ( ddr2_clk                 ),
         .ddr_rst_o             ( ddr2_rst                 ),
@@ -1058,6 +1061,7 @@ module simplyv (
         .s_axi_rready           ( MBUS_to_DDR2_axi_rready     )
     );
 
+`endif // DDR2_IS_SUPPORTED
 `elsif HPC
 
     ////////////////////

@@ -26,7 +26,7 @@ module ddr2_channel_wrapper # (
 ) (
     input logic clock_i,
     input logic reset_ni,
-    input logic sys_clk_i,
+    input logic clk_200mhz_i,
     input logic sys_reset_ni,
 
     `DEFINE_DDR2_PORTS,
@@ -249,7 +249,7 @@ module ddr2_channel_wrapper # (
     );
 
     xlnx_ddr2_mig ddr2_mig_u (
-        .sys_clk_i           ( sys_clk_i             ),
+        .sys_clk_i           ( clk_200mhz_i          ),
         // The board MIG preset uses an active-low system reset.
         .sys_rst             ( sys_reset_ni          ),
         .ui_clk              ( ddr_clk_o             ),

@@ -19,7 +19,7 @@ module ddr_wrapper # (
     input logic reset_ni,
 
     // DDR2 MIG clock and physical interface
-    input logic sys_clk_i,
+    input logic clk_200mhz_i,
     input logic sys_reset_ni,
     `DEFINE_DDR2_PORTS,
 

@@ -11,6 +11,12 @@ if { "$::env(SIMPLYV_PROFILE)" == "hpc" } {
     lappend verilog_defines HPC=1
 } elseif { "$::env(SIMPLYV_PROFILE)" == "embedded" } {
     lappend verilog_defines EMBEDDED=1
+    switch -glob -- $::env(XILINX_BOARD_PART) {
+        "digilentinc.com:nexys-a7-100t:part0:*" -
+        "digilentinc.com:nexys-a7-50t:part0:*" {
+            lappend verilog_defines DDR2_IS_SUPPORTED=1
+        }
+    }
 } else {
     puts "Unsupported board $::env(SIMPLYV_PROFILE)"
     exit 1
